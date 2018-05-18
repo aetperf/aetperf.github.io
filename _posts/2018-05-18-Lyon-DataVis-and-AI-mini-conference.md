@@ -3,8 +3,6 @@ author: François Pacull
 tags: Conference DataViz DeepLearning AI
 ---
 
-# Lyon DataVis & AI Mini-Conference
-
 Yesterday I went to [this](http://data.em-lyon.com/2018/04/26/mini-conference-on-data-visualization-and-ai/) mini-conference at ENS Lyon and enjoyed it very much. Here is a very short description of the speakers/subjects:
 
 ## [Lane Harrison](https://web.cs.wpi.edu/~ltharrison/)
