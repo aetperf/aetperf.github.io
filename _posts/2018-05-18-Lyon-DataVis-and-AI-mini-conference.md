@@ -1,5 +1,4 @@
 ---
----
 title: Lyon DataVis and AI mini-conference
 layout: post
 author: François Pacull
