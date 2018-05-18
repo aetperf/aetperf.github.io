@@ -1,1 +1,1 @@
-### [Lyon DataVis & AI Mini-Conference](./posts/20180518/report_01.md)
+### [Lyon DataVis & AI Mini-Conference](./_posts/2018-05-18-Lyon-DataVis-and-AI-mini-conference.md)
