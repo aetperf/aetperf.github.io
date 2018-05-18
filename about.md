@@ -1,7 +1,5 @@
 
 Architecture & Performance
-
-Adresse:
 4 Quai Jean-Moulin
 LYON
 69001
