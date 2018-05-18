@@ -1,3 +1,5 @@
+author: François Pacull
+
 # Lyon DataVis & AI Mini-Conference
 
 Yesterday I went to [this](http://data.em-lyon.com/2018/04/26/mini-conference-on-data-visualization-and-ai/) mini-conference at ENS Lyon and enjoyed it very much. Here is a very short description of the speakers/subjects:
@@ -22,7 +24,7 @@ This was really interesting to me. He is one of the developer of [TensorFlow.js]
 
 Great presentation about the [quick draw game](https://quickdraw.withgoogle.com/#) dataset, which can be found [here](https://github.com/googlecreativelab/quickdraw-dataset): 50 million drawings across 345 categories.
 
-![](./qdgame.jpg)
+![](/img/qdgame.jpg)
 
 An old version of his slides can be found [here](http://vallandingham.me/quickdraw_talk.html) on his website.
 
@@ -34,7 +36,7 @@ He is a graphics reporter on the investigative team at the Washington Post. He t
 
 He is one of authors of [Vega](https://vega.github.io/vega/), which is a visualization grammar: a declarative language for creating, saving (in JSON), and sharing interactive visualization designs, and [Vega-Lite](https://vega.github.io/vega-lite/). Here is a little example of an interactive moving average in Vega-Lite 2:
 
-![](./vega_lite_01.gif)
+![](/img/vega_lite_01.gif)
 
 You can check the corresponding JSON file and play with this interactive plot  [here](https://vega.github.io/editor/#/examples/vega-lite/selection_layer_bar_month). This Vega-Lite visualization grammar is very powerful, and is also used in the Python [Altair](https://altair-viz.github.io/) visualization library, created by [Jake Vanderplas](http://www.vanderplas.com).
 
@@ -44,6 +46,6 @@ Here is a quote from the Vega website page describing the project:
 
 He was here to talk about deep learning and his work on [The Building Blocks of Interpretability](https://distill.pub/2018/building-blocks/). This was fun!
 
-![](./mixed4d.jpeg)
+![](/img/mixed4d.jpeg)
 
 Note that this last research work is presented on the [Distill](https://distill.pub/) platform, which is a very powerful web medium to present ML top research.
