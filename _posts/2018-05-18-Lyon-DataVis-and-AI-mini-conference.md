@@ -1,5 +1,4 @@
 # Lyon DataVis & AI Mini-Conference
-2018/05/18, François Pacull
 
 Yesterday I went to [this](http://data.em-lyon.com/2018/04/26/mini-conference-on-data-visualization-and-ai/) mini-conference at ENS Lyon and enjoyed it very much. Here is a very short description of the speakers/subjects:
 
@@ -13,7 +12,7 @@ This was really interesting to me. He is one of the developer of [TensorFlow.js]
 
   * [TensorFlow.js implementation of PoseNet](https://github.com/tensorflow/tfjs-models/tree/master/posenet): PoseNet is based on a convolutional neural network and allow to detect a person in a video in real time with an accurate prediction of the body position. You can try a live demo [here](https://storage.googleapis.com/tfjs-models/demos/posenet/camera.html).
 
- ![](./posenet.jpg)
+ ![](/img/posenet.jpg)
 
   * [FACETS](https://pair-code.github.io/facets/): Facets is a visualization tool to aid in understanding and analyzing machine learning datasets.
 
