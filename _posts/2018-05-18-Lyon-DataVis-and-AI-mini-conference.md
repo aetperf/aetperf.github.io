@@ -1,6 +1,6 @@
 ---
 author: François Pacull
-tags: conference, dataviz, deep learning
+tags: conference dataviz "deep learning", AI
 ---
 
 # Lyon DataVis & AI Mini-Conference
