@@ -470,7 +470,7 @@ print(dfoutput)
 
 We already saw that the mean is clearly increasing starting in the 80s while standard deviation seems to be uniform. Now we can observe that the Test Statistic is significantly greater than the critical values and that the p-value is not so small, which also seems to indicate that the data is not stationary.
 
-Let us try to make this time series artificially stationary by removing the rolling mean from the data and run the test again. We start by computing the meaan on a 120 months rolling window.
+Let us try to make this time series artificially stationary by removing the rolling mean from the data and run the test again. We start by computing the mean on a 120 months rolling window.
 
 
 ```python
@@ -899,13 +899,12 @@ In order to use OLS from statsmodels, we need to convert the `datetime` objects 
 
 
 ```python
-epoch = pd.to_datetime(0, unit='d').to_julian_date()
-
 df_france = temp_annual.loc[temp_annual.index >= pd.Timestamp('1975-01-01'), ('tas', 'mean')].copy(deep=True).reset_index()
 df_france.columns = ['Date', 't']
 df_france.set_index('Date', drop=False, inplace=True)
 df_france['jDate'] = df_france['Date'].map(pd.Timestamp.to_julian_date)
 df_france['const'] = 1.0
+#epoch = pd.to_datetime(0, unit='d').to_julian_date()
 #df_france['Date2'] = pd.to_datetime(df_france['jDate']- epoch, unit='D')
 
 df_land = glty.loc[glty.index >= pd.Timestamp('1975-01-01'), ('t', 'mean')].copy(deep=True).reset_index()
