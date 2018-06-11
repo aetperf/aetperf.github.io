@@ -1,5 +1,3 @@
-# Running JupyterLab computational environment on an Amazon EC2 GPU
-
 Following [this](https://blog.keras.io/running-jupyter-notebooks-on-gpu-on-aws-a-starter-guide.html) very usefull Keras blog entry.
 
 * Create an Amazon account if you don't already have one
