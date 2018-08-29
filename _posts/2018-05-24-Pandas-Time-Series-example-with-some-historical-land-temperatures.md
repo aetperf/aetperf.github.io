@@ -1,5 +1,7 @@
-
-# Pandas time series - example 1
+---
+layout: post
+author: francois pacull
+---
 
 ## Monthly averaged historical temperatures in France and over the global land surface
 
