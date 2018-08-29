@@ -1,6 +1,8 @@
 ---
+title: Looping over Pandas datas
 layout: post
-author: francois pacull
+author: François Pacull
+tags: Pandas Cython Numba
 ---
 
 I recently stumbled on this interesting post on [RealPython](https://realpython.com/) (excellent website by the way!):

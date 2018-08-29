@@ -1,6 +1,8 @@
 ---
+title: Pandas Time Series example with some historical land temperatures
 layout: post
-author: francois pacull
+author: François Pacull
+tags: Pandas time_series
 ---
 
 ## Monthly averaged historical temperatures in France and over the global land surface

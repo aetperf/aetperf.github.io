@@ -1,7 +1,7 @@
 ---
 title: Lyon DataVis and AI mini-conference
 layout: post
-author: françois pacull
+author: François Pacull
 tags: Conference DataViz DeepLearning AI
 ---
 
