@@ -1,11 +1,9 @@
-mathjax: true
-
 k-means is a kind of clustering algorithms, which belong to the family of [unsupervised machine learning](https://en.wikipedia.org/wiki/Unsupervised_learning) models. It aims at finding $k$ groups of similar data (clusters) in an unlabeled multidimensional dataset.
 
 
 ## The k-means minimization problem
 
-Let $(x_1, ..., x_n)$ be a set of $n$ observations with $x_i \in \mathbb{R}^{d}$, for $1 \leq i \leq n$. The aim of the k-means algorithms is to find a disjoint partition $S=\{S_1, ..., S_k \}$ of the $n$ observations into $k \leq n$ clusters, minimizing $D$ the within-cluster distance to center:
+Let \\((x_1, ..., x_n)\\) be a set of $n$ observations with $x_i \in \mathbb{R}^{d}$, for $1 \leq i \leq n$. The aim of the k-means algorithms is to find a disjoint partition $S=\{S_1, ..., S_k \}$ of the $n$ observations into $k \leq n$ clusters, minimizing $D$ the within-cluster distance to center:
 $$ D(S) = \sum_{i=1}^k \sum_{x \in S_i} \| x - \mu_i \|^2 $$
 where $\mu_i$ is the $i$-th cluster center (i.e. the arithmetic mean of the cluster observations): $\mu_i = \frac{1}{|S_i|} \sum_{x_j \in S_i} x_j$, for $1 \leq i \leq n$.
 
