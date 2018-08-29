@@ -1,3 +1,5 @@
+mathjax: true
+
 k-means is a kind of clustering algorithms, which belong to the family of [unsupervised machine learning](https://en.wikipedia.org/wiki/Unsupervised_learning) models. It aims at finding $k$ groups of similar data (clusters) in an unlabeled multidimensional dataset.
 
 
