@@ -1,6 +1,6 @@
 
 ---
-title: Symmetric Chaos
+title: Symmetric Chaos with Datashader and Numba
 layout: post
 author: François Pacull
 tags: attractor symmetry datashader numba
