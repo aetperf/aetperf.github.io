@@ -1,4 +1,3 @@
-
 ---
 title: Symmetric Chaos with Datashader and Numba
 layout: post
