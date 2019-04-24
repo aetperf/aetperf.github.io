@@ -235,7 +235,7 @@ OmniSQL Version: 4.6.0-20190415-38f897c50e
 
 ## Test OmniSci
 
-Let's insert some data to check that everything is working well! A convenient script has been installed in order to load some data into the database:
+Let's insert some data to check that everything is working fine! A convenient script has been installed in order to load some data into the database:
 
 
 ```bash
@@ -314,4 +314,4 @@ Harrisburg|Baltimore|25
 
 ```
 
-Well, it seems that the database is working. Next we will see how to install the RAPIDS suite and load some data from OmniSci to dataframes.
+Well, it seems that the database is working fine. Next we will see how to install the RAPIDS suite and load some data from OmniSci to dataframes.
