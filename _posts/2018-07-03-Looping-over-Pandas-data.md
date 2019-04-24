@@ -1,5 +1,5 @@
 ---
-title: Looping over Pandas datas
+title: Looping over Pandas data
 layout: post
 author: François Pacull
 tags: Pandas Cython Numba
