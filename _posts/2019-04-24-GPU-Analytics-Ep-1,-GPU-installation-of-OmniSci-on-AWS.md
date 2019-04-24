@@ -5,7 +5,7 @@ author: François Pacull
 tags: GPU database OmniSci AWS analytics
 ---
 
-In this post, we are going to install the OmniSci GPU database on an Ubuntu 18.04 AWS instance. These are the actual command lines I entered when performing the installation. 
+In this post, we are going to install the OmniSci 4.6 GPU database on an Ubuntu 18.04 AWS instance. These are the actual command lines I entered when performing the installation. 
 
 But let's start by introducing the motivation behind GPU databases: **GPUs allow fast data analysis**. GPU computing should provide a [1,000X speed-up in 15 or 20 years]((https://www.nvidia.com/en-us/about-nvidia/ai-computing/)) and also offers the ability to visualize the data efficiently. Since the size of the global data-sphere will double between 2019 and 2022 ([from 40 to 80 Zetabytes](https://www.datanami.com/2018/11/27/global-datasphere-to-hit-175-zettabytes-by-2025-idc-says/)), increasing the speed of data ingestion, data analysis, data visualization is a necessity.
 
