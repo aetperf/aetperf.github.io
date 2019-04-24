@@ -229,6 +229,8 @@ ubuntu@ip-10-0-10-124:/opt/omnisci$ systemctl status omnisci_server
 
 Apr 24 09:36:49 ip-10-0-10-124 systemd[1]: Started OmniSci database server.
 lines 1-10/10 (END)
+ubuntu@ip-10-0-10-124:/opt/omnisci$  $OMNISCI_PATH/bin/omnisql --version
+OmniSQL Version: 4.6.0-20190415-38f897c50e
 ```
 
 ## Test OmniSci
