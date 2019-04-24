@@ -18,7 +18,7 @@ OmniSci is actually their new brand name, replacing MapD. OmniSci is part of the
 
 ## Launch Amazon EC2 Instance
 
-From the AWS console, we launch a new instance (in Ireland in our case).
+From the AWS console, I launch a new instance (in Ireland in our case).
 
 - Step 1: Choose an Amazon Machine Image (AMI)  
 64-bit (x86) Ubuntu Server 18.04 LTS (HVM), EBS General Purpose (SSD) Volume Type
@@ -28,7 +28,7 @@ GPU instance p3.2xlarge, 8 vCPUs, 61 GiB, 1 GPU NVIDIA Tensor Core V100 with 16 
 
 This GPU has a Volta architecture. The successive NVIDIA generations are the following ones, from oldest to newest: Kepler, Maxwell, Pascal, Volta, Turing. It is important to note that the libraries from [RAPIDS](https://rapids.ai/), the Open GPU Data Science suite, require at least a Pascal architecture, which prevents from choosing a p2 instance (NVIDIA K80 of the Kepler generation), although it is cheaper (0.90 USD per hour instead of 3.06 USD for the p3.2xlarge instance). Also, note that you need to increase the initial AWS limit of p3 instances, which is 0 by default, using the AWS Support Center (it took a few hours in my case).
 
-Regarding the storage size, we asked for 100 GB (we can increase it later if ever we need to).
+Regarding the storage size, I asked for 100 GB (we can increase it later if ever we need to).
 
 The next steps deal with network and security... After that, I can eventually start the instance. Once it is running, I can connect via `ssh`:
 ```bash
