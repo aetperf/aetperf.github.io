@@ -1,11 +1,9 @@
 ---
-title: GPU installation of OmniSci on AWS
+title: GPU Analytics Ep 1, GPU installation of OmniSci on AWS
 layout: post
 author: François Pacull
-tags: GPU database OmniSci AWS
+tags: GPU database OmniSci AWS analytics
 ---
-
-# GPU analytics part 1
 
 In this post, we are going to install the OmniSci GPU database on an Ubuntu 18.04 AWS instance. These are the actual command lines I entered when performing the installation. 
 
