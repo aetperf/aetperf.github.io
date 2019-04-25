@@ -299,6 +299,10 @@ omnisql> SELECT * FROM flights_2008_7M LIMIT 2;
 flight_year|flight_month|flight_dayofmonth|flight_dayofweek|deptime|crsdeptime|arrtime|crsarrtime|uniquecarrier|flightnum|tailnum|actualelapsedtime|crselapsedtime|airtime|arrdelay|depdelay|origin|dest|distance|taxiin|taxiout|cancelled|cancellationcode|diverted|carrierdelay|weatherdelay|nasdelay|securitydelay|lateaircraftdelay|dep_timestamp|arr_timestamp|carrier_name|plane_type|plane_manufacturer|plane_issue_date|plane_model|plane_status|plane_aircraft_type|plane_engine_type|plane_year|origin_name|origin_city|origin_state|origin_country|origin_lat|origin_lon|dest_name|dest_city|dest_state|dest_country|dest_lat|dest_lon|origin_merc_x|origin_merc_y|dest_merc_x|dest_merc_y
 2008|1|10|4|702|700|758|800|WN|1|N505SW|56|60|46|-2|2|DAL|HOU|239|2|8|0|NULL|0|NULL|NULL|NULL|NULL|NULL|2008-01-10 07:02:00|2008-01-10 07:58:00|Southwest Airlines|Corporation|BOEING|1990-05-14|737-5H4|Valid|Fixed Wing Multi-Engine|Turbo-Jet|1990|Dallas Love|Dallas|TX|USA|32.84711|-96.85177|William P Hobby|Houston|TX|USA|29.64542|-95.27889|-1.078149e+07|3875028|-1.06064e+07|3458053
 2008|1|10|4|730|730|831|830|WN|3|N642WN|61|60|48|1|0|DAL|HOU|239|3|10|0|NULL|0|NULL|NULL|NULL|NULL|NULL|2008-01-10 07:30:00|2008-01-10 08:31:00|Southwest Airlines|Corporation|BOEING|1997-02-11|737-3H4|Valid|Fixed Wing Multi-Engine|Turbo-Fan|1997|Dallas Love|Dallas|TX|USA|32.84711|-96.85177|William P Hobby|Houston|TX|USA|29.64542|-95.27889|-1.078149e+07|3875028|-1.06064e+07|3458053
+```
+
+
+```bash
 omnisql> SELECT origin_city AS "Origin", dest_city AS "Destination", AVG(airtime) AS "Average Airtime" FROM flights_2008_7M WHERE distance < 200 GROUP BY origin_city, dest_city LIMIT 10;
 Origin|Destination|Average Airtime
 Jacksonville|Tampa|37.80867850098619
@@ -314,4 +318,4 @@ Harrisburg|Baltimore|25
 
 ```
 
-Well, it seems to be working fine. Next we will see how to install the RAPIDS suite and load some data from OmniSci to dataframes.
+Well, it seems to be working fine. Next we will see how to install the [RAPIDS](https://rapids.ai/) suite and load some data from OmniSci to dataframes.
