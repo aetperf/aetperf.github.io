@@ -314,4 +314,4 @@ Harrisburg|Baltimore|25
 
 ```
 
-Well, it seems that the database is working fine. Next we will see how to install the RAPIDS suite and load some data from OmniSci to dataframes.
+Well, it seems to be working fine. Next we will see how to install the RAPIDS suite and load some data from OmniSci to dataframes.
