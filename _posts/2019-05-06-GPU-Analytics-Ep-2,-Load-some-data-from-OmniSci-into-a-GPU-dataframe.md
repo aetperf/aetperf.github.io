@@ -215,7 +215,7 @@ thrift-cpp                0.12.0            h0a07b25_1002    conda-forge
 
 ### Launching JupyterLab
 
-Well everything seems to be ready to launch `Jupyter Lab`. We start by creating a folder for the notebooks:
+Well everything seems to be ready to launch `Jupyter Lab`. We start by c:reating a folder for the notebooks:
 
 ```bash
 cd Notebooks(base) ubuntu@ip-10-0-10-124:~/.jupyter$ cd ~
@@ -232,9 +232,11 @@ However, on the my local machine (not the AWS remote one), I tried to enter the 
 (base) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown -R $USER:$USER /run/user/1000/jupyter/
 ```
 
-This kind of issues is rather confusing and I am glad I could find similar issues on some web sites... But I finally got the following web page. As put by François Chollet:
+This kind of issues is rather confusing and I am glad I could find similar issues on some web sites... As put by François Chollet:
 
 > This warning is simply due to the fact that the SSL certificate we generated isn't verified by any trusted authority (obviously: we just generated our own). Click "advanced" and proceed to navigate, which is safe.
+
+But I eventually got the following web page. 
 
 ![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_01.jpg)
 
