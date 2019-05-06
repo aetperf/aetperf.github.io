@@ -174,7 +174,7 @@ We are done with the Jupyter set-up. Let's create an environment, install Jupyte
 (rapids) ubuntu@ip-10-0-10-124:~$ conda install -y jupyterlab
 ```
 
-In order to install RAPIDS, we got thee the RAPIDS [[get started page](https://rapids.ai/start.html):
+In order to install them, we get the command line from the the RAPIDS / GET STARTED page[[get started page](https://rapids.ai/start.html):
 
 ![RAPIDS](/img/2019-05-06_01/20190506_rapids01.jpg)
 
