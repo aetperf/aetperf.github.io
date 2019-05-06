@@ -12,7 +12,7 @@ This is the follow-up of our post [GPU Analytics Ep 1, GPU installation of OmniS
 
 This JupyterLab part of this post is mostly inspired from two blog posts that I found usefull:
 - [This first one](https://chrisalbon.com/aws/basics/run_project_jupyter_on_amazon_ec2/) from Chris Albon
-- [That second one](https://blog.keras.io/running-jupyter-notebooks-on-gpu-on-aws-a-starter-guide.html) from François Chollet  
+- [This second one](https://blog.keras.io/running-jupyter-notebooks-on-gpu-on-aws-a-starter-guide.html) from François Chollet  
 
 By the way, each of these people happened to write a book that I found highly interesting, so let's give the references to the fantastic books:
 - [Machine Learning with Python Cookbook, Chris Albon, O'Reilly Media, March 2018, ISBN  9781491989388, 366 pages](http://shop.oreilly.com/product/0636920085423.do)
