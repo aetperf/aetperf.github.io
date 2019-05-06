@@ -10,7 +10,7 @@ Although the post title is about loading some data from a GPU database into a GP
 
 This is the follow-up of our post [GPU Analytics Ep 1, GPU installation of OmniSci on AWS](https://aetperf.github.io/2019/04/24/GPU-Analytics-Ep-1,-GPU-installation-of-OmniSci-on-AWS.html). Thus we assume that we already created the GPU instance and installed [OmniSci](https://www.omnisci.com/) MapD Core database.
 
-This JupyterLab par of this post is mostly inspired from two blog posts that I found usefull:
+This JupyterLab part of this post is mostly inspired from two blog posts that I found usefull:
 - [This first one](https://chrisalbon.com/aws/basics/run_project_jupyter_on_amazon_ec2/) from Chris Albon
 - [That second one](https://blog.keras.io/running-jupyter-notebooks-on-gpu-on-aws-a-starter-guide.html) from François Chollet  
 
