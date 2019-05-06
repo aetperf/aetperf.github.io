@@ -40,7 +40,7 @@ Let's go to the [Anaconda download page](https://www.anaconda.com/distribution/)
 
 ![Anaconda](/img/2019-05-06_01/20190506_anaconda_01.png)
 
-In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, Right-click on `64-Bit (x86) Installer (654 MB)` and then `Copy Link Location` (At the time of my writing, the link is the following: `https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh`). We start by downloading this script:
+In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, Right-click on `64-Bit (x86) Installer (654 MB)` and then `Copy Link Location` (At the time of my writing, the link is the following one: `https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh`). We start by downloading this script:
 
 ```bash
 ubuntu@ip-10-0-10-124:~$ wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
