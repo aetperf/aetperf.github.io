@@ -187,7 +187,7 @@ conda install -c conda-forge pymapd
 conda install cudatoolkit
 ```
 
-Here are a few of the packages along with their version number that we have in our environment (`cuda list`):
+Here are a few of the packages along with their version number installed in our environment (`cuda list`):
 
 ```bash
 # packages in environment at /home/ubuntu/anaconda3/envs/rapids:
