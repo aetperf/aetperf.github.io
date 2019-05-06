@@ -328,4 +328,4 @@ type(gpudf)
 ```
     cudf.dataframe.dataframe.DataFrame
 
-This seems to work fine! In the next episode, we are going to look at row-wise user defined functions, either on cuDF and Pandas dataframes.
+This seems to work fine! In the next episode, we are going to look at row-wise user defined functions, both on cuDF and Pandas dataframes.
