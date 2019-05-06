@@ -22,7 +22,7 @@ By the way, each of these people happened to write a book that I found highly in
 
 The first step is to start the EC2 instance.
 
-![AWS instance](/img/2019-05-06_01/20190506_aws_01.jpg)/
+![AWS instance](/img/2019-05-06_01/20190506_aws_01.jpg)
 
 And then connect via `ssh`:
 
@@ -38,7 +38,7 @@ Everything is fine, so that's start to install [Anaconda](https://www.anaconda.c
 
 Let's go to the [Anaconda download page](https://www.anaconda.com/distribution/). 
 
-![Anaconda](/img/2019-05-06_01/20190506_anaconda_01.png)/
+![Anaconda](/img/2019-05-06_01/20190506_anaconda_01.png)
 
 In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, Right-click on `64-Bit (x86) Installer (654 MB)` and then `Copy Link Location` (At the time of my writing, the link is the following: `https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh`). We start by downloading this script:
 
