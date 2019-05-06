@@ -185,7 +185,6 @@ conda install -c nvidia/label/cuda10.0 -c rapidsai/label/cuda10.0 -c pytorch \
     -c numba -c conda-forge cudf=0.6 cuml=0.6 python=3.7
 conda install -c conda-forge pymapd
 conda install cudatoolkit
-
 ```
 
 Here are a few of the packages along with their version number that we have in our environment (`cuda list`):
