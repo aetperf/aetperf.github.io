@@ -14,7 +14,7 @@ This JupyterLab par of this post is mostly inspired from two blog posts that I f
 - [This first one](https://chrisalbon.com/aws/basics/run_project_jupyter_on_amazon_ec2/) from Chris Albon
 - [That second one](https://blog.keras.io/running-jupyter-notebooks-on-gpu-on-aws-a-starter-guide.html) from François Chollet  
 
-By the way, each of these people happened to write a book that I found highly interesting, so let's :
+By the way, each of these people happened to write a book that I found highly interesting, so let's give the references to the fantastic books:
 - [Machine Learning with Python Cookbook, Chris Albon, O'Reilly Media, March 2018, ISBN  9781491989388, 366 pages](http://shop.oreilly.com/product/0636920085423.do)
 - [Deep Learning with Python, François Chollet, Manning Publications, November 2017, ISBN 9781617294433, 384 pages](https://www.manning.com/books/deep-learning-with-python)
 
@@ -22,7 +22,7 @@ By the way, each of these people happened to write a book that I found highly in
 
 The first step is to start the EC2 instance.
 
-![AWS instance](./img/2019-05-06_01/20190506_aws_01.jpg)/
+![AWS instance](/img/2019-05-06_01/20190506_aws_01.jpg)/
 
 And then connect via `ssh`:
 
@@ -38,7 +38,7 @@ Everything is fine, so that's start to install [Anaconda](https://www.anaconda.c
 
 Let's go to the [Anaconda download page](https://www.anaconda.com/distribution/). 
 
-![Anaconda](./img/2019-05-06_01/20190506_anaconda_01.png)/
+![Anaconda](/img/2019-05-06_01/20190506_anaconda_01.png)/
 
 In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, Right-click on `64-Bit (x86) Installer (654 MB)` and then `Copy Link Location` (At the time of my writing, the link is the following: `https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh`). We start by downloading this script:
 
@@ -158,7 +158,7 @@ Press:
 
 In the past section, we set up the 8888 port for Jupyter. Now we are going to create a specific inbound rule fro the instance, so that we can connect from the local browser to the jupyter server on AWS. We are going to create a custom TCP rule to allow port 8888 in the security group.
 
-![inbound rules](./img/2019-05-06_01/20190506_inbound_rules.jpg)
+![inbound rules](/img/2019-05-06_01/20190506_inbound_rules.jpg)
 
 I allowed all IP to connect. However this is not a safe rule, as explained by François Chollet:
 
@@ -176,7 +176,7 @@ We are done with the Jupyter set-up. Let's create an environment, install Jupyte
 
 In order to install RAPIDS, we got thee the RAPIDS [[get started page](https://rapids.ai/start.html):
 
-![RAPIDS](./img/2019-05-06_01/20190506_rapids01.jpg)
+![RAPIDS](/img/2019-05-06_01/20190506_rapids01.jpg)
 
 We install cuDF and cuML, along with [pymapd](https://github.com/omnisci/pymapd) (Python client for OmniSci) and cudatoolkit:
 
@@ -236,11 +236,11 @@ This kind of issues is rather confusing and I am glad I could find similar issue
 
 > This warning is simply due to the fact that the SSL certificate we generated isn't verified by any trusted authority (obviously: we just generated our own). Click "advanced" and proceed to navigate, which is safe.
 
-![Jupyter_01](./img/2019-05-06_01/20190506_jupyter_01.jpg)
+![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_01.jpg)
 
 We finally get enntre the password created above:
 
-![Jupyter_01](./img/2019-05-06_01/20190506_jupyter_03.jpg)
+![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_03.jpg)
 
 We can now proceed to a very basic test of the GPU stack.
 
