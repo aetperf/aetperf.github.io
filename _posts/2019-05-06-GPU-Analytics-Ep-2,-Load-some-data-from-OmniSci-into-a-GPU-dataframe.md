@@ -166,7 +166,7 @@ I allowed all IP to connect. However this is not a safe rule, as explained by Fr
 
 ### Create an environment for GPU anaytics
 
-We are done with the Jupyter set-up. Let's create an environment, install JupyterLab and all the RAPIDS library.
+We are done with the Jupyter set-up. Let's create an environment, install JupyterLab and all the RAPIDS libraries.
 
 ```bash
 (base) ubuntu@ip-10-0-10-124:~$conda create -y -n rapids python=3.7
