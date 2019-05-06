@@ -236,11 +236,11 @@ This kind of issues is rather confusing and I am glad I could find similar issue
 
 > This warning is simply due to the fact that the SSL certificate we generated isn't verified by any trusted authority (obviously: we just generated our own). Click "advanced" and proceed to navigate, which is safe.
 
-But I eventually got the following web page. 
+But I eventually got the following web page: 
 
 ![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_01.jpg)
 
-We finally get enntre the password created above:
+We finally get enter the password created above:
 
 ![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_03.jpg)
 
