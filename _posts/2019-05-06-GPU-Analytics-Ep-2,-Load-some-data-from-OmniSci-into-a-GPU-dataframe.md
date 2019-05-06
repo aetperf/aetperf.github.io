@@ -156,7 +156,7 @@ Press:
 
 ### Change the inbounds rules of the instance security group
 
-In the past section, we set up the 8888 port for Jupyter. Now we are going to create a specific inbound rule fro the instance, so that we can connect from the local browser to the jupyter server on AWS. We are going to create a custom TCP rule to allow port 8888 in the security group.
+In the past section, we set up the 8888 port for Jupyter. Now we are going to create a specific inbound rule for the instance, so that we can connect from the local browser to the jupyter server on AWS. We are going to create a custom TCP rule to allow port 8888 in the security group.
 
 ![inbound rules](/img/2019-05-06_01/20190506_inbound_rules.jpg)
 
