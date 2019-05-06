@@ -1,4 +1,3 @@
-
 ---
 title: GPU Analytics Ep 2, Load some data from OmniSci into a GPU dataframe
 layout: post
@@ -302,6 +301,7 @@ from pymapd import connect
 con = connect(user="mapd", password="HyperInteractive", host="localhost", dbname="mapd")
 ```
 
+Let's query the DB and load the result of the query into a GPU dataframe:
 
 ```python
 query = "SELECT flight_year, flight_month, flight_dayofmonth, flight_dayofweek, deptime FROM flights_2008_7M LIMIT 1000;"
@@ -328,3 +328,4 @@ type(gpudf)
 ```
     cudf.dataframe.dataframe.DataFrame
 
+This seems to work fine! In the next episode, we are going to look at row-wise user defined functions, either on cuDF and Pandas dataframes.
