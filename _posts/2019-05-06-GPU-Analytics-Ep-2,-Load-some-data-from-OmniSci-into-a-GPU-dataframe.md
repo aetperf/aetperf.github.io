@@ -215,7 +215,7 @@ thrift-cpp                0.12.0            h0a07b25_1002    conda-forge
 
 ### Launching JupyterLab
 
-Well everythin seems to be reay to launch `Jupyter Lab`. We start by reating a folder for the notebooks:
+Well everything seems to be ready to launch `Jupyter Lab`. We start by creating a folder for the notebooks:
 
 ```bash
 cd Notebooks(base) ubuntu@ip-10-0-10-124:~/.jupyter$ cd ~
