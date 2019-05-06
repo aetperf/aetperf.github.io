@@ -231,13 +231,15 @@ However, on the my local machine (not the AWS remote one), I tried to enter the 
 (base) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown -R $USER:$USER /run/user/1000/jupyter/
 ```
 
-This kind of issues is rather confusing and I am glad I could find similar issues on some web sites... After this little unfortunate experience, I gcoule eventually launch the juputer lab from the browser. Don't be surprised if you get at first a "your connection is not private" warning. As explained by François Chollet:
+This kind of issues is rather confusing and I am glad I could find similar issues on some web sites...  
 
-> This warning is simply due to the fact that the SSL certificate we generated isn't verified by any trusted authority (obviously: we just generated our own). Click "advanced" and proceed to navigate, which is safe.
-
-But I eventually got the following web page: 
+After this little unfortunate experience, I could eventually launch the juputer lab from the browser. Don't be surprised if you get at first a "your connection is not private" warning. 
 
 ![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_01.jpg)
+
+As explained by François Chollet:
+
+> This warning is simply due to the fact that the SSL certificate we generated isn't verified by any trusted authority (obviously: we just generated our own). Click "advanced" and proceed to navigate, which is safe.  
 
 We finally get enter the password created above:
 
