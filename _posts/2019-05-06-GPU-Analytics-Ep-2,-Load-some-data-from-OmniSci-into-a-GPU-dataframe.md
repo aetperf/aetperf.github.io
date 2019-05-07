@@ -55,7 +55,7 @@ In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, right-
 ubuntu@ip-10-0-10-124:~$ wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 ```
 
-And then we run it:
+And then run it:
 
 ```bash
 ubuntu@ip-10-0-10-124:~$ sh Anaconda3-2019.03-Linux-x86_64.sh 
@@ -73,7 +73,7 @@ ubuntu@ip-10-0-10-124:~$ source ~/.bashrc
 (base) ubuntu@ip-10-0-10-124:~$ which python
 /home/ubuntu/anaconda3/bin/python
 ```
-We are in the `base` conda environment. We see that the python command is now pointing toward the Anaconda distribution. We start by updating conda, in case it would not be the lastest available:
+We are in the `base` conda environment. We see that the python command is now pointing toward the Anaconda distribution. We start by updating conda, in case it would not be the lastest version available:
 
 ```bash
 (base) ubuntu@ip-10-0-10-124:~$ conda update conda
@@ -83,7 +83,7 @@ Jupyter is already installed in this env. Let's create a password protection for
 
 ### Create a password for Jupyter
 
-Jupyter password protection is created with IPython (also already installed):
+Jupyter password protection is created with IPython (also already installed in this env):
 
 ```bash
 (base) ubuntu@ip-10-0-10-124:~$ ipython
@@ -242,7 +242,7 @@ However, on the my local machine (not the AWS remote one), I tried to enter the 
 
 This kind of issues is rather confusing and I am glad I could find similar issues on some web sites...  
 
-After this little unfortunate experience, I could eventually launch the juputer lab from the browser. Don't be surprised if you get at first a "your connection is not private" warning. 
+After this little unfortunate experience, I could eventually launch juputer lab from the browser. Don't be surprised if you get at first a "your connection is not private" warning. 
 
 ![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_01.jpg)
 
@@ -313,7 +313,7 @@ from pymapd import connect
 con = connect(user="mapd", password="HyperInteractive", host="localhost", dbname="mapd")
 ```
 
-Let's query the DB and load the result of the query into a GPU dataframe:
+Let's query the flights_2008_7M DB (loaded in the [last post](https://aetperf.github.io/2019/04/24/GPU-Analytics-Ep-1,-GPU-installation-of-OmniSci-on-AWS.html)) and load the result of the query into a GPU dataframe (with [`elect_ipc_gpu`](https://pymapd.readthedocs.io/en/latest/api.html#): Execute a SELECT operation using GPU memory):
 
 ```python
 query = "SELECT flight_year, flight_month, flight_dayofmonth, flight_dayofweek, deptime FROM flights_2008_7M LIMIT 1000;"
@@ -340,7 +340,7 @@ type(gpudf)
 ```
     cudf.dataframe.dataframe.DataFrame
 
-Data are correctly loaded from the OmniSci DB to the cuDF! 
+The data is correctly loaded from the OmniSci DB to the cuDF GPU dataframe! 
 
 In the next episode, we are going to look at row-wise user defined functions, both on cuDF and Pandas dataframes.
 
