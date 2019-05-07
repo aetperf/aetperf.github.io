@@ -319,7 +319,6 @@ Let's query the flights_2008_7M DB (loaded in the [last post](https://aetperf.gi
 query = "SELECT flight_year, flight_month, flight_dayofmonth, flight_dayofweek, deptime FROM flights_2008_7M LIMIT 1000;"
 gpudf = con.select_ipc_gpu(query)
 print(gpudf)
-
 ```
         flight_year  flight_month  flight_dayofmonth  flight_dayofweek  deptime
     0         2008             1                 11                 5     1705
