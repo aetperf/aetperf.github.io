@@ -72,7 +72,7 @@ ubuntu@ip-10-0-10-124:~$ source ~/.bashrc
 (base) ubuntu@ip-10-0-10-124:~$ which python
 /home/ubuntu/anaconda3/bin/python
 ```
-We are in the `base` conda environment. We see that the pythonn command is now pointing toward the Python Anaconda distribution. We start by updating conda, in case it would not be the lastest available:
+We are in the `base` conda environment. We see that the python command is now pointing toward the Anaconda distribution. We start by updating conda, in case it would not be the lastest available:
 
 ```bash
 (base) ubuntu@ip-10-0-10-124:~$ conda update conda
