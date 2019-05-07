@@ -1,6 +1,7 @@
 ---
 title: GPU Analytics Ep 1, GPU installation of OmniSci on AWS
 layout: post
+comments: true
 author: François Pacull
 tags: GPU database OmniSci AWS analytics
 ---
