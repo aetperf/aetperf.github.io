@@ -250,7 +250,7 @@ As explained by François Chollet:
 
 > This warning is simply due to the fact that the SSL certificate we generated isn't verified by any trusted authority (obviously: we just generated our own). Click "advanced" and proceed to navigate, which is safe.  
 
-We finally get enter the password created above:
+We finally get to enter the password created above (Create a password for Jupyter):
 
 ![Jupyter_01](/img/2019-05-06_01/20190506_jupyter_03.jpg)
 
