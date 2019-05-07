@@ -340,7 +340,9 @@ type(gpudf)
 ```
     cudf.dataframe.dataframe.DataFrame
 
-This seems to work fine! In the next episode, we are going to look at row-wise user defined functions, both on cuDF and Pandas dataframes.
+Data are correctly loaded from the OmniSci DB to the cuDF! 
+
+In the next episode, we are going to look at row-wise user defined functions, both on cuDF and Pandas dataframes.
 
 
 {% if page.comments %}

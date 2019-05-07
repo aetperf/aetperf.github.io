@@ -312,10 +312,34 @@ Ft. Lauderdale|Tampa|38.19741636303412
 Sarasota|Tampa|19.5
 Norfolk|Baltimore|37.0005980861244
 Philadelphia|Baltimore|24.73684210526316
-Newark|Baltimore|37.52857142857143
+Newark|Baltimore|37.52857142857143s
 New York|Baltimore|39.21726755218216
 Harrisburg|Baltimore|25
 
 ```
 
 Well, it seems to be working fine. Next we will see how to install the [RAPIDS](https://rapids.ai/) suite and load some data from OmniSci to dataframes.
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
