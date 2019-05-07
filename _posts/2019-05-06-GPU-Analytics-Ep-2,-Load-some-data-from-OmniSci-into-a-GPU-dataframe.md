@@ -118,7 +118,7 @@ cert.key  cert.pem
 ### Create Jupyter config profile and configure
 
 ```bash
-(base) ubuntu@ip-10-0-10-124:~$ jupyter notebook --generate-config
+(base) ubuntu@ip-10-0-10-124:~/certs$ jupyter notebook --generate-config
 Writing default config to: /home/ubuntu/.jupyter/jupyter_notebook_config.py
 ```
 
