@@ -8,6 +8,14 @@ tags: GPU database OmniSci AWS analytics RAPIDS dataframe cuDF
 
 Although the post title is about loading some data from a GPU database into a GPU dataframe, most of it is about running [JupyterLab](https://jupyterlab.readthedocs.io/en/stable/) on a GPU AWS instance, which is a little bit cumbersome to set up. Finally, once JupyterLab is running on our `p3.2xlarge` instance, we are going to install [RAPIDS](https://rapids.ai/) cuDF and cuML libraries and perform a very short test.
 
+Here is a brief description of [cuDF](https://github.com/rapidsai/cudf) and [cuML](https://github.com/rapidsai/cuml):
+
+> Built based on the Apache Arrow columnar memory format, cuDF is a GPU DataFrame library for loading, joining, aggregating, filtering, and otherwise manipulating data. 
+
+> cuML is a suite of libraries that implement machine learning algorithms and mathematical primitives functions that share compatible APIs with other RAPIDS projects. 
+
+Both libraries enable the use of GPUs in Python (without going into the details of CUDA programming).
+
 This is the follow-up of our post [GPU Analytics Ep 1, GPU installation of OmniSci on AWS](https://aetperf.github.io/2019/04/24/GPU-Analytics-Ep-1,-GPU-installation-of-OmniSci-on-AWS.html). Thus we assume that we already created the GPU instance and installed [OmniSci](https://www.omnisci.com/) MapD Core database.
 
 This JupyterLab part of this post is mostly inspired from two blog posts that I found usefull:
