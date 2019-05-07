@@ -256,7 +256,7 @@ We finally get enter the password created above:
 
 We can now proceed to a very basic test of the GPU stack.
 
-## cuDF test
+## DB query to GPU memory via cuDF
 
 Let's check that the GPU is ready:
 
@@ -313,7 +313,7 @@ from pymapd import connect
 con = connect(user="mapd", password="HyperInteractive", host="localhost", dbname="mapd")
 ```
 
-Let's query the flights_2008_7M DB (loaded in the [last post](https://aetperf.github.io/2019/04/24/GPU-Analytics-Ep-1,-GPU-installation-of-OmniSci-on-AWS.html)) and load the result of the query into a GPU dataframe (with [`elect_ipc_gpu`](https://pymapd.readthedocs.io/en/latest/api.html#): Execute a SELECT operation using GPU memory):
+Let's query the flights_2008_7M database (loaded in the [last post](https://aetperf.github.io/2019/04/24/GPU-Analytics-Ep-1,-GPU-installation-of-OmniSci-on-AWS.html)) and load the result of the query into a GPU dataframe (with [`select_ipc_gpu`](https://pymapd.readthedocs.io/en/latest/api.html#): Execute a SELECT operation using GPU memory):
 
 ```python
 query = "SELECT flight_year, flight_month, flight_dayofmonth, flight_dayofweek, deptime FROM flights_2008_7M LIMIT 1000;"
