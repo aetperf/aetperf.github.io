@@ -23,7 +23,7 @@ This JupyterLab part of this post is mostly inspired from two blog posts that I 
 - [This first one](https://chrisalbon.com/aws/basics/run_project_jupyter_on_amazon_ec2/) from Chris Albon
 - [This second one](https://blog.keras.io/running-jupyter-notebooks-on-gpu-on-aws-a-starter-guide.html) from François Chollet  
 
-By the way, each of these people happened to write a book that I found highly interesting, so let's give the references to the fantastic books:
+By the way, each of these people happened to write a book that I found highly interesting, so let's give the references to these fantastic books:
 - [Machine Learning with Python Cookbook, Chris Albon, O'Reilly Media, March 2018, ISBN  9781491989388, 366 pages](http://shop.oreilly.com/product/0636920085423.do)
 - [Deep Learning with Python, François Chollet, Manning Publications, November 2017, ISBN 9781617294433, 384 pages](https://www.manning.com/books/deep-learning-with-python)
 
@@ -40,7 +40,7 @@ $ ssh -i ~/keys/EC2_nopass.pem ubuntu@ec2-34-243-80-83.eu-west-1.compute.amazona
 ubuntu@ip-10-0-10-124:~$ 
 ```
 
-Everything is fine, so that's start to install [Anaconda](https://www.anaconda.com/), which we are going to use to install our packages and create a specific environment. From their website:
+Everything is fine, so let's start by installing [Anaconda](https://www.anaconda.com/), which we are going to use later to install the cuDF, cuML and related packages, and create a specific environment to play with these RAPIDS tools. From the Anaconda website:
 > The open-source Anaconda Distribution is the easiest way to perform Python/R data science and machine learning on Linux, Windows, and Mac OS X. With over 11 million users worldwide, it is the industry standard for developing, testing, and training on a single machine, ...
 
 ### Install Anaconda
@@ -49,13 +49,13 @@ Let's go to the [Anaconda download page](https://www.anaconda.com/distribution/)
 
 ![Anaconda](/img/2019-05-06_01/20190506_anaconda_01.png)
 
-In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, Right-click on `64-Bit (x86) Installer (654 MB)` and then `Copy Link Location` (At the time of my writing, the link is the following one: `https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh`). We start by downloading this script:
+In the `Anaconda 2019.03 for Linux Installer > Python 3.7 version` frame, right-click on `64-Bit (x86) Installer (654 MB)` and then `Copy Link Location` (At the time of my writing, the link is the following one: `https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh`). We download this `Anaconda3-2019.03-Linux-x86_64.sh` script with `wget`:
 
 ```bash
 ubuntu@ip-10-0-10-124:~$ wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 ```
 
-Then we run the script:
+And then we run it:
 
 ```bash
 ubuntu@ip-10-0-10-124:~$ sh Anaconda3-2019.03-Linux-x86_64.sh 
@@ -173,7 +173,7 @@ I allowed all IP to connect. However this is not a safe rule, as explained by Fr
 
 > This rule can either be allowed for your current public IP (e.g. that of your laptop), or for any IP (e.g. 0.0.0.0/0) if the former is not possible. Note that if you do allow port 8888 for any IP, then literally anyone will be able to listen to that port on your instance (which is where we will be running our IPython notebooks). We will add password protection to the notebooks to migitate the risk of random strangers modifying them, but that may be pretty weak protection. If at all possible, you should really consider restricting the access to a specific IP. However, if your IP address changes constantly, then that is not a very pratical choice. If you are going to leave access open to any IP, then remember not to leave any sensitive data on the instance.
 
-### Create an environment for GPU anaytics
+## Create an environment for GPU anaytics
 
 We are done with the Jupyter set-up. Let's create an environment, install JupyterLab and all the RAPIDS libraries.
 
@@ -221,7 +221,7 @@ thrift                    0.11.0          py37hf484d3e_1001    conda-forge
 thrift-cpp                0.12.0            h0a07b25_1002    conda-forge
 ```
 
-### Launching JupyterLab
+## Launching JupyterLab
 
 Well everything seems to be ready to launch `Jupyter Lab`. We start by c:reating a folder for the notebooks:
 
@@ -256,7 +256,7 @@ We finally get enter the password created above:
 
 We can now proceed to a very basic test of the GPU stack.
 
-### cuDF test
+## cuDF test
 
 Let's check that the GPU is ready:
 
