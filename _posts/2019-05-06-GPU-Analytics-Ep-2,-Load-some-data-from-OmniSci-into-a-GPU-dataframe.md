@@ -177,7 +177,7 @@ I allowed all IP to connect. However this is not a safe rule, as explained by Fr
 We are done with the Jupyter set-up. Let's create an environment, install JupyterLab and all the RAPIDS libraries.
 
 ```bash
-(base) ubuntu@ip-10-0-10-124:~$conda create -y -n rapids python=3.7
+(base) ubuntu@ip-10-0-10-124:~$ conda create -y -n rapids python=3.7
 (base) ubuntu@ip-10-0-10-124:~$ conda activate rapids
 (rapids) ubuntu@ip-10-0-10-124:~$ conda install -y jupyterlab
 ```
@@ -189,10 +189,10 @@ In order to install them, we get the command line from the RAPIDS [GET STARTED p
 We install cuDF and cuML, along with [pymapd](https://github.com/omnisci/pymapd) (Python client for OmniSci) and cudatoolkit:
 
 ```bash
-conda install -c nvidia/label/cuda10.0 -c rapidsai/label/cuda10.0 -c pytorch \
+(rapids) ubuntu@ip-10-0-10-124:~$ conda install -c nvidia/label/cuda10.0 -c rapidsai/label/cuda10.0 -c pytorch \
     -c numba -c conda-forge cudf=0.6 cuml=0.6 python=3.7
-conda install -c conda-forge pymapd
-conda install cudatoolkit
+(rapids) ubuntu@ip-10-0-10-124:~$ conda install -c conda-forge pymapd
+(rapids) ubuntu@ip-10-0-10-124:~$ conda install cudatoolkit
 ```
 
 Here are a few of the packages along with their version number installed in our environment (`cuda list`):
@@ -225,18 +225,18 @@ thrift-cpp                0.12.0            h0a07b25_1002    conda-forge
 Well everything seems to be ready to launch `Jupyter Lab`. We start by c:reating a folder for the notebooks:
 
 ```bash
-cd Notebooks(base) ubuntu@ip-10-0-10-124:~/.jupyter$ cd ~
-(base) ubuntu@ip-10-0-10-124:~$ mkdir Notebooks
-(base) ubuntu@ip-10-0-10-124:~$ cd Notebooks
-(base) ubuntu@ip-10-0-10-124:~/Notebooks$ jupyter lab
+(rapids) ubuntu@ip-10-0-10-124:~/.jupyter$ cd ~
+(rapids) ubuntu@ip-10-0-10-124:~$ mkdir Notebooks
+(rapids) ubuntu@ip-10-0-10-124:~$ cd Notebooks
+(rapids) ubuntu@ip-10-0-10-124:~/Notebooks$ jupyter lab
 ```
 
 However, on the my local machine (not the AWS remote one), I tried to enter the following address in the browser `https://ec2-34-243-80-83.eu-west-1.compute.amazonaws.com:8888` and got a time out error... I found out there was an issue with the file owner of the cert files and some other Jupyter user files:
 
 ```bash
-(base) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown $USER:$USER ~/certs/cert.pem
-(base) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown $USER:$USER ~/certs/cert.key
-(base) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown -R $USER:$USER /run/user/1000/jupyter/
+(rapids) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown $USER:$USER ~/certs/cert.pem
+(rapids) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown $USER:$USER ~/certs/cert.key
+(rapids) ubuntu@ip-10-0-10-124:~/Notebooks$ sudo chown -R $USER:$USER /run/user/1000/jupyter/
 ```
 
 This kind of issues is rather confusing and I am glad I could find similar issues on some web sites...  
