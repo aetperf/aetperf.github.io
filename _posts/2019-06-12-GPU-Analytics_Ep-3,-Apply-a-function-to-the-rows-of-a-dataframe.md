@@ -8,7 +8,7 @@ tags: GPU analytics Pandas dataframe RAPIDS cuDF GeoPandas
 
 The goal of this post is to compare the execution time between [Pandas](https://pandas.pydata.org/) (CPU) and [RAPIDS](https://rapids.ai/) (GPU) dataframes, when applying a simple mathematical function to the rows of a dataframe.
 
-Since the row-wise applied function is a reprojection of geographical cooordinates (WGS84  to Web Mercator), we are also going to compare the apply row function with an equivalent native method of [GeoPandas](http://geopandas.org/).
+Since the row-wise applied function is a re-projection of geographical cooordinates (WGS84  to Web Mercator), we are also going to compare the different methods with an equivalent native method of [GeoPandas](http://geopandas.org/).
 
 
 Although I already had an environment running on AWS with RAPIDS cuDF and the other GPU-related libraries ready (see the last [post](https://aetperf.github.io/2019/05/06/GPU-Analytics-Ep-2,-Load-some-data-from-OmniSci-into-a-GPU-dataframe.html)), I got into trouble when updating [cuDF](https://github.com/rapidsai/cudf) (from 0.6 to 0.7), [pymapd](https://github.com/omnisci/pymapd) and some oher packages. Because these tools are fairly new, you get some new releases very frequently! Anyway, I probably did something wrong... But I did not want to waste some time trying to fix this AWS instance. We are going to run the code on two different hardware environments:
@@ -44,7 +44,7 @@ import gc
 %load_ext watermark
 ```
 
-The package version are the following ones:
+The package versions are the following ones:
 
 ```python
 %watermark
@@ -81,7 +81,7 @@ Note the name of the cuDF version tag! :)
 
 ### Data creation
 
-First we create some artificial data: we generate `n` point coordinates within a given [bounding box](https://boundingbox.klokantech.com/) of Lyon, France. These coordinates corresponds to the $longitude$ and $latitude$ of the points, expressed in the World Geodetic System (WGS84).
+First we create some artificial data: we generate `n` point coordinates within a given [bounding box](https://boundingbox.klokantech.com/) of Lyon, France. These coordinates corresponds to the *longitude* and *latitude* of the points, expressed in the World Geodetic System (WGS84).
 
 
 ```python
@@ -599,9 +599,9 @@ ax.set_title('Time measurement: all re-projecting methods');
 
 We can see that the conversion from Pandas to GeoPandas is rather expensive. Also, regarding the re-projection, GeoPandas is by far the slowest. GeoPandas is using the [pyproj](https://github.com/pyproj4/pyproj) library (which is probably using a sequential Python loop on the Shapely objects??).
 
-Reagrding the re-projection process, Numba on the CPU seems to be the most efficient implementation on the small/medium size arrays.
+Regarding the re-projection process, Numba on the CPU seems to be the most efficient implementation on the small/medium size arrays.
 
-Well now that we validated the approach by comparing the UDF results with GeoPandas transformed coordinates, we are going to create a smaller function without all the assertion of the above function. This allows us to skip the GeoPandas part, which is taking too much time with the number of points is above a million. And we are going to run it on Google Colab.
+Well now that we validated the approach by comparing the UDF results with GeoPandas transformed coordinates, we are going to create a smaller function without all the assertion of the above function. This allows us to skip the GeoPandas part, which is taking too long when the number of points is above a million. And we are going to run it on Google Colab.
 
 ## Reduced comparison on Google Colab
 
