@@ -490,7 +490,7 @@ We can see that the conversion from Pandas to GeoPandas is rather expensive. Als
 
 Regarding the re-projection process, Numba on the CPU seems to be the most efficient implementation on the small/medium size arrays.
 
-Well now that we validated the approach by comparing the UDF results with GeoPandas transformed coordinates, we are going to create a smaller function without all the assertion of the above function. This allows us to skip the GeoPandas part, which is taking too long when the number of points is above a million. And we are going to run it on Google Colab.
+Well now that we validated the approach by comparing the UDF results with GeoPandas transformed coordinates, we are going to create a smaller function without all the assertions of the above function. This allows us to skip the GeoPandas part, which is taking too long when the number of points is above a million. And we are going to run it on Google Colab.
 
 ## Reduced comparison on Google Colab
 
