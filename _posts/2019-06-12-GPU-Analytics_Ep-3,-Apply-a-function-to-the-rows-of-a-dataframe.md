@@ -11,7 +11,7 @@ The goal of this post is to compare the execution time between [Pandas](https://
 Since the row-wise applied function is a re-projection of geographical cooordinates (WGS84  to Web Mercator), we are also going to compare the different methods with an equivalent native method of [GeoPandas](http://geopandas.org/).
 
 
-Although I already had an environment running on AWS with RAPIDS cuDF and the other GPU-related libraries ready (see the last [post](https://aetperf.github.io/2019/05/06/GPU-Analytics-Ep-2,-Load-some-data-from-OmniSci-into-a-GPU-dataframe.html)), I got into trouble when updating [cuDF](https://github.com/rapidsai/cudf) (from 0.6 to 0.7), [pymapd](https://github.com/omnisci/pymapd) and some oher packages. Because these tools are fairly new, you get some new releases very frequently! Anyway, I probably did something wrong... But I did not want to waste some time trying to fix this AWS instance. We are going to run the code on two different hardware environments:
+Although I already had an environment running on AWS with RAPIDS cuDF and the other GPU-related libraries ready (see the last [post](https://aetperf.github.io/2019/05/06/GPU-Analytics-Ep-2,-Load-some-data-from-OmniSci-into-a-GPU-dataframe.html)), I got into trouble when updating [cuDF](https://github.com/rapidsai/cudf) (from 0.6 to 0.7), [pymapd](https://github.com/omnisci/pymapd) and some other packages. Because these tools are fairly recent, you get some new releases very frequently! Anyway, I probably did something wrong... But I did not want to waste some time trying to fix this AWS instance. We are going to run the code on two different hardware environments:
 - my laptop
 - Google Collab
 
@@ -635,7 +635,7 @@ First we make sure to use a graphics processing unit by setting *Edit > Notebook
 
 However, note that sometimes we get a K80 instead of T4 GPU instance. Then you need to reset it until you get a T4 (*Runtime > Reset all runtimes*). Also, the CPU is a dual core Intel Xeon @ 2.20GHz (12 GB RAM).
 
-Now we are going to install [miniconda](https://docs.conda.io/en/latest/miniconda.html) and install the required packages:
+Now we are going to install [miniconda](https://docs.conda.io/en/latest/miniconda.html) and the other required packages:
 
 
 ```python
@@ -699,7 +699,7 @@ for fn in ['libcudf.so', 'librmm.so']:
 
 ### A reduced comparison
 
-This time the reduced `compare` function only has the following steps:
+This time the reduced `compare` function only has the following steps (we keep the step numbers from the previous section):
 - 1 - create a Pandas dataframe
 - 5 - convert the CRS using Numba
 - 6 - convert the CRS using Numba parallel
@@ -836,4 +836,4 @@ ax.set_title('Time measurement: from Pandas to cuDF');
 
 ![png](/img/2019-06-12_01/output_22_0.png)
 
-Conclusion: Numba and cuDFs are awesome!!
+Conclusion: Numba and cuDFs are **awesome**!!
