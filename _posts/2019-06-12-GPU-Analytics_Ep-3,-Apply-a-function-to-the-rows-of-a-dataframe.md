@@ -458,118 +458,7 @@ for i in range(1,6):
 res = pd.DataFrame(res)
 res = res.groupby('n').min()
 res.drop('trial', axis=1, inplace=True)
-res
 ```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>1_create_df</th>
-      <th>2_df_to_gdf</th>
-      <th>3_gdf_to_crs</th>
-      <th>4_np_vectorize</th>
-      <th>5_numba</th>
-      <th>6_numba_para</th>
-      <th>7_cudf_from_df</th>
-      <th>8_cudf_apply_rows</th>
-      <th>9_cudf_to_df</th>
-    </tr>
-    <tr>
-      <th>n</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>10</th>
-      <td>0.000560</td>
-      <td>0.001257</td>
-      <td>0.001078</td>
-      <td>0.000106</td>
-      <td>0.000138</td>
-      <td>0.000191</td>
-      <td>0.004624</td>
-      <td>0.007022</td>
-      <td>0.002412</td>
-    </tr>
-    <tr>
-      <th>100</th>
-      <td>0.000572</td>
-      <td>0.002010</td>
-      <td>0.004484</td>
-      <td>0.000458</td>
-      <td>0.000185</td>
-      <td>0.000192</td>
-      <td>0.004652</td>
-      <td>0.006799</td>
-      <td>0.002775</td>
-    </tr>
-    <tr>
-      <th>1000</th>
-      <td>0.000608</td>
-      <td>0.009530</td>
-      <td>0.037273</td>
-      <td>0.003662</td>
-      <td>0.000244</td>
-      <td>0.000200</td>
-      <td>0.005557</td>
-      <td>0.008441</td>
-      <td>0.003018</td>
-    </tr>
-    <tr>
-      <th>10000</th>
-      <td>0.000853</td>
-      <td>0.083131</td>
-      <td>0.255614</td>
-      <td>0.021124</td>
-      <td>0.000697</td>
-      <td>0.000278</td>
-      <td>0.006390</td>
-      <td>0.009179</td>
-      <td>0.003280</td>
-    </tr>
-    <tr>
-      <th>100000</th>
-      <td>0.002494</td>
-      <td>0.576957</td>
-      <td>2.502099</td>
-      <td>0.210454</td>
-      <td>0.005537</td>
-      <td>0.001119</td>
-      <td>0.007200</td>
-      <td>0.010474</td>
-      <td>0.003974</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
 
 We are going to plot these results on two different firgures: the first one is about the dataframe and geodataframe creation, the second one about the different re-projecting methods.
 
@@ -695,7 +584,8 @@ for fn in ['libcudf.so', 'librmm.so']:
     matplotlib 3.0.3
     IPython    5.5.0
     pandas     0.24.2
-    
+
+Still a "dirty" cuDF realease :)
 
 ### A reduced comparison
 
