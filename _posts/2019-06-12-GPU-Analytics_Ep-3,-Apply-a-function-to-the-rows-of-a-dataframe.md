@@ -10,8 +10,9 @@ The goal of this post is to compare the execution time between [Pandas](https://
 
 Since the row-wise applied function is a re-projection of geographical cooordinates (WGS84  to Web Mercator), we are also going to compare the different methods with an equivalent native method of [GeoPandas](http://geopandas.org/).
 
+The present post is related to another [post](https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html), in which I compared different ways to loop over Pandas dataframes.
 
-Although I already had an environment running on AWS with RAPIDS cuDF and the other GPU-related libraries ready (see the last [post](https://aetperf.github.io/2019/05/06/GPU-Analytics-Ep-2,-Load-some-data-from-OmniSci-into-a-GPU-dataframe.html)), I got into trouble when updating [cuDF](https://github.com/rapidsai/cudf) (from 0.6 to 0.7), [pymapd](https://github.com/omnisci/pymapd) and some other packages. Because these tools are fairly recent, you get some new releases very frequently! Anyway, I probably did something wrong... But I did not want to waste some time trying to fix this AWS instance. We are going to run the code on two different hardware environments:
+Although I already had an environment running on AWS with RAPIDS cuDF (GPU dataframes) and the other GPU-related libraries ready (see the last [post](https://aetperf.github.io/2019/05/06/GPU-Analytics-Ep-2,-Load-some-data-from-OmniSci-into-a-GPU-dataframe.html)), I got into trouble when updating [cuDF](https://github.com/rapidsai/cudf) (from 0.6 to 0.7), [pymapd](https://github.com/omnisci/pymapd) and some other packages. Because these tools are fairly recent, you get some new releases very frequently! Anyway, I probably did something wrong... But I did not want to waste some time trying to fix this AWS instance. We are going to run the code on two different hardware environments:
 - my laptop
 - Google Collab
 
@@ -23,28 +24,7 @@ My laptop's technical features:
 - CPU: Intel i7-7700HQ @ 2.80GHz with 8 cores and 16GB of RAM
 - GPU: NVIDIA GEFORCE GTX 1050Ti (Pascal architecture) with 4GB of RAM
 
-Let us start with the imports:
-
-```python
-import numpy as np
-import geopandas as gpd
-import pandas as pd
-import cudf
-%matplotlib inline
-import matplotlib
-import matplotlib.pyplot as plt
-plt.style.use('seaborn')
-import contextily as ctx
-from timeit import default_timer
-import math 
-import numba
-from numba import njit, prange
-from numba import jit
-import gc
-%load_ext watermark
-```
-
-The package versions are the following ones:
+The Python and package versions are the following ones:
 
 ```python
 %watermark
@@ -102,7 +82,6 @@ def create_df(n=10000, lon_min=4.771813, lon_max=4.898377, lat_min=45.707367, la
 df = create_df()
 df.head(2)
 ```
-
 
 
 <div>
@@ -207,8 +186,6 @@ gdf.head(2)
 ```
 
 
-
-
 <div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
@@ -244,7 +221,6 @@ gdf.head(2)
 </div>
 
 
-
 Since we converted the CRS to Web Mercator, we can now plot the points on a map with background tiles provided by [Stamen Design](https://stamen.com/). We add these tiles using the [contextily](https://github.com/darribas/contextily) package.The following `add_basemap` function is taken from the GeoPandas [documentation](http://geopandas.org/gallery/plotting_basemap_background.html).
 
 
@@ -266,12 +242,11 @@ plt.axis('off');
 
 Of course, in the present case, this is not so usefull to visualize some random points on a map. At least we can check visually that they are in the bounding box...
 
-#### The UDFs
+#### The re-projection function
 
-The formulae for the re-projection from EPSG4326 (WGS84) to EPSG3854 (Web Mercator) is taken from a [pdf](http://earth-info.nga.mil/GandG/wgs84/web_mercator/(U)%20NGA_SIG_0011_1.0.0_WEBMERC.pdf) found on the web and entitled "Implementation Practice
-Web Mercator Map Projection".  
+The formulae for the re-projection from EPSG4326 (WGS84) to EPSG3854 (Web Mercator) is taken from a [pdf](http://earth-info.nga.mil/GandG/wgs84/web_mercator/(U)%20NGA_SIG_0011_1.0.0_WEBMERC.pdf) found on the web and entitled "Implementation Practice Web Mercator Map Projection".  
 
-The first function `to_EPSG3857_2` has two arguments: `lon` and `lat`, while the second one `to_EPSG3857_4` has four. The second one is a non-value returning function, modifying the input arguments. Also, in order to be compatible with `numba`, I had to use the `math` library instead of `numpy` for the `log` and `tan` functions.
+The first function `to_EPSG3857_2` has two arguments: `lon` and `lat`, while the second one `to_EPSG3857_4` has four. The second one is a non-value returning function, modifying the input arguments. Also, in order to be compatible with `numba`, I had to use the `math` library instead of `numpy` for the `log` and `tan` functions (from what I understand, the math module has been implemented in Numba, but some numpy functions do not have an implementation that can be inlined by Numba??).
 
 
 ```python
@@ -462,25 +437,7 @@ res.drop('trial', axis=1, inplace=True)
 
 We are going to plot these results on two different firgures: the first one is about the dataframe and geodataframe creation, the second one about the different re-projecting methods.
 
-
-```python
-ax = res[['1_create_df', '2_df_to_gdf']].plot(style='o-', logx=True, logy=True, figsize=FIGSIZE);
-ax.set_xlabel('Number of points');
-ax.set_ylabel('Elapsed time (s)');
-ax.set_title('Time measurement: DataFrame creation and conversion to GeoDataFrame');
-```
-
-
 ![png](/img/2019-06-12_01/output_23_0.png)
-
-
-
-```python
-ax = res[['3_gdf_to_crs', '4_np_vectorize', '5_numba', '6_numba_para', '8_cudf_apply_rows']].plot(style='o-', logx=True, logy=True, figsize=FIGSIZE);
-ax.set_xlabel('Number of points');
-ax.set_ylabel('Elapsed time (s)');
-ax.set_title('Time measurement: all re-projecting methods');
-```
 
 
 ![png](/img/2019-06-12_01/output_24_0.png)
@@ -649,7 +606,7 @@ Here are the results:
       <td>0.004443</td>
     </tr>
     <tr>
-      <th>1000</th>
+      <th>1 000</th>
       <td>0.000546</td>
       <td>0.000288</td>
       <td>0.000289</td>
@@ -657,7 +614,7 @@ Here are the results:
       <td>0.006692</td>
     </tr>
     <tr>
-      <th>10000</th>
+      <th>10 000</th>
       <td>0.000749</td>
       <td>0.000866</td>
       <td>0.000651</td>
@@ -665,7 +622,7 @@ Here are the results:
       <td>0.007745</td>
     </tr>
     <tr>
-      <th>100000</th>
+      <th>100 000</th>
       <td>0.003069</td>
       <td>0.006858</td>
       <td>0.004497</td>
@@ -673,7 +630,7 @@ Here are the results:
       <td>0.009915</td>
     </tr>
     <tr>
-      <th>1000000</th>
+      <th>1 000 000</th>
       <td>0.026337</td>
       <td>0.067422</td>
       <td>0.043061</td>
@@ -681,7 +638,7 @@ Here are the results:
       <td>0.023371</td>
     </tr>
     <tr>
-      <th>10000000</th>
+      <th>10 000 000</th>
       <td>0.296810</td>
       <td>0.622501</td>
       <td>0.398296</td>
@@ -689,7 +646,7 @@ Here are the results:
       <td>0.148041</td>
     </tr>
     <tr>
-      <th>100000000</th>
+      <th>100 000 000</th>
       <td>3.047611</td>
       <td>6.232928</td>
       <td>3.996533</td>
@@ -704,25 +661,9 @@ Here are the results:
 On the next figure, we can see the benefit of using cuDFs when dealing with arrays larger than a million. It seems that the cuDF slope is increasing a little bit slower that the CPU Numba ones. However, the CPU is not so powerful: it would be interesting to perform a measurment on a faster CPU with many cores.
 
 
-```python
-ax = res[['5_numba', '6_numba_para', '8_cudf_apply_rows']].plot(style='o-', logx=True, logy=True, figsize=FIGSIZE);
-ax.set_xlabel('Number of points');
-ax.set_ylabel('Elapsed time (s)');
-ax.set_title('Time measurement: fastest re-projecting methods');
-```
-
-
 ![png](/img/2019-06-12_01/output_21_0.png)
 
-
 Also we measured the cost of moving data from the motherboard to the GPU device:
-
-```python
-ax = res[['7_cudf_from_df']].plot(style='o-', logx=True, logy=True, figsize=FIGSIZE);
-ax.set_xlabel('Number of points');
-ax.set_ylabel('Elapsed time (s)');
-ax.set_title('Time measurement: from Pandas to cuDF');
-```
 
 ![png](/img/2019-06-12_01/output_22_0.png)
 
