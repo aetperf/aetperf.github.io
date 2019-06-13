@@ -414,7 +414,7 @@ def compare(n=10000, tol=1.e-12, check=True, vect=True):
     gpudf = cudf.DataFrame.from_pandas(df)
     timer.stop(); time['7_cudf_from_df'] = timer.interval
     
-    # 8 - convert the CRS on the GPU using apply_rows and to_EPSG3857_cudf
+    # 8 - convert the CRS on the GPU using apply_rows and to_EPSG3857_4
     timer = Timer(); timer.start()
     gpudf = gpudf.apply_rows(
         to_EPSG3857_4,
@@ -433,7 +433,7 @@ def compare(n=10000, tol=1.e-12, check=True, vect=True):
         x_2 = df_2.x.values
         y_2 = df_2.y.values
 
-        # check the results of to_EPSG3857_cudf as compared to geopandas to_crs
+        # check the results of to_EPSG3857_4 as compared to geopandas to_crs
         assert np.linalg.norm(x_2-x_ref) / np.linalg.norm(x_ref) < tol
         assert np.linalg.norm(y_2-y_ref) / np.linalg.norm(y_ref) < tol
         
@@ -494,7 +494,7 @@ Well now that we validated the approach by comparing the UDF results with GeoPan
 
 ## Reduced comparison on Google Colab
 
-Now let us run the apply row functions on [Google Colab](https://colab.research.google.com/). This section is inspired by this post: [Run RAPIDS on Google Colab — For Free](https://medium.com/rapids-ai/run-rapids-on-google-colab-for-free-1617ac6323a8). Basically you just need to copy the notebook file to your Google drive. 
+Now let us run the apply row functions on [Google Colab](https://colab.research.google.com/). This section is inspired by this post: [Run RAPIDS on Google Colab — For Free](https://medium.com/rapids-ai/run-rapids-on-google-colab-for-free-1617ac6323a8). Basically you just need to copy the notebook file to your Google drive since we are generating all the data within the notebook. 
 
 First we make sure to use a graphics processing unit by setting *Edit > Notebook settings > Hardware accelerator to GPU*. We can see that the available GPU is actually a recent one: Tesla T4 (Turing) with 15GB of memory:
 
@@ -594,7 +594,7 @@ This time the reduced `compare` function only has the following steps (we keep t
 - 5 - convert the CRS using Numba
 - 6 - convert the CRS using Numba parallel
 - 7 - create a GPU dataframe from the Pandas dataframe
-- 8 - convert the CRS on the GPU using apply_rows and to_EPSG3857_cudf
+- 8 - convert the CRS on the GPU using apply_rows and to_EPSG3857_4
 
 Here are the results:
 
