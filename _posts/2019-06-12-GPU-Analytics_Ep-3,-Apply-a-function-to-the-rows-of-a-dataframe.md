@@ -660,11 +660,13 @@ Here are the results:
 
 On the next figure, we can see the benefit of using cuDFs when dealing with arrays larger than a million. It seems that the cuDF slope is increasing a little bit slower that the CPU Numba ones. However, the CPU is not so powerful: it would be interesting to perform a measurment on a faster CPU with many cores.
 
-
 ![png](/img/2019-06-12_01/output_21_0.png)
 
 Also we measured the cost of moving data from the motherboard to the GPU device:
 
 ![png](/img/2019-06-12_01/output_22_0.png)
 
-Conclusion: Numba and cuDFs are **awesome**!!
+Conclusion: 
+- RAPIDS cuDF ìs very efficient when dealing with large arrays and row-wise operations
+- Numba `njit` is also efficient while very easy to use, and for any size of array
+- Google Colab make it easy to test different hardware options
