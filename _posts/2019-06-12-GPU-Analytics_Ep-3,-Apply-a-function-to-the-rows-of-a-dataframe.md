@@ -606,7 +606,7 @@ Here are the results:
       <td>0.004443</td>
     </tr>
     <tr>
-      <th>1 000</th>
+      <th>1_000</th>
       <td>0.000546</td>
       <td>0.000288</td>
       <td>0.000289</td>
@@ -614,7 +614,7 @@ Here are the results:
       <td>0.006692</td>
     </tr>
     <tr>
-      <th>10 000</th>
+      <th>10_000</th>
       <td>0.000749</td>
       <td>0.000866</td>
       <td>0.000651</td>
@@ -622,7 +622,7 @@ Here are the results:
       <td>0.007745</td>
     </tr>
     <tr>
-      <th>100 000</th>
+      <th>100_000</th>
       <td>0.003069</td>
       <td>0.006858</td>
       <td>0.004497</td>
@@ -630,7 +630,7 @@ Here are the results:
       <td>0.009915</td>
     </tr>
     <tr>
-      <th>1 000 000</th>
+      <th>1_000_000</th>
       <td>0.026337</td>
       <td>0.067422</td>
       <td>0.043061</td>
@@ -638,7 +638,7 @@ Here are the results:
       <td>0.023371</td>
     </tr>
     <tr>
-      <th>10 000 000</th>
+      <th>10_000_000</th>
       <td>0.296810</td>
       <td>0.622501</td>
       <td>0.398296</td>
@@ -646,7 +646,7 @@ Here are the results:
       <td>0.148041</td>
     </tr>
     <tr>
-      <th>100 000 000</th>
+      <th>100_000_000</th>
       <td>3.047611</td>
       <td>6.232928</td>
       <td>3.996533</td>
