@@ -244,7 +244,7 @@ Of course, in the present case, this is not so usefull to visualize some random 
 
 #### The re-projection function
 
-The formulae for the re-projection from EPSG4326 (WGS84) to EPSG3854 (Web Mercator) is taken from a [pdf](http://earth-info.nga.mil/GandG/wgs84/web_mercator/(U)%20NGA_SIG_0011_1.0.0_WEBMERC.pdf) found on the web and entitled "Implementation Practice Web Mercator Map Projection". It is a fairly simple one compared with some other re-projection.
+The formulae for the re-projection from EPSG4326 (WGS84) to EPSG3854 (Web Mercator) is taken from a [pdf](http://earth-info.nga.mil/GandG/wgs84/web_mercator/(U)%20NGA_SIG_0011_1.0.0_WEBMERC.pdf) found on the web and entitled "Implementation Practice Web Mercator Map Projection". It is a fairly simple one compared with other re-projections.
 
 The first function `to_EPSG3857_2` has two arguments: `lon` and `lat`, while the second one `to_EPSG3857_4` has four. The second one is a non-value returning function, modifying the input arguments. Also, in order to be compatible with `numba`, I had to use the `math` library instead of `numpy` for the `log` and `tan` functions (from what I understand, the math module has been implemented in Numba, but some numpy functions do not have an implementation that can be inlined by Numba??).
 
