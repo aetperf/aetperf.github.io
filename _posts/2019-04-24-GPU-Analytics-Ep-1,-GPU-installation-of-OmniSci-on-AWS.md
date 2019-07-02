@@ -182,7 +182,7 @@ ubuntu@ip-10-0-10-124:~$ echo 'export OMNISCI_GROUP=omnisci' >> ~/.bashrc
 ubuntu@ip-10-0-10-124:~$ echo 'export OMNISCI_STORAGE=/var/lib/omnisci' >> ~/.bashrc 
 ubuntu@ip-10-0-10-124:~$ echo 'export OMNISCI_PATH=/opt/omnisci' >> ~/.bashrc 
 ubuntu@ip-10-0-10-124:~$ echo 'export OMNISCI_LOG=/var/lib/omnisci/data/mapd_log' >> ~/.bashrc 
-ubuntu@ip-10-0-10-124:~$ source ~/.bash
+ubuntu@ip-10-0-10-124:~$ source ~/.bashrc
 ```
 
 
