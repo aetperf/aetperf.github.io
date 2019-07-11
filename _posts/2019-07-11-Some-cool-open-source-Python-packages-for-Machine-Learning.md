@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python open source machine learning packages
 ---
 
-![png](/img/2019-07-11_01/moebius_01.jpg)
+![jpg](/img/2019-07-11_01/moebius_01.jpg)
 
 There is a very rich ecosystem of Python libraries related to ML. Here is a list of some "active", open-source packages that may be useful for ML day-to-day activities. Of course, this list is far from being exhaustive and should evolve as fast as the Python ecosystem does. Also, we exclude from the current list: 
 * main ML algorithm frameworks ([scikit-learn](https://github.com/scikit-learn/scikit-learn), [LightGBM](https://github.com/microsoft/LightGBM), [PyTorch](https://github.com/pytorch/pytorch), ...), 
@@ -14,7 +14,7 @@ There is a very rich ecosystem of Python libraries related to ML. Here is a list
 * specific application-oriented libraries ([spaCy](https://github.com/explosion/spaCy), [scikit-image](https://github.com/scikit-image/scikit-image), [StellarGraph](https://github.com/stellargraph/stellargraph), ...),
 * packages dealing with the general data/analytics environment ([JupyterLab](https://github.com/jupyterlab/jupyterlab), [Pandas](https://github.com/pandas-dev/pandas), [Dask](https://github.com/dask/dask), [Conda](https://github.com/conda/conda), ...) that are also used in many other domains, even if some of the following tools are more on the data-engineering side than on the ML one.
 
-We hope you will find this list informative and useful!
+We hope you will find this list informative!
 
 ## Data cleaning
 
