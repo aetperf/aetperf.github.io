@@ -1,12 +1,12 @@
 ---
-title: Loading data into a Pandas DataFrame : a comparative study
+title: Loading data into a Pandas DataFrame
 layout: post
 comments: true
 author: François Pacull
 tags: Python Pandas MSSQL CSV Parquet Feather HDF dataframe
 ---
 
-![moebius](moebius01.jpg "moebius")
+![moebius](/img/2019-07-30_01/moebius01.jpg "moebius")
 
 Because doing data science often requires trying many algorithms with different parameters, the **Python** programmers will often load a full dataset into a [Pandas](https://pandas.pydata.org/) dataframe, without actually modifying the stored data. This loading part may be relatively long for large datasets. In this post, we look at different options regarding the storage, in terms of elapsed time and disk space.
 
@@ -176,7 +176,7 @@ First, we change the table length but keep a fixed number of columns, then vary 
 
 We loop on different table lengths `n`, from 10 to 1000000, with the following set of paraleter values: `n_int`=5, `n_float`=5, `n_str`=5, `i_max`=50, `n_cat`=10.
 
-![png](output_32_0.png)
+![png](/img/2019-07-30_01/output_32_0.png)
 
 In the above figure, the format are sorted in ascending order of reading time for the largest table length (`n`=100000). This is why the **HDF_table** format appears first. However we can observe that this format performs poorly on small table sizes. Overall, **Parquet_pyarrow** is the fastest reading format for the given table. The **Parquet_pyarrow** is about 3 times as fast as the **CSV** one. 
 
@@ -195,7 +195,7 @@ Now let's have a look at the file size of the stored tables. First, here is the 
 
 We can see that the tables are pretty small: at most 81 MB! In the next figure, we measure the file size for each table size, excluding the 3 MS SQL formats: 
 
-![png](output_33_0.png)
+![png](/img/2019-07-30_01/output_33_0.png)
 
 It appears that the **Parquet_fastparquet_gzip**, **Parquet_pyarrow_gzip** and **Parquet_pyarrow** formats are rather compact. **HDF** formats seems rather inadequate when dealing with small tables. The **Parquet_pyarrow_gzip** file is about 3 times smaller than the **CSV** one. 
 
@@ -203,11 +203,11 @@ Also, note that many of these formats use equal or more space to store the data 
 
 Now let us focus on longer tables in order to see whether **HDF** or **Parquet** performs better. We do not consider a DB storage anymore (tests are too long to perform, especially for data injection), but only single file storage. We set `n`=10000000 (memory usage of the dataframe: 810.629 MB).
  
-![png](output_32_1.png)
+![png](/img/2019-07-30_01/output_32_1.png)
 
 We observe above that **HDF_table** is faster than other file formats for longer tables. It takes only 3.77 s to load the data, instead of 29.80 s for **CSV** format (8.21 s for **Parquet_pyarrow**). On the other hand file size is larger when using **HDF_table** (932.57 MB) than **Parquet_pyarrow** (464.13 MB). The **CSV** format file is is the largest: 1522.37 MB!
 
-![png](output_34_1.png)
+![png](/img/2019-07-30_01/output_34_1.png)
 
 
 
@@ -215,13 +215,13 @@ We observe above that **HDF_table** is faster than other file formats for longer
 
 The table length `n` is now fixed (`n`=100000) and only the number of columns is changed, always with the same proportion of int, float and categorical columns (1/3 each). We start from 15 and increases the column count up to 150. Here are the results:
 
-![png](output_36_0.png)
+![png](/img/2019-07-30_01/output_36_0.png)
 
 We can observe that **Parquet_fastparquet** behaves better with larger tables, as oposed to **HDF_table**. **Parquet_pyarrow** still is in the leading trio. Also, **MSSQL_turbobdc** still outperforms where other MSSQL drivers struggle.
 
 If we look at the file size (excluding the 3 MS SQL formats), we note that **HDF** files are rather large as compared to **Parquet_fastparquet_gzip** or **Parquet_pyarrow_gzip**. 
 
-![png](output_37_0.png)
+![png](/img/2019-07-30_01/output_37_0.png)
 
 It seems that the gzip compression is really more effective when applied to **Parquet_fastparquet** than **Parquet_pyarrow**, for which it is almost useless. 
 
@@ -230,7 +230,7 @@ It seems that the gzip compression is really more effective when applied to **Pa
 
 For this section, we are just going to look at the elapsed time (not the file size). The table length `n` is still fixed (`n`=100000), as well as the number of columns (100: `n_int`=50, `n_float`=0, `n_str`=50). Only the "entropy coefficient" `e` does vary betwen 0 and 1000. `e` is related to the number of unique values in each column in the following way: `i_max` = 50 + `e` and `n_cat` = 10 + `e`.
 
-![png](output_40_0.png)
+![png](/img/2019-07-30_01/output_40_0.png)
 
 From the above figure, it seems that the "entropy coef" has a very small influence on the loading time for most of the formats. Surprisingly, it does have a small influence on the reading time of CSV files. It also have an non negligible influence on all the **Pyarrow** formats.
 
