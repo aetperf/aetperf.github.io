@@ -236,6 +236,8 @@ From the above figure, it seems that the "entropy coef" has a very small influen
 
 ## Conclusion
 
+It is important to stress that we are not dealing here with big data processing here, but rather very common small to medium size datasets. Here is what we can get from this performance study:
+
 * **Parquet_pyarrow** is a good choice in most cases regarding both loading time and disk space
 * **HDF_table** is the fastest format when dealing with larger datasets. 
 * **MSSQL_turbobdc** is the rather efficient as compared to other MSSQL drivers, achieving similar timings as the CSV file format
