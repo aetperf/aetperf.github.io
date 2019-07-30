@@ -19,7 +19,7 @@ This performance study is inspired by this great post [*Extreme IO performance w
 
 ## Introduction
 
-Let's start by giving the complete list of the storage formats evaluated in the following, present the hardware and software environment, as well as the fake data set.
+Let's start by giving the complete list of the storage formats evaluated in the present post, describing the hardware and software environment, as well as the fake data set.
 
 ### Complete list of storage formats
 
@@ -41,7 +41,7 @@ Here is the list of the different options we used for saving the data and the Pa
 
 For the purpose of the comparison, we are going to create a fake table dataset of variable length `n`, and variable number of columns: 
 * `n_int` columns of `int64` type, generated randomnly in the between 0 and `i_max`-1,
-* `n_float` columns of `float64` type, drawn randomnly between 0 and 1,
+* `n_float` columns of `float64` type, drawn randomly between 0 and 1,
 * `n_str` columns of `category` type, of categorigal data with `n_cat` unique `str` in each column (`n_cat` different words drawn randomly from Shakespeare's *King Lear*)  
 
 So we have a total of `n_col` = `n_int` + `n_float` + `n_str` columns. The parameters `i_max` and `n_cat` control the "level of entropy" in the integer and categorical columns, i.e. the number of unique values per column.
@@ -178,7 +178,7 @@ We loop on different table lengths `n`, from 10 to 1000000, with the following s
 
 ![png](/img/2019-07-30_01/output_32_0.png)
 
-In the above figure, the format are sorted in ascending order of reading time for the largest table length (`n`=100000). This is why the **HDF_table** format appears first. However we can observe that this format performs poorly on small table sizes. Overall, **Parquet_pyarrow** is the fastest reading format for the given table. The **Parquet_pyarrow** is about 3 times as fast as the **CSV** one. 
+In the above figure, the format are sorted in ascending order of reading time for the largest table length (`n`=100000). This is why the **HDF_table** format appears first. However we can observe that this format performs poorly on small table sizes. Overall, **Parquet_pyarrow** is the fastest reading format for the given table. The **Parquet_pyarrow** format is about 3 times as fast as the **CSV** one. 
 
 Also, regarding the Microsoft SQL storage, it is interesting to see that **turbobdc** performs slightly better than the two other drivers (**pyodbc** and **pymssql**). It actually achieves similar timings as **CSV**, which is not bad!
 
@@ -193,7 +193,7 @@ Now let's have a look at the file size of the stored tables. First, here is the 
 | 100000 |8.112|
 | 1000000 |81.068|
 
-We can see that the tables are pretty small: at most 81 MB! In the next figure, we measure the file size for each table size, excluding the 3 MS SQL formats: 
+We can see that the tables are pretty small: at most 81 MB! In the next figure, we measure the file size for each table size, excluding the 3 MS SQL formats (measuring disk space for DB file in the case of such small datasets is not so relevant): 
 
 ![png](/img/2019-07-30_01/output_33_0.png)
 
@@ -217,9 +217,9 @@ The table length `n` is now fixed (`n`=100000) and only the number of columns is
 
 ![png](/img/2019-07-30_01/output_36_0.png)
 
-We can observe that **Parquet_fastparquet** behaves better with larger tables, as oposed to **HDF_table**. **Parquet_pyarrow** still is in the leading trio. Also, **MSSQL_turbobdc** still outperforms where other MSSQL drivers struggle.
+We can observe that **Parquet_fastparquet** behaves better with larger tables, as opposed to **HDF_table**. **Parquet_pyarrow** still is in the leading trio. Still, **MSSQL_turbobdc** outperforms the two other MSSQL drivers.
 
-If we look at the file size (excluding the 3 MS SQL formats), we note that **HDF** files are rather large as compared to **Parquet_fastparquet_gzip** or **Parquet_pyarrow_gzip**. 
+If we look at the file size, we note that **HDF** files are rather large as compared to **Parquet_fastparquet_gzip** or **Parquet_pyarrow_gzip**. 
 
 ![png](/img/2019-07-30_01/output_37_0.png)
 
@@ -232,13 +232,15 @@ For this section, we are just going to look at the elapsed time (not the file si
 
 ![png](/img/2019-07-30_01/output_40_0.png)
 
-From the above figure, it seems that the "entropy coef" has a very small influence on the loading time for most of the formats. Surprisingly, it does have a small influence on the reading time of CSV files. It also have an non negligible influence on all the **Pyarrow** formats.
+From the above figure, it seems that the "entropy coef" has a very small influence on the loading time for most of the formats. Surprisingly, it does have some kind of influence on the reading time of CSV files. It also have an non negligible influence on all the **Pyarrow** formats.
 
 ## Conclusion
 
 * **Parquet_pyarrow** is a good choice in most cases regarding both loading time and disk space
 * **HDF_table** is the fastest format when dealing with larger datasets. 
 * **MSSQL_turbobdc** is the rather efficient as compared to other MSSQL drivers, achieving similar timings as the CSV file format
+
+Please drop a comment if ever you think something in this post is not clear or wrong!
 
 
 {% if page.comments %}
