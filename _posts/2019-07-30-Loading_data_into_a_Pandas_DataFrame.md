@@ -8,7 +8,7 @@ tags: Python Pandas MSSQL CSV Parquet Feather HDF dataframe
 
 ![moebius](/img/2019-07-30_01/moebius01.jpg "moebius")
 
-Because doing machine learning implies trying many options and algorithms with different parameters, from data cleaning to model validation, the **Python** programmers will often load a full dataset into a [Pandas](https://pandas.pydata.org/) dataframe, without actually modifying the stored data. This loading part may be relatively long for large datasets. In this post, we look at different options regarding the storage, in terms of elapsed time and disk space.
+Because doing machine learning implies trying many options and algorithms with different parameters, from data cleaning to model validation, the **Python** programmers will often load a full dataset into a [Pandas](https://pandas.pydata.org/) dataframe, without actually modifying the stored data. This loading part might seem relatively long sometimes... In this post, we look at different options regarding the storage, in terms of elapsed time and disk space.
 
 We are going to measure the **loading time** of a small- to medium-size table stored in different formats, either in a file (CSV file, [Feather](https://github.com/wesm/feather), [Parquet](https://parquet.apache.org/) or 
  [HDF5](https://support.hdfgroup.org/HDF5/whatishdf5.html)) or in a database (Microsoft SQL Server). For the file storage formats (as opposed to DB storage, even if DB stores data in files...), we are going to also look at **file size**.
