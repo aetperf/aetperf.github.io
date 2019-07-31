@@ -33,8 +33,10 @@ Here is the list of the different options we used for saving the data and the Pa
 * **Parquet_pyarrow** : Pandas' [read_parquet()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_parquet.html#pandas.read_parquet) with the [pyarrow](https://arrow.apache.org/docs/python/) engine. File saved without compression
 * **Parquet_pyarrow_gzip** : Pandas' [read_parquet()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_parquet.html#pandas.read_parquet) with the [pyarrow](https://arrow.apache.org/docs/python/) engine. File saved with *gzip* compression
 * **Feather** : Pandas' [read_feather()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_feather.html#pandas.read_feather)
-* **HDF_table** : Pandas' [read_hdf()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_hdf.html#pandas.read_hdf). File saved with the `table` option (write as a PyTables Table structure which may perform worse but allow more flexible operations like searching / selecting subsets of the data)
-* **HDF_fixed** : Pandas' [read_hdf()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_hdf.html#pandas.read_hdf). File saved with the `fixed` option (fast writing/reading. Not-appendable, nor searchable) 
+* **HDF_table** : Pandas' [read_hdf()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_hdf.html#pandas.read_hdf). File saved with the `table` option. From Pandas' documentation:
+> write as a PyTables Table structure which may perform worse but allow more flexible operations like searching / selecting subsets of the data
+* **HDF_fixed** : Pandas' [read_hdf()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_hdf.html#pandas.read_hdf). File saved with the `fixed` option. From Pandas' documentation:
+> fast writing/reading. Not-appendable, nor searchable
 
 
 ### Data creation
