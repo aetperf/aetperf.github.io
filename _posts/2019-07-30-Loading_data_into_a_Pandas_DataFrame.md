@@ -207,7 +207,7 @@ Now let us focus on longer tables in order to see whether **HDF** or **Parquet**
  
 ![png](/img/2019-07-30_01/output_32_1.png)
 
-We observe above that **HDF_table** is faster than other file formats for longer tables. It takes only 3.77 s to load the data, instead of 29.80 s for **CSV** format (8.21 s for **Parquet_pyarrow**). On the other hand file size is larger when using **HDF_table** (932.57 MB) than **Parquet_pyarrow** (464.13 MB). The **CSV** format file is is the largest: 1522.37 MB!
+We observe above that **HDF_table** is faster than other file formats for longer tables, but this may be partly because we don't have to convert the string columns back into the categorical type. It takes only 3.77 s to load the data, instead of 29.80 s for **CSV** format (8.21 s for **Parquet_pyarrow**). On the other hand file size is larger when using **HDF_table** (932.57 MB) than **Parquet_pyarrow** (464.13 MB). The **CSV** format file is is the largest: 1522.37 MB!
 
 ![png](/img/2019-07-30_01/output_34_1.png)
 
