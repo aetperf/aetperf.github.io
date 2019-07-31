@@ -142,14 +142,14 @@ We use the Anaconda distibution of `CPython 3.7.3`and the following package vers
 
 | package | version |
 |---|---|
-|    pandas     | 0.24.2  |
-|    sqlalchemy | 1.3.5   |
-|    pymssql    | 2.1.4  |
-|    pyodbc     | 4.0.24 |
-|    turbodbc   | 3.1.1  |
-|  fastparquet | 0.3.1    |
-| pyarrow  | 0.13.0 |
-| tables | 3.5.2 |
+| pandas      | 0.24.2 |
+| sqlalchemy  | 1.3.5  |
+| pymssql     | 2.1.4  |
+| pyodbc      | 4.0.24 |
+| turbodbc    | 3.1.1  |
+| fastparquet | 0.3.1  |
+| pyarrow     | 0.13.0 |
+| tables      | 3.5.2  |
 
 
 ### Time measurements and equality tests
