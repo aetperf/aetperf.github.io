@@ -10,10 +10,10 @@ tags: Python Pandas MSSQL CSV Parquet Feather HDF dataframe
 
 Because doing machine learning implies trying many options and algorithms with different parameters, from data cleaning to model validation, the **Python** programmers will often load a full dataset into a [Pandas](https://pandas.pydata.org/) dataframe, without actually modifying the stored data. This loading part may be relatively long for large datasets. In this post, we look at different options regarding the storage, in terms of elapsed time and disk space.
 
-We are going to measure the **loading time** of a table stored in different formats, either as file (CSV file, [Feather](https://github.com/wesm/feather), [Parquet](https://parquet.apache.org/) or 
- [HDF5](https://support.hdfgroup.org/HDF5/whatishdf5.html)) or in a database (Microsoft SQL Server). For the file formats, we are going to look at file sizes.
+We are going to measure the **loading time** of a small- to medium-size table stored in different formats, either in a file (CSV file, [Feather](https://github.com/wesm/feather), [Parquet](https://parquet.apache.org/) or 
+ [HDF5](https://support.hdfgroup.org/HDF5/whatishdf5.html)) or in a database (Microsoft SQL Server). For the file storage formats (as opposed to DB storage, even if DB stores data in files...), we are going to also look at **file size**.
 
-Also, measurements are going to be performed for different tables lengths, table widths and "data entropy" (number of unique values per columns).
+Measurements are going to be performed for different tables lengths, table widths and "data entropy" (number of unique values per columns).
 
 This performance study is inspired by this great post [*Extreme IO performance with parallel Apache Parquet in Python*](http://wesmckinney.com/blog/python-parquet-multithreading/) by [Wes McKinney](https://wesmckinney.com/). 
 
