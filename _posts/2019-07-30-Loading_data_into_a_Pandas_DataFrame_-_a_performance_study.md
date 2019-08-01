@@ -148,7 +148,7 @@ We use the Anaconda distibution of `CPython 3.7.3`and the following package vers
 | pyodbc      | 4.0.24 |
 | turbodbc    | 3.1.1  |
 | fastparquet | 0.3.1  |
-| pyarrow     | 0.13.0 |
+| pyarrow     | 0.13.0 |
 | tables      | 3.5.2  |
 
 
