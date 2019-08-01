@@ -50,84 +50,16 @@ So we have a total of `n_col` = `n_int` + `n_float` + `n_str` columns. The param
 
 ```python
 df = create_table(n=2, n_int=5, n_float=5, n_str=5, i_max=50, n_cat=10, rng=rng)
-df.head()
+print(df)
 ```
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>I00</th>
-      <th>I01</th>
-      <th>I02</th>
-      <th>I03</th>
-      <th>I04</th>
-      <th>F00</th>
-      <th>F01</th>
-      <th>F02</th>
-      <th>F03</th>
-      <th>F04</th>
-      <th>S00</th>
-      <th>S01</th>
-      <th>S02</th>
-      <th>S03</th>
-      <th>S04</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>37</td>
-      <td>48</td>
-      <td>10</td>
-      <td>0</td>
-      <td>0.969184</td>
-      <td>0.312325</td>
-      <td>0.442491</td>
-      <td>0.726057</td>
-      <td>0.676547</td>
-      <td>WILL</td>
-      <td>worm</td>
-      <td>wild</td>
-      <td>element</td>
-      <td>endured</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1</td>
-      <td>29</td>
-      <td>22</td>
-      <td>10</td>
-      <td>13</td>
-      <td>0.354541</td>
-      <td>0.743794</td>
-      <td>0.443800</td>
-      <td>0.126042</td>
-      <td>0.684723</td>
-      <td>solicit</td>
-      <td>rivall</td>
-      <td>Many</td>
-      <td>asleep</td>
-      <td>excellent</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+       I00  I01  I02  I03  I04       F00       F01       F02       F03       F04  \
+    0   18   27   46    9   17  0.394370  0.731073  0.161069  0.600699  0.865864   
+    1    3   11   26   28   11  0.983522  0.079366  0.428347  0.204543  0.450636   
+    
+            S00   S01       S02        S03     S04  
+    0      Cure  deer  unsettle    weakens  wicked  
+    1  banished  wrap     Loyal  fortnight  wicked  
 
 ### Hardware
 
