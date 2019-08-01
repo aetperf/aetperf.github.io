@@ -1,5 +1,5 @@
 ---
-title: Loading data into a Pandas DataFrame
+title: Loading data into a Pandas DataFrame - a performance study
 layout: post
 comments: true
 author: François Pacull
