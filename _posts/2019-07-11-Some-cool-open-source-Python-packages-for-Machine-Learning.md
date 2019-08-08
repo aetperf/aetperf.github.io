@@ -1,5 +1,5 @@
 ---
-title: Some cool open-source Python packages for Machine Learning
+title: Some cool open-source Python packages for Machine Learning Ep 1
 layout: post
 comments: true
 author: François Pacull
