@@ -21,7 +21,7 @@ This post is following this one:
 * [Turbodbc](https://github.com/blue-yonder/turbodbc) - a module to access relational databases via the Open Database Connectivity (ODBC) interface.  
 * [ibis](https://github.com/ibis-project/ibis) - a toolbox to bridge the gap between local Python environments, remote storage, execution systems like Hadoop components (HDFS, Impala, Hive, Spark) and SQL databases. 
 
-## Data exploration
+## Data description
 
 * [Pandas Profiling](https://github.com/pandas-profiling/pandas-profiling) - Generates profile reports from a pandas DataFrame.
 
@@ -46,7 +46,7 @@ This post is following this one:
 
 ## Model analysis
 
-* [Skater](https://github.com/oracle/Skater) - a unified framework to enable Model Interpretation for all forms of model
+* [Skater](https://github.com/oracle/Skater) - a unified framework to enable Model Interpretation for all forms of model.
 
 ## Workflow management
 
@@ -59,7 +59,7 @@ This post is following this one:
 
 ## Data visualization
 
-* [kepler.gl](https://github.com/keplergl/kepler.gl) - a powerful open source geospatial analysis tool for large-scale data sets (WITH A JUPYTER WIDGET to render large-scale interactive maps in Jupyter Notebook).  
+* [kepler.gl](https://github.com/keplergl/kepler.gl) - a powerful open source geospatial analysis tool for large-scale data sets **with a jupyter widget** to render large-scale interactive maps in Jupyter Notebook.  
 * [glue](https://glueviz.org/) - a library to explore relationships within and among related datasets.
 * [KeplerMapper](https://github.com/scikit-tda/kepler-mapper) - an implementation of the TDA Mapper algorithm for visualization of high-dimensional data.
 
