@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Pandas MSSQL CSV Parquet Feather HDF dataframe
 ---
 
-![moebius](/img/2019-07-30_01/moebius01.jpg "moebius")
+![moebius](/img/2019-07-30_01/moebius01.jpg "Moebius")
 
 Because doing machine learning implies trying many options and algorithms with different parameters, from data cleaning to model validation, the **Python** programmers will often load a full dataset into a [Pandas](https://pandas.pydata.org/) dataframe, without actually modifying the stored data. This loading part might seem relatively long sometimes... In this post, we look at different options regarding the storage, in terms of elapsed time and disk space.
 

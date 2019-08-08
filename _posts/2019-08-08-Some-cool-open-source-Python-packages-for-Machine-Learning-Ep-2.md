@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python open source machine learning packages
 ---
 
-![moebius](/img/2019-08-08_01/moebius.jpg)
+![moebius](/img/2019-08-08_01/moebius.jpg "Moebius")
 
 There is a very rich ecosystem of Python libraries related to ML. Here is a list of some “active”, open-source packages that may be useful for ML day-to-day activities.
 
