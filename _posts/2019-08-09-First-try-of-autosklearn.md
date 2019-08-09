@@ -210,7 +210,7 @@ Balanced accuracy score :  0.936
 | Basic | 0.60 | 0.964 |
 | *auto-sklearn* | 3601.35 | 0.936 |
 
-## Final thouhts
+## Final thoughts
 
 It it a little weird that the elapsed time for each dataset is about 1 hour with *auto-sklearn*, maybe there is a default time limit for small datasets?
 
