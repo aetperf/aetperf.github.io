@@ -8,16 +8,16 @@ tags: Python open source machine learning packages
 
 ![moebius](/img/2019-08-09_01/moebius.jpg "Moebius")
 
-Since we are big users of *scikit-learn* and *XGBoost*, we wanted to try a package that would automate the process of builing a machine learning model with these tools. Here is the introduction to *auto-sklearn* from its [github.io](https://automl.github.io/auto-sklearn/master/index.html) website:
+Since we are big users of *scikit-learn* and *XGBoost*, we wanted to try a package that would automate the process of building a machine learning model with these tools. Here is the introduction to *auto-sklearn* from its [github.io](https://automl.github.io/auto-sklearn/master/index.html) website:
 
-> *auto-sklearn* is an automated machine learning toolkit and a drop-in replacement for a scikit-learn estimator. It leverages recent advantages in Bayesian optimization, meta-learning and ensemble construction. 
+> *auto-sklearn* is an automated machine learning toolkit and a drop-in replacement for a *scikit-learn* estimator. It leverages recent advantages in Bayesian optimization, meta-learning and ensemble construction. 
 
 Here is the wikipedia definition of [AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning):
 
 > Automated machine learning (AutoML) is the process of automating end-to-end the process of applying machine learning to real-world problems. In a typical machine learning application, practitioners have a dataset consisting of input data points to train on. The raw data itself may not be in a form that all algorithms may be applicable to it out of the box. An expert may have to apply the appropriate data pre-processing, feature engineering, feature extraction, and feature selection methods that make the dataset amenable for machine learning. Following those preprocessing steps, practitioners must then perform algorithm selection and hyperparameter optimization to maximize the predictive performance of their final machine learning model. As many of these steps are often beyond the abilities of non-experts, AutoML was proposed as an artificial intelligence-based solution to the ever-growing challenge of applying machine learning. 
 
 
-The theory behind *auto-sklearn* the package is presented in the paper published at [NIPS2015](http://papers.nips.cc/paper/5872-efficient-and-robust-automated-machine-learning.pdf) (to be honest, I did not read the article because I just wanted to give `auto-sklearn` a very quick try with some very basic examples).
+The theory behind *auto-sklearn* package is presented in the paper published at [NIPS2015](http://papers.nips.cc/paper/5872-efficient-and-robust-automated-machine-learning.pdf) (to be honest, I did not read the article because I just wanted to give `auto-sklearn` a very quick try with some very basic examples).
 
 Here are the main features of the API. You can:
 * set time and memory limits
@@ -48,7 +48,7 @@ Note that the *scikit-learn* version associated with *auto-sklearn* is 0.19.2 (l
 
 ## First data set
 
-[This](https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits) is a description of the UCI ML hand-written digits dataset: each datapoint is a 8x8 image of a digit. However we only have a subset (copy of the test set) included in scikit-learn. So we can say that it is rather small (table from *scikit-lean*'s documentation):
+[This](https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits) is a description of the UCI ML hand-written digits dataset: each datapoint is a 8x8 image of a digit. However we only have a subset (copy of the test set) included in *scikit-learn*. So we can say that it is rather small (table from *scikit-lean*'s documentation):
 
 | Characteristics | |
 |----------|:-------------:|
@@ -97,7 +97,7 @@ automl.fit(X_train, y_train)
 y_hat = automl.predict(X_test)
 print(f"Accuracy score: {accuracy_score(y_test, y_hat): 6.3f})
 ```
-We just made one small change: we want to make sure to use several cores when we instanciate the `autosklearn` model:
+We just made one small change; since we want to make sure to use several cores,  we instanciate the `autosklearn` model with this argument:
 ```python
 automl = autosklearn.classification.AutoSklearnClassifier(n_jobs=4)
 ```
@@ -118,7 +118,7 @@ The accuracy score is not so bad: *0.993*! The *auto-sklearn* algorithm did not 
 
 ## Second data set
 
-[This](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic)) is a description of the Breast Cancer Wisconsin (Diagnostic) Data Set: each datapoint is a collection of geometric measurements of a breast mass computed from a digitized image. Here is description table from *scikit-lean*'s documentation':
+[This](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic)) is a description of the Breast Cancer Wisconsin (Diagnostic) Data Set: each datapoint is a collection of geometric measurements of a breast mass computed from a digitized image. Here is description table from *scikit-lean*'s documentation:
 
 | Characteristics | |
 |----------|:-------------:|
@@ -173,7 +173,7 @@ We compute the balanced accuracy score since the classes are a little imbalanced
 
 ### Auto-sklearn
 
-The code is very similar to the previous one:
+The *auto-sklearn* code is very similar to the previous one:
 
 ```python
 import pandas as pd
@@ -182,7 +182,6 @@ from sklearn.model_selection import train_test_split
 import autosklearn.classification
 import sklearn.datasets
 from sklearn.metrics import accuracy_score, roc_auc_score
-
 
 RS = 124  # random seed
 
