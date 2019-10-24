@@ -32,11 +32,11 @@ This post is following these ones:
 
 * [Hyperopt](https://github.com/hyperopt/hyperopt) - a library for serial and parallel optimization over awkward search spaces, which may include real-valued, discrete, and conditional dimensions.
 * [ray[tune]](https://github.com/ray-project/ray) - a library for hyperparameter tuning at any scale.
-* [MLBox](https://github.com/AxeldeRomblay/MLBox) - a powerful Automated Machine Learning python library.
+* [MLBox](https://github.com/AxeldeRomblay/MLBox) - a powerful Automated Machine Learning library.
 * [Chocolate](https://github.com/AIworx-Labs/chocolate) - a completely asynchronous hyperparameter optimisation framework relying solely on a database to share information between workers.
 * [ATM](https://github.com/HDI-Project/ATM) - a multi-tenant, multi-data system for automated machine learning (model selection and tuning).
 * [HpBandSter](https://github.com/automl/HpBandSter) - a distributed Hyperband implementation on Steroids.
-* [SHERPA](https://github.com/sherpa-ai/sherpa) - a Python library for hyperparameter tuning of machine learning models.
+* [SHERPA](https://github.com/sherpa-ai/sherpa) - a library for hyperparameter tuning of machine learning models.
 * [HyperparameterHunter](https://github.com/HunterMcGushion/hyperparameter_hunter) - automatically save and learn from Experiment results, leading to long-term, persistent optimization that remembers all your tests.
 
 ## Experimentation frameworks and tools
@@ -59,7 +59,7 @@ This post is following these ones:
 
 ## App framework
 
-* [Streamlit](https://github.com/streamlit/streamlit) - lets you create apps for your machine learning projects with deceptively simple Python scripts. It supports hot-reloading, so your app updates live as you edit and save your file. No need to mess with HTTP requests, HTML, JavaScript, etc. All you need is your favorite editor and a browser. 
+* [Streamlit](https://github.com/streamlit/streamlit) - lets you create apps for your machine learning projects with deceptively simple scripts. It supports hot-reloading, so your app updates live as you edit and save your file. No need to mess with HTTP requests, HTML, JavaScript, etc. All you need is your favorite editor and a browser. 
 * [Voila](https://github.com/voila-dashboards/voila) - from Jupyter notebooks to standalone web applications and dashboards .
 
 ## Data visualization
