@@ -6,7 +6,9 @@ author: François Pacull
 tags: Python open source machine learning packages
 ---
 
-![moebius](/img/2019-08-09_01/moebius.jpg "Moebius")
+<p align="center">
+  <img width="600" src="/img/2019-08-09_01/moebius.jpg" alt="Moebius">
+</p>
 
 Since we are big users of *scikit-learn* and *XGBoost*, we wanted to try a package that would automate the process of building a machine learning model with these tools. Here is the introduction to *auto-sklearn* from its [github.io](https://automl.github.io/auto-sklearn/master/index.html) website:
 
@@ -95,7 +97,7 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y
 automl = autosklearn.classification.AutoSklearnClassifier()
 automl.fit(X_train, y_train)
 y_hat = automl.predict(X_test)
-print(f"Accuracy score: {accuracy_score(y_test, y_hat): 6.3f})
+print(f"Accuracy score: {accuracy_score(y_test, y_hat): 6.3f}")
 ```
 We just made one small change; since we want to make sure to use several cores,  we instanciate the `autosklearn` model with this argument:
 ```python
