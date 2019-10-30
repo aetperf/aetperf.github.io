@@ -7,8 +7,6 @@ tags: attractor symmetry datashader numba
 
 Map equation and coefficient values are taken from [here](https://softologyblog.wordpress.com/2017/03/04/2d-strange-attractors/). Some mathematical explainations can be found [here](http://www.ams.org/notices/199502/golubitsky.pdf), by Mike Field and Martin Golubitsky.  
 
-Notebook source file is [here](https://github.com/djfrancesco/Math_notebooks/blob/master/attractors/golubitsky_01.ipynb).
-
 ```python
 import numpy as np
 import pandas as pd
