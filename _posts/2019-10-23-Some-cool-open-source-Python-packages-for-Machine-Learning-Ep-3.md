@@ -6,7 +6,6 @@ author: François Pacull
 tags: Python open source machine learning packages
 ---
 
-![moebius](/img/2019-10-23_01/moebius.jpg "Moebius")
 <p align="center">
   <img width="600" src="/img/2019-10-23_01/moebius.jpg" alt="Moebius">
 </p>
