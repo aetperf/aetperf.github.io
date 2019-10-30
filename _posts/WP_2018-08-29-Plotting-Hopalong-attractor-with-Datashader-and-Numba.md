@@ -1,9 +1,3 @@
----
-title: Plotting Hopalong attractor with Datashader and Numba 
-layout: post
-author: François Pacull
-tags: Datashader Numba Pandas
----
 
 What is an attractor? Definition from [wikipedia](https://en.wikipedia.org/wiki/Attractor#Strange_attractor):
 > In the mathematical field of dynamical systems, an attractor is a set of numerical values toward which a system tends to evolve, for a wide variety of starting conditions of the system. System values that get close enough to the attractor values remain close even if slightly disturbed.
