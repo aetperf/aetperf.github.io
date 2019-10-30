@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-10-23_01/moebius.jpg" width=100% alt="Moebius"/>
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-10-23_01/moebius.jpg" alt="Moebius">
 </p>
 
 There is a very rich ecosystem of Python libraries related to ML. Here is a list of some “active”, open-source packages that may be useful for ML day-to-day activities.
