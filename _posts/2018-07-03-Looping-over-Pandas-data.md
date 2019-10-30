@@ -21,7 +21,7 @@ I focused on the *looping over Pandas data* part. They compare different approac
 - `apply()` with a lambda function
 
 But I was a little bit disapointed to see that they did not actually implement the following other approaches:
-- itertuples()`
+- `itertuples()`
 > While `.itertuples()` tends to be a bit faster, let’s stay in Pandas and use `.iterrows()` in this example, because some readers might not have run across `nametuple`. 
 - Numpy vectorize
 - Numpy (just a loop over Numpy vectors)
@@ -487,15 +487,8 @@ I am really pleased to see that Numba and Cython exhibit equivalent performance!
 matplotlib.rcParams.update({'font.size': 20})
 plt.figure(figsize=(14, 7))
 plt.semilogx(list(timeit.values()), list(timeit.keys()), 'ko', markersize=20)
-plt.xlabel("Elapsed time (s)")
+plt.xlabel("Elapsed time (s)");
 ```
-
-
-
-
-    Text(0.5,0,'Elapsed time (s)')
-
-
 
 
 ![png](/img/2018-07-03_01/output_46_1.png)
