@@ -90,7 +90,7 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y
 automl = autosklearn.classification.AutoSklearnClassifier()
 automl.fit(X_train, y_train)
 y_hat = automl.predict(X_test)
-print(f"Accuracy score: {accuracy_score(y_test, y_hat): 6.3f})
+print(f"Accuracy score: {accuracy_score(y_test, y_hat): 6.3f}")
 ```
 We just made one small change; since we want to make sure to use several cores,  we instanciate the `autosklearn` model with this argument:
 ```python
