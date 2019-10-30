@@ -262,16 +262,8 @@ Plotting these monthly averaged temperatures is rather messy because of seasonal
 
 
 ```python
-temperature.plot(figsize=(12, 6))
+temperature.plot(figsize=(12, 6));
 ```
-
-
-
-
-    <matplotlib.axes._subplots.AxesSubplot at 0x7f1f75cbb128>
-
-
-
 
 ![png](/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_10_1.png)
 
@@ -479,16 +471,8 @@ Let us try to make this time series artificially stationary by removing the roll
 
 ```python
 ts_mean = ts.rolling(window=120).mean().rename("t_mean")
-ts_mean.plot()
+ts_mean.plot();
 ```
-
-
-
-
-    <matplotlib.axes._subplots.AxesSubplot at 0x7f1f7063d898>
-
-
-
 
 ![png](/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_25_1.png)
 
