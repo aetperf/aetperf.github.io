@@ -75,7 +75,7 @@ This post is following these ones:
 I like this figure from MetaFlow's [documentation](https://docs.metaflow.org/introduction/what-is-metaflow) about its purpose:
 
 <p align="center">
-  <img src="https://lh5.googleusercontent.com/f68UAR7UxClKR6XvHXq-ZeepDXLHISoVboj6amF9f0cv6jCxqTsjyYnm-isKIHdINMl_gdlPVbR3wJ9vIDwipjMIglHwwetL3-rVNhUTRN4a7UYXmVZ78IqeI2fGJ2OA2Silk5ZS" alt="MetaFlow">
+  <img width="600" src="https://lh5.googleusercontent.com/f68UAR7UxClKR6XvHXq-ZeepDXLHISoVboj6amF9f0cv6jCxqTsjyYnm-isKIHdINMl_gdlPVbR3wJ9vIDwipjMIglHwwetL3-rVNhUTRN4a7UYXmVZ78IqeI2fGJ2OA2Silk5ZS" alt="MetaFlow">
 </p>
 
 ## Containers
