@@ -43,7 +43,7 @@ from shapely.geometry import Point, Polygon
 
 ## Download the latest forecasts
 
-The first thing we need to do is guess the latest available run from Meteo France. In order to do that, we have the following function inspired from [this](https://github.com/TimLepage/MeteoPredictor/blob/982dadda3e1f60558accfc8f9c9a3fe8bfd405b2/METEO/METEO_VISUALISATION_SIMPLE/PYTHON/RequeteAromeHD.py ) repo:
+The first thing we need to do is guessing the latest available run from Meteo France. In order to do that, we have the following function inspired from [this](https://github.com/TimLepage/MeteoPredictor/blob/982dadda3e1f60558accfc8f9c9a3fe8bfd405b2/METEO/METEO_VISUALISATION_SIMPLE/PYTHON/RequeteAromeHD.py ) repo:
 
 
 ```python
@@ -100,7 +100,7 @@ Now we are going to use 2 functions returning strings:
 * one to create the URLs
 * one to create the path where each file is going to be saved
 
-One of the parameter of these functions is `package`: this defines a group of weather fields. We are going to fetch the `SP1` package, which contains "current surface parameters", and specifically the surface temperature. Also, we are going to fetch the results with a 0.025° resolution. We tried the finer ones (0.01°) but did not succeed in opening them in Python, but only with the [XyGrib](https://opengribs.org/en/xygrib) software. Note that 11 different packages are available on the Meteo-France web site with the coarser resolution (0.025°).
+One of the parameter of these functions is `package`: this defines a group of weather fields. We are going to fetch the `SP1` package, which contains "current surface parameters", and specifically the surface temperature. Also, we are going to fetch the results with a 0.025° resolution. We tried the finer ones (0.01°) but did not succeed in opening the files in Python, but only with the [XyGrib](https://opengribs.org/en/xygrib) software. Note that 11 different packages are available on the Meteo-France web site with the coarser resolution (0.025°).
 
 ```python
 def create_url(run_time, time_range='00H06H', package='SP1', token='__5yLVTdr-sGeHoPitnFc7TZ6MhBcJxuSsoZp6y0leVHU__'):
@@ -142,6 +142,7 @@ for cmd in [file['cmd'] for file in files]:
 ```
     CPU times: user 51.2 ms, sys: 66.1 ms, total: 117 ms
     Wall time: 28min 26s
+
 28 min is quite long! I guess that this could be easily parallelized but is the upstream server allowing multiple requests from the same IP? Anyway we (slowly) got the following files:
 
 ```python
@@ -154,7 +155,9 @@ for cmd in [file['cmd'] for file in files]:
     30552 AROME_0.025_SP1_25H30H_202001200600.grib2
     29928 AROME_0.025_SP1_31H36H_202001200600.grib2
         0 AROME_0.025_SP1_37H42H_202001200600.grib2
+
 We can notice that the last file was not available from the Meteo-France server at the moment we tried to access it. Also, we can observe that the files aren't so large (around 30 MB each).
+
 
 ## Open the grib2 files
 
@@ -239,6 +242,8 @@ df.head(2)
 len(df)
 ```
     547
+
+
 We actually have 547 layers. Let us look at the different fields found in the files:
 ```python
 df.name.unique()
@@ -251,6 +256,7 @@ df.name.unique()
            'Total Precipitation', 'Snow melt',
            'Downward short-wave radiation flux', '75', 'Total Cloud Cover'],
           dtype=object)
+
 
 Obviously, not all the 15 variables are available for each of the 37 hours, or we would have 555 layers. Let's look at the `2 metre temperature` variable:
 
@@ -286,6 +292,7 @@ lats, lons = grb.latlons()  # WGS84 projection
 lats.shape, lats.min(), lats.max(), lons.shape, lons.min(), lons.max()
 ```
     ((601, 801), 38.00000000000085, 53.0, (601, 801), -8.0, 12.00000000000015)
+
 
 So we assume that the grid is a uniform Catesian 601 by 801 grid.
 
