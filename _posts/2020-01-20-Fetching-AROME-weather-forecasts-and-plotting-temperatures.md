@@ -260,7 +260,7 @@ df.name.unique()
           dtype=object)
 
 
-Obviously, not all the 15 variables are available for each of the 37 hours, or we would have 555 layers. Let's look at the `2 metre temperature` variable:
+Obviously, not all the 15 variables are available for each of the 37 hours, or we would have 555 layers. This is becaause some of the variables do not exhibit the same 1H temporality. Let's look at the `2 metre temperature` variable:
 
 ```python
 df.loc[df.name == '2 metre temperature', 'hour'].values
