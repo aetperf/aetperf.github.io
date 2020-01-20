@@ -9,7 +9,7 @@ tags: Python data Pandas GeoPandas Matplotlib visualization Grib weather
 Accurate weather forecasts might be very usefull for various types of models. In this post, we are going to download the latest available weather forecasts for France and plot some temperature fields, using different Python libraries:
 
 <p align="center">
-  <img width="750" src="/img/2020-01-08_01/animation_lowres_2.gif" alt="Etalab">
+  <img width="750" src="/img/2020-01-20_01/animation_lowres_2.gif" alt="gif">
 </p>
 
 [Arome](https://www.umr-cnrm.fr/spip.php?article120&lang=en) is small scale numerical prediction model, operational at Meteo-France. AROME forecasts are available on the Meteo-France website [here](https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=131&id_rubrique=51) under the [ETALAB licence](https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Open_Licence.pdf).  
@@ -341,7 +341,7 @@ world = gpd.read_file('./countries/ne_10m_admin_0_countries.shp')
 ax = world.plot(color='white', edgecolor='black')
 ```
 <p align="center">
-  <img width="400" src="/img/2020-01-08_01/output_43_0.png" alt="world">
+  <img width="400" src="/img/2020-01-20_01/output_43_0.png" alt="world">
 </p>
 
 
@@ -363,7 +363,7 @@ france.plot(color='white', edgecolor='black');
 ```
 
 <p align="center">
-  <img width="400" src="/img/2020-01-08_01/output_47_0.png" alt="france">
+  <img width="400" src="/img/2020-01-20_01/output_47_0.png" alt="france">
 </p>
 
 ## Plot the temperature fields
@@ -388,7 +388,7 @@ for k in range(temperatures.shape[2]):
         break
 ```
 <p align="center">
-  <img width="750" src="/img/2020-01-08_01/output_49_0.png" alt="temperature">
+  <img width="750" src="/img/2020-01-20_01/output_49_0.png" alt="temperature">
 </p>
 
 
