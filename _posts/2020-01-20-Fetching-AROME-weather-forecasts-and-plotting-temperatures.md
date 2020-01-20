@@ -379,7 +379,7 @@ france.plot(color='white', edgecolor='black');
 
 ## Plot the temperature fields
 
-Here we go! Now we can plot the temperature fields:
+Here we go! Now we can finally plot the temperature fields:
 
 ```python
 creation_time = datetime.datetime.strptime(run_time, "%Y-%m-%dT%H:%M:%S")
@@ -403,7 +403,7 @@ for k in range(temperatures.shape[2]):
 </p>
 
 
-Remark: this is the command line used to create the animated gif from the png files:
+Remark: this is the command line used to create the animated gif from all the png files (`movie == True`):
 ```python
 # !convert -delay 10 -loop 0 temperature*.png animation.gif
 ```
