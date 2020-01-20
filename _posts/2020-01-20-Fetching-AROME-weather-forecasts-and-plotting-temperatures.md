@@ -3,7 +3,7 @@ title: Fetching AROME weather forecasts and plotting temperatures
 layout: post
 comments: true
 author: François Pacull
-tags: Python open source machine learning packages
+tags: Python data Pandas GeoPandas Matplotlib visualization Grib weather
 ---
 
 Accurate weather forecasts might be very usefull for machnine learning models. In this post, we are going to download the latest available weather forecasts for France and plot some temperature fields, using different Python libraries:
