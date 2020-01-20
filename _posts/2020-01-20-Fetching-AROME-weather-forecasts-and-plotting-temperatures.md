@@ -161,7 +161,7 @@ for cmd in [file['cmd'] for file in files]:
 We can notice that the last file was not available from the Meteo-France server at the moment we tried to access it. Also, we can observe that the files aren't so large (around 30 MB each).
 
 
-## Open the grib2 files
+## Open the grib2 files
 
 We use the handy `pygrib` package:
 
