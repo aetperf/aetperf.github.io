@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python data Pandas GeoPandas Matplotlib visualization Grib weather
 ---
 
-Accurate weather forecasts might be very usefull for machnine learning models. In this post, we are going to download the latest available weather forecasts for France and plot some temperature fields, using different Python libraries:
+Accurate weather forecasts might be very usefull for various types of models. In this post, we are going to download the latest available weather forecasts for France and plot some temperature fields, using different Python libraries:
 
 <p align="center">
   <img width="750" src="/img/2020-01-08_01/animation_lowres_2.gif" alt="Etalab">
