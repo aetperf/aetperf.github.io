@@ -143,6 +143,7 @@ for cmd in [file['cmd'] for file in files]:
     CPU times: user 51.2 ms, sys: 66.1 ms, total: 117 ms
     Wall time: 28min 26s
 
+
 28 min is quite long! I guess that this could be easily parallelized but is the upstream server allowing multiple requests from the same IP? Anyway we (slowly) got the following files:
 
 ```python
@@ -155,6 +156,7 @@ for cmd in [file['cmd'] for file in files]:
     30552 AROME_0.025_SP1_25H30H_202001200600.grib2
     29928 AROME_0.025_SP1_31H36H_202001200600.grib2
         0 AROME_0.025_SP1_37H42H_202001200600.grib2
+
 
 We can notice that the last file was not available from the Meteo-France server at the moment we tried to access it. Also, we can observe that the files aren't so large (around 30 MB each).
 
@@ -276,6 +278,8 @@ df.loc[df.name == '2 metre temperature', 'hour'].values
            'fcst time 30 hrs', 'fcst time 31 hrs', 'fcst time 32 hrs',
            'fcst time 33 hrs', 'fcst time 34 hrs', 'fcst time 35 hrs',
            'fcst time 36 hrs'], dtype=object)
+
+
 All the 37 hours are found.
 
 ## Get the spatial grid
