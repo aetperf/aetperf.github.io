@@ -403,7 +403,7 @@ for k in range(temperatures.shape[2]):
 </p>
 
 
-Remark: this is the command line used to create the animated gif from all the png files (generated with `movie = True`):
+And this is the command line used to create the animated gif from all the png files (generated with `movie = True`):
 ```python
 # !convert -delay 10 -loop 0 temperature*.png animation.gif
 ```
