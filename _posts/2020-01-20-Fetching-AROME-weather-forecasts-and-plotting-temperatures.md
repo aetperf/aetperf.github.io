@@ -144,7 +144,7 @@ for cmd in [file['cmd'] for file in files]:
     Wall time: 28min 26s
 
 
-28 min is quite long! I guess that this could be easily parallelized but is the upstream server allowing multiple requests from the same IP? Anyway we (slowly) got the following files:
+28 min is quite long! This could be easily parallelized but is the upstream server allowing multiple requests from the same IP? Anyway we (slowly) got the following files:
 
 ```python
 !ls -s *.grib2
@@ -260,7 +260,7 @@ df.name.unique()
           dtype=object)
 
 
-Obviously, not all the 15 variables are available for each of the 37 hours, or we would have 555 layers. This is becaause some of the variables do not exhibit the same 1H temporality. Let's look at the `2 metre temperature` variable:
+Obviously, not all the 15 variables are available for each of the 37 hours, or we would have 555 layers. This is because some of the variables do not exhibit the same one-hour based temporality. Let's look at the `2 metre temperature` variable:
 
 ```python
 df.loc[df.name == '2 metre temperature', 'hour'].values
@@ -298,7 +298,7 @@ lats.shape, lats.min(), lats.max(), lons.shape, lons.min(), lons.max()
     ((601, 801), 38.00000000000085, 53.0, (601, 801), -8.0, 12.00000000000015)
 
 
-So we assume that the grid is a uniform Catesian 601 by 801 grid.
+So we assume that the grid is a uniform Catesian 801 x 601 grid.
 
 ```python
 shape = lats.shape
@@ -319,7 +319,7 @@ fig_size
 
 ## Stack the temperature files into a 3D Numpy array
 
-For each temperature layer, we extract the values as a NumPy array. The data is reverted along the 1st axis in order to be printed correctly. Also, the temperature unit is changed from Kelvin to Celsius:
+For each temperature layer, we extract the values as a NumPy array. The data is reverted along the 1st axis in order to be displayed correctly. Also, the temperature unit is changed from Kelvin to Celsius:
 
 ```python
 arrays = []
@@ -403,7 +403,7 @@ for k in range(temperatures.shape[2]):
 </p>
 
 
-Remark: this is the command line used to create the animated gif from all the png files (`movie == True`):
+Remark: this is the command line used to create the animated gif from all the png files (generated with `movie = True`):
 ```python
 # !convert -delay 10 -loop 0 temperature*.png animation.gif
 ```
