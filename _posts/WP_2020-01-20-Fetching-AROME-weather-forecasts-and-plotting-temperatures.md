@@ -400,3 +400,15 @@ And this is the command line used to create the animated gif from all the png fi
 ```python
 # !convert -delay 10 -loop 0 temperature*.png animation.gif
 ```
+.
+
+
+
+
+
+
+
+
+
+
+
