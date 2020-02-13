@@ -311,7 +311,7 @@ bbox = (-5., 39., 10., 54.)
 coords = coords[(coords.long > bbox[0]) & (coords.lat > bbox[1]) & (coords.long < bbox[2]) & (coords.lat < bbox[3])]
 ```
 
-And that's it! Finally we can call datashader:
+And that's it! We can eventually call datashader:
 
 
 ```python
@@ -330,6 +330,8 @@ img
   <img width="1000" src="/img/2020-02-13_01/output_30_0.png" alt="White map">
 </p>
 
+
+This confirms my intuition that driving in Paris is dangerous :)
 
 
 {% if page.comments %}
