@@ -10,7 +10,7 @@ tags: Python datashader opendata dataviz
   <img width="750" src="/img/2020-02-13_01/accidents_black.png" alt="Main">
 </p>
 
-Well I love the [datashader](https://datashader.org/) Python package and I am always happy to use it on some new dataset, even if the data is kind of tragic... I recently came across a [traffic injury database](https://www.data.gouv.fr/fr/datasets/base-de-donnees-accidents-corporels-de-la-circulation/#_) for french roads, which has some geographical coordinates. This comes from the open platform for french public data. So in this notebook, we are going to plot all the georeferenced collisions that ocurred over 13 years in mainland France.
+Well I love the [datashader](https://datashader.org/) Python package and I am always happy to use it on some interesting dataset. I recently came across a [traffic injury database](https://www.data.gouv.fr/fr/datasets/base-de-donnees-accidents-corporels-de-la-circulation/#_) for french roads, which happens to have some geographical coordinates. This comes from the open platform for french public data. So in this notebook, we are going to plot all the georeferenced collisions that ocurred over 13 years in mainland France.
 
 ## Imports
 
