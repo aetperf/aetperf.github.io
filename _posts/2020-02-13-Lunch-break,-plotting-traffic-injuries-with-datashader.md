@@ -10,7 +10,7 @@ tags: Python datashader opendata dataviz
   <img width="750" src="/img/2020-02-13_01/accidents_black.png" alt="Main">
 </p>
 
-Well I love the [datashader](https://datashader.org/) Python package and I am always happy to use it on some interesting dataset. I recently came across a [traffic injury database](https://www.data.gouv.fr/fr/datasets/base-de-donnees-accidents-corporels-de-la-circulation/#_) for french roads, which happens to have some geographical coordinates. This comes from the open platform for french public data. So in this notebook, we are going to plot all the georeferenced collisions that ocurred over 13 years in mainland France.
+Well I love the [datashader](https://datashader.org/) Python package and I am always happy to use it on some interesting datasets. I recently came across a [traffic injury database](https://www.data.gouv.fr/fr/datasets/base-de-donnees-accidents-corporels-de-la-circulation/#_) for french roads, which happens to have some geographical coordinates. This comes from the open platform for french public data. So in this notebook, we are going to plot all the georeferenced collisions that ocurred over 13 years in mainland France.
 
 ## Imports
 
@@ -50,7 +50,7 @@ plt.style.use('seaborn')
 
 ## Collect the CSV files
 
-The coordinates can be found in the `caracteristiques_20??.csv` files. I did not try to scrap the web page but just gathered the urls for each year in a list: 
+The coordinates can be found in the `caracteristiques_20??.csv` files. I did not try to scrap the web page but just gathered the urls for each year into a list: 
 
 
 ```python
@@ -117,7 +117,7 @@ for file_path in file_paths:
     WINDOWS-1252
 
 
-Also, the separator may vary, and is not always detected by pandas (csv.Sniffer?), so the seperator is hard-coded for each file. Fortunately, all the loaded dataframes have the same column names, so we concantenate them all:
+Also, the separator may vary, and is not always detected by `pandas` (`csv.Sniffer`?), so the seperator is hard-coded for each file. Fortunately, all the loaded dataframes have the same column names, so we concantenate them all:
 
 
 ```python
@@ -173,115 +173,7 @@ df['minute'] = df.hrmn.map(lambda x: int(str(x).zfill(4)[2:4]))
 df.drop('hrmn', axis=1, inplace=True)
 df['dt'] = pd.to_datetime(df[['year', 'month', 'day', 'hour', 'minute']])
 df.set_index('dt', inplace=True)
-df.head(2)
 ```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Num_Acc</th>
-      <th>year</th>
-      <th>month</th>
-      <th>day</th>
-      <th>lum</th>
-      <th>agg</th>
-      <th>int</th>
-      <th>atm</th>
-      <th>col</th>
-      <th>com</th>
-      <th>adr</th>
-      <th>gps</th>
-      <th>lat</th>
-      <th>long</th>
-      <th>dep</th>
-      <th>hour</th>
-      <th>minute</th>
-    </tr>
-    <tr>
-      <th>dt</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>2018-01-24 15:05:00</th>
-      <td>201800000001</td>
-      <td>2018</td>
-      <td>1</td>
-      <td>24</td>
-      <td>1</td>
-      <td>1</td>
-      <td>4</td>
-      <td>1.0</td>
-      <td>1.0</td>
-      <td>5.0</td>
-      <td>route des Ansereuilles</td>
-      <td>M</td>
-      <td>5055737.0</td>
-      <td>294992</td>
-      <td>590</td>
-      <td>15</td>
-      <td>5</td>
-    </tr>
-    <tr>
-      <th>2018-02-12 10:15:00</th>
-      <td>201800000002</td>
-      <td>2018</td>
-      <td>2</td>
-      <td>12</td>
-      <td>1</td>
-      <td>2</td>
-      <td>7</td>
-      <td>7.0</td>
-      <td>7.0</td>
-      <td>11.0</td>
-      <td>Place du général de Gaul</td>
-      <td>M</td>
-      <td>5052936.0</td>
-      <td>293151</td>
-      <td>590</td>
-      <td>10</td>
-      <td>15</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
 
 And we can plot the daily count of traffic injuries:
 
@@ -300,7 +192,7 @@ ax.set_title('Daily count of traffic injuries');
 
 ## Map of traffic injuries
 
-Now we focus on the coordinates columns `lat` and `long`. Also we select only the mainland france area (`gps = M`):
+Now we focus on the coordinate columns `lat` and `long`. Also we select only the mainland france area (`gps = M`):
 
 
 ```python
