@@ -435,7 +435,7 @@ img
 
 
 <p align="center">
-  <img width="750" src="/img/2020-02-13_01/accidents_black.png" alt="Black map">
+  <img width="1000" src="/img/2020-02-13_01/output_30_0.png" alt="White map">
 </p>
 
 
