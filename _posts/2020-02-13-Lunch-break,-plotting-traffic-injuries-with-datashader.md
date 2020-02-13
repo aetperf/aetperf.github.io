@@ -215,7 +215,7 @@ coords.info()
     memory usage: 10.4+ MB
 
 
-It appears that the `long` column contain some numbers (al lot of zeros actually) and some `str`:
+It appears that the `long` column contain some numbers (a lot of zeros actually!) and some `str` values:
 
 
 ```python
@@ -240,7 +240,7 @@ coords.long.value_counts()
 
 
 
-So we remove the `str` and convert the column to `float`:
+So we remove the `str` values and convert the `long` column to `float`:
 
 
 ```python
@@ -303,7 +303,7 @@ The coordinates are expressed in "decimal degrees"... We convert them to WGS84 b
 coords /= 100000
 ```
 
-Also, we filter the points with a bounding box around the mainland france:
+Also, we filter the points with a bounding box of mainland france:
 
 
 ```python
