@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Cython Numba Sorting
 ---
 
-The aim of this notebook is to show a basic example of [Cython](https://cython.org/) and [Numba](http://numba.pydata.org/), applied to a simple algorithm. 
+The aim of this notebook is to show a basic example of [Cython](https://cython.org/) and [Numba](http://numba.pydata.org/), applied to a simple algorithm: Insertion sort. 
 
 As we will see, the code transformation from Python to Cython or Python to Numba can be really easy (specifically for the latter), and results in very efficient code for sorting algorithms. This is due to the fact that the computer is CPU bound when executing this type of algorithmic task, for which the overhead of calling the CPython API in pure Python is really large.
 
@@ -201,7 +201,7 @@ _ = ax.set_title('Timings of Insertion sort')
 ```
 
 <p align="center">
-  <img width="750" src="/img/2020-04-04_01/output_16_0.png" alt="">
+  <img width="600" src="/img/2020-04-04_01/output_16_0.png" alt="">
 </p>
 
 We can observe the following things regarding the execution time:
@@ -245,9 +245,8 @@ _ = ax.set_title('Timings of Insertion sort')
 ```
 
 <p align="center">
-  <img width="750" src="/img/2020-04-04_01/output_19_0.png" alt="">
+  <img width="600" src="/img/2020-04-04_01/output_19_0.png" alt="">
 </p>
-
 
 ## Conclusion
 
