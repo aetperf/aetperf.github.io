@@ -26,7 +26,7 @@ Here is a visualization of the *Insertion sort* process applied to 25 random ele
   <img width="750" src="/img/2020-04-04_01/animation-optimized.gif" alt="Insertion sort animation">
 </p>
 
-However, this algorithm is not so efficient, except for elements that are almost already sorted: its performance is quadratic, i.e. $О ( n^2 )$. But we are only intersted here in comparing different optimization approaches in Python and not actually in sorting efficiently.
+However, this algorithm is not so efficient, except for elements that are almost already sorted: its performance is quadratic, i.e. $О ( n^2 )$. But we are only interested here in comparing different optimization approaches in Python and not actually in sorting efficiently.
 
 Here is the Python code for an in-place array-based implementation:
 
