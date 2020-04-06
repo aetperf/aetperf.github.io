@@ -44,6 +44,8 @@ plugins:
  - jekyll-feed
  - jekyll-seo-tag
 
+# Set this to true to get LaTeX math equation support
+use_math: true
 
 # Google Analytics
 google_analytics: UA-123584424-1
