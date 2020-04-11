@@ -31,6 +31,7 @@ where
 Here is an example of a logistic curve fitted to data of AIDS cases in the US:
 
 ![New cases of AIDS in The United States](/img/2020-04-11_01/aids_usa.jpg "Source: http://www.nlreg.com/aids.htm")
+Source: http://www.nlreg.com/aids.htm
 
 Now we are going to look at the influence of each parameter of the logistic curve. Let's start by importing the libraries.
 
@@ -90,7 +91,7 @@ _ = ax.set_xlabel('t')
 ![png](/img/2020-04-11_01/output_5_0.png)
 
 
-So how are we going to fit these paramters? We are going to use a linar regression to find some values for $k$ and $L$, and then estimate $t_0$ manually. 
+So how are we going to fit these paramters? We are going to use a linear regression to find some values for $k$ and $L$, and then estimate $t_0$ manually. 
 
 In order to get a linear equation, we need to describe the logistic differential equation.
 
@@ -120,6 +121,10 @@ If we actually find a "large" range of data for which the proportional growth ra
 - find a value of $t_0$ such that the logistic curve is as close as possible to the data on the range of data (for which the proportional growth rate is a linear function of $D$)
 
 Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different ranges on which we apply the linear regression. Just because we can fin a line to a point cloud does not mean that we should.
+
+![png](/ https://imgs.xkcd.com/comics/linear_regression.png "source: https://xkcd.com/1725/")
+source: https://xkcd.com/1725/
+
 
 ## Data
 
