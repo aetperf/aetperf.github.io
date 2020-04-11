@@ -98,7 +98,7 @@ In order to get a linear equation, we need to describe the logistic differential
 
 ## The logistic differential equation
 
-If we differentiate $D$, we get the following differential relationship, for a given value of $t_0$:
+If we differentiate $D$, we get the following differential relationship, for a given value of $t_0$ (each step broken down):
 
 $$\frac{dD}{dt} = L (-1) (-k) e^{-k (t - t_0)} \left(1 + e^{-k(t-t_0)} \right)^{-2}$$
 
