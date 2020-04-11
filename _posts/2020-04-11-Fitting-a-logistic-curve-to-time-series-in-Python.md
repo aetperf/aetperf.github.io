@@ -52,7 +52,7 @@ FS = (16, 9)  # figure size
 
 ## The Parameters
 
-We have 3 parameters: $k$, $t_0$ and $L$. In the following we are going to vary each parameter in order to see their influence.
+We have 3 parameters in the logistic curve: $k$, $t_0$ and $L$. In the following we are going to vary each parameter in order to see their respective influence.
 
 
 ```python
@@ -92,17 +92,17 @@ _ = ax.set_xlabel('t')
 
 So how are we going to fit these paramters? We are going to use a linar regression to find some values for $k$ and $L$, and then estimate $t_0$ manually. 
 
-In order to get a linear equation, we first need to describe the logistic differential equation.
+In order to get a linear equation, we need to describe the logistic differential equation.
 
 ## The logistic differential equation
 
 If we differentiate $D$, we get the following differential relationship, for a given value of $t_0$:
 
-$\frac{dD}{dt} = L (-1) (-k) e^{-k (t - t_0)} \left(1 + e^{-k(t-t_0)} \right)^{-2}$
+$$\frac{dD}{dt} = L (-1) (-k) e^{-k (t - t_0)} \left(1 + e^{-k(t-t_0)} \right)^{-2}$$
 
-$= k \frac{L}{1 + e^{-k(t-t_0)}} \left( \frac{ e^{-k(t-t_0)}}{1 + e^{-k(t-t_0)}} \right)$
+$$= k \frac{L}{1 + e^{-k(t-t_0)}} \left( \frac{ e^{-k(t-t_0)}}{1 + e^{-k(t-t_0)}} \right)$$
 
-$= k D \left( \frac{ 1+ e^{-k(t-t_0)} - 1}{1 + e^{-k(t-t_0)}} \right) = k D \left( 1 - \frac{D}{L} \right)$
+$$= k D \left( \frac{ 1+ e^{-k(t-t_0)} - 1}{1 + e^{-k(t-t_0)}} \right) = k D \left( 1 - \frac{D}{L} \right)$$
 
 As you can infer from this equation the proportional growth rate $\frac{dD / dt}{D}$ is a linear function of $D$:
 
