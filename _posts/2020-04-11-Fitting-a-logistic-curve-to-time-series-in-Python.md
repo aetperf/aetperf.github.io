@@ -85,7 +85,7 @@ _ = ax.set_xlabel('t')
 ```
 
 
-![png](/img/2020-04-04_01/output_5_0.png)
+![png](/img/2020-04-11_01/output_5_0.png)
 
 
 So how are we going to fit these paramters? We are going to use a linar regression to find some values for $k$ and $L$, and then estimate $t_0$ manually. 
@@ -146,7 +146,7 @@ _ = ax.set_title("Number of COVID-19 deaths per country")
 ```
 
 
-![png](/img/2020-04-04_01/output_8_0.png)
+![png](/img/2020-04-11_01/output_8_0.png)
 
 
 ## Functions
@@ -246,7 +246,7 @@ x, y = plot_ratios(country_name, country)
 ```
 
 
-![png](/img/2020-04-04_01/output_15_0.png)
+![png](/img/2020-04-11_01/output_15_0.png)
 
 
 
@@ -256,7 +256,7 @@ x, y = plot_ratios(country_name, country, death_min)
 ```
 
 
-![png](/img/2020-04-04_01/output_16_0.png)
+![png](/img/2020-04-11_01/output_16_0.png)
 
 
 
@@ -265,7 +265,7 @@ a, b = linear_regression(x, y)
 ```
 
 
-![png](/img/2020-04-04_01/output_17_0.png)
+![png](/img/2020-04-11_01/output_17_0.png)
 
 
 
@@ -275,7 +275,7 @@ L, k = plot_t0(a, b, country, death_min, t0=t0)
 ```
 
 
-![png](/img/2020-04-04_01/output_18_0.png)
+![png](/img/2020-04-11_01/output_18_0.png)
 
 
 
@@ -284,7 +284,7 @@ extended_plot(country, death_min, L, k, t0, figsize=FS)
 ```
 
 
-![png](/img/2020-04-04_01/output_19_0.png)
+![png](/img/2020-04-11_01/output_19_0.png)
 
 
 ## Spain
@@ -297,7 +297,7 @@ x, y = plot_ratios(country_name, country)
 ```
 
 
-![png](/img/2020-04-04_01/output_21_0.png)
+![png](/img/2020-04-11_01/output_21_0.png)
 
 
 
@@ -307,7 +307,7 @@ x, y = plot_ratios(country_name, country, death_min)
 ```
 
 
-![png](/img/2020-04-04_01/output_22_0.png)
+![png](/img/2020-04-11_01/output_22_0.png)
 
 
 
@@ -316,7 +316,7 @@ a, b = linear_regression(x, y)
 ```
 
 
-![png](/img/2020-04-04_01/output_23_0.png)
+![png](/img/2020-04-11_01/output_23_0.png)
 
 
 
@@ -326,7 +326,7 @@ L, k = plot_t0(a, b, country, death_min, t0=t0)
 ```
 
 
-![png](/img/2020-04-04_01/output_24_0.png)
+![png](/img/2020-04-11_01/output_24_0.png)
 
 
 
@@ -335,7 +335,7 @@ extended_plot(country, death_min, L, k, t0, figsize=FS)
 ```
 
 
-![png](/img/2020-04-04_01/output_25_0.png)
+![png](/img/2020-04-11_01/output_25_0.png)
 
 
 ## France
@@ -348,7 +348,7 @@ x, y = plot_ratios(country_name, country)
 ```
 
 
-![png](/img/2020-04-04_01/output_27_0.png)
+![png](/img/2020-04-11_01/output_27_0.png)
 
 
 
@@ -358,7 +358,7 @@ x, y = plot_ratios(country_name, country, death_min)
 ```
 
 
-![png](/img/2020-04-04_01/output_28_0.png)
+![png](/img/2020-04-11_01/output_28_0.png)
 
 
 
@@ -367,7 +367,7 @@ a, b = linear_regression(x, y)
 ```
 
 
-![png](/img/2020-04-04_01/output_29_0.png)
+![png](/img/2020-04-11_01/output_29_0.png)
 
 
 
@@ -377,7 +377,7 @@ L, k = plot_t0(a, b, country, death_min, t0=t0)
 ```
 
 
-![png](/img/2020-04-04_01/output_30_0.png)
+![png](/img/2020-04-11_01/output_30_0.png)
 
 
 
@@ -386,7 +386,7 @@ extended_plot(country, death_min, L, k, t0, figsize=FS)
 ```
 
 
-![png](/img/2020-04-04_01/output_31_0.png)
+![png](/img/2020-04-11_01/output_31_0.png)
 
 
 {% if page.comments %}
