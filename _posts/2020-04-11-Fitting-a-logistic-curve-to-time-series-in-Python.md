@@ -104,7 +104,7 @@ $$= k \frac{L}{1 + e^{-k(t-t_0)}} \left( \frac{ e^{-k(t-t_0)}}{1 + e^{-k(t-t_0)}
 
 $$= k D \left( \frac{ 1+ e^{-k(t-t_0)} - 1}{1 + e^{-k(t-t_0)}} \right) = k D \left( 1 - \frac{D}{L} \right)$$
 
-As you can infer from this equation the proportional growth rate $\frac{dD / dt}{D}$ is a linear function of $D$:
+As you can infer from this equation, the proportional growth rate $\frac{dD / dt}{D}$ is a linear function of $D$:
 
 \begin{equation}
 \frac{dD / dt}{D} = k \left( 1 - \frac{D}{L}  \right)
@@ -119,11 +119,11 @@ If we actually find a "large" range of data for which the proportional growth ra
 - compute $L$ and $k$ from these coefficient ($k=b$, $L=-k/a$)
 - find a value of $t_0$ such that the logistic curve is as close as possible to the data on the range of data (for which the proportional growth rate is a linear function of $D$)
 
-Note that this process is very subjective... When applied to real data, we never find a strictly linear proportional growth rate and can get whatever sigmoid shape that we want just by choosing a range on which we apply the linear regression.
+Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different ranges on which we apply the linear regression. Just because we can fin a line to a point cloud does not mean that we should.
 
 ## Data
 
-The data comes from the 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE. We are going to look at the deaths by country time series.
+The data comes from the 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE on github. We are going to look at the deaths-by-country time series.
 
 
 ```python
