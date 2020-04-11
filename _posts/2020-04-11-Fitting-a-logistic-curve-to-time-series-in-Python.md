@@ -30,7 +30,7 @@ where
 
 Here is an example of a logistic curve fitted to data of AIDS cases in the US:
 
-![New cases of AIDS in The United States](aids_usa.jpg "Source: http://www.nlreg.com/aids.htm")
+![New cases of AIDS in The United States](/img/2020-04-11_01/aids_usa.jpg "Source: http://www.nlreg.com/aids.htm")
 
 Now we are going to look at the influence of each parameter of the logistic curve. Let's start by importing the libraries.
 
