@@ -48,23 +48,6 @@ from sklearn.linear_model import LinearRegression
 FS = (16, 9)  # figure size
 ```
 
-
-```python
-import matplotlib as mpl
-mpl.rcParams.update({'legend.fontsize': 22})
-mpl.rcParams.update({'xtick.labelsize': 20})
-mpl.rcParams.update({'ytick.labelsize': 20})
-mpl.rcParams.update({'axes.labelsize': 20})
-mpl.rcParams.update({'axes.titlesize': 24})
-mpl.rcParams.update({'font.family': 'sans-serif'})
-mpl.rcParams.update({'font.sans-serif': 'Ubuntu'})
-mpl.rcParams.update({'legend.frameon': True})
-mpl.rcParams.update({'legend.fancybox': False})
-mpl.rcParams.update({'legend.shadow': False})
-mpl.rcParams.update({'legend.facecolor': 'w'})
-mpl.rcParams.update({'legend.framealpha': 0.8})
-```
-
 ## The Parameters
 
 We have 3 parameters: $k$, $t_0$ and $L$. In the following we are going to vary each parameter in order to see their influence.
