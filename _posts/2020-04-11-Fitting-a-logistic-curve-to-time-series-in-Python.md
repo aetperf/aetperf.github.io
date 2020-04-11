@@ -110,7 +110,7 @@ As you can infer from this equation the proportional growth rate $\frac{dD / dt}
 \frac{dD / dt}{D} = k \left( 1 - \frac{D}{L}  \right)
 \end{equation}
 
-So the idea is the following:
+So the basic idea for fitting a logistic curve is the following:
 - plot the proportional growth rate as a function of $D$
 - try to find a range where this curve is close to linear
 
