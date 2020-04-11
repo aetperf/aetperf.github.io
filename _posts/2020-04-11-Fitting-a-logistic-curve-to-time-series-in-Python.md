@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Pandas scikit-learn logistic
 ---
 
-In this post we are going to fit a logistic curve to time series stored in [Pandas](https://pandas.pydata.org/), using a simple linear regression from [scikit-learn](https://scikit-learn.org/stable/) to find the coefficients of the logistic curve.
+In this notebook we are going to fit a logistic curve to time series stored in [Pandas](https://pandas.pydata.org/), using a simple linear regression from [scikit-learn](https://scikit-learn.org/stable/) to find the coefficients of the logistic curve.
 
 **Disclaimer:** although we are going to use some COVID-19 data in this notebook, I want the reader to know that I have ABSOLUTELY no knowledge in epidemiology or any medicine-related subject, and clearly state that the result of fitting logistic curve to these data is an incredibly simplistic and naive approach. The point of this post is not the COVID-19 at all but only to show an application of the Python data stack.
 
@@ -14,7 +14,7 @@ Let's start by decribing the logistic curve.
 
 ## The Logistic curve
 
-A logistic curve is a common S-shaped curve (sigmoid curve). It can be usefull for modelling many different phenomena, such as: 
+A logistic curve is a common S-shaped curve (sigmoid curve). It can be usefull for modelling many different phenomena, such as (from [wikipedia](https://en.wikipedia.org/wiki/Logistic_function)): 
 - population growth
 - tumor growth
 - concentration of reactants and products in autocatalytic reactions
@@ -34,7 +34,7 @@ Here is an example of a logistic curve fitted to data of AIDS cases in the US:
 
 Source: [http://www.nlreg.com/aids.htm](http://www.nlreg.com/aids.htm)
 
-Now we are going to look at the influence of each parameter of the logistic curve. Let's start by importing the libraries.
+Let's start by importing the libraries.
 
 ## Imports
 
@@ -116,12 +116,12 @@ So the basic idea for fitting a logistic curve is the following:
 - plot the proportional growth rate as a function of $D$
 - try to find a range where this curve is close to linear
 
-If we actually find a "large" range of data for which the proportional growth rate is a linear function of $D$:
+If we actually find a "large" interval of data for which the proportional growth rate is a linear function of $D$:
 - find the coefficients of the linear function $y=ax+b$ using a linear regression
 - compute $L$ and $k$ from these coefficient ($k=b$, $L=-k/a$)
-- find a value of $t_0$ such that the logistic curve is as close as possible to the data on the range of data (for which the proportional growth rate is a linear function of $D$)
+- find a value of $t_0$ such that the logistic curve is as close as possible to the data on the interval of data (for which the proportional growth rate is a linear function of $D$)
 
-Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different ranges on which we apply the linear regression. Just because we can fin a line to a point cloud does not mean that we should.
+Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different intervals on which we apply the linear regression. Just because we can technically fit a line to a point cloud does not mean that it is justified.
 
 ![png](https://imgs.xkcd.com/comics/linear_regression.png "source: https://xkcd.com/1725/")
 
@@ -130,7 +130,7 @@ source: [https://xkcd.com/1725/](https://xkcd.com/1725/)
 
 ## Data
 
-The data comes from the 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE on github. We are going to look at the deaths-by-country time series.
+The data comes from the 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE on [github](https://github.com/CSSEGISandData/COVID-19). We are going to look at the deaths-by-country time series.
 
 
 ```python
