@@ -8,7 +8,7 @@ tags: Python Pandas scikit-learn logistic
 
 In this post we are going to fit a logistic curve to time series stored in [Pandas](https://pandas.pydata.org/), using a simple linear regression from [scikit-learn](https://scikit-learn.org/stable/) to find the coefficients of the logistic curve.
 
-**Disclaimer:** although we are going to use some COVID-19 data in this notebook, I want the reader to know that I have ABSOLUTELY NO KNOWLEDGE in epidemiology or any medicine-related subject, and clearly state that the result of fitting logistic curve to these data is an incredibly simplistic and naive approach. The point of this post is not the COVID-19 at all but only to show an application of the Python data stack.
+**Disclaimer:** although we are going to use some COVID-19 data in this notebook, I want the reader to know that I have ABSOLUTELY no knowledge in epidemiology or any medicine-related subject, and clearly state that the result of fitting logistic curve to these data is an incredibly simplistic and naive approach. The point of this post is not the COVID-19 at all but only to show an application of the Python data stack.
 
 Let's start by decribing the logistic curve.
 
@@ -20,7 +20,9 @@ A logistic curve is a common S-shaped curve (sigmoid curve). It can be usefull f
 - concentration of reactants and products in autocatalytic reactions
 
 The equation is the following:
-$$ D(t) = \frac{L}{1 + e^{-k (t - t_0)}} $$
+
+$$ D(t) = \frac{L}{1 + e^{-k (t - t_0)}} $$  
+
 where 
 - $t_{0}$ is the sigmoid's midpoint,
 - $L$ is the curve's maximum value,
@@ -96,11 +98,11 @@ In order to get a linear equation, we first need to describe the logistic differ
 
 If we differentiate $D$, we get the following differential relationship, for a given value of $t_0$:
 
-\begin{equation}
-\frac{dD}{dt} = L (-1) (-k) e^{-k (t - t_0)} \left(1 + e^{-k(t-t_0)} \right)^{-2} \\
-  = k \frac{L}{1 + e^{-k(t-t_0)}} \left( \frac{ e^{-k(t-t_0)}}{1 + e^{-k(t-t_0)}} \right) \\
-  = k D \left( \frac{ 1+ e^{-k(t-t_0)} - 1}{1 + e^{-k(t-t_0)}} \right) = k D \left( 1 - \frac{D}{L} \right)
-\end{equation}
+$\frac{dD}{dt} = L (-1) (-k) e^{-k (t - t_0)} \left(1 + e^{-k(t-t_0)} \right)^{-2}$
+
+$= k \frac{L}{1 + e^{-k(t-t_0)}} \left( \frac{ e^{-k(t-t_0)}}{1 + e^{-k(t-t_0)}} \right)$
+
+$= k D \left( \frac{ 1+ e^{-k(t-t_0)} - 1}{1 + e^{-k(t-t_0)}} \right) = k D \left( 1 - \frac{D}{L} \right)$
 
 As you can infer from this equation the proportional growth rate $\frac{dD / dt}{D}$ is a linear function of $D$:
 
