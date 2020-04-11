@@ -123,7 +123,7 @@ If we actually find a "large" range of data for which the proportional growth ra
 
 Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different ranges on which we apply the linear regression. Just because we can fin a line to a point cloud does not mean that we should.
 
-![png](/ https://imgs.xkcd.com/comics/linear_regression.png "source: https://xkcd.com/1725/")
+![png](https://imgs.xkcd.com/comics/linear_regression.png "source: https://xkcd.com/1725/")
 
 source: [https://xkcd.com/1725/](https://xkcd.com/1725/)
 
