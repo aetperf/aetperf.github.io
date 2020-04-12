@@ -295,7 +295,7 @@ x, y = plot_ratios(country_name, country)
 ![png](/img/2020-04-11_01/output_21_0.png)
 
 
-Again, it looks like a piecwise linear curve.
+Again, it looks like a piecewise linear curve.
 
 ```python
 death_min = 11000
