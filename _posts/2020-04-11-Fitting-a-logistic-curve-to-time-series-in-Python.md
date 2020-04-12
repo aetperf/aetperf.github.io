@@ -258,7 +258,7 @@ x, y = plot_ratios(country_name, country)
 ![png](/img/2020-04-11_01/output_15_0.png)
 
 
-It looks like the slope is changing several times. Let's focus on the last slope of the line.
+It looks like the slope is changing several times. Let's focus on the last part of the curve.
 
 
 ```python
@@ -279,7 +279,22 @@ a, b = linear_regression(x, y)
 ![png](/img/2020-04-11_01/output_17_0.png)
 
 
+```python
+t0 = 1.5
+L, k = plot_t0(a, b, country, death_min, t0=t0)
+```
 
+
+![png](/img/2020-04-11_01/output_18_0.png)
+
+
+
+```python
+extended_plot(country, death_min, L, k, t0, figsize=FS)
+```
+
+
+![png](/img/2020-04-11_01/output_19_0.png)
 
 
 ## Spain
@@ -295,7 +310,7 @@ x, y = plot_ratios(country_name, country)
 ![png](/img/2020-04-11_01/output_21_0.png)
 
 
-Again, it looks like a piecewise linear curve.
+Again, it looks like a piecewise linear curve and we are going to focus on the last part of the curve.
 
 ```python
 death_min = 11000
@@ -347,7 +362,7 @@ x, y = plot_ratios(country_name, country)
 ![png](/img/2020-04-11_01/output_27_0.png)
 
 
-It doe not look very linear, but let's proceed with the regression anyway.
+It does not look linear at all, but let's proceed with the regression anyway.
 
 ```python
 death_min = 200
