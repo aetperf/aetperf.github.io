@@ -75,7 +75,7 @@ def insertion_sort_inplace_python(A):
 
 ## Numba implementation
  
-As you can observe, this is stricly the same as the pure Python implementation, except for the `@jit` [just-in-time]decorator:
+As you can observe, this is stricly the same as the pure Python implementation, except for the `@jit` [just-in-time] decorator:
 
 ```python
 @jit(nopython=True)
