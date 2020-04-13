@@ -121,7 +121,7 @@ If we actually find a "large" interval of data for which the proportional growth
 - compute $L$ and $k$ from these coefficient ($k=b$, $L=-k/a$)
 - find a value of $t_0$ such that the logistic curve is as close as possible to the data on the interval of data (for which the proportional growth rate is a linear function of $D$)
 
-Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different intervals on which we apply the linear regression. Just because we can technically fit a line to a point cloud does not mean that it is justified.
+Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different intervals on which we apply the linear regression. Just because we can technically fit a line to a point cloud does not mean that it is appropriate.
 
 ![png](https://imgs.xkcd.com/comics/linear_regression.png "source: https://xkcd.com/1725/")
 
