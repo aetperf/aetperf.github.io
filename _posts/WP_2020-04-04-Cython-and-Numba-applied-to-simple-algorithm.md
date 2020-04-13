@@ -1,7 +1,7 @@
 
 The aim of this notebook is to show a basic example of [Cython](https://cython.org/) and [Numba](http://numba.pydata.org/), applied to a simple algorithm: Insertion sort. 
 
-As we will see, the code transformation from Python to Cython or Python to Numba can be really easy (specifically for the latter), and results in very efficient code for sorting algorithms. This is due to the fact that the computer is CPU bound when executing this type of algorithmic task, for which the overhead of calling the CPython API in pure Python is really large.
+As we will see, the code transformation from Python to Cython or Python to Numba can be really easy, specifically for the latter, and results in very efficient code for sorting algorithms. This is due to the fact that the computer is CPU bound when executing this type of algorithmic task, for which the overhead of calling the CPython API in pure Python is really large.
 
 Let us recall the purpose of these two Python-related tools from their respective websites:
 
@@ -13,7 +13,7 @@ Now, let's describe the chosen algorithm: *Insertion sort*, which is a very simp
 
 > Insertion sort works the way many people sort a hand of playing cards. We start with an empty left hand and the cards face down on the table. We then remove one card at a time from the table and insert it into the correct position in the left hand. To find the correct position for a card, we compare it with each of the cards already in the hand, from right to left [...]. At all times, the cards held in the left hand are sorted, and these cards were originally the top cards of the pile on the table.
 
-Here is a visualization of the *Insertion sort* process applied to 25 random elements (the code used to generate this animated gif is shown at the end of the notebook):
+Here is a visualization of the *Insertion sort* process applied to 25 random elements ( the code used to generate this animated gif is shown at the end of the notebook ):
 
 <p align="center">
   <img width="750" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-04-04_01/animation-optimized.gif" alt="Insertion sort animation">
