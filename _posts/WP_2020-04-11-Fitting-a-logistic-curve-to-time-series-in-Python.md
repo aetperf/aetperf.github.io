@@ -126,7 +126,7 @@ Source: [https://xkcd.com/1725/](https://xkcd.com/1725/)
 
 ## Data
 
-The data comes from the 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE on [github](https://github.com/CSSEGISandData/COVID-19). We are going to look at the deaths-by-country time series.
+The data comes from the 2019 Novel Coronavirus COVID-19 Data Repository by Johns Hopkins CSSE on [github](https://github.com/CSSEGISandData/COVID-19). We are going to look at the deaths-by-country time series.
 
 
 ```python
