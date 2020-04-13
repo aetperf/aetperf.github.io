@@ -22,8 +22,9 @@ where
 
 Here is an example of a logistic curve fitted to data of AIDS cases in the US:
 
-![New cases of AIDS in The United States](/img/2020-04-11_01/aids_usa.jpg "Source: http://www.nlreg.com/aids.htm")
-
+<p align="center">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-04-11_01/aids_usa.jpg" alt="">
+</p>
 Source: [http://www.nlreg.com/aids.htm](http://www.nlreg.com/aids.htm)
 
 Let's start by importing the libraries.
