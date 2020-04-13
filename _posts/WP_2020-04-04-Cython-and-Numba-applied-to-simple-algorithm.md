@@ -1,7 +1,7 @@
 
 The aim of this notebook is to show a basic example of [Cython](https://cython.org/) and [Numba](http://numba.pydata.org/), applied to a simple algorithm: Insertion sort. 
 
-As we will see, the code transformation from Python to Cython or Python to Numba can be really easy, specifically for the latter, and results in very efficient code for sorting algorithms. This is due to the fact that the computer is CPU bound when executing this type of algorithmic task, for which the overhead of calling the CPython API in pure Python is really large.
+As we will see, the code transformation from Python to Cython or Python to Numba can be really easy [specifically for the latter], and results in very efficient code for sorting algorithms. This is due to the fact that the computer is CPU bound when executing this type of algorithmic task, for which the overhead of calling the CPython API in pure Python is really large.
 
 Let us recall the purpose of these two Python-related tools from their respective websites:
 
@@ -75,7 +75,7 @@ def insertion_sort_inplace_python(A):
 
 ## Numba implementation
  
-As you can observe, this is stricly the same as the pure Python implementation, except for the `@jit` (just-in-time) decorator:
+As you can observe, this is stricly the same as the pure Python implementation, except for the `@jit` [just-in-time]decorator:
 
 ```python
 @jit(nopython=True)
@@ -118,12 +118,12 @@ cpdef void insertion_sort_inplace_cython_int64(cnp.int64_t[:] A) nogil:
 
 The differences are the following ones:
 - we add the `%%cython` magic for interactive work with Cython in Jupyterlab
-- we import some libraries (`cython` and the NumPy C API) specifically for thic Cython notebook cell
-- we add some compiler directives (instructions which affect which kind of code Cython generates). [Here](https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives) is a decription of the various compiler directives from the Cython documentation
+- we import some libraries [`cython` and the NumPy C API] specifically for thic Cython notebook cell
+- we add some compiler directives [instructions which affect which kind of code Cython generates]. [Here](https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives) is a decription of the various compiler directives from the Cython documentation
 - the function is defined as `cpdef` which means that it can be called either from some Python or Cython code. In our case, we are going to call it from a Python function
 - in the arguments, a 1D typed memoryview is performed on the given NumPy `int64` array: `cnp.int64_t[:] A`, which allows a fast/direct access to memory buffers. However, since this is typed, we need to write another function if dealing with floats, e.g. with a `cnp.float64_t[:]` memoryview.
 - all variables within the function are declared
-- `nogil` is added at the end of the function signature, to indicate the release of the [GIL](https://wiki.python.org/moin/GlobalInterpreterLock). In the present case, this is only to make sure that the CPython API is not used within the function (or there would be an error when executing the cell).
+- `nogil` is added at the end of the function signature, to indicate the release of the [GIL](https://wiki.python.org/moin/GlobalInterpreterLock). In the present case, this is only to make sure that the CPython API is not used within the function [or there would be an error when executing the cell].
 
 ## Main function
 
@@ -155,7 +155,7 @@ np.testing.assert_array_equal(A_sorted_cython, A_sorted_numba)
 np.testing.assert_array_equal(A_sorted_cython, A_sorted)
 ```
 
-Then we compare the execution time of the four different implementations: Python, Cython, Numba and NumPy. The NumPy command is `np.sort` with the default *quicksort* algorithm (implemented in C).
+Then we compare the execution time of the four different implementations: Python, Cython, Numba and NumPy. The NumPy command is `np.sort` with the default *quicksort* algorithm [implemented in C].
 
 ### With pure Python
 
@@ -200,7 +200,7 @@ _ = ax.set_title('Timings of Insertion sort')
 We can observe the following things regarding the execution time:
 - pure Python is slower by a factor 100 to 1000
 - the Cython and Numba implementations are very close, and probably equivalent to C 
-- the *quicksort* NumPy algorithm is way more efficient ($ O(n \; log \; n)$ on average)
+- the *quicksort* NumPy algorithm is way more efficient [$ O(n \log{n})$ on average]
 
 ### Without pure Python
 
