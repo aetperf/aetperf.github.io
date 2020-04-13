@@ -25,6 +25,7 @@ Here is an example of a logistic curve fitted to data of AIDS cases in the US:
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-04-11_01/aids_usa.jpg" alt="">
 </p>
+
 Source: [http://www.nlreg.com/aids.htm](http://www.nlreg.com/aids.htm)
 
 Let's start by importing the libraries.
@@ -119,7 +120,8 @@ Note that this process is very subjective! When applied to real data, we rarely 
 <p align="center">
   <img width="600" src="https://imgs.xkcd.com/comics/linear_regression.png" alt="">
 </p>
-source: [https://xkcd.com/1725/](https://xkcd.com/1725/)
+
+Source: [https://xkcd.com/1725/](https://xkcd.com/1725/)
 
 
 ## Data
