@@ -13,7 +13,7 @@ Now, let's describe the chosen algorithm: *Insertion sort*, which is a very simp
 
 > Insertion sort works the way many people sort a hand of playing cards. We start with an empty left hand and the cards face down on the table. We then remove one card at a time from the table and insert it into the correct position in the left hand. To find the correct position for a card, we compare it with each of the cards already in the hand, from right to left [...]. At all times, the cards held in the left hand are sorted, and these cards were originally the top cards of the pile on the table.
 
-Here is a visualization of the *Insertion sort* process applied to 25 random elements ( the code used to generate this animated gif is shown at the end of the notebook ):
+Here is a visualization of the *Insertion sort* process applied to 25 random elements [the code used to generate this animated gif is shown at the end of the notebook]:
 
 <p align="center">
   <img width="750" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-04-04_01/animation-optimized.gif" alt="Insertion sort animation">
