@@ -19,7 +19,7 @@ Here is a visualization of the *Insertion sort* process applied to 25 random ele
   <img width="750" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-04-04_01/animation-optimized.gif" alt="Insertion sort animation">
 </p>
 
-However, this algorithm is not so efficient, except for elements that are almost already sorted: its performance is quadratic, i.e. $О ( n^2 )$. But we are only interested here in comparing different optimization approaches in Python and not actually in sorting efficiently.
+However, this algorithm is not so efficient, except for elements that are almost already sorted: its performance is quadratic, i.e. $latex О ( n^2 )$. But we are only interested here in comparing different optimization approaches in Python and not actually in sorting efficiently.
 
 Here is the Python code for an in-place array-based implementation:
 
@@ -34,9 +34,9 @@ for j in range(1, len(A)):
 ```
 
 And here are some other facts about *Insertion sort* from [Wikipedia](https://en.wikipedia.org/wiki/Insertion_sort):
-> - **Adaptive**, i.e., efficient for data sets that are already substantially sorted: the time complexity is $ O(kn) $ when each element in the input is no more than $k$ places away from its sorted position  
+> - **Adaptive**, i.e., efficient for data sets that are already substantially sorted: the time complexity is $latex O(kn) $ when each element in the input is no more than $latex k$ places away from its sorted position  
 > - **Stable**, i.e., does not change the relative order of elements with equal keys  
-> - **In-place**, i.e., only requires a constant amount $ O(1) $ of additional memory space  
+> - **In-place**, i.e., only requires a constant amount $latex O(1) $ of additional memory space  
 > - **Online**, i.e., can sort a list as it receives it  
 
 [1] *Introduction to Algorithms*, T. Cormen, C. Leiserson, R. Rivest, and C. Stein. The MIT Press, 3rd edition, (2009)
@@ -200,7 +200,7 @@ _ = ax.set_title('Timings of Insertion sort')
 We can observe the following things regarding the execution time:
 - pure Python is slower by a factor 100 to 1000
 - the Cython and Numba implementations are very close, and probably equivalent to C 
-- the *quicksort* NumPy algorithm is way more efficient ($O(n \; log \; n)$ on average)
+- the *quicksort* NumPy algorithm is way more efficient ($latex O(n \; log \; n)$ on average)
 
 ### Without pure Python
 
