@@ -164,7 +164,7 @@ For each of these 3 countries we are going to try to fit a logistic curve, using
 
 
 ```python
-def plot_ratios(country_name, country, death_min=0, death_max=None):
+def plot_ratios(country, death_min=0, death_max=None):
     """ Plot the proportional growth rate with respect to D, 
         on the interval (death_min, death_max).
     """
@@ -251,7 +251,7 @@ def extended_plot(country, death_min, L, k, t0, days_before=30, days_after=30, f
 ```python
 country_name = 'Italy'
 country = deaths[country_name]
-x, y = plot_ratios(country_name, country)
+x, y = plot_ratios(country)
 ```
 
 
@@ -263,7 +263,7 @@ It looks like the slope is changing several times. Let's focus on the last part 
 
 ```python
 death_min = 11000
-x, y = plot_ratios(country_name, country, death_min)
+x, y = plot_ratios(country, death_min)
 ```
 
 
@@ -303,7 +303,7 @@ extended_plot(country, death_min, L, k, t0, figsize=FS)
 ```python
 country_name = 'Spain'
 country = deaths[country_name]
-x, y = plot_ratios(country_name, country)
+x, y = plot_ratios(country)
 ```
 
 
@@ -314,7 +314,7 @@ Again, it looks like a piecewise linear curve and we are going to focus on the l
 
 ```python
 death_min = 11000
-x, y = plot_ratios(country_name, country, death_min)
+x, y = plot_ratios(country, death_min)
 ```
 
 
@@ -355,7 +355,7 @@ extended_plot(country, death_min, L, k, t0, figsize=FS)
 ```python
 country_name = 'France'
 country = deaths[country_name]
-x, y = plot_ratios(country_name, country)
+x, y = plot_ratios(country)
 ```
 
 
@@ -366,7 +366,7 @@ It does not look linear at all, but let's proceed with the regression anyway.
 
 ```python
 death_min = 200
-x, y = plot_ratios(country_name, country, death_min)
+x, y = plot_ratios(country, death_min)
 ```
 
 
