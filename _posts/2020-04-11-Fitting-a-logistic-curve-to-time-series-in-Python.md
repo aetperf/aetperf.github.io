@@ -234,9 +234,9 @@ def extended_plot(country, death_min, L, k, t0, days_before=30, days_after=30, f
     country = country.to_frame('Deaths')
     country_start = country.index.min()
     country_end = country.index.max()
-    ix = pd.date_range(
-        start=country_start - timedelta(days=days_before), 
-        end=country_end + timedelta(days=days_after), freq='D')
+    start=country_start - timedelta(days=days_before)
+    end=country_end + timedelta(days=days_after)
+    ix = pd.date_range(start=start, end=end, freq='D')
     country = country.reindex(ix)
     country['idx'] = np.arange(len(country))
     country['idx'] -= country.loc[country_start, 'idx']
