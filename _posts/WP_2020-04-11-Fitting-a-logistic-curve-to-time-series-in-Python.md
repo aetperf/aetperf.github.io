@@ -226,6 +226,7 @@ def extended_plot(country, death_min, L, k, t0, days_before=30, days_after=30, f
     """ Plot the logistic curve on an extended interval, 
         against the real data.
     """
+    country_original = country.copy(deep=True)
     country = country[country > death_min]
     country = country.to_frame('Deaths')
     country_start = country.index.min()
@@ -238,7 +239,7 @@ def extended_plot(country, death_min, L, k, t0, days_before=30, days_after=30, f
     country['idx'] -= country.loc[country_start, 'idx']
     country['logistic'] = L / (1. + np.exp(-k * (country['idx'].values - t0)))
     ax = country['logistic'].plot(figsize=figsize,logy=False)
-    _ = deaths[country_name][start:].plot(ax=ax, style='o')
+    _ = country_original[start:].plot(ax=ax, style='o')
 ```
 
 ## Italy
