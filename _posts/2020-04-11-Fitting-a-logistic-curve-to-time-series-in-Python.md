@@ -10,6 +10,8 @@ In this notebook we are going to fit a logistic curve to time series stored in [
 
 **Disclaimer:** although we are going to use some COVID-19 data in this notebook, I want the reader to know that I have ABSOLUTELY no knowledge in epidemiology or any medicine-related subject, and clearly state that the result of fitting logistic curve to these data is an incredibly simplistic and naive approach. The point of this post is not the COVID-19 at all but only to show an application of the Python data stack.
 
+**Edit:** here is an interesting post about the difficulty of time series forecasting with logistic curves: [Forecasting s-curves is hard](https://constancecrozier.com/2020/04/16/forecasting-s-curves-is-hard/) by Constance Crozier.
+
 Let's start by decribing the logistic curve.
 
 ## The Logistic curve
