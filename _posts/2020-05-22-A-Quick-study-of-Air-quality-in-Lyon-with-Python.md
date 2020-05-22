@@ -24,7 +24,6 @@ from datetime import datetime
 from fastprogress.fastprogress import progress_bar
 from matplotlib import pyplot as plt
 
-prop_cycle = plt.rcParams["axes.prop_cycle"]
 plt.style.use("seaborn")
 %load_ext lab_black
 
@@ -38,24 +37,6 @@ API_TOKEN = "8ff64072eafffb9f02d20db396001d07"
 
 # api-endpoint
 URL = f"https://api.atmo-aura.fr/communes/{CODE_INSEE}/indices?api_token={API_TOKEN}"
-```
-
-
-```python
-import matplotlib as mpl
-
-mpl.rcParams.update({"legend.fontsize": 22})
-mpl.rcParams.update({"xtick.labelsize": 20})
-mpl.rcParams.update({"ytick.labelsize": 20})
-mpl.rcParams.update({"axes.labelsize": 20})
-mpl.rcParams.update({"axes.titlesize": 24})
-mpl.rcParams.update({"font.family": "sans-serif"})
-mpl.rcParams.update({"font.sans-serif": "Ubuntu"})
-mpl.rcParams.update({"legend.frameon": True})
-mpl.rcParams.update({"legend.fancybox": False})
-mpl.rcParams.update({"legend.shadow": False})
-mpl.rcParams.update({"legend.facecolor": "w"})
-mpl.rcParams.update({"legend.framealpha": 0.8})
 ```
 
 ## First try of the API 
