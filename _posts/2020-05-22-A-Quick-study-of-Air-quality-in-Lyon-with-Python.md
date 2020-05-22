@@ -267,7 +267,7 @@ _ = ax.set(
 ```
 
 
-![png](output_16_0.png)
+![png](/img/2020-05-22_01/output_16_0.png)
 
 
 Well we do not see a significant drop in air pollution during the lockdown that took place between march 17 and may 11. The reason is that the air pollution index is combining 3 different kinds of pollutants:
@@ -506,7 +506,7 @@ _ = ax.set(
 ```
 
 
-![png](output_25_0.png)
+![png](/img/2020-05-22_01/output_25_0.png)
 
 
 When there is  no significant difference between the different years.
@@ -745,7 +745,7 @@ plot_pollutant(pol, "NO2", "microg/m3")
 ```
 
 
-![png](output_35_0.png)
+![png](/img/2020-05-22_01/output_35_0.png)
 
 
 
@@ -754,7 +754,7 @@ plot_pollutant(pol, "O3", "microg/m3")
 ```
 
 
-![png](output_36_0.png)
+![png](/img/2020-05-22_01/output_36_0.png)
 
 
 
@@ -763,7 +763,7 @@ plot_pollutant(pol, "PM10", "microg/m3")
 ```
 
 
-![png](output_37_0.png)
+![png](/img/2020-05-22_01/output_37_0.png)
 
 
 So clearly the NO2 concentration dropped at the begining of the lockdown alongside the intensity of road traffic.
