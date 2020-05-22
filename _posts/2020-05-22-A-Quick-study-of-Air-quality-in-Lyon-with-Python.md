@@ -1,5 +1,5 @@
 ---
-title: A Quick study of Air quality in Lyon with Python
+title: A Quick study of air quality in Lyon with Python
 layout: post
 comments: true
 author: François Pacull
@@ -270,7 +270,7 @@ Concerning the first part of 2020, let's try to compare the above pollution valu
 
 ## Air Quality from 2018 to 2020
 
-We already have the data for 2020, so we now fetch the data for the same range of days (january 1 to may 22), but for 2018 and 2019. The data from previous years does not seem to be available on the web service.
+We already have the data for 2020, so we now fetch the data for the same range of days (january 1 to may 22), but for 2018 and 2019. The data from previous years (<2018) does not seem to be available on the web service.
 
 
 ```python
@@ -338,7 +338,7 @@ for year in range(2018, 2020):
     No data for the date: 2020-02-29
 
 
-Similarly to we we did before, we create a dataframe with a `DatetimeIndex`:
+Similarly to what we did before, we create a dataframe with a `DatetimeIndex`:
 
 
 ```python
