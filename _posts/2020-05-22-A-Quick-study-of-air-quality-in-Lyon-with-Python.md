@@ -10,7 +10,7 @@ The aim of this post is to use Python to fetch air quality data from a web servi
 
 We are going to look at some data from earlier this year, before and after the lockdown and eventually compare 2020 with some from previous years, in the city of Lyon, France. 
 
-The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region in France. They also come up with an API (HTTP GET method). An API token is required to use it, that you get from their website after registration.
+The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region in France. They also come up with an API (HTTP GET method). An API token is required to use it, that you get from their website, after registration.
 
 
 
@@ -63,9 +63,9 @@ data
 
 
 
-Since we will not change the location (4th district in Lyon), we only need to keep the `valeur` key from this dictionary, which is the air pollution index value. It usually ranges from 0 to 100, but can also exceeds 100 in case of warning threshold is exceeded, which represents a risk to the health of the whole population or to environmental degradation justifying the implementation of emergency measures.
+Since we will not change the location (4th district in Lyon), we only need to keep the `valeur` key from this dictionary, which is the air pollution index value. It ranges from 0 to 100, but could also rise above 100, which would mean that the warning threshold is exceeded, implying a risk to the health of the whole population or to environmental degradation justifying the implementation of emergency measures.
 
-Note that you can get historic values but also forecasts if you enter a future date in the `get` params (2 day horizon at most whe I tried that).
+Note that you can get historic values but also forecasts if you enter a future date in the `get` params (2 day horizon at most when I tried that).
 
 So let's fetch the daily pollution index on a temporal range starting at the begining of 2020 and ending today.
 
@@ -262,7 +262,7 @@ Now theses pollutants have very different origins: NO2 is mainly related to road
 
 > Ozone precursors are a group of pollutants, predominantly those emitted during the combustion of fossil fuels. Ground-level ozone pollution (tropospheric ozone) is created near the Earth's surface by the action of daylight UV rays on these precursors. The ozone at ground level is primarily from fossil fuel precursors, but methane is a natural precursor, and the very low natural background level of ozone at ground level is considered safe.
 
-Also, these levels of pollution also depends on the weather. A cold dry weather may yield more PM10 pollution due to heating. A sunny weather without wind may increase the level of ozone pollution, while some rain may "clean" the particles.
+So these levels of pollution also depends on the weather. A cold dry weather may yield more PM10 pollution due to heating. A sunny weather without wind may increase the level of ozone pollution, while some rain may "clean" the particles, I guess.
 
 
 
@@ -490,7 +490,7 @@ _ = ax.set(
 ![png](/img/2020-05-22_01/output_25_0.png)
 
 
-When there is  no significant difference between the different years.
+Well there is no significant difference between the different years.
 
 Unfortunately the web service does not offer separate data for each pollutant. However these data are available from their website [here](https://www.atmo-auvergnerhonealpes.fr/donnees/telecharger), as CSV files.
 
@@ -696,7 +696,7 @@ pol.head(2)
 
 
 
-Now here is a little function to plot each pollutant:
+Here is a little function to plot each pollutant:
 
 
 ```python
