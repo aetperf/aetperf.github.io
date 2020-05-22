@@ -12,12 +12,12 @@ We are going to look at some data from earlier this year, before and after the l
 
 The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region in France. They also come up with an API (HTTP GET method). An API token is required to use it, that you get from their website after registration.
 
+
+
 ## Imports
 
 
 ```python
-import itertools
-
 import requests
 import pandas as pd
 from datetime import datetime
