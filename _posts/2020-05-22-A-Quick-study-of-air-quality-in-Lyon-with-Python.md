@@ -13,7 +13,7 @@ We are going to:
 - compare 2020 with some from previous years
 - and eventually look at some specific pollutants
 
-The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region. They also come up with an web API (HTTP GET method). An API token is required to use it, that you easily get from their website, after registration.
+The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region. They also come up with a convenient web API (HTTP GET method). Note that an API token is required, you can easily get from their website after registration.
 
 
 
@@ -67,7 +67,7 @@ data
 
 
 
-Since we will not change the location (4th district in Lyon), we only need to keep the `date` and `valeur` items from this dictionary, which is the air pollution index value. It ranges from 0 to 100, but could also rise above 100, which would mean that the warning threshold is exceeded. This would imply a serious risk to the population and the environment justifying the implementation of emergency measures.
+Since we will not change the location (4th district in Lyon), we only need to keep the `date` and `valeur` items from this dictionary. `valeur` is the air pollution index value. It ranges from 0 to 100, but could also rise above 100, which would mean that the warning threshold is exceeded. This would imply a serious risk to the population and the environment justifying the implementation of emergency measures.
 
 Note that you can get historic values but also forecasts if you enter a future date in the `get` params (2 day horizon at most when I tried that).
 
@@ -260,13 +260,13 @@ Well we do not see a significant drop in air pollution during the lockdown that 
 - O3: Ozone, 
 - PM10: particulate matter, which are coarse particles with a diameter between 2.5 and 10 micrometers (μm) 
 
-From what I understand, an index is computed for each of these three pollutants, and the air pollution index corresponds a combination of these three values. So the pollution index will keep being large if any of these pollutant concentrations remain large.
+From what I understand, an index is computed for each of these three pollutants, and the air pollution index corresponds to a combination of these three values. So the pollution index will keep being large if any of these pollutant concentrations remain large.
 
 Now theses pollutants have very different origins: NO2 is mainly related to road traffic and other fossil fuel combustion processes, PM10 to wood heating (in the suburb), agriculture,... O3 is more complex; here is a quote from [wikipedia](https://en.wikipedia.org/wiki/Ozone#Ozone_air_pollution):
 
 > Ozone precursors are a group of pollutants, predominantly those emitted during the combustion of fossil fuels. Ground-level ozone pollution (tropospheric ozone) is created near the Earth's surface by the action of daylight UV rays on these precursors. The ozone at ground level is primarily from fossil fuel precursors, but methane is a natural precursor, and the very low natural background level of ozone at ground level is considered safe.
 
-And of course these levels of pollution also depends on the weather. A cold weather may yield more PM10 pollution due to heating. A sunny weather may increase the level of ozone pollution, while some rain may "clean" the particles, I guess. So many factors contribute to air pollution.
+And of course these levels of pollution also depends on the weather conditions. A cold weather may yield a larger PM10 concentration due to heating. A sunny weather may increase the level of ozone concentration, while some rain may "clean" the particles, I guess. So many factors contribute to air pollution.
 
 Concerning the first part of 2020, let's try to compare the above pollution values with the ones recorded in the 2 previous years.
 
