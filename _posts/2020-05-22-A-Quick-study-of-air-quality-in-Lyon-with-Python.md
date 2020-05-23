@@ -245,7 +245,7 @@ _ = plt.vlines("2020-03-17", 0, 100, colors="r")  # lockdown start
 _ = plt.vlines("2020-05-11", 0, 100, colors="r")  # lockdown end
 _ = ax.set_ylim(0, 100)
 _ = ax.set(
-    title=f"Daily air quality in Lyon 4E",
+    title="Daily air quality in Lyon 4E",
     xlabel="Date",
     ylabel="Air pollution index (smaller is better)",
 )
@@ -482,7 +482,7 @@ monthly.set_index("month", inplace=True, drop=True)
 ax = monthly.plot.bar(figsize=FS, rot=10)
 _ = ax.set_ylim(0, 100)
 _ = ax.set(
-    title=f"Monthly air quality in Lyon 4E",
+    title="Monthly air quality in Lyon 4E",
     xlabel="Date",
     ylabel="Air pollution index (smaller is better)",
 )
