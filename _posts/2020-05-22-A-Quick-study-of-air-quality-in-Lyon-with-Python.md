@@ -6,11 +6,14 @@ author: François Pacull
 tags: Python Pandas GET API
 ---
 
-The aim of this post is to use Python to fetch air quality data from a web service and make some plots. 
+The aim of this post is to use Python to fetch air quality data from a web service and to create a few plots. 
 
-We are going to look at some data from earlier this year, before and after the lockdown and eventually compare 2020 with some from previous years, in the city of Lyon, France. 
+We are going to: 
+- look at some daily data from earlier this year, before and after the lockdown, in the city of Lyon, France
+- compare 2020 with some from previous years
+- and eventually look at some specific pollutants
 
-The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region in France. They also come up with an API (HTTP GET method). An API token is required to use it, that you get from their website, after registration.
+The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region. They also come up with an web API (HTTP GET method). An API token is required to use it, that you easily get from their website, after registration.
 
 
 
@@ -18,9 +21,10 @@ The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhon
 
 
 ```python
+from datetime import datetime
+
 import requests
 import pandas as pd
-from datetime import datetime
 from fastprogress.fastprogress import progress_bar
 from matplotlib import pyplot as plt
 
@@ -63,13 +67,13 @@ data
 
 
 
-Since we will not change the location (4th district in Lyon), we only need to keep the `valeur` key from this dictionary, which is the air pollution index value. It ranges from 0 to 100, but could also rise above 100, which would mean that the warning threshold is exceeded, implying a risk to the health of the whole population or to environmental degradation justifying the implementation of emergency measures.
+Since we will not change the location (4th district in Lyon), we only need to keep the `date` and `valeur` items from this dictionary, which is the air pollution index value. It ranges from 0 to 100, but could also rise above 100, which would mean that the warning threshold is exceeded. This would imply a serious risk to the population and the environment justifying the implementation of emergency measures.
 
 Note that you can get historic values but also forecasts if you enter a future date in the `get` params (2 day horizon at most when I tried that).
 
 So let's fetch the daily pollution index on a temporal range starting at the begining of 2020 and ending today.
 
-## Air Quality in 2020 so far
+## Daily air quality in 2020 so far
 
 First we create a date range:
 
@@ -258,17 +262,15 @@ Well we do not see a significant drop in air pollution during the lockdown that 
 
 From what I understand, an index is computed for each of these three pollutants, and the air pollution index corresponds a combination of these three values. So the pollution index will keep being large if any of these pollutant concentrations remain large.
 
-Now theses pollutants have very different origins: NO2 is mainly related to road traffic and other fossil fuel combustion processes, PM10 to wood heating (in the suburb) and agriculture. O3 is more complex; here is a quote from [wikipedia](https://en.wikipedia.org/wiki/Ozone#Ozone_air_pollution):
+Now theses pollutants have very different origins: NO2 is mainly related to road traffic and other fossil fuel combustion processes, PM10 to wood heating (in the suburb), agriculture,... O3 is more complex; here is a quote from [wikipedia](https://en.wikipedia.org/wiki/Ozone#Ozone_air_pollution):
 
 > Ozone precursors are a group of pollutants, predominantly those emitted during the combustion of fossil fuels. Ground-level ozone pollution (tropospheric ozone) is created near the Earth's surface by the action of daylight UV rays on these precursors. The ozone at ground level is primarily from fossil fuel precursors, but methane is a natural precursor, and the very low natural background level of ozone at ground level is considered safe.
 
-So these levels of pollution also depends on the weather. A cold dry weather may yield more PM10 pollution due to heating. A sunny weather without wind may increase the level of ozone pollution, while some rain may "clean" the particles, I guess.
-
-
+And of course these levels of pollution also depends on the weather. A cold weather may yield more PM10 pollution due to heating. A sunny weather may increase the level of ozone pollution, while some rain may "clean" the particles, I guess. So many factors contribute to air pollution.
 
 Concerning the first part of 2020, let's try to compare the above pollution values with the ones recorded in the 2 previous years.
 
-## Air Quality from 2018 to 2020
+## Monthly air quality from 2018 to 2020
 
 We already have the data for 2020, so we now fetch the data for the same range of days (january 1 to may 22), but for 2018 and 2019. The data from previous years (<2018) does not seem to be available on the web service.
 
@@ -396,7 +398,7 @@ df_hist.head(2)
 
 
 
-Now we merge the data corresponding to the 3 different years:
+And we merge the data corresponding to the 3 different years:
 
 
 ```python
@@ -477,10 +479,10 @@ Let's plot the monthly average:
 monthly = df_all.resample("M").mean()
 monthly["month"] = monthly.index.month_name()
 monthly.set_index("month", inplace=True, drop=True)
-ax = monthly.plot.bar(figsize=FS, color=colors, rot=10)
+ax = monthly.plot.bar(figsize=FS, rot=10)
 _ = ax.set_ylim(0, 100)
 _ = ax.set(
-    title=f"Daily air quality in Lyon 4E",
+    title=f"Monthly air quality in Lyon 4E",
     xlabel="Date",
     ylabel="Air pollution index (smaller is better)",
 )
@@ -494,7 +496,7 @@ Well there is no significant difference between the different years.
 
 Unfortunately the web service does not offer separate data for each pollutant. However these data are available from their website [here](https://www.atmo-auvergnerhonealpes.fr/donnees/telecharger), as CSV files.
 
-## Evolution of each pollutant
+## Daily concentration of 3 pollutants
 
 We download the data for the 3 pollutants seen earlier, on the same time range and with the same frequency. Let's look at the first file:
 
@@ -530,21 +532,7 @@ NO2
       <th>Mesure</th>
       <th>Unité</th>
       <th>01/01/2020</th>
-      <th>02/01/2020</th>
-      <th>03/01/2020</th>
-      <th>04/01/2020</th>
-      <th>05/01/2020</th>
-      <th>06/01/2020</th>
       <th>...</th>
-      <th>13/05/2020</th>
-      <th>14/05/2020</th>
-      <th>15/05/2020</th>
-      <th>16/05/2020</th>
-      <th>17/05/2020</th>
-      <th>18/05/2020</th>
-      <th>19/05/2020</th>
-      <th>20/05/2020</th>
-      <th>21/05/2020</th>
       <th>22/05/2020</th>
     </tr>
   </thead>
@@ -556,21 +544,7 @@ NO2
       <td>Dioxyde d'azote</td>
       <td>microg/m3</td>
       <td>38,2</td>
-      <td>42,6</td>
-      <td>64,4</td>
-      <td>34,5</td>
-      <td>25,4</td>
-      <td>54,1</td>
       <td>...</td>
-      <td>17</td>
-      <td>8,3</td>
-      <td>10,6</td>
-      <td>5,3</td>
-      <td>4,4</td>
-      <td>7,8</td>
-      <td>4,7</td>
-      <td>6,1</td>
-      <td>6,4</td>
       <td>18,3</td>
     </tr>
   </tbody>
@@ -631,7 +605,7 @@ NO2.head(2)
 
 
 
-Now we do the same with the two other files and concatenate them:
+Now we do the same with the two other files and concatenate the 3 columns:
 
 
 ```python
