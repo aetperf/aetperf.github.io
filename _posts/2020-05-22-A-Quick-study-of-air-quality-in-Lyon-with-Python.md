@@ -694,6 +694,7 @@ def plot_pollutant(df, pollutant, unit):
     )
 ```
 
+that we can call 3 times:
 
 ```python
 plot_pollutant(pol, "NO2", "microg/m3")
@@ -721,7 +722,7 @@ plot_pollutant(pol, "PM10", "microg/m3")
 ![png](/img/2020-05-22_01/output_37_0.png)
 
 
-So clearly the NO2 concentration dropped at the begining of the lockdown alongside the intensity of road traffic.
+So clearly the NO2 concentration dropped at the begining of the lockdown alongside the intensity of road traffic, and remain low after (as does road traffic). The level of the two other pollutants during lockdown have a lot do with the specific weather conditions (see [this](https://www.atmo-auvergnerhonealpes.fr/actualite/coronavirus-evolution-de-la-qualite-de-lair-ces-2-derniers-mois-et-juste-apres-le) page from Atmo).
 
 
 {% if page.comments %}
