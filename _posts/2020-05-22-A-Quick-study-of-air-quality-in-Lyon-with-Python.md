@@ -13,7 +13,7 @@ We are going to:
 - compare 2020 with some from previous years
 - and eventually look at some specific pollutants
 
-The data is provided by an institute called [Atmo](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region. They also come up with a convenient web API (HTTP GET method). Note that an API token is required, you can easily get from their website after registration.
+The data is provided by an organization called [Atmo Auvergne-Rhône-Alpes](https://www.atmo-auvergnerhonealpes.fr/) monitoring air quality over the Auvergne-Rhône-Alpes region. They also come up with a convenient web API (HTTP GET method). Note that an API token is required, you can easily get from their website after registration.
 
 
 
