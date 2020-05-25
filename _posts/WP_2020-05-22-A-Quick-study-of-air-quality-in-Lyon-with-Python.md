@@ -244,7 +244,7 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_16_0.png" alt="">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_16_0.png" alt="">
 </p>
 
 
@@ -482,7 +482,7 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_25_0.png" alt="">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_25_0.png" alt="">
 </p>
 
 
@@ -695,7 +695,7 @@ plot_pollutant(pol, "NO2", "microg/m3")
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_35_0.png" alt="">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_35_0.png" alt="">
 </p>
 
 
@@ -706,7 +706,7 @@ plot_pollutant(pol, "O3", "microg/m3")
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_36_0.png" alt="">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_36_0.png" alt="">
 </p>
 
 
@@ -717,7 +717,7 @@ plot_pollutant(pol, "PM10", "microg/m3")
 
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_37_0.png" alt="">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-05-22_01/output_37_0.png" alt="">
 </p>
 
 
