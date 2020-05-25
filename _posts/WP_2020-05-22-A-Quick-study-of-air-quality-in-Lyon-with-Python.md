@@ -92,18 +92,6 @@ for day in progress_bar(day_range):
 
 
 <div>
-    <style>
-        /* Turns off some styling */
-        progress {
-            /* gets rid of default border in Firefox and Opera. */
-            border: none;
-            /* Needs to be in here for Safari polyfill so background images work as expected. */
-            background-size: auto;
-        }
-        .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {
-            background: #F44336;
-        }
-    </style>
   <progress value='143' class='' max='143' style='width:300px; height:20px; vertical-align: middle;'></progress>
   100.00% [143/143 00:21<00:00]
 </div>
