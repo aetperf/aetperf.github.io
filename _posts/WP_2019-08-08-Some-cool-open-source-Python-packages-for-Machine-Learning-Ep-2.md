@@ -7,7 +7,7 @@ There is a very rich ecosystem of Python libraries related to ML. Here is a list
 
 This post is following that one:
 
-* [Some cool open-source Python packages for Machine Learning EP 1](https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html) (2019/07/11)
+* [Some cool open-source Python packages for Machine Learning EP 1](https://www.architecture-performance.fr/ap_blog/some-cool-open-source-python-packages-for-machine-learning-ep-1/) (2019/07/11)
 
 (☞ﾟヮﾟ)☞
 
