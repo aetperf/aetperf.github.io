@@ -41,7 +41,7 @@ This post is following these ones:
 * [SHERPA](https://github.com/sherpa-ai/sherpa) - a library for hyperparameter tuning of machine learning models.
 * [HyperparameterHunter](https://github.com/HunterMcGushion/hyperparameter_hunter) - automatically save and learn from Experiment results, leading to long-term, persistent optimization that remembers all your tests.
 
-EDIT: here is a very nice post that compares [Hyperopt](https://github.com/hyperopt/hyperopt) with [Optuna](https://github.com/optuna/optuna), mentioned in [EP 1](https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html) (2019/07/11): [https://neptune.ai/blog/optuna-vs-hyperopt](https://neptune.ai/blog/optuna-vs-hyperopt)
+EDIT: here is a very nice post that compares [Hyperopt](https://github.com/hyperopt/hyperopt) with [Optuna](https://github.com/optuna/optuna), mentioned in [EP 1](https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html): [https://neptune.ai/blog/optuna-vs-hyperopt](https://neptune.ai/blog/optuna-vs-hyperopt)
 
 ## Experimentation frameworks and tools
 
