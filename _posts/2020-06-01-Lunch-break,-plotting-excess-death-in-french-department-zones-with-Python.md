@@ -43,67 +43,24 @@ csv_file_path = "./data/INSEE/2020-05-29_deces_quotidiens_departement_csv.csv"
 
 ```python
 df = pd.read_csv(csv_file_path, sep=";")
-df.head(2)
+df.info(2)
 ```
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Date_evenement</th>
-      <th>Zone</th>
-      <th>Communes_a_envoi_dematerialise_Deces2020</th>
-      <th>Total_deces_2020</th>
-      <th>Communes_a_envoi_dematerialise_Deces2019</th>
-      <th>Total_deces_2019</th>
-      <th>Communes_a_envoi_dematerialise_Deces2018</th>
-      <th>Total_deces_2018</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>01-mars</td>
-      <td>France</td>
-      <td>1625.0</td>
-      <td>1778.0</td>
-      <td>1708</td>
-      <td>1872</td>
-      <td>1928</td>
-      <td>2136</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>02-mars</td>
-      <td>France</td>
-      <td>3263.0</td>
-      <td>3557.0</td>
-      <td>3467</td>
-      <td>3782</td>
-      <td>3933</td>
-      <td>4327</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 9384 entries, 0 to 9383
+    Data columns (total 8 columns):
+     #   Column                                    Non-Null Count  Dtype  
+    ---  ------                                    --------------  -----  
+     0   Date_evenement                            9384 non-null   object 
+     1   Zone                                      9384 non-null   object 
+     2   Communes_a_envoi_dematerialise_Deces2020  8466 non-null   float64
+     3   Total_deces_2020                          8058 non-null   float64
+     4   Communes_a_envoi_dematerialise_Deces2019  9384 non-null   int64  
+     5   Total_deces_2019                          9384 non-null   int64  
+     6   Communes_a_envoi_dematerialise_Deces2018  9384 non-null   int64  
+     7   Total_deces_2018                          9384 non-null   int64  
+    dtypes: float64(2), int64(4), object(2)
+    memory usage: 586.6+ KB
 
 
 The different values of `Zone` are the different french department zones, or the whole country:
@@ -150,73 +107,23 @@ df["year"] = 2020
 df["date"] = pd.to_datetime(df[["year", "month", "day"]])
 df.drop(["year", "month", "day"], axis=1, inplace=True)
 df.set_index("date", inplace=True)
-df.head(2)
+df.info()
 ```
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Zone</th>
-      <th>Communes_a_envoi_dematerialise_Deces2020</th>
-      <th>Total_deces_2020</th>
-      <th>Communes_a_envoi_dematerialise_Deces2019</th>
-      <th>Total_deces_2019</th>
-      <th>Communes_a_envoi_dematerialise_Deces2018</th>
-      <th>Total_deces_2018</th>
-    </tr>
-    <tr>
-      <th>date</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>2020-03-01</th>
-      <td>France</td>
-      <td>1625.0</td>
-      <td>1778.0</td>
-      <td>1708</td>
-      <td>1872</td>
-      <td>1928</td>
-      <td>2136</td>
-    </tr>
-    <tr>
-      <th>2020-03-02</th>
-      <td>France</td>
-      <td>3263.0</td>
-      <td>3557.0</td>
-      <td>3467</td>
-      <td>3782</td>
-      <td>3933</td>
-      <td>4327</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+    <class 'pandas.core.frame.DataFrame'>
+    DatetimeIndex: 9384 entries, 2020-03-01 to 2020-05-31
+    Data columns (total 7 columns):
+     #   Column                                    Non-Null Count  Dtype  
+    ---  ------                                    --------------  -----  
+     0   Zone                                      9384 non-null   object 
+     1   Communes_a_envoi_dematerialise_Deces2020  8466 non-null   float64
+     2   Total_deces_2020                          8058 non-null   float64
+     3   Communes_a_envoi_dematerialise_Deces2019  9384 non-null   int64  
+     4   Total_deces_2019                          9384 non-null   int64  
+     5   Communes_a_envoi_dematerialise_Deces2018  9384 non-null   int64  
+     6   Total_deces_2018                          9384 non-null   int64  
+    dtypes: float64(2), int64(4), object(1)
+    memory usage: 586.5+ KB
 
 
 
