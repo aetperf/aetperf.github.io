@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Pandas GeoPandas Matplotlib
 ---
 
-Daily deaths data is provided by INSEE (The National Institute of Statistics and Economic Studies). [Here](https://www.insee.fr/fr/statistiques/4487988?sommaire=4487854) is the link of the page displaying these data.
+Daily deaths data is provided by INSEE (the national institute of statistics and economic studies). [Here](https://www.insee.fr/fr/statistiques/4487988?sommaire=4487854) is the link of the page displaying these data, and here is a short description:
 
 > During the Covid-19 pandemic, INSEE is reporting the number of deaths per day per department on a weekly basis. Deaths are recorded in the commune in which they occur (and not in the place of residence of the deceased). 
 
@@ -14,7 +14,7 @@ We downloaded the smallest CSV [file](https://www.insee.fr/en/statistiques/fichi
 
 > The two downloadable files below were uploaded on 29 May 2020 and relate to the cumulative number of daily deaths from 1 March to 18 May 2018, 2019 and 2020 and the number of daily deaths reported electronically up to 22 May.
 
-Now let's try to make some graphs.
+Now let's try to make visualize these data.
 
 ## Imports
 
