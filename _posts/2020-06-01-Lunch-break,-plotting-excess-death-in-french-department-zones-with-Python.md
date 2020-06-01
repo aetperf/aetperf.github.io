@@ -451,7 +451,7 @@ _ = ax.set(
 ![png](/img/2020-06-01_01/output_25_0.png)
 
 
-Here is the data for dep. 75 (Seine):
+Here is the data for dep. 75 (Paris):
 
 
 ```python
