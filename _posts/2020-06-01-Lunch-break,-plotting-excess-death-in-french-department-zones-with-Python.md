@@ -38,32 +38,6 @@ FS = (16, 9)
 csv_file_path = "./data/INSEE/2020-05-29_deces_quotidiens_departement_csv.csv"
 ```
 
-
-```python
-import matplotlib as mpl
-
-mpl.rcParams.update({"legend.fontsize": 18})
-mpl.rcParams.update({"xtick.labelsize": 20})
-mpl.rcParams.update({"xtick.color": "dimgrey"})
-mpl.rcParams.update({"ytick.labelsize": 20})
-mpl.rcParams.update({"ytick.color": "dimgrey"})
-mpl.rcParams.update({"axes.labelsize": 22})
-mpl.rcParams.update({"axes.labelcolor": "dimgrey"})
-mpl.rcParams.update({"axes.titlesize": 28})
-mpl.rcParams.update({"axes.edgecolor": "dimgrey"})
-mpl.rcParams.update({"font.family": "sans-serif"})
-mpl.rcParams.update({"font.sans-serif": "Ubuntu"})
-mpl.rcParams.update({"legend.frameon": False})
-mpl.rcParams.update({"legend.fancybox": False})
-mpl.rcParams.update({"legend.shadow": False})
-mpl.rcParams.update({"legend.facecolor": "w"})
-mpl.rcParams.update({"legend.framealpha": 0.8})
-mpl.rcParams.update({"grid.color": "dimgrey"})
-mpl.rcParams.update({"grid.alpha": 0.25})
-mpl.rcParams.update({"text.color": "grey"})
-mpl.rcParams.update({"lines.linewidth": 2})
-```
-
 ## Load the CSV file
 
 
