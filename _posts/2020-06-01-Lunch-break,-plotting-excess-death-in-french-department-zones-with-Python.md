@@ -221,7 +221,7 @@ xticks[-1].label1.set_visible(False)
 ![png](/img/2020-06-01_01/output_13_0.png)
 
 
-Now we are going to create a function for plotting the evolutio of excess death in a department zone, and try it on the Rhône department.
+Now we are going to create a function for plotting the daily deaths in a department zone, and try it on the Rhône department.
 
 ## Rhône (department zone)
 
@@ -264,7 +264,7 @@ plot_dep(df, "Dept_69")
 ![png](/img/2020-06-01_01/output_16_0.png)
 
 
-Let's try to compute which departments have been the most affected by excess death, with the relative and absolute differences betwenn 2020 and the previous years. We first need to pivot the tables.
+Let's try to compute which departments have been the most affected by COVID-19, with the relative and absolute differences between 2020 and the previous years. We first need to pivot the tables.
 
 ## Pivot
 
