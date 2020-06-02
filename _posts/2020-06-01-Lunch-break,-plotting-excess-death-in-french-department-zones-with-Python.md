@@ -43,7 +43,7 @@ csv_file_path = "./data/INSEE/2020-05-29_deces_quotidiens_departement_csv.csv"
 
 ```python
 df = pd.read_csv(csv_file_path, sep=";")
-df.info(2)
+df.info()
 ```
 
     <class 'pandas.core.frame.DataFrame'>
