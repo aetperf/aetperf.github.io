@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Pandas GeoPandas Matplotlib
 ---
 
-Daily deaths data is provided by INSEE (the national institute of statistics and economic studies). [Here](https://www.insee.fr/fr/statistiques/4487988?sommaire=4487854) is the link of the page displaying these data, and here is a short description:
+Daily deaths data are provided by INSEE (the national institute of statistics and economic studies). [Here](https://www.insee.fr/fr/statistiques/4487988?sommaire=4487854) is the link of the page displaying these data, and here is a short description:
 
 > During the Covid-19 pandemic, INSEE is reporting the number of deaths per day per department on a weekly basis. Deaths are recorded in the commune in which they occur (and not in the place of residence of the deceased). 
 
