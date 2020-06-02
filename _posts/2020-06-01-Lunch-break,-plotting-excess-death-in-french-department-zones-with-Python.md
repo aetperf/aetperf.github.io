@@ -264,7 +264,7 @@ plot_dep(df, "Dept_69")
 ![png](/img/2020-06-01_01/output_16_0.png)
 
 
-Let's try to compute which departments have been the most affected by COVID-19, with the relative and absolute differences between 2020 and the previous years. We first need to pivot the tables.
+Let's try to find out which departments have been the most affected by COVID-19, with the relative and absolute differences between 2020 and the previous years. We first need to pivot the tables.
 
 ## Pivot
 
