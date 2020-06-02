@@ -14,7 +14,7 @@ We downloaded the smallest CSV [file](https://www.insee.fr/en/statistiques/fichi
 
 > The two downloadable files below were uploaded on 29 May 2020 and relate to the cumulative number of daily deaths from 1 March to 18 May 2018, 2019 and 2020 and the number of daily deaths reported electronically up to 22 May.
 
-Now let's try to make visualize these data.
+Now let's try to visualize these data.
 
 ## Imports
 
