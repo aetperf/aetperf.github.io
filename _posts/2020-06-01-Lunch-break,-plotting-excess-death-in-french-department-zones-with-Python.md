@@ -127,7 +127,7 @@ df.info()
 
 
 
-Note that the day and month values are not exactly the same each year since because of leap years (2020 for example), but the earliest date here is in march anyway.
+Note that 2020 is a leap year, but the earliest date here is in march anyway.
 
 We start by plotting the daily deaths over the whole country.
 
@@ -221,7 +221,7 @@ xticks[-1].label1.set_visible(False)
 ![png](/img/2020-06-01_01/output_13_0.png)
 
 
-Now we are going to create a function for plotting some department zone data and try it on the Rhône department.
+Now we are going to create a function for plotting the evolutio of excess death in a department zone, and try it on the Rhône department.
 
 ## Rhône (department zone)
 
@@ -264,7 +264,7 @@ plot_dep(df, "Dept_69")
 ![png](/img/2020-06-01_01/output_16_0.png)
 
 
-Let's try to compute relative and absolute value for excess death in each department zone. We first need to pivot the tables.
+Let's try to compute which departments have been the most affected by excess death, with the relative and absolute differences betwenn 2020 and the previous years. We first need to pivot the tables.
 
 ## Pivot
 
@@ -369,7 +369,7 @@ plot_dep(df, "Dept_75")
 ![png](/img/2020-06-01_01/output_27_0.png)
 
 
-Now instead of plotting all the different curves corresponding to each department, let's plot a choropleth map and color the department zones with relative and absolute excess death.
+Now let's plot a choropleth map and color the department zones with relative and absolute excess death.
 
 ## Choropleth Maps
 
@@ -428,7 +428,7 @@ dep.head(2)
 
 
 
-We merge these geometries with the previous excess death data:
+We merge these geometries with the previous relative and absolute difference data:
 
 
 ```python
@@ -492,7 +492,7 @@ gdf.head(2)
 
 
 
-And use a different projection than lat-lon, so that the shapes are not distorted: [EPSG:2154](https://epsg.io/2154)
+and use a different projection than lat-lon, so that the shapes are not distorted: [EPSG:2154](https://epsg.io/2154)
 
 
 ```python
