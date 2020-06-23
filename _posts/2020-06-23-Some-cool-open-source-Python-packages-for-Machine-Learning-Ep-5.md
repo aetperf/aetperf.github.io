@@ -39,10 +39,8 @@ _
 
 * [DeepPavlov](https://github.com/deepmipt/DeepPavlov) - conversational AI library built on TensorFlow and Keras. DeepPavlov is designed for
     - development of production ready chat-bots and complex conversational systems,
-    - research in the area of NLP and, particularly, of dialog systems.
-
-
-
+    - research in the area of NLP and, particularly, of dialog systems.   
+  
 * [ParlAI](https://github.com/facebookresearch/ParlAI) - a framework for training and evaluating AI models on a variety of openly available dialogue datasets. 
 
 ## Causal Inference, probabilistic ML
@@ -146,9 +144,7 @@ _
     - Covariance matrix adaptation,
     - Population control methods for noise management,
     - Particle swarm optimization.  
-
-
-
+  
 * [HiPlot](https://github.com/facebookresearch/hiplot) - a lightweight interactive visualization tool to help AI researchers discover correlations and patterns in high-dimensional data using parallel plots and other graphical ways to represent information.
 
 ## Auto-ML
