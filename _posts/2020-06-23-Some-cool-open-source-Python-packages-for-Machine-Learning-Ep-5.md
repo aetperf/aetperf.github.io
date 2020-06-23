@@ -172,7 +172,7 @@ _
 
 ## Experimentation frameworks
 
-* [Katib](https://github.com/kubeflow/katib) - a Kubernetes-based system for Hyperparameter Tuning and Neural Architecture Search. Katib supports a number of ML frameworks, including TensorFlow, Apache MXNet, PyTorch, XGBoost, and others.
+* [Katib](https://github.com/kubeflow/katib) - a Kubernetes-based system for Hyperparameter Tuning and Neural Architecture Search. Katib supports a number of ML frameworks, including TensorFlow, Apache MXNet, PyTorch, XGBoost, and others. Note that there is a Python [SDK](https://github.com/kubeflow/katib/tree/master/sdk/python).
 
 
 {% if page.comments %}
