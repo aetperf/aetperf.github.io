@@ -19,7 +19,7 @@ _
 
 There is a very rich ecosystem of Python libraries related to ML. Here is a list of some “active”, open-source packages that may be useful for ML day-to-day activities.
 
-This post is following these ones:
+Previous post list:
 
 * [Some cool open-source Python packages for Machine Learning EP 1](https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html) (2019/07/11)
 * [Some cool open-source Python packages for Machine Learning EP 2](https://aetperf.github.io/2019/08/08/Some-cool-open-source-Python-packages-for-Machine-Learning-Ep-2.html) (2019/08/08)
@@ -40,6 +40,7 @@ _
 * [DeepPavlov](https://github.com/deepmipt/DeepPavlov) - conversational AI library built on TensorFlow and Keras. DeepPavlov is designed for
     - development of production ready chat-bots and complex conversational systems,
     - research in the area of NLP and, particularly, of dialog systems.
+
 
 
 * [ParlAI](https://github.com/facebookresearch/ParlAI) - a framework for training and evaluating AI models on a variety of openly available dialogue datasets. 
@@ -167,7 +168,7 @@ _
 * [OpenML-Python](https://github.com/openml/openml-python) - an interface for [OpenML](https://www.openml.org/), an online platform for open science collaboration in machine learning. It can be used to download or upload OpenML data such as datasets and machine learning experiment results.
 
 
-## ----- NOT PYTHON, but with Python support -----
+## ------ NOT PYTHON, but with Python support ------
 
 ## Workflows
 
