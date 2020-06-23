@@ -8,7 +8,7 @@ tags: Python open source machine learning packages
 
 
 <p align="center">
-  <img width="700" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg/1920px-Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg" alt="Moebius">    
+  <img width="800" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg/1920px-Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg" alt="Moebius">    
 </p>
 
 *Image credit: NASA/JPL-Caltech and The Hubble Heritage Team (STScI/AURA)*
@@ -40,6 +40,7 @@ _
 * [DeepPavlov](https://github.com/deepmipt/DeepPavlov) - conversational AI library built on TensorFlow and Keras. DeepPavlov is designed for
     - development of production ready chat-bots and complex conversational systems,
     - research in the area of NLP and, particularly, of dialog systems.
+
 
 * [ParlAI](https://github.com/facebookresearch/ParlAI) - a framework for training and evaluating AI models on a variety of openly available dialogue datasets. 
 
@@ -146,17 +147,18 @@ _
     - Particle swarm optimization.  
     
 
+
 * [HiPlot](https://github.com/facebookresearch/hiplot) - a lightweight interactive visualization tool to help AI researchers discover correlations and patterns in high-dimensional data using parallel plots and other graphical ways to represent information.
 
-# Auto-ML
+## Auto-ML
 
 * [NNI](https://github.com/microsoft/nni) - a toolkit for automate machine learning lifecycle, including feature engineering, neural architecture search, model compression and hyper-parameter tuning.
 
-# Tensor computing
+## Tensor computing
 
 * [Hummingbird](https://github.com/microsoft/hummingbird) - a library for compiling trained traditional ML models into tensor computations. Hummingbird allows users to seamlessly leverage neural network frameworks (such as [PyTorch](https://pytorch.org/)) to accelerate traditional ML models
 
-# Automatic differentiation
+## Automatic differentiation
 
 * [JAX](https://github.com/google/jax) - JAX is [Autograd](https://github.com/hips/autograd) and [XLA](https://www.tensorflow.org/xla), brought together for high-performance machine learning research. With its updated version of [Autograd](https://github.com/hips/autograd), JAX can automatically differentiate native Python and NumPy functions. It can differentiate through loops, branches, recursion, and closures, and it can take derivatives of derivatives of derivatives. It supports reverse-mode differentiation (a.k.a. backpropagation) via grad as well as forward-mode differentiation, and the two can be composed arbitrarily to any order. What’s new is that JAX uses [XLA](https://www.tensorflow.org/xla) to compile and run your NumPy programs on GPUs and TPUs. 
 
