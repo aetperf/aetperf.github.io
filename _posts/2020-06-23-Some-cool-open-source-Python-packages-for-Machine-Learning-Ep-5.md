@@ -145,7 +145,7 @@ _
     - Covariance matrix adaptation,
     - Population control methods for noise management,
     - Particle swarm optimization.  
-    
+
 
 
 * [HiPlot](https://github.com/facebookresearch/hiplot) - a lightweight interactive visualization tool to help AI researchers discover correlations and patterns in high-dimensional data using parallel plots and other graphical ways to represent information.
@@ -165,6 +165,7 @@ _
 ## Open science collaboration
 
 * [OpenML-Python](https://github.com/openml/openml-python) - an interface for [OpenML](https://www.openml.org/), an online platform for open science collaboration in machine learning. It can be used to download or upload OpenML data such as datasets and machine learning experiment results.
+
 
 # NOT PYTHON, but with Python support
 
