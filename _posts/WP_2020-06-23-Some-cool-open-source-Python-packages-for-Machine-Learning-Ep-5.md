@@ -2,12 +2,6 @@
   <img width="750" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg/1920px-Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg" alt="Moebius">    
 </p>
 
-*Image credit: NASA/JPL-Caltech and The Hubble Heritage Team (STScI/AURA)*
-
-
-_  
-
-
 There is a very rich ecosystem of Python libraries related to ML. Here is a list of some “active”, open-source packages that may be useful for ML day-to-day activities.
 
 Previous post list:
@@ -16,6 +10,8 @@ Previous post list:
 * [Some cool open-source Python packages for Machine Learning EP 2](https://www.architecture-performance.fr/ap_blog/some-cool-open-source-python-packages-for-machine-learning-ep-2/) (2019/08/08)
 * [Some cool open-source Python packages for Machine Learning EP 3](https://www.architecture-performance.fr/ap_blog/some-cool-open-source-python-packages-for-machine-learning-ep-3/) (2019/10/23)
 * [Some cool open-source Python packages for Machine Learning EP 4](https://www.architecture-performance.fr/ap_blog/some-cool-open-source-python-packages-for-machine-learning-ep-4/) (2020/01/08)
+
+*Image credit: NASA/JPL-Caltech and The Hubble Heritage Team (STScI/AURA)*
 
 (☞ﾟヮﾟ)☞
 
