@@ -1,5 +1,6 @@
 
-GeoTIFF [data](https://ngdc.noaa.gov/eog/dmsp/download_radcal.html) from NOAA (single GeoTIFF: F16_20100111-20110731_rad_v4.avg_vis.tif):
+
+I this post, we are going to plot some satellite GeoTIFF data in Python. The [data](https://ngdc.noaa.gov/eog/dmsp/download_radcal.html) is provided by NOAA (single GeoTIFF: F16_20100111-20110731_rad_v4.avg_vis.tif):
 
 > The Operational Linescan System (OLS) flown on the Defense Meteorological Satellite Program (DMSP) satellites, has a unique capability to record low light imaging data at night worldwide. These data are archived at the National Oceanic and Atmospheric Administration (NOAA) National Geophysical Data Center (NGDC).
  
