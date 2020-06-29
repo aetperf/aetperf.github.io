@@ -38,7 +38,7 @@ minima:
 # - about.html
 
 # Build settings
-theme: minima
+theme: jekyll-theme-cayman
 
 plugins:
  - jekyll-feed
