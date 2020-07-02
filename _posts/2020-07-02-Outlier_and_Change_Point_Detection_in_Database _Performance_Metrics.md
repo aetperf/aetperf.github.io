@@ -558,7 +558,7 @@ df = extract_features(ts)
 
 This aim of this post was to quickly explore ways to detect performance drift in the executio time of large and complex daily SQL queries. The approach was to remove noise and jumps in the data using outlier detection, change point detection and piecewise linear approximation. Then a weighted average of the slope is computed on the last 6 months to result in a single coefficient for each time serie. We could imagine to track this coefficient on a monthly basis.
 
-However this approach strongly depends a two parameters:
+However this approach strongly depends on two parameters:
 - the threshold value for the outlier detection method,
 - the penalty coefficient fot the change point detection method.
 
