@@ -261,7 +261,11 @@ We are looking for an outlier detection method that does not depend on the numbe
 y = \left\{ y_i \right\}
 \end{equation}
 
-The median and MAD are denoted as follows: $\tilde{y} = median \left\{ y_i \right\}$, $MAD(y) = median \left\{ | y_i - \tilde{y} | \right\}$
+The median and MAD are denoted as follows: 
+
+$$\tilde{y} = median \left\{ y_i \right\}$$
+
+$$MAD(y) = median \left\{ | y_i - \tilde{y} | \right\}$$
 
 Then we can define the [modified Z-score](https://stats.stackexchange.com/questions/123895/mad-formula-for-outlier-detection/274944#274944):
 
