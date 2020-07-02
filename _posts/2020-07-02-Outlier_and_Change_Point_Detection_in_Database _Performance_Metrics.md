@@ -257,9 +257,9 @@ We are interested at the global trend. Let's start by removing outliers.
 
 We are looking for an outlier detection method that does not depend on the number of observations, but also that is not much affected by outliers. We are going to use a rolling-window method, on which we compute the median, and the Median Absolute Deviation (MAD). If we have a size $n$ window:
 
-$$ y = { y_i }_{i=1}^n $$
+$$ y = \left\{ y_i \right\} $$
 
-The median and MAD are denoted as follows: $\tilde{y} = median { y_i }$, $MAD(y) = median { | y_i - \tilde{y} | }$
+The median and MAD are denoted as follows: $\tilde{y} = median \left\{ y_i \right\}$, $MAD(y) = median \left\{ | y_i - \tilde{y} | \right\}$
 
 Then we can define the [modified Z-score](https://stats.stackexchange.com/questions/123895/mad-formula-for-outlier-detection/274944#274944):
 
