@@ -222,7 +222,7 @@ _ = ax.set(
 ![png](/img/2020-07-02_01/output_14_0.png)
 
 
-Also, they do exhibit a lot of noise, jumps and more general changes of distribution. We can look at a 2 examples using this plotting function:
+Also, they do exhibit a lot of noise, jumps and more general changes of distribution. We can look at 2 examples using this plotting function:
 
 
 ```python
@@ -257,9 +257,9 @@ We are interested at the global trend. Let's start by removing outliers.
 
 We are looking for an outlier detection method that does not depend on the number of observations, but also that is not much affected by outliers. We are going to use a rolling-window method, on which we compute the median, and the Median Absolute Deviation (MAD). If we have a size $n$ window:
 
-$$y = \left\{ y_i \right\}_{i=1}^n$$
+$$ y = { y_i }_{i=1}^n $$
 
-The median and MAD are denoted as follows: $\tilde{y} = median \left\{ y_i \right\}$, $MAD(y) = median \left\{ | y_i - \tilde{y} | \right\}$
+The median and MAD are denoted as follows: $\tilde{y} = median { y_i }$, $MAD(y) = median { | y_i - \tilde{y} | }$
 
 Then we can define the [modified Z-score](https://stats.stackexchange.com/questions/123895/mad-formula-for-outlier-detection/274944#274944):
 
