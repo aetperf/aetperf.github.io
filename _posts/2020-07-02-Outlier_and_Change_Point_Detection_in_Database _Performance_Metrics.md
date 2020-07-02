@@ -118,42 +118,13 @@ traces.tail(2)
       <th>c_00</th>
       <th>c_01</th>
       <th>c_02</th>
-      <th>c_03</th>
-      <th>c_04</th>
-      <th>c_05</th>
-      <th>c_06</th>
-      <th>c_07</th>
-      <th>c_08</th>
-      <th>c_09</th>
       <th>...</th>
-      <th>c_44</th>
-      <th>c_45</th>
-      <th>c_46</th>
-      <th>c_47</th>
-      <th>c_48</th>
-      <th>c_49</th>
-      <th>c_50</th>
       <th>c_51</th>
       <th>c_52</th>
       <th>c_53</th>
     </tr>
     <tr>
       <th>start</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -168,21 +139,7 @@ traces.tail(2)
       <td>314.0</td>
       <td>231.0</td>
       <td>322.0</td>
-      <td>237.0</td>
-      <td>305.0</td>
-      <td>4460.0</td>
-      <td>321.0</td>
-      <td>826.0</td>
-      <td>9286.0</td>
-      <td>854.0</td>
       <td>...</td>
-      <td>5329.0</td>
-      <td>2092.0</td>
-      <td>481.0</td>
-      <td>599.0</td>
-      <td>184.0</td>
-      <td>779.0</td>
-      <td>377.0</td>
       <td>2062.0</td>
       <td>1631.0</td>
       <td>75.0</td>
@@ -192,21 +149,7 @@ traces.tail(2)
       <td>311.0</td>
       <td>239.0</td>
       <td>170.0</td>
-      <td>376.0</td>
-      <td>323.0</td>
-      <td>4948.0</td>
-      <td>321.0</td>
-      <td>929.0</td>
-      <td>9104.0</td>
-      <td>856.0</td>
       <td>...</td>
-      <td>5737.0</td>
-      <td>2461.0</td>
-      <td>562.0</td>
-      <td>590.0</td>
-      <td>170.0</td>
-      <td>793.0</td>
-      <td>362.0</td>
       <td>2157.0</td>
       <td>1387.0</td>
       <td>74.0</td>
