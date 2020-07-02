@@ -8,7 +8,7 @@ tags: Python time series SQL Database
 
 In this post, we are interested in detecting **performance drift** of large and complex daily SQL queries, which usually take from several minutes to several hours to complete. The data correspond to more than 3 years of query execution performance measurements from SQL databases provided by a single organization, for around 50 queries, yielding the same number of time series after pre-processing.
 
-Each time serie is assumed to be independent from the others, although there might be some interactions that we could be studied with some causal discovery algorithms for example. However our choice is to only deal sequentially with univariate time series. These series have a daily frequency and are always strictly positive, due to the fact that they store some elapsed time.
+Each time serie is assumed to be independent from the others, although there might be some interactions that could be studied with some causal discovery algorithms for example. However our choice is to only deal sequentially as univariate time series. These series have a daily frequency and are always strictly positive, due to the fact that they store some elapsed time.
 
 The aim of this post is to detect decays in query performance, time-wise. The difficulty is that the underlying data, stored in the databases, is evolving during the time span of the study, regarding table size and structure. So does the queries that may be improved from time to time. Also, the background load of database servers where queries are executed may vary. 
 
