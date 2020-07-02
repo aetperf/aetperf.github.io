@@ -131,6 +131,7 @@ traces.tail(2)
       <th></th>
       <th></th>
       <th></th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -158,8 +159,6 @@ traces.tail(2)
 </table>
 <p>2 rows × 54 columns</p>
 </div>
-
-
 
 
 ```python
