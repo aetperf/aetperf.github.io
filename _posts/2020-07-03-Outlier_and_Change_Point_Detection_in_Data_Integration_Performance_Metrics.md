@@ -12,7 +12,7 @@ The data correspond to more than 3 years of time performance measurements provid
 
 Each time serie is assumed to be independent from the others, although there might be some interactions that could be studied with some causal discovery algorithms for example. However our choice is to deal sequentially with univariate time serie problems. These series have a daily frequency and are always strictly positive, due to the fact that they store some elapsed time.
 
-The aim of this post is to detect a potential decay in the time-wise performance of a complex and heavy process. The difficulty is that the underlying data, stored in databases, is evolving during the time span of the study, regarding table size and structure. So does the pipeline that may be adapted and improved from time to time. Also, the background load of database servers or networks may vary. 
+The aim of this post is to detect a potential decay in the time-wise performance of a complex and heavy process. The difficulty is that the underlying data, stored in databases, is evolving during the time span of the study. So does the pipeline that may be adapted and improved from time to time. Also, the background load of database servers or networks may vary. 
 
 Here are the steps of the analysis:
 - clean/prepare the data
