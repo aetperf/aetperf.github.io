@@ -1,5 +1,5 @@
 ---
-title: Outlier and Change Point Detection in Database Performance Metrics
+title: Outlier and Change Point Detection in Data Integration Perfmormance Metrics
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton
