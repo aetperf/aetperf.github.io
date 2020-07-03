@@ -1,5 +1,5 @@
 ---
-title: Outlier and Change Point Detection in Data integration Performance Metrics
+title: Outlier and Change Point Detection in Data Integration Performance Metrics
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton
@@ -183,7 +183,7 @@ _ = ax.set(title="Data Completion", xlabel="Columns", ylabel="Rows")
 ```
 
 
-![png](/img/2020-07-02_01/output_9_0.png)
+![png](/img/2020-07-03_01/output_9_0.png)
 
 
 We are going to keep the missing values, so we need to use some methods that can handle `NaN` values.
@@ -201,7 +201,7 @@ _ = ax.set(
 ```
 
 
-![png](/img/2020-07-02_01/output_12_0.png)
+![png](/img/2020-07-03_01/output_12_0.png)
 
 
 Actually, we can observe that these time series are fairly heterogeneous by plotting all the kernel density estimations:
@@ -223,7 +223,7 @@ _ = ax.set(
 ```
 
 
-![png](/img/2020-07-02_01/output_14_0.png)
+![png](/img/2020-07-03_01/output_14_0.png)
 
 
 Also, they do exhibit a lot of noise, jumps and more general changes of distribution. We can look at 2 examples using this plotting function:
@@ -243,7 +243,7 @@ plot_ts(3, traces)
 ```
 
 
-![png](/img/2020-07-02_01/output_17_0.png)
+![png](/img/2020-07-03_01/output_17_0.png)
 
 
 
@@ -252,7 +252,7 @@ plot_ts(21, traces)
 ```
 
 
-![png](/img/2020-07-02_01/output_18_0.png)
+![png](/img/2020-07-03_01/output_18_0.png)
 
 
 We are interested at the global trend. Let's start by removing outliers.
@@ -343,7 +343,7 @@ plot_outliers(ts, outliers)
 ```
 
 
-![png](/img/2020-07-02_01/output_24_0.png)
+![png](/img/2020-07-03_01/output_24_0.png)
 
 
 
@@ -354,7 +354,7 @@ plot_outliers(ts, outliers)
 ```
 
 
-![png](/img/2020-07-02_01/output_25_0.png)
+![png](/img/2020-07-03_01/output_25_0.png)
 
 
 Now we actually remove all suspected outliers in each serie:
@@ -410,7 +410,7 @@ _ = plt.ylabel("Elapsed time (s)")
 ```
 
 
-![png](/img/2020-07-02_01/output_33_0.png)
+![png](/img/2020-07-03_01/output_33_0.png)
 
 
 
@@ -424,7 +424,7 @@ _ = plt.ylabel("Elapsed time (s)")
 ```
 
 
-![png](/img/2020-07-02_01/output_34_0.png)
+![png](/img/2020-07-03_01/output_34_0.png)
 
 
 ## Feature extraction on homogeneous time intervals
@@ -478,7 +478,7 @@ _ = extract_features(ts)
 ```
 
 
-![png](/img/2020-07-02_01/output_37_0.png)
+![png](/img/2020-07-03_01/output_37_0.png)
 
 
 
@@ -488,7 +488,7 @@ _ = extract_features(ts)
 ```
 
 
-![png](/img/2020-07-02_01/output_38_0.png)
+![png](/img/2020-07-03_01/output_38_0.png)
 
 
 So imagine that we would like to detect if a process has been recently taking more and more time to complete. We start by computing a monthly-averaged value of the slope for the last 6 months, and then compute another average of these slope values with non-uniform weights that increase with time (the older, the smaller the weight). We finally get a unique value representing the increase of elapsed time during the most recent months, without taking account outliers and jumps. This slope coefficient is computed for each time serie with `compute_slope_coefs`:
@@ -535,7 +535,7 @@ _ = ax.set(
 ```
 
 
-![png](/img/2020-07-02_01/output_43_0.png)
+![png](/img/2020-07-03_01/output_43_0.png)
 
 
 Well we already plotted `c_21` and could notice that it was increasing in the last part.
@@ -560,7 +560,7 @@ _ = ax.set(
 ```
 
 
-![png](/img/2020-07-02_01/output_46_0.png)
+![png](/img/2020-07-03_01/output_46_0.png)
 
 
 
@@ -570,7 +570,7 @@ df = extract_features(ts)
 ```
 
 
-![png](/img/2020-07-02_01/output_47_0.png)
+![png](/img/2020-07-03_01/output_47_0.png)
 
 
 ## Final remarks
