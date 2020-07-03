@@ -1,16 +1,20 @@
 ---
-title: Outlier and Change Point Detection in Data Integration Perfmormance Metrics
+title: Outlier and Change Point Detection in Data integration Performance Metrics
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton
-tags: Python time series SQL Database
+tags: Python Time series Outlier Change point Data integration ETL
 ---
 
-In this post, we are interested in detecting **performance drift** of large and complex daily SQL queries, which usually take from several minutes to several hours to complete. The data correspond to more than 3 years of query execution performance measurements from SQL databases provided by a single organization, for around 50 distinct queries, yielding the same number of time series after pre-processing.
+[Data integration](https://en.wikipedia.org/wiki/Data_integration) involves combining data residing in different sources, and providing users with a unified view of them.
+
+In this post, we are interested in detecting **performance drift** of large and complex daily data integration processes through ETL pipelines, which usually take from several minutes to several hours to complete.
+
+The data correspond to more than 3 years of time performance measurements provided by a single organization, for around 50 distinct data integration processes performed with [SAP Data Services](https://www.sap.com/products/data-services.html), yielding the same number of time series after pre-processing.
 
 Each time serie is assumed to be independent from the others, although there might be some interactions that could be studied with some causal discovery algorithms for example. However our choice is to deal sequentially with univariate time serie problems. These series have a daily frequency and are always strictly positive, due to the fact that they store some elapsed time.
 
-The aim of this post is to detect decays in query performance, time-wise. The difficulty is that the underlying data, stored in the databases, is evolving during the time span of the study, regarding table size and structure. So does the queries that may be improved from time to time. Also, the background load of database servers where queries are executed may vary. 
+The aim of this post is to detect a potential decay in the time-wise performance of a complex and heavy process. The difficulty is that the underlying data, stored in the databases, is evolving during the time span of the study, regarding table size and structure. So does the pipeline that may be adapted and improved from time to time. Also, the background load of database servers or networks may vary. 
 
 Here are the steps of the analysis:
 - clean/prepare the data
@@ -18,7 +22,7 @@ Here are the steps of the analysis:
 - detect change points
 - extract features on homogeneous time intervals
 
-As a result, we expect to get a single indicator of performance drift per SQL query.
+As a result, we expect to get a single indicator of performance drift per data integration process.
 
 ## Imports
 
@@ -328,7 +332,7 @@ def plot_outliers(ts, outliers, figsize=FS):
         ax = ts.plot(ax=ax, style=".", c="#325160", ms=5, alpha=0.75, grid=True)
         ax.autoscale(enable=True, axis="x", tight=True)
         _ = ax.set_ylim(0,)
-        ax.set(title=ts.name + " with outliers", xlabel="Date")
+        ax.set(title=ts.name + " with outliers", xlabel="Date", ylabel="Elapsed time (s)")
 ```
 
 
@@ -384,7 +388,7 @@ Now we can focus on the change point detection problem. We are going to use [rup
 
 > Change point detection is the task of finding changes in the underlying model of a signal or time series
 
-Here we are dealing an unknown number of break points, so a penalty is added to the change point problem with a fixed number of change points $K$. Although `ruptures` can deal with multivariate signals, we apply the detection algorithms to each time serie separately.
+Here we are dealing with an unknown number of break points, so a penalty is added to the change point problem with a fixed number of change points $K$. Although `ruptures` can deal with multivariate signals, we apply the detection algorithms to each time serie separately.
 
 The selected search method is the Pruned Exact Linear Time (PELT) method which is optimal. The cost function is a Gaussian kernel-based mapping. The default penalty function in `ruptures` is linear, from what we understand. Here is the function that computes and return the breakpoint indices:
 
@@ -402,6 +406,7 @@ signal = ts.dropna().values
 bkps = detect_change_points(signal)
 fig, axarr = display(signal, bkps, figsize=FS)
 _ = plt.title(ts.name + " with break points")
+_ = plt.ylabel("Elapsed time (s)")
 ```
 
 
@@ -415,6 +420,7 @@ signal = ts.dropna().values
 bkps = detect_change_points(signal)
 display(signal, bkps, figsize=FS)
 _ = plt.title(ts.name + " with break points")
+_ = plt.ylabel("Elapsed time (s)")
 ```
 
 
@@ -457,7 +463,10 @@ def extract_features(ts_in, plot=True):
         ax = ts.plot(figsize=FS, style=".", c="#F1D05E", ms=15, alpha=0.75, grid=True)
         _ = df.piecelin.plot(ax=ax, c="#325160", grid=True)
         _ = ax.set_ylim(0,)
-        _ = ax.set(xlabel="Date", title=name + " with piecewise linear approx.")
+        _ = ax.set(
+            xlabel="Date", 
+            title=name + " with piecewise linear approx.", 
+            ylabel="Elapsed time (s)"),
 
     return df
 ```
@@ -482,7 +491,7 @@ _ = extract_features(ts)
 ![png](/img/2020-07-02_01/output_38_0.png)
 
 
-So imagine that we would like to detect if a queries is recently taken more and more time to complete. We start by computing a monthly-averaged value of the slope for the 6 more recent months, and then compute another average of theses monthly slope values with non-uniform weights that increase with time (the older, the smaller the weight). We finally get a unique value representing the average monthly increase of elapsed time during the most recent months, without taking account outliers and jumps. This slope coefficient is computed for each time serie with `compute_slope_coefs`:
+So imagine that we would like to detect if a process has been recently taking more and more time to complete. We start by computing a monthly-averaged value of the slope for the last 6 months, and then compute another average of these slope values with non-uniform weights that increase with time (the older, the smaller the weight). We finally get a unique value representing the increase of elapsed time during the most recent months, without taking account outliers and jumps. This slope coefficient is computed for each time serie with `compute_slope_coefs`:
 
 
 ```python
@@ -518,6 +527,11 @@ Let's plot the 20 largest slope coefficients:
 ax = sc.sort_values(by="slope_coef", ascending=False)[:20].plot.bar(
     figsize=FS, grid=True, alpha=0.5, legend=False
 )
+_ = ax.set(
+    title="Processes with largest slope coefficient in the last 6 months",
+    xlabel="Process",
+    ylabel="Time delta per day (s/day)",
+)
 ```
 
 
@@ -538,6 +552,11 @@ sc = compute_slope_coefs(traces[:"2018-07"])
 ax = sc.sort_values(by="slope_coef", ascending=False)[:20].plot.bar(
     figsize=FS, grid=True, alpha=0.5, legend=False
 )
+_ = ax.set(
+    title="Processes with largest slope coefficient in the last 6 months",
+    xlabel="Process",
+    ylabel="Time delta per day (s/day)",
+)
 ```
 
 
@@ -556,13 +575,14 @@ df = extract_features(ts)
 
 ## Final remarks
 
-This aim of this post was to quickly explore ways to detect performance drift in the executio time of large and complex daily SQL queries. The approach was to remove noise and jumps in the data using outlier detection, change point detection and piecewise linear approximation. Then a weighted average of the slope is computed on the last 6 months to result in a single coefficient for each time serie. We could imagine to track this coefficient on a monthly basis.
+This aim of this post was to quickly explore ways to detect performance drift in the execution time of large and complex data integration processes. The approach was to remove noise and jumps in the time series data using outlier detection, change point detection and piecewise linear approximation. Then a weighted average of the slope is computed on the last 6 months to result in a single coefficient for each time serie. We could imagine to track this coefficient on a monthly basis.
 
 However this approach strongly depends on two parameters:
 - the threshold value for the outlier detection method,
 - the penalty coefficient fot the change point detection method.
 
 [1] B. Iglewicz and D. Hoaglin, *Volume 16: How to Detect and Handle Outliers*, The ASQC Basic References in Quality Control: Statistical Techniques, Edward F. Mykytka, Ph.D., Editor, 1993.  
+
 [2] C. Truong, L. Oudre and N. Vayatis, *Selective review of offline change point detection methods*, Signal Processing, 167:107299, 2020.  
 
 
