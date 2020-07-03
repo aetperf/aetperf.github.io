@@ -489,7 +489,7 @@ _ = extract_features(ts)
 ![png](/img/2020-07-03_01/output_38_0.png)
 
 
-So imagine that we would like to detect if a process has been recently taking more and more time to complete. We start by computing a monthly-averaged value of the slope for the last 6 months, and then compute another average of these slope values with non-uniform weights that increase with time (the older, the smaller the weight). We finally get a unique value representing the increase of elapsed time during the most recent months, without taking account outliers and jumps. This slope coefficient is computed for each time serie with `compute_slope_coefs`:
+So we would like to detect if a process has been recently taking more and more time to complete. We start by computing a monthly-averaged value of the slope for the last 6 months, and then compute another average of these slope values with non-uniform weights that increase with time (the older, the smaller the weight). We finally get a unique value representing the increase of elapsed time during the most recent months, without taking account outliers and jumps. This slope coefficient is computed for each time serie with `compute_slope_coefs`:
 
 
 ```python
