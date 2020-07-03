@@ -538,7 +538,7 @@ _ = ax.set(
 
 Well we already plotted `c_21` and could notice that it was increasing in the last part.
 
-Let's study the slope coefficients of the months preceeding "2018-07":
+Let's study the slope coefficients of the months preceding "2018-07":
 
 
 ```python
