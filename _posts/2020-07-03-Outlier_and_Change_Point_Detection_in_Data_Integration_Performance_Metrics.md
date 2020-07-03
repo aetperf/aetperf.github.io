@@ -8,7 +8,7 @@ tags: Python Time series Outlier Change point Data integration ETL
 
 [Data integration](https://en.wikipedia.org/wiki/Data_integration) involves combining data residing in different sources, and providing users with a unified view of them.
 
-In this post, we are interested in detecting **performance drift** of large and complex daily data integration processes through ETL pipelines, which usually take from several minutes to several hours to complete.
+In this post, we are interested in detecting **performance drift** of large and complex daily data integration processes performed through ETL pipelines, which usually take from several minutes to several hours to complete.
 
 The data correspond to more than 3 years of time performance measurements provided by a single organization, for around 50 distinct data integration processes performed with [SAP Data Services](https://www.sap.com/products/data-services.html), yielding the same number of time series after pre-processing.
 
