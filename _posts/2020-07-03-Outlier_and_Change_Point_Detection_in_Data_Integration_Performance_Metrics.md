@@ -427,7 +427,7 @@ _ = plt.ylabel("Elapsed time (s)")
 
 ## Feature extraction on homogeneous time intervals
 
-Now that we have removed some outliers and segmented the serie, we are interested computing the slope of each homegeneous segment, to finally compute a slope coefficient, which would indicate if the elpsed time is reather increasing or not. Let's start with the slope exctraction:
+Now that we have removed some outliers and segmented the serie, we are interested computing the slope of each homegeneous segment, to finally compute a slope coefficient, which would indicate if the elapsed time is reather increasing or not. Let's start with the slope exctraction:
 
 
 ```python
