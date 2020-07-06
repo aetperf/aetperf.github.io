@@ -1,10 +1,3 @@
----
-title: Outlier and Change Point Detection in Data Integration Performance Metrics
-layout: post
-comments: true
-author: François Pacull & Romain Ferraton
-tags: Python Time series Outlier Change point Data integration ETL
----
 
 [Data integration](https://en.wikipedia.org/wiki/Data_integration) involves combining data residing in different sources, and providing users with a unified view of them. In this post, we are interested in detecting **performance drift** of large and complex daily data integration processes performed through ETL pipelines, which usually take from several minutes to several hours to complete.
 
