@@ -7,7 +7,7 @@ tags: Python time series temperature AROME web services météo france
 ---
 
 
-Since a "small" heat wave is coming, I would like to get some temperature forecast in my neighborhood for the next hours, from my [JupyterLab](https://github.com/jupyterlab/jupyterlab) notebook. 
+Since a "small" heat wave is coming, I would like to get some temperature forecast for the next hours in my neighborhood, from my [JupyterLab](https://github.com/jupyterlab/jupyterlab) notebook. 
 
 We are going to fetch the results from the Météo-France AROME 0.01 model. Here is the AROME item listed in the Météo-France web service documentation: 
 
