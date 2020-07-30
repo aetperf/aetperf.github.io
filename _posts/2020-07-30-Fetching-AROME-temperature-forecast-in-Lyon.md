@@ -1,5 +1,5 @@
 ---
-title: Fetching AROME forecast in Lyon
+title: Fetching AROME temperature forecast in Lyon
 layout: post
 comments: true
 author: François Pacull
@@ -13,7 +13,7 @@ Since a "small" heat wave is coming, I would like to get some temperature foreca
 
 The weather forecast data are under an [ETALAB](https://www.etalab.gouv.fr/licence-ouverte-open-licence) open license. Note that an access request must be made to support.inspire@meteo.fr in order to get some credentials for the Météo-France web services.
 
-We are going to use the [PyMeteoFr](https://github.com/aetperf/pymeteofr) package, which is a Python wrapper of the Météo-France web services. Note that this package is young and did not reach yer a stable level.
+We are going to use the [PyMeteoFr](https://github.com/aetperf/pymeteofr) package, which is a Python wrapper of the Météo-France web services. Note that this package is young and did not reach yet a stable level.
 
 <p align="center">
   <img width="600" src="/img/2020-07-30_01/Homer.gif" alt="Homer">
@@ -30,8 +30,6 @@ import pytz
 from pymeteofr import Fetcher
 
 %load_ext lab_black
-
-FS = (18, 7)  # figsize
 
 TOKEN = "__xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx__"  # API key
 ```
@@ -243,7 +241,7 @@ forecast.head(2)
 
 
 ```python
-ax = forecast.plot(style="d-", figsize=FS, legend=False)
+ax = forecast.plot(style="d-", figsize=(18, 7), legend=False)
 ax.grid()
 ax.autoscale(enable=True, axis="x", tight=True)
 _ = ax.set(title="Temperature forecast in Lyon - AROME 0.01", ylabel="Temperature (°C)")
