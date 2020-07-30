@@ -31,7 +31,7 @@ from pymeteofr import Fetcher
 
 %load_ext lab_black
 
-TOKEN = "__xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx__"  # API key
+TOKEN = "__YOUR_TOKEN_HERE__"  # API key
 ```
 
 ## Fetching the temperature forecast
