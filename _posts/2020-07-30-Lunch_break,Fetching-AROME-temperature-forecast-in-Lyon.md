@@ -129,7 +129,9 @@ forecast = fetcher.series.copy(deep=True)
     -- GetCoverage request 2020-07-30T11:00:00Z --
     -- GetCoverage request 2020-07-30T12:00:00Z --
     -- GetCoverage request 2020-07-30T13:00:00Z --  
+
 ...  
+
     -- GetCoverage request 2020-07-31T19:00:00Z --
     -- GetCoverage request 2020-07-31T20:00:00Z --
     -- GetCoverage request 2020-07-31T21:00:00Z --
