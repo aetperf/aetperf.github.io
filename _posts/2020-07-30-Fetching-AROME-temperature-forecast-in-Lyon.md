@@ -7,7 +7,7 @@ tags: Python time series temperature AROME web services météo france
 ---
 
 
-Since a "small" heat wave is coming, I would like to get some temperature forecast in my neighborhood for the next hours. We are going to fetch the results from the Météo-France AROME 0.01 model. Here is the AROME item listed in the Météo-France web service documentation: 
+Since a "small" heat wave is coming, I would like to get some temperature forecast in my neighborhood for the next hours, in my [JupyterLab](https://github.com/jupyterlab/jupyterlab) notebook. We are going to fetch the results from the Météo-France AROME 0.01 model. Here is the AROME item listed in the Météo-France web service documentation: 
 
 > Results from the French high resolution atmospheric forecast model (called AROME) on a grid with a resolution of 0°01 or 0°025 for France. Data is updated every 3 hours and available up to 42 hours, with a temporal resolution of 1 hour.
 
