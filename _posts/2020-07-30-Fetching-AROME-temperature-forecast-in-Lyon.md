@@ -7,11 +7,11 @@ tags: Python time series temperature AROME web services météo france
 ---
 
 
-Since a "small" heat wave is coming, I would like to get some temperature forecast in my neighborhood for the next hours. We are going to fetch the results from the Météo-France AROME 0.01 model. Here is the AROME item listed in the  Météo-France web service documentation: 
+Since a "small" heat wave is coming, I would like to get some temperature forecast in my neighborhood for the next hours. We are going to fetch the results from the Météo-France AROME 0.01 model. Here is the AROME item listed in the Météo-France web service documentation: 
 
 > Results from the French high resolution atmospheric forecast model (called AROME) on a grid with a resolution of 0°01 or 0°025 for France. Data is updated every 3 hours and available up to 42 hours, with a temporal resolution of 1 hour.
 
-The weather forecast data are under an [ETALAB](https://www.etalab.gouv.fr/licence-ouverte-open-licence) open license. Note that an access request must be made to support.inspire@meteo.fr in order to get some credentials for the Météo-France web services.
+The weather forecast data are under an [ETALAB](https://www.etalab.gouv.fr/licence-ouverte-open-licence) open license. Note that an access request must be made to support.inspire@meteo.fr in order to get some credentials for these web services.
 
 We are going to use the [PyMeteoFr](https://github.com/aetperf/pymeteofr) package, which is a Python wrapper of the Météo-France web services. Note that this package is young and did not reach yet a stable level.
 
