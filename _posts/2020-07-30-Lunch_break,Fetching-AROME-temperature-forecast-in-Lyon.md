@@ -15,7 +15,7 @@ We are going to fetch the results from the Météo-France AROME 0.01 model. Here
 
 The weather forecast data are under an [ETALAB](https://www.etalab.gouv.fr/licence-ouverte-open-licence) open license. Note that an access request must be made to support.inspire@meteo.fr in order to get some credentials for these web services.
 
-We are going to use the [PyMeteoFr](https://github.com/aetperf/pymeteofr) package, which is a Python wrapper of the Météo-France web services. Note that this package is young and hasn't reached yet a stable level.
+We are going to use the [PyMeteoFr](https://github.com/aetperf/pymeteofr) package, which is a Python wrapper of the Météo-France web services, despite that this package is young and hasn't reached a stable level yet.
 
 <p align="center">
   <img width="600" src="/img/2020-07-30_01/Homer.gif" alt="Homer">
