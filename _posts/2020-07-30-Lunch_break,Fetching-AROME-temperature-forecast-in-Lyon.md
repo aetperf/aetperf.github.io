@@ -29,8 +29,6 @@ import pytz
 
 from pymeteofr import Fetcher
 
-%load_ext lab_black
-
 TOKEN = "__YOUR_TOKEN_HERE__"  # API key
 ```
 
