@@ -344,7 +344,7 @@ print(f'min {temp_min} / max {temp_max}')
 
 ## Get a background map
 
-We would like to plot the temperature as filled contours on top of an administrative map, so that the different borders can be seen. The borders are loaded with [GeoPandas](http://geopandas.org/) from a shapefile found on the [naturalearthdata.com](naturalearthdata.com) web site. However these are all the countries in the world and we are only interested in a bounding box around France defined by the previous spatial grid. 
+We would like to plot the temperature as filled contours on top of an administrative map, so that the different borders can be seen. The borders are loaded with [GeoPandas](http://geopandas.org/) from a shapefile found on the [naturalearthdata.com](http://www.naturalearthdata.com) web site. However these are all the countries in the world and we are only interested in a bounding box around France defined by the previous spatial grid. 
 
 ```python
 # https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-countries/
