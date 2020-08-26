@@ -8,6 +8,10 @@ tags: Python Bokeh visualization Ridge
 
 [Bokeh](https://bokeh.org/) is a great visualization Python library. In this short post, we are going to use it to create a ridge plot.
 
+<p align="center">
+  <img width="750" src="/img/2020-08-26_01/closeup.jpg" alt="closeup">
+</p>
+
 For that purpose, we use the [COVID-19 death data](https://github.com/CSSEGISandData/COVID-19) from Johns Hopkins University, and plot the daily normalized death rate (100000 * number of daily deaths / population) per EU(+UK) country.
 
 ## Imports
@@ -103,7 +107,7 @@ deaths.head(2)
 
 
 
-Also load a list of EU countries into a list:
+Also load a list of EU countries:
 
 
 ```python
@@ -134,7 +138,7 @@ deaths_eu = deaths.loc[deaths["Country/Region"].isin(countries)].copy(deep=True)
 
 # cleanup
 deaths_eu.drop(["Province/State", "Lat", "Long"], axis=1, inplace=True)
-deaths_eu = deaths_eu.groupby("Country/Region").sum()  # sum with overseas territories
+deaths_eu = deaths_eu.groupby("Country/Region").sum()  # with overseas territories
 deaths_eu.index.name = "Country"
 assert len(deaths_eu) == n_countries
 deaths_eu.head(2)
@@ -266,7 +270,7 @@ pop_eu.head(2)
 
 
 
-This population data dates back to 2016, but it is recent enough for this blog post...
+This population data date back to 2016, but it is recent enough for this blog post...
 
 We compute the death density as the number of deaths per 100000 inhabitants for each country:
 
@@ -546,6 +550,8 @@ Finally we can create the ridge plot.
 
 ## Plot
 
+Most of the following code comes from Bokeh's documentation:
+https://docs.bokeh.org/en/latest/docs/gallery/ridgeplot.html
 
 ```python
 def ridge(category, data, scale=5):
