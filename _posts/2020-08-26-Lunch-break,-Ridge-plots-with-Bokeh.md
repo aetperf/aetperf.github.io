@@ -550,8 +550,7 @@ Finally we can create the ridge plot.
 
 ## Plot
 
-Most of the following code comes from Bokeh's documentation:
-https://docs.bokeh.org/en/latest/docs/gallery/ridgeplot.html
+Most of the following code comes from Bokeh's [documentation](https://docs.bokeh.org/en/latest/docs/gallery/ridgeplot.html).
 
 ```python
 def ridge(category, data, scale=5):
