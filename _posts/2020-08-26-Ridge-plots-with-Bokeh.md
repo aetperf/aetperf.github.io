@@ -1,4 +1,3 @@
-# Ridge plots with Bokeh
 ---
 title: Ridge plots with Bokeh
 layout: post
@@ -73,9 +72,6 @@ deaths.head(2)
       <th>Province/State</th>
       <th>Country/Region</th>
       <th>Lat</th>
-      <th>Long</th>
-      <th>1/22/20</th>
-      <th>1/23/20</th>
       <th>...</th>
       <th>8/24/20</th>
       <th>8/25/20</th>
@@ -87,9 +83,6 @@ deaths.head(2)
       <td>NaN</td>
       <td>Afghanistan</td>
       <td>33.93911</td>
-      <td>67.709953</td>
-      <td>0</td>
-      <td>0</td>
       <td>...</td>
       <td>1389</td>
       <td>1397</td>
@@ -99,9 +92,6 @@ deaths.head(2)
       <td>NaN</td>
       <td>Albania</td>
       <td>41.15330</td>
-      <td>20.168300</td>
-      <td>0</td>
-      <td>0</td>
       <td>...</td>
       <td>254</td>
       <td>259</td>
@@ -610,7 +600,7 @@ show(p)
 
 
 <p align="center">
-  <img width="750" src="/img/2020-08-26_01/output_01.jg" alt="Ridge plot">
+  <img width="750" src="/img/2020-08-26_01/output_01.jpg" alt="Ridge plot">
 </p>
 
 
