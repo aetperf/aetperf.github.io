@@ -1,5 +1,5 @@
 ---
-title: Lunch break, Ridge plots with Bokeh
+title: Lunch break, ridge plots with Bokeh
 layout: post
 comments: true
 author: François Pacull
