@@ -15,7 +15,7 @@ In this post, we are going to deal with single-objective continuous optimization
 
 > Optuna is an automatic hyperparameter optimization software framework, particularly designed for machine learning. It features an imperative, define-by-run style user API. Thanks to our define-by-run API, the code written with Optuna enjoys high modularity, and the user of Optuna can dynamically construct the search spaces for the hyperparameters.
 
-Optuna is a really great package for HyperParameter Optimization (HPO). I have been using it for a little while along several machine learning frameworks such as XGBoost, LightGBM, Scikit-Learn, Keras, etc... Optuna is powerful, efficient and easy to use. It is developped by the japanese company Preferred Networks Inc, which brought some other great open-source packages such as [Chainer](https://github.com/chainer/chainer) or [CuPy](https://github.com/cupy/cupy).
+Optuna is a really great package for HyperParameter Optimization (HPO). I have been using it for a little while along several machine learning frameworks such as XGBoost, LightGBM, Scikit-Learn, Keras, etc... Optuna is powerful, efficient and easy to use. From what I understand, it is developped by the people from the japanese company Preferred Networks Inc, which brought some other great open-source packages such as [Chainer](https://github.com/chainer/chainer) or [CuPy](https://github.com/cupy/cupy).
 
 Let's use it here on some "textbook" optimization problems, minimizing 4 classic non-convex [test functions for single-objective optimization](https://en.wikipedia.org/wiki/Test_functions_for_optimization):
 - Rastrigin
