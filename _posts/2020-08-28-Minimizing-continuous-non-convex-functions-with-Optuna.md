@@ -663,7 +663,7 @@ The Himmelblau function has four equal local minima $f(x, y) = 0$, located at:
 - $(x, y) = (-3.779310, -3.283186)$  (approx.),
 - $(x, y) = (3.584458, -1.848126)$  (approx.),
 
-So obviously, the algorithm will only find a single of these 4 minima.
+So obviously, the algorithm will find only one of these equal minima.
 
 ### Optimization
 
@@ -746,7 +746,7 @@ ax.grid()
 </p>
 
 
-One way to reach another minima is to change the random seed:
+One way to reach another minimum is to change the random seed:
 
 
 ```python
