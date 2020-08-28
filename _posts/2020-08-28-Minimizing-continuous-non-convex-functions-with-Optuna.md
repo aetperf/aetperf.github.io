@@ -766,15 +766,14 @@ try:
     )
 except EarlyStoppingExceeded:
     print(f"EarlyStopping Exceeded: No new best scores on iters {OPTUNA_EARLY_STOPING}")
-study.best_params
-```
 
+```
     EarlyStopping Exceeded: No new best scores on iters 250
 
 
-
-
-
+```python
+study.best_params
+```
     {'x': -2.805118086952745, 'y': 3.131312518250573}
 
 
