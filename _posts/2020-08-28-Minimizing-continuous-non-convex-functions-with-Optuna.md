@@ -17,7 +17,7 @@ In this post, we are going to deal with single-objective continuous optimization
 
 Optuna is a really great package for HyperParameter Optimization (HPO). I have been using it for a little while along several machine learning frameworks such as XGBoost, LightGBM, Scikit-Learn, Keras, etc... Optuna is powerful, efficient and easy to use. It is developped by the japanese company Preferred Networks Inc, which brought some other great open-source packages such as [Chainer](https://github.com/chainer/chainer) or [CuPy](https://github.com/cupy/cupy).
 
-Let's use it on some "textbook" optimization problems, minimizing 4 classic non-convex [test functions for single-objective optimization](https://en.wikipedia.org/wiki/Test_functions_for_optimization):
+Let's use it here on some "textbook" optimization problems, minimizing 4 classic non-convex [test functions for single-objective optimization](https://en.wikipedia.org/wiki/Test_functions_for_optimization):
 - Rastrigin
 - Ackley
 - Rosenbrock
@@ -262,12 +262,7 @@ trials.head(2)
       <th>number</th>
       <th>value</th>
       <th>datetime_start</th>
-      <th>datetime_complete</th>
-      <th>duration</th>
-      <th>params_x</th>
-      <th>params_y</th>
-      <th>system_attrs_cma:generation</th>
-      <th>system_attrs_cma:optimizer</th>
+      <th>...</th>
       <th>state</th>
     </tr>
   </thead>
@@ -277,12 +272,7 @@ trials.head(2)
       <td>0</td>
       <td>15.185858</td>
       <td>2020-08-28 16:03:03.971095</td>
-      <td>2020-08-28 16:03:04.055734</td>
-      <td>0 days 00:00:00.084639</td>
-      <td>2.011844</td>
-      <td>-2.189933</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <th>...</th>
       <td>COMPLETE</td>
     </tr>
     <tr>
@@ -290,12 +280,7 @@ trials.head(2)
       <td>1</td>
       <td>10.601259</td>
       <td>2020-08-28 16:03:04.056077</td>
-      <td>2020-08-28 16:03:04.057631</td>
-      <td>0 days 00:00:00.001554</td>
-      <td>-1.039788</td>
-      <td>0.772146</td>
-      <td>0.0</td>
-      <td>NaN</td>
+      <th>...</th>
       <td>COMPLETE</td>
     </tr>
   </tbody>
