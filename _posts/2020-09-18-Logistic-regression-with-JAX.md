@@ -463,7 +463,7 @@ print(classification_report(y_test, y_pred))
     
 
 
-Well we hardly scratched the surface of what can be done with JAX, but at least played with a little example.
+Well we hardly scratched the surface of what can be done with JAX, but at least we presented a little example.
 
 ## References:  
 
