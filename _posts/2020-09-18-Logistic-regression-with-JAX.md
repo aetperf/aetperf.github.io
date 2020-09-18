@@ -93,7 +93,11 @@ In the logistic regression algorithm, the relationship between the predictors an
 logit( P(Y=1 | \textbf{w} ) ) = c +  \sum_{i=1}^k w_i X_i \tag{1}
 \end{equation}
 
-where $$ \left\{ w_i \right\}\_{i=1}^{k} \in \mathbf{R}^k $$ are the linear weights and $c \in \mathbf{R}$ the intercept. Now what is the $logit$ function? It is the log of odds:
+where 
+
+$$ \left\{ w_i \right\}_{i=1}^{k} \in \mathbf{R}^k $$ 
+
+are the linear weights and $c \in \mathbf{R}$ the intercept. Now what is the $logit$ function? It is the log of odds:
 
 \begin{equation}
 logit( p ) = \ln \left( \frac{p}{1-p} \right) \tag{2}
