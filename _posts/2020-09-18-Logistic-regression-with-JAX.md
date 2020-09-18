@@ -26,7 +26,7 @@ Here are the steps of this post:
 
 ## Imports
 
-We import JAX' NumPy instead of the the regular one.
+We import JAX' NumPy instead of the regular one.
 
 
 ```python
