@@ -175,7 +175,11 @@ This probability can be turned into a predicted class label $\hat{y}$ using a th
 
 ## The cost funtion
 
-Now we assume that we have $n$ observations and that they are independently Bernoulli distributed: $ \left\{ \left( \textbf{x}^{(1)}, y^{(1)} \right), \left( \textbf{x}^{(2)}, y^{(2)} \right), ...,  \left( \textbf{x}^{(n)}, y^{(n)} \right) \right\}$. The likelihood that we would like to maximize given the samples is the following one:
+Now we assume that we have $n$ observations and that they are independently Bernoulli distributed: 
+
+$$ \left\{ \left( \textbf{x}^{(1)}, y^{(1)} \right), \left( \textbf{x}^{(2)}, y^{(2)} \right), ...,  \left( \textbf{x}^{(n)}, y^{(n)} \right) \right\} $$ 
+
+The likelihood that we would like to maximize given the samples is the following one:
 
 
 \begin{equation}
