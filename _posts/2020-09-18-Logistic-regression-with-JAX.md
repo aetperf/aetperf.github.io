@@ -467,6 +467,8 @@ Well we hardly scratched the surface of what can be done with JAX, but at least 
 
 ## References:  
 
+Both references are really great ressources:
+
 [1] S. Raschka and V. Mirjalili, *Python Machine Learning, 2nd edition*, Packt Publishing Ltd, Packt Publishing Ltd, 2017.  
 
 [2] alexbw@, mattjj@, [*The Autodiff Cookbook*](https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html)  
