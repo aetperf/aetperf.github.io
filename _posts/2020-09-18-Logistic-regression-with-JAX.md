@@ -166,7 +166,7 @@ And thus:
 P(y=1 | \textbf{w} )=  \sigma(\textbf{w}^T \textbf{x} ) \equiv \sigma_{\textbf{w}} (\textbf{x}) \tag{5}
 \end{equation}
 
-For a given set of weights $\textbf{w}$, the probability of a positive outcome is $\sigma_{\textbf{w}} (\textbf{x})$, that we implement in the following `predict` function:
+For a given set of weights $\textbf{w}$, the probability of a positive outcome is $\sigma_{\textbf{w}} (\textbf{x})$ that we implement in the following `predict` function:
 
 
 ```python
