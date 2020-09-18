@@ -79,7 +79,7 @@ X_test_s = scaler.transform(X_test)
 
 Here we are going to look at the binary classification case, but it is straightforward to generalize the algorithm to multiclass classification using One-vs-Rest, or multinomial (Softmax) logistic regression.
 
-Assume that we have $k$ predictors: $ \left\{ X_i \right\}_{i=1}^{k} \in \mathbf{R}^k$ and a binary response variable: $Y \in \left\{ 0, 1 \right\} .$
+Assume that we have $k$ predictors $\left\{ X_i \right\}\_{i=1}^{k} \in \mathbf{R}^k$ and a binary response variable: $ Y \in \left\{ 0, 1 \right\}$.
 
 In the logistic regression algorithm, the relationship between the predictors and the $logit$ of the probability of a positive outcome $Y=1$ is assumed to be linear:
 
@@ -87,7 +87,7 @@ In the logistic regression algorithm, the relationship between the predictors an
 logit( P(Y=1 | \textbf{w} ) ) = c +  \sum_{i=1}^k w_i X_i \tag{1}
 \end{equation}
 
-where $ \left\{ w_i \right\}_{i=1}^{k} \in \mathbf{R}^k$ are the linear weights and $c \in \mathbf{R}$ the intercept. Now what is the $logit$ function? It is the log of odds:
+where $$ \left\{ w_i \right\}\_{i=1}^{k} \in \mathbf{R}^k $$ are the linear weights and $c \in \mathbf{R}$ the intercept. Now what is the $logit$ function? It is the log of odds:
 
 \begin{equation}
 logit( p ) = \ln \left( \frac{p}{1-p} \right) \tag{2}
@@ -198,7 +198,7 @@ with $\lambda \geq 0$. As written by Sebastian Raschka in [1]:
 
 > Regularization is a very useful method to handle collinearity (high correlation among features), filter out noise from data, and eventually prevent overfitting.
 
-Here is the cost function from Eq.$(9)$, $J_r(\textbf{w})$, implemented in the `cost` function: 
+Here is the cost function from Eq.$(9)$, $J_r(\textbf{w})$: 
 
 
 ```python
