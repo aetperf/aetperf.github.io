@@ -176,9 +176,9 @@ def predict(c, w, X):
 
 This probability can be turned into a predicted class label $\hat{y}$ using a threshold value:
 
-\begin{equation}
+$$
 \hat{y} = 1 & \text{if $\sigma_{\textbf{w}} (\textbf{x}) \geq 0.5$ }, 0 \text{otherwise} \tag{6}  
-\end{equation}
+$$
 
 ## The cost funtion
 
