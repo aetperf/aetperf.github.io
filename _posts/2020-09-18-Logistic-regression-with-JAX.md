@@ -10,9 +10,9 @@ tags: Python JAX ML Logistic Regression
 
 <p align="center">
   <img width="400" src="/img/2020-09-18_01/JAX_village.jpg" alt="world">
+  Source: [Papou Moustache](http://www.cpauvergne.com/2018/08/jax.html)
 </p>
 
-Source: [Papou Moustache](http://www.cpauvergne.com/2018/08/jax.html)
 
 In this post we are going to simply use JAX' `grad` function (back-propagation) to minimize the cost function of the Logistic regression algorithm. [Logistic regression](https://en.wikipedia.org/wiki/Logistic_regression) is a supervised learning algorithm, for classification.
 
