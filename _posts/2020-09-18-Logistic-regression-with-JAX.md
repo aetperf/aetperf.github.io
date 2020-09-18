@@ -10,6 +10,9 @@ tags: Python JAX ML Logistic Regression
 
 <p align="center">
   <img width="400" src="/img/2020-09-18_01/JAX_village.jpg" alt="world">
+</p>
+
+<p align="center">
   Source: [Papou Moustache](http://www.cpauvergne.com/2018/08/jax.html)
 </p>
 
