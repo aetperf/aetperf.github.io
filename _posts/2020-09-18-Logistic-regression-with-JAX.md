@@ -79,7 +79,7 @@ X_test_s = scaler.transform(X_test)
 
 Here we are going to look at the binary classification case, but it is straightforward to generalize the algorithm to multiclass classification using One-vs-Rest, or multinomial (Softmax) logistic regression.
 
-Assume that we have $k$ predictors 
+Assume that we have $k$ predictors:
 
 $$\left\{ X_i \right\}_{i=1}^{k} \in \mathbf{R}^k $$ 
 
