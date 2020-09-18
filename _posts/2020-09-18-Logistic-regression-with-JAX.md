@@ -9,7 +9,7 @@ tags: Python JAX ML Logistic Regression
 [JAX](https://github.com/google/jax) is a Python package for [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) from Google Research. It is a really powerful and efficient library. JAX can automatically differentiate some Python code (supports the reverse- and forward-mode). It can also speed up the exection time by using the [XLA (Accelerated Linear Algebra)](https://www.tensorflow.org/xla?hl=fi) compiler. JAX allows your code to run efficiently on CPUs, GPUs and TPUs. It is a library mainly used for machine learning. We refer to the [The Autodiff Cookbook](https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html) [2] for a very good introduction to JAX.
 
 <p align="center">
-  <img width="400" src="/img/2020-09-18_01/JAX_village.jpg" alt="world">
+  <img width="600" src="/img/2020-09-18_01/JAX_village.jpg" alt="world">
 </p>
 
 Photo credit: [Papou Moustache](http://www.cpauvergne.com/2018/08/jax.html)
@@ -81,7 +81,7 @@ Here we are going to look at the binary classification case, but it is straightf
 
 Assume that we have $k$ predictors 
 
-$$\left\{ X_i \right\}\_{i=1}^{k} \in \mathbf{R}^k $$ 
+$$\left\{ X_i \right\}_{i=1}^{k} \in \mathbf{R}^k $$ 
 
 and a binary response variable: 
 
