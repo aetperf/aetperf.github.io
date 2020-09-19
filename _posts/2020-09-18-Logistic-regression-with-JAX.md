@@ -408,7 +408,7 @@ print(classification_report(y_test, y_pred))
 From [wikipedia](https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm):
 > The BFGS method belongs to quasi-Newton methods, a class of hill-climbing optimization techniques that seek a stationary point of a (preferably twice continuously differentiable) function.
 
-We are going to use [SciPy's implementation](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html#optimize-minimize-bfgs) and give the `grad` function from JAX as an input parameter. Let's first define the objective function with a single input vector (instead of $c$ and $\textbf{w}$)
+We are going to use [SciPy's implementation](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html#optimize-minimize-bfgs) and give the `grad` function from JAX as an input parameter. Let's first define the objective function with a single input vector (instead of `c` and `w`)
 
 
 ```python
