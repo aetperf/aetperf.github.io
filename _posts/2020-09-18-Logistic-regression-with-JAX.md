@@ -50,7 +50,7 @@ RS = 124  # random seed
 
 ## Load, split and scale the dataset
 
-The breast cancer dataset is a classic binary classification dataset that we load from `scikit-learn`. Dataset features:
+The breast cancer dataset is a classic binary classification dataset that we load from [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html). Dataset features:
 
 |                   |                |
 |------------------:|---------------:|
