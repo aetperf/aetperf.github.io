@@ -124,7 +124,7 @@ _ = ax.set_ylim(-5, 5)
     
 
 
-The inverse of the $logit$ is the $logistic$ curve, which we are going to note $\sigma$:
+The inverse of the $logit$ is the $logistic$ curve (or sigmoid function), which we are going to note $\sigma$:
 
 \begin{equation}
 \sigma (r) = \frac{1}{1 + e^{-r}} \tag{3}
