@@ -202,7 +202,7 @@ J(\textbf{w}) = - \frac{1}{n} \sum_{i=1}^n \left[  y^{(i)} \log \left(  \sigma_{
 A great feature of this cost function is that it is differentiable and convex. A gradient-based algorithm should find the global minimum. Now let's also introduce some $l_2$-regularization in order to improve the model:
 
 \begin{equation}
-J_r(\textbf{w}) = - \frac{1}{n} \sum_{i=1}^n \left[  y^{(i)} \log \left(  \sigma_{\textbf{w}} \left(\textbf{x}^{(i)} \right) \right) +  \left( 1-y^{(i)} \right) \log \left( 1- \sigma_{\textbf{w}} \left(\textbf{x}^{(i)} \right)\right) \right]  + \frac{\lambda}{2} \textbf{w}^T \textbf{w} \tag{9}
+J_r(\textbf{w}) = J(\textbf{w})  + \frac{\lambda}{2} \textbf{w}^T \textbf{w} \tag{9}
 \end{equation}
 
 with $\lambda \geq 0$. As written by Sebastian Raschka in [1]:
@@ -222,7 +222,7 @@ def cost(c, w, X, y, eps=1e-14, lmbd=0.1):
     )
 ```
 
-We can now evaluate the cost fucntion for some given values of $\textbf{w}$:
+We can now evaluate the cost function for some given values of $\textbf{w}$:
 
 
 ```python
