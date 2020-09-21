@@ -290,7 +290,7 @@ So we need to minimize $J_r(\textbf{w})$. For that we are going to apply two dif
 * Gradient descent
 * BFGS
 
-They both use gradient $\nabla_{\textbf{w}} J(\textbf{w})$.
+They both use gradient $\nabla_{\textbf{w}} J_r(\textbf{w})$.
 
 ### Compute the gradient
 
