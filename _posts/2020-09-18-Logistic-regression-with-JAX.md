@@ -67,7 +67,7 @@ The breast cancer dataset is a classic binary classification dataset that we loa
 X, y = load_breast_cancer(return_X_y=True)
 n_feat = X.shape[1]
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=RS
+    X, y, test_size=0.25, stratify=y, random_state=RS
 )
 scaler = StandardScaler()
 scaler.fit(X_train)
