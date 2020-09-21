@@ -1,4 +1,4 @@
-[JAX](https://github.com/google/jax) is a Python package for [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) from Google Research. It is a really powerful and efficient library. JAX can automatically differentiate some Python code (\text{supports the reverse- and forward-mode}). It can also speed up the exection time by using the [XLA (Accelerated Linear Algebra)](https://www.tensorflow.org/xla?hl=fi) compiler. JAX allows your code to run efficiently on CPUs, GPUs and TPUs. It is a library mainly used for machine learning. We refer to the [The Autodiff Cookbook](https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html) [2] for a very good introduction to JAX.
+[JAX](https://github.com/google/jax) is a Python package for [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) from Google Research. It is a really powerful and efficient library. JAX can automatically differentiate some Python code [supports the reverse- and forward-mode]. It can also speed up the exection time by using the [XLA - Accelerated Linear Algebra](https://www.tensorflow.org/xla?hl=fi) compiler. JAX allows your code to run efficiently on CPUs, GPUs and TPUs. It is a library mainly used for machine learning. We refer to the [The Autodiff Cookbook](https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html) [2] for a very good introduction to JAX.
 
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2020-09-18_01/JAX_village.jpg" alt="world">
@@ -7,7 +7,7 @@
 Photo credit: [Papou Moustache](http://www.cpauvergne.com/2018/08/jax.html)
 
 
-In this post we are going to simply use JAX' `grad` function (back-propagation) to minimize the cost function of Logistic regression. In case you don't know, [Logistic regression](https://en.wikipedia.org/wiki/Logistic_regression) is a supervised learning algorithm, for classification. 
+In this post we are going to simply use JAX' `grad` function [back-propagation] to minimize the cost function of Logistic regression. In case you don't know, [Logistic regression](https://en.wikipedia.org/wiki/Logistic_regression) is a supervised learning algorithm, for classification. 
 
 Here are the steps of this post:
 * load a toy dataset
@@ -47,7 +47,7 @@ The breast cancer dataset is a classic binary classification dataset that we loa
 |                   |                |
 |------------------:|---------------:|
 |           Classes |              2 |
-| Samples per class |  212(0),357(1) |
+| Samples per class |  212[0],357[1] |
 |     Samples total |            569 |
 |    Dimensionality |             30 |
 |          Features | real, positive |
@@ -69,7 +69,7 @@ X_test_s = scaler.transform(X_test)
 
 ## Logistic regression
 
-Here we are going to look at the binary classification case, but it is straightforward to generalize the algorithm to multiclass classification using One-vs-Rest, or multinomial (Softmax) logistic regression.
+Here we are going to look at the binary classification case, but it is straightforward to generalize the algorithm to multiclass classification using One-vs-Rest, or multinomial [Softmax] logistic regression.
 
 Assume that we have $k$ predictors:
 
@@ -116,7 +116,7 @@ _ = ax.set_ylim(-5, 5)
     
 
 
-The inverse of the $logit$ is the $logistic$ curve (or sigmoid function), which we are going to note $\sigma$:
+The inverse of the $logit$ is the $logistic$ curve [also called sigmoid function], which we are going to note $\sigma$:
 
 \begin{equation}
 \sigma (r) = \frac{1}{1 + e^{-r}} \tag{3}
@@ -199,7 +199,7 @@ J_r(\textbf{w}) = - \frac{1}{n} \sum_{i=1}^n \left[  y^{(i)} \log \left(  \sigma
 
 with $\lambda \geq 0$. As written by Sebastian Raschka in [1]:
 
-> Regularization is a very useful method to handle collinearity (high correlation among features), filter out noise from data, and eventually prevent overfitting.
+> Regularization is a very useful method to handle collinearity [high correlation among features], filter out noise from data, and eventually prevent overfitting.
 
 Here is the cost function from Eq.$(9)$, $J_r(\textbf{w})$: 
 
@@ -327,7 +327,7 @@ for $i = 1, ..., n_{iter}$:
 $ \hspace{1cm} w \leftarrow w - \eta \nabla_{\textbf{w}} J(\textbf{w})$  
 with $\eta >0$ small enough (that we can see as the learning rate).
 
-And here is an implementation in which we added a stopping criterion (exits the loop if it stagnates during 20 iterations):
+And here is an implementation in which we added a stopping criterion [exits the loop if it stagnates during 20 iterations]:
 
 
 ```python
@@ -398,9 +398,9 @@ print(classification_report(y_test, y_pred))
 ### BFGS
 
 From [wikipedia](https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm):
-> The BFGS method belongs to quasi-Newton methods, a class of hill-climbing optimization techniques that seek a stationary point of a (preferably twice continuously differentiable) function.
+> The BFGS method belongs to quasi-Newton methods, a class of hill-climbing optimization techniques that seek a stationary point of a [preferably twice continuously differentiable] function.
 
-We are going to use [SciPy's implementation](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html#optimize-minimize-bfgs) and give the `grad` function from JAX as an input parameter. Let's first define the objective function with a single input vector (instead of `c` and `w`)
+We are going to use [SciPy's implementation](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html#optimize-minimize-bfgs) and give the `grad` function from JAX as an input parameter. Let's first define the objective function with a single input vector [instead of `c` and `w`]
 
 
 ```python
