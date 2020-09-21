@@ -73,11 +73,11 @@ Here we are going to look at the binary classification case, but it is straightf
 
 Assume that we have $k$ predictors:
 
-$$\left\{ X_i \right\}_{i=1}^{k} \in \mathbf{R}^k $$ 
+$$\\{ X_i \\}_{i=1}^{k} \in \mathbf{R}^k $$ 
 
 and a binary response variable: 
 
-$$ Y \in \left\{ 0, 1 \right\} $$
+$$ Y \in \\{ 0, 1 \\} $$
 
 In the logistic regression algorithm, the relationship between the predictors and the $logit$ of the probability of a positive outcome $Y=1$ is assumed to be linear:
 
@@ -87,7 +87,7 @@ logit( P(Y=1 | \textbf{w} ) ) = c +  \sum_{i=1}^k w_i X_i \tag{1}
 
 where 
 
-$$ \left\{ w_i \right\}_{i=1}^{k} \in \mathbf{R}^k $$ 
+$$ \\{ w_i \\}_{i=1}^{k} \in \mathbf{R}^k $$ 
 
 are the linear weights and $c \in \mathbf{R}$ the intercept. Now what is the $logit$ function? It is the log of odds:
 
@@ -176,7 +176,7 @@ $$
 
 Now we assume that we have $n$ observations and that they are independently Bernoulli distributed: 
 
-$$ \left\{ \left( \textbf{x}^{(1)}, y^{(1)} \right), \left( \textbf{x}^{(2)}, y^{(2)} \right), ...,  \left( \textbf{x}^{(n)}, y^{(n)} \right) \right\} $$ 
+$$ \\{ \left( \textbf{x}^{(1)}, y^{(1)} \right), \left( \textbf{x}^{(2)}, y^{(2)} \right), ...,  \left( \textbf{x}^{(n)}, y^{(n)} \right) \\} $$ 
 
 The likelihood that we would like to maximize given the samples is the following one:
 
