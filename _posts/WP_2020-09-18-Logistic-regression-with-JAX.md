@@ -324,7 +324,7 @@ The Gradient descent algorithm is very basic, here is an outline:
  
 $w=w_0$     
 for $i = 1, ..., n_{iter}$:  
-$ \hspace{1cm} w \leftarrow w - \eta \nabla_{\textbf{w}} J(\textbf{w})$  
+$ \hspace{1cm} w \leftarrow w - \eta \nabla_{\textbf{w}} J_r(\textbf{w})$  
 with $\eta >0$ small enough (that we can see as the learning rate).
 
 And here is an implementation in which we added a stopping criterion [exits the loop if it stagnates during 20 iterations]:
