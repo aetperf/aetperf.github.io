@@ -7,7 +7,7 @@ tags: Python merge sorting Cython Numba
 ---
 
 
-In this post, we present an implementation of the classic *merge sort* algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [NumPy sort(kind='mergesort')](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools (Cython and Numba) to `insertion sort` in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the *merge sort* algorithm.
+In this post, we present an implementation of the classic *merge sort* algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [NumPy sort(kind='mergesort')](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools to *insertion sort* in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the *merge sort* algorithm.
 
 ## Merge sort
 
@@ -33,7 +33,7 @@ def mergesort(A, l, r):
         
 mergesort(A, 0, len(A) - 1)
 ```
-The `merge` part consists in taking two sorted contiguous chunks as input and produce a single sorted chunk as output.
+The `merge` part consists in sorting two sorted contiguous chunks of arrays.
 
 ### Implementation optimizations
 
@@ -43,8 +43,8 @@ An additional storage is used during the `merge` step, which size is of the orde
 
 Here are the optimizations performed in the following implementation:
 - Eliminate the copy to the auxiliary array (reducing the cost of copying).
-- Use an in-place sorting algorithm (`insertion sort`) for small subarrays (length smaller than a constant `SMALL_MERGESORT=40`). This may be referred to as "tiled merge sort".
-- Stop if already sorted (test if the array is already in order before merging (`A[mid] <= A[mid + 1]`).  
+- Use an in-place sorting algorithm (`insertion sort`) for small subarrays (length smaller than a constant `SMALL_MERGESORT=40`). This may be referred to as *tiled merge sort*.
+- Stop if already sorted (test if the array is already in order before merging : `A[mid] <= A[mid + 1]`).  
 
 
 [1] Robert Sedgewick. *Algorithms in C: Parts 1-4, Fundamentals, Data Structures, Sorting, and Searching (3rd. ed.)*. Addison-Wesley Longman Publishing Co., Inc., USA. 1997. 
@@ -60,7 +60,7 @@ from numba import jit
 
 %load_ext Cython
 
-np.random.seed(124)  # Seed the random number generator
+np.random.seed(124)  # Just a habit
 ```
 
 Here are the package versions:
@@ -83,8 +83,6 @@ N = 1000
 A = np.random.randint(low=0, high=10 * N, size=N, dtype=np.int64)
 A[:5]
 ```
-
-
 
 
     array([4558, 4764, 8327, 9154,  681])
@@ -111,7 +109,12 @@ cdef Py_ssize_t SMALL_MERGESORT_CYTHON = 40
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 @cython.binding(False)
-cdef void merge_cython(stype[:] A, stype[:] Aux, Py_ssize_t lo, Py_ssize_t mid, Py_ssize_t hi) nogil:
+cdef void merge_cython(
+    stype[:] A, 
+    stype[:] Aux, 
+    Py_ssize_t lo, 
+    Py_ssize_t mid, 
+    Py_ssize_t hi) nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -137,7 +140,10 @@ cdef void merge_cython(stype[:] A, stype[:] Aux, Py_ssize_t lo, Py_ssize_t mid, 
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 @cython.binding(False)
-cdef void insertion_sort_cython(stype[:] A, Py_ssize_t lo, Py_ssize_t hi) nogil:
+cdef void insertion_sort_cython(
+    stype[:] A, 
+    Py_ssize_t lo, 
+    Py_ssize_t hi) nogil:
 
     cdef:
         Py_ssize_t i, j
@@ -156,7 +162,11 @@ cdef void insertion_sort_cython(stype[:] A, Py_ssize_t lo, Py_ssize_t hi) nogil:
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 @cython.binding(False)
-cdef void merge_sort_cython(stype[:] A, stype[:] Aux, Py_ssize_t lo, Py_ssize_t hi) nogil:
+cdef void merge_sort_cython(
+    stype[:] A, 
+    stype[:] Aux, 
+    Py_ssize_t lo, 
+    Py_ssize_t hi) nogil:
 
     cdef Py_ssize_t i, mid
 
@@ -307,7 +317,7 @@ _ = ax.set_title("Timings of merge sort")
 
 ## Conclusion
 
-Numba is really easy to use. When dealing with NumPy arrays, I am amazed that it can perform as well as efficient 'C' or Cython just by adding a simple decorator.
+Numba is really easy to use. When dealing with NumPy arrays, I am amazed that it can perform as well as efficient C or Cython just by adding a simple decorator to a Python function.
 
 
 
