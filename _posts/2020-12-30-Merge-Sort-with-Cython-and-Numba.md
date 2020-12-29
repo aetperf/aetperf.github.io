@@ -7,17 +7,17 @@ tags: Python merge sorting Cython Numba
 ---
 
 
-In this post, we present an implementation of the classic `merge sort` algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [NumPy sort(kind='mergesort')](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools (Cython and Numba) to `insertion sort` in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the `merge sort` algorithm.
+In this post, we present an implementation of the classic *merge sort* algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [NumPy sort(kind='mergesort')](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools (Cython and Numba) to `insertion sort` in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the *merge sort* algorithm.
 
 ## Merge sort
 
-Here is the main idea of `merge sort` (from [wikipedia](https://en.wikipedia.org/wiki/Merge_sort)):
+Here is the main idea of *merge sort* (from [wikipedia](https://en.wikipedia.org/wiki/Merge_sort)):
 
 > Conceptually, a merge sort works as follows:
 > - Divide the unsorted list into $n$ sublists, each containing one element (a list of one element is considered sorted).
 > - Repeatedly merge sublists to produce new sorted sublists until there is only one sublist remaining. This will be the sorted list.
 
-The performance of `merge sort` is $O(n\log{}n)$ independently of the input order: worst case and average case have same complexities. We refer to any classic book about algorithms to get more theoretical and practical insights about this algorithm.
+The performance of *merge sort* is $O(n\log{}n)$ independently of the input order: worst case and average case have same complexities. We refer to any classic book about algorithms to get more theoretical and practical insights about this algorithm.
 
 ### Top-down implementation
 
@@ -33,11 +33,11 @@ def mergesort(A, l, r):
         
 mergesort(A, 0, len(A) - 1)
 ```
-The `merge` part consists in taking two sorted lists as input and produce a single sorted list as output.
+The `merge` part consists in taking two sorted contiguous chunks as input and produce a single sorted chunk as output.
 
 ### Implementation optimizations
 
-An additional storage is used during the `merge` step. This also implies copying back the merged list from the auxiliary array(s) back to $A$, which has a cost. It is possible to implement the algorithm without copying (but using a full size auxiliary array), which is what we chose to do in the following. As explained by Robert Sedgewick in [1]:
+An additional storage is used during the `merge` step, which size is of the order of $n$. This also implies copying back the merged list from the auxiliary array(s) back to $A$, which has a cost. It is possible to implement the algorithm without copying, which is what we chose to do in the following. As explained by Robert Sedgewick in [1]:
 
 > To do so, we arrange the recursive calls such that the computation switches the roles of the input array and the auxiliary array at each level.
 
