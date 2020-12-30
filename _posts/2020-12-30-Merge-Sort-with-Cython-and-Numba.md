@@ -9,6 +9,10 @@ tags: Python merge sorting Cython Numba
 
 In this post, we present an implementation of the classic *merge sort* algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [`numpy.sort(kind='mergesort')`](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools to *insertion sort* in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the *merge sort* algorithm.
 
+<p align="center">
+  <img width="400" src="/img/2020-12-30_01/out.gif" alt="Timings">
+</p>
+
 ## Merge sort
 
 Here is the main idea of *merge sort* (from [wikipedia](https://en.wikipedia.org/wiki/Merge_sort)):
