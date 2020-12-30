@@ -7,7 +7,7 @@ tags: Python merge sorting Cython Numba
 ---
 
 
-In this post, we present an implementation of the classic *merge sort* algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [NumPy sort(kind='mergesort')](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools to *insertion sort* in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the *merge sort* algorithm.
+In this post, we present an implementation of the classic *merge sort* algorithm in Python on NumPy arrays, and make it run reasonably "fast" using [Cython](https://cython.org/) and [Numba](https://numba.pydata.org/). We are going to compare the run time with the [`numpy.sort(kind='mergesort')`](https://numpy.org/doc/stable/reference/generated/numpy.sort.html) implementation ([in C](https://github.com/numpy/numpy/blob/master/numpy/core/src/npysort/mergesort.c.src)). We already applied both tools to *insertion sort* in a previous [post](https://aetperf.github.io/2020/04/04/Cython-and-Numba-applied-to-simple-algorithm.html). Let's start by briefly describing the *merge sort* algorithm.
 
 ## Merge sort
 
@@ -17,7 +17,7 @@ Here is the main idea of *merge sort* (from [wikipedia](https://en.wikipedia.org
 > - Divide the unsorted list into $n$ sublists, each containing one element (a list of one element is considered sorted).
 > - Repeatedly merge sublists to produce new sorted sublists until there is only one sublist remaining. This will be the sorted list.
 
-The performance of *merge sort* is $O(n\log{}n)$ independently of the input order: worst case and average case have same complexities. We refer to any classic book about algorithms to get more theoretical and practical insights about this algorithm.
+The performance of *merge sort* is $O(n\log{}n)$ independently of the input order: worst case and average case have the same complexities. We refer to any classic book about algorithms to get more theoretical and practical insights about this algorithm.
 
 ### Top-down implementation
 
@@ -75,7 +75,7 @@ matplotlib: 3.3.3
 
 ## Test array
 
-We create a small NumPy `int64` array in order to test that the different implementations.
+We create a small NumPy `int64` array in order to test the different implementations.
 
 
 ```python
@@ -91,7 +91,7 @@ A[:5]
 
 ## Cython implementation
 
-The Cython implementation can only sort NumPy `int64` arrays. The functions should be duplicated and specialized to each supported types (e.g. `float64`).
+The Cython implementation can only sort NumPy `int64` arrays. The functions should be duplicated and specialized to each supported type (e.g. `float64`).
 
 
 ```cython
@@ -317,7 +317,7 @@ _ = ax.set_title("Timings of merge sort")
 
 ## Conclusion
 
-Numba is really easy to use. When dealing with NumPy arrays, I am amazed that it can perform as well as efficient C or Cython just by adding a simple decorator to a Python function.
+Numba is really easy to use. When dealing with NumPy arrays, it is impressive that it can perform as well as efficient C or Cython just by adding a simple decorator to a Python function.
 
 
 
