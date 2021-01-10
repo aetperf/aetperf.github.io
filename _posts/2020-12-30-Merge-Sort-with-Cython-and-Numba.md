@@ -21,6 +21,10 @@ Here is the main idea of *merge sort* (from [wikipedia](https://en.wikipedia.org
 > - Divide the unsorted list into $n$ sublists, each containing one element (a list of one element is considered sorted).
 > - Repeatedly merge sublists to produce new sorted sublists until there is only one sublist remaining. This will be the sorted list.
 
+<p align="center">
+  <img width="400" src="/img/2020-12-30_01/margesort.png" alt="marge sort">
+</p>
+
 The performance of *merge sort* is $O(n\log{}n)$ independently of the input order: worst case and average case have the same complexities. We refer to any classic book about algorithms to get more theoretical and practical insights about this algorithm.
 
 ### Top-down implementation
