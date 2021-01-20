@@ -167,10 +167,10 @@ df = df[df.PTOT > 0].copy(deep=True)
 number_of_records = len(df)
 min_value = df.PTOT.min()
 max_value = df.PTOT.max()
+orders_of_magnitude = int(np.log10(max_value)) - int(np.log10(min_value))
 print(f"number_of_records : {number_of_records}")
 print(f"min value : {min_value}")
 print(f"max_value : {max_value}")
-orders_of_magnitude = int(np.log10(max_value)) - int(np.log10(min_value))
 print(f"orders of magnitude : {orders_of_magnitude}")
 ```
 
