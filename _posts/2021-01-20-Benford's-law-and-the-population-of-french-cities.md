@@ -252,7 +252,6 @@ Let's generate some fake numbers uniformly in the log space, across several orde
 n = 1_000_000
 l, u = 1, 5
 fake = pd.DataFrame(data={"gen": 10 ** (l + (u - l) * np.random.rand(n))})
-fake
 
 coef = 10
 bins = 10 ** (np.arange(0, 6 * coef) / coef)
