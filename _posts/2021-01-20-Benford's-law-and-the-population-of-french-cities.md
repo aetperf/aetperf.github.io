@@ -52,7 +52,9 @@ ax = benford.plot(
     legend=False, grid=True, alpha=0.5, figsize=FS, rot=0, style="o", ms=20
 )
 _ = ax.set(
-    title="Benford's law", xlabel="Leading digit", ylabel="Probability of occurence"
+    title="Benford's law", 
+    xlabel="Leading digit", 
+    ylabel="Probability of occurence"
 )
 ```
 
@@ -66,7 +68,7 @@ Now let's check our population data.
 
 ## Population of french cities
 
-Data from 2017 can be found [here](https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511) from the website of the french institute of statistics and economic studies (INSEE). This archive has several files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an "arrondissement", which is some kind of district (e.g. twenty arrondissements in Paris). Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.
+Data from 2017 can be found [here](https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511), from the website of the french institute of statistics and economic studies (INSEE). This archive has several files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an "arrondissement", which is some kind of district (e.g. twenty arrondissements in Paris). Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.
 
 Let's start by downloading and extracting the data :
 
@@ -304,7 +306,7 @@ _ = ax.legend()
     
 
 
-If we look at the population's distribution in the log space, we can see that it is rather spread out across several orders of magnitude. 
+If we look at the population's distribution in the log space, we can see that it is rather spread out, across several orders of magnitude. 
 
 
 ```python
@@ -325,16 +327,16 @@ _ = plt.title("Distribution of the communes' population")
     
 
 
-So even if it is not uniform in the log space, it is smooth and wide enough to overall follow Bendford's law. As explained in [wikipedia](https://en.wikipedia.org/wiki/Benford%27s_law):
+So even if it is not uniform in the log space, it is smooth and wide enough to approximately follow Bendford's law. As explained in [wikipedia](https://en.wikipedia.org/wiki/Benford%27s_law):
 > Benford's law can be seen in the larger area covered by red (first digit one) compared to blue (first digit 8) shading.
 
 <p align="center">
   <img width="600" src="/img/2021-01-20_01/wikipedia_02.png" alt="Distribution">
 </p>
 
-For each order of magnitude, the width corresponding to the first digit 1 is almost 6 times larger than the one corresponding to the first digit 8!
+For each order of magnitude, the width corresponding to the leading digit 1 is almost 6 times larger than the one corresponding to the leading digit 8. So overall, the cumulative area under the distribution curve corresponding to the leading digit 1 is also about 6 times larger than the one corresponding to the leading digit 8.
 
-An interesting thing is that it Bendford's law can be easily generalized to every significant digit. Let's apply the second-digit version of the law to the population dataset.
+Now, an interesting thing is that it Bendford's law can be easily generalized to every significant digit. Let's apply the second-digit version of the law to the population dataset.
 
 ## Second significant digit
 
@@ -380,7 +382,7 @@ _ = ax.set(
 </p>
 
 
-Also the second-digit distribution is not uniform, it is less uneven than the first-digit one.
+Although the second-digit distribution is not uniform, it is less uneven than the first-digit one.
 
 Now we store the second digit and compute the probability of occurence :
 
