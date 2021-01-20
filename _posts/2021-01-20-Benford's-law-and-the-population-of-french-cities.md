@@ -217,7 +217,7 @@ _ = ax.legend()
 </p>
     
 
-## Explaination
+## Quick explaination
 
 First we can observe that the values of Benford's distribution corresponds to the spacing in a log scale bar :
 
