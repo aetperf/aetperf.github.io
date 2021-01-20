@@ -58,11 +58,11 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_4_0.png" alt="Benford's law">
+  <img width="600" src="/img/2021-01-20_01/output_4_0.png" alt="Benford's law">
 </p>
 
 
-Now let's chek our population data.
+Now let's check our population data.
 
 ## Population of french cities
 
@@ -213,7 +213,7 @@ _ = ax.legend()
 ```
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_15_0.png" alt="french communes">
+  <img width="600" src="/img/2021-01-20_01/output_15_0.png" alt="french communes">
 </p>
     
 
@@ -234,7 +234,7 @@ for i, x in enumerate(xs_h):
 ```
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_18_0.png" alt="Log scale">
+  <img width="600" src="/img/2021-01-20_01/output_18_0.png" alt="Log scale">
 </p>
 
 
@@ -265,7 +265,7 @@ _ = plt.title("Distribution of the fake number collection")
 
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_21_0.png" alt="Fake">
+  <img width="600" src="/img/2021-01-20_01/output_21_0.png" alt="Fake">
 </p>
 
 
@@ -299,7 +299,7 @@ _ = ax.legend()
 ```
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_23_0.png" alt="Fake">
+  <img width="600" src="/img/2021-01-20_01/output_23_0.png" alt="Fake">
 </p>
     
 
@@ -320,7 +320,7 @@ _ = plt.title("Distribution of the communes' population")
 ```
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_25_0.png" alt="Distribution">
+  <img width="600" src="/img/2021-01-20_01/output_25_0.png" alt="Distribution">
 </p>
     
 
@@ -376,7 +376,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_29_0.png" alt="Second-digit">
+  <img width="600" src="/img/2021-01-20_01/output_29_0.png" alt="Second-digit">
 </p>
 
 
@@ -418,7 +418,7 @@ _ = ax.legend()
 ```
 
 <p align="center">
-  <img width="600" src="/img/2020-12-30_01/output_33_0.png" alt="Second-digit">
+  <img width="600" src="/img/2021-01-20_01/output_33_0.png" alt="Second-digit">
 </p>
    
 
