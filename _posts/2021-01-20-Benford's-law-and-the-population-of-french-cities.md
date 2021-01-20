@@ -68,7 +68,7 @@ Now let's check our population data.
 
 ## Population of french cities
 
-Data from 2017 can be found [here](https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511), from the website of the french institute of statistics and economic studies (INSEE). This archive has several files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an "arrondissement", which is some kind of district (e.g. twenty arrondissements in Paris). Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.
+Data from 2017 can be found [here](https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511), from the website of the french institute of statistics and economic studies (INSEE). The chosen archive has several CSV files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an "arrondissement", which is some kind of district (e.g. twenty arrondissements in Paris). Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.
 
 Let's start by downloading and extracting the data :
 
@@ -346,7 +346,7 @@ Here is the generalization of Benford's law, from Hill [1] :
 P(D_1 = d_1, ... ,D_k = d_k) = log_{10} \left[ 1 + \left( \sum_{i=1}^k d_i 10^{k-i} \right)^{-1} \right], \; k \geq 1
 \end{equation}
 
-where $d_j$ is the $j$-th significant digit ($d_1 = 1, ..., 9$ and $d_j = 0, ..., 9$ for $j>1$).
+where $d_j$ is the $j$-th significant digit ($d_1 \in \llbracket 1, ..., 9 \rrbracket$ and $d_j \in \llbracket 0, ..., 9 \rrbracket$ for $j>1$).
 
 So the distribution of the second digit is the following one :
 
