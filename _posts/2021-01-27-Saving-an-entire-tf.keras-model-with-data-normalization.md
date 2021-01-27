@@ -146,7 +146,7 @@ _ = ax.legend(["Training loss", "Trainig accuracy"])
 
 
 <p align="center">
-  <img width="600" src="/img/2021-01-27_01output_14_0.png" alt="Training loss and accuracy">
+  <img width="600" src="/img/2021-01-27_01/output_14_0.png" alt="Training loss and accuracy">
 </p>
     
 
