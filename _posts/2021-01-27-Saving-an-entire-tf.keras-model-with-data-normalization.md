@@ -151,7 +151,7 @@ _ = ax.legend(["Training loss", "Trainig accuracy"])
     
 
 
-If we evaluate the model on the test set, we get a decent accuracy :
+If we evaluate the model on the test set, we get an accuracy of 0.9708:
 
 
 ```python
@@ -186,14 +186,13 @@ model.save(MODEL_PATH)
 ```python
 !tree {MODEL_PATH}
 ```
-
-    [01;34m./tf_model[00m
-    ├── [01;34massets[00m
+    ./tf_model
+    ├── assets
     ├── saved_model.pb
-    └── [01;34mvariables[00m
+    └── variables
         ├── variables.data-00000-of-00001
         └── variables.index
-    
+
     2 directories, 3 files
 
 
