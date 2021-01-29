@@ -6,6 +6,10 @@ author: François Pacull
 tags: Python tensorflow keras saving model normalization
 ---
 
+<p align="center">
+  <img width="400" src="/img/2021-01-29_01/1024px-Keras_logo.svg.png" alt="Keras logo">
+</p>
+
 Training a DL model might take some time, and make use of some special hardware. So you may want to save the model for using it later, or on another computer.
 
 In this short Python notebook, we are going to create a very simple `tensorflow.keras` model, train it, save it into a directory along with the training data scaling factors (standard scaling), and then load and call it.
@@ -146,7 +150,7 @@ _ = ax.legend(["Training loss", "Trainig accuracy"])
 
 
 <p align="center">
-  <img width="600" src="/img/2021-01-27_01/output_14_0.png" alt="Training loss and accuracy">
+  <img width="600" src="/img/2021-01-29_01/output_14_0.png" alt="Training loss and accuracy">
 </p>
     
 
