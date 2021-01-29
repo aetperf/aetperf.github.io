@@ -14,7 +14,7 @@ Training a DL model might take some time, and make use of some special hardware.
 
 In this short Python notebook, we are going to create a very simple `tensorflow.keras` model, train it, save it into a directory along with the training data scaling factors (standard scaling), and then load and call it.
 
-The dataset is the [breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html) from scikit-learn (binary classification). The point of this post is not the model but rather saving and loading the entire keras model with the training dataset mean and std. 
+The dataset is the [breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html) from scikit-learn (binary classification). The point of this post is not the model but rather saving and loading the entire Keras model with the training dataset mean and std. 
 
 ## Imports
 
@@ -212,6 +212,7 @@ model = tf.keras.models.load_model(MODEL_PATH)
 
 ## Calling the model
 
+Note that the normalization layer is automatically used in the inference.
 
 ```python
 y_pred_proba = model.predict(X_test, verbose=0)[:, 0]
@@ -244,6 +245,8 @@ print(f"accuracy score : {accuracy_score(y_test, y_pred):5.4f}")
 ```
 
     accuracy score : 0.9708
+
+
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
