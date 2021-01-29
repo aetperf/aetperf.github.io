@@ -10,7 +10,7 @@ Training a DL model might take some time, and make use of some special hardware.
 
 In this short Python notebook, we are going to create a very simple `tensorflow.keras` model, train it, save it into a directory along with the training data scaling factors (standard scaling), and then load and call it.
 
-The dataset is the breast cancer dataset from scikit-learn (binary classification). The point of this post is not the model but rather saving and loading the entire keras model with the training mean and std. 
+The dataset is the [breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html) from scikit-learn (binary classification). The point of this post is not the model but rather saving and loading the entire keras model with the training mean and std. 
 
 ## Imports
 
