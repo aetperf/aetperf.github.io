@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python tensorflow keras saving model normalization
 ---
 
-Training a DL model might take some time, and make use of some special hardware. So you may want to save the model for using it later or and/on another computer.
+Training a DL model might take some time, and make use of some special hardware. So you may want to save the model for using it later and/or on another computer.
 
 In this short Python notebook, we are going to create a very simple `tensorflow.keras` model, train it, save it into a directory along with the training data scaling factors (standard scaling), and then load and call it.
 
