@@ -169,7 +169,7 @@ OK, now that the model is trained, let's save it!
 
 ## Save the whole model
 
-It is possible to partially save the model. However, here we are going to save the entire model with `model.save()`. As descripded in the [documentation](https://www.tensorflow.org/guide/keras/save_and_serialize) :
+It is possible to partially save the model. However, here we are going to save the entire model with `model.save()`. As described in the [documentation](https://www.tensorflow.org/guide/keras/save_and_serialize) :
 
 > You can save an entire model to a single artifact. It will include :  
     - The model's architecture/config  
@@ -177,7 +177,7 @@ It is possible to partially save the model. However, here we are going to save t
     - The model's compilation information (if compile()) was called  
     - The optimizer and its state, if any (this enables you to restart training where you left)  
 
-Note that since we only load the model for inference in the later part of the post, we don't actually need the two last points.
+Note that since we only load the model for inference in the later part of the post, we do not actually need the two last points.
 
 
 ```python
