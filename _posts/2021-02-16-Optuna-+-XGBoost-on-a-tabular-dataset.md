@@ -629,7 +629,7 @@ Here is a capture of the leaderboard web page :
   <img width="400" src="/img/2021-02-16_01/leaderboard.png" alt="leaderboard">
 </p>
 
-Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do to improve this score (EDA, FE, other algorihms, stacking, magic tricks, ...).
+Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do to improve this score (EDA, FE, other algorithms, stacking, magic tricks, ...).
 
 
 {% if page.comments %}
