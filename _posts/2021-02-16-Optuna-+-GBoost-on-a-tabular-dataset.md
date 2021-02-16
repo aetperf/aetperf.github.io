@@ -451,7 +451,7 @@ Even if Optuna  is a great library, we should try to make the optimization probl
 
 In this post, we are not going into much details about the gradient boosting algorithm and all the different parameters. 
 
-A pragmatic approach is to use a large number of `n_estimators` and then activates early stopping with `early_stopping_rounds` in the `fit()`method :
+A pragmatic approach is to use a large number of `n_estimators` and then activates early stopping with `early_stopping_rounds` (we use `early_stopping_rounds`=100 in this post) in the `fit()`method :
 > Validation metric needs to improve at least once in every `early_stopping_rounds` round(s) to continue training.
  
 Then, some of the most important parameters are `learning_rate`, `max_depth`, `min_child_weight`. In maybe another level of importance comes  `subsample` and `colsample_bytree`. 
