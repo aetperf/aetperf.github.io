@@ -10,9 +10,9 @@ tags: Python XGBoost Optuna HPO kaggle tabular regression supervised
   <img width="400" src="/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
 </p>
 
-The purpose of this Python notebook is to give a simple example of hyper-parameter optimization (HPO) using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
+The purpose of this Python notebook is to give a simple example of hyperparameter optimization (HPO) using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
 
-[XGBoost](https://github.com/dmlc/xgboost) is a well-known gradient boosting library, with some hyper-parameters, and [Optuna](https://github.com/optuna/optuna) is a powerful hyper-parameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.
+[XGBoost](https://github.com/dmlc/xgboost) is a well-known gradient boosting library, with some hyperparameters, and [Optuna](https://github.com/optuna/optuna) is a powerful hyperparameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.
 
 We are going to use a dataset from Kaggle : [Tabular Playground Series - Feb 2021](https://www.kaggle.com/c/tabular-playground-series-feb-2021/overview). These playground competitions are great for practicing machine learning skills. If you have a kaggle account and installed the `kaggle` package, you can download the data by running :
 
@@ -24,7 +24,7 @@ Note that this is not exactly real-world data. As described in the competition p
 
 > The dataset used for this competition is synthetic, but based on a real dataset and generated using a CTGAN. The original dataset deals with predicting the amount of an insurance claim. Although the features are anonymized, they have properties relating to real-world features.
 
-An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is **hyper-parameter optimization of XGBoost with Optuna** and it would be too long to describe here the whole process of making a model with a new dataset. 
+An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is **hyperparameter optimization of XGBoost with Optuna** and it would be too long to describe here the whole process of making a model with a new dataset. 
 
 ## Imports
 
@@ -433,7 +433,7 @@ Let's define an objective function for the optimization process. With Optuna, a 
 - `suggest_float`  
 - `suggest_uniform`  
 
-Even if Optuna  is a great library, we should try to make the optimization problem easier by reducing the search space. XGBoost has at least a dozen of hyper-parameters. We are using here the [Scikit-Learn API](https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn) of XGBoost. Here is a list of some parameters of this interface :   
+Even if Optuna  is a great library, we should try to make the optimization problem easier by reducing the search space. XGBoost has at least a dozen of hyperparameters. We are using here the [Scikit-Learn API](https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn) of XGBoost. Here is a list of some parameters of this interface :   
 - `n_estimators` (int) – Number of gradient boosted trees.   
 - `max_depth` (int) – Maximum tree depth for base learners.    
 - `learning_rate` (float) – Boosting learning rate.  
