@@ -20,7 +20,7 @@ We are going to use a dataset from Kaggle : [Tabular Playground Series - Feb 202
 kaggle competitions download -c tabular-playground-series-feb-2021
 ```
 
-Note that this is not real-world data. As described in the competition page :
+Note that this is not exactly real-world data. As described in the competition page :
 
 > The dataset used for this competition is synthetic, but based on a real dataset and generated using a CTGAN. The original dataset deals with predicting the amount of an insurance claim. Although the features are anonymized, they have properties relating to real-world features.
 
