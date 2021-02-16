@@ -10,7 +10,7 @@ tags: Python XGBoost Optuna HPO kaggle tabular regression supervised
   <img width="400" src="/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
 </p>
 
-The purpose of this Python notebook is to give a simple example of hyper-parameter optimization using Optuna and XGBoost. We are going to perform an univariate regression on tabular data. 
+The purpose of this Python notebook is to give a simple example of hyper-parameter optimization using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
 
 [XGBoost](https://github.com/dmlc/xgboost) is a well-known gradient boosting library, with some hyper-parameters, and [Optuna](https://github.com/optuna/optuna) is a powerful hyper-parameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.
 
@@ -94,8 +94,6 @@ Let's have a look at this dataset :
 ```python
 train_df.shape
 ```
-
-
     (300000, 25)
 
 
