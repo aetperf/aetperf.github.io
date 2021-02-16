@@ -252,7 +252,7 @@ train_df[cat_cols].nunique()
     dtype: int64
 
 
-We can also display the distinct values in each categorical feature along with the respective value counts :
+We can also display the distinct values in each categorical feature along with the respective value count :
 
 
 ```python
