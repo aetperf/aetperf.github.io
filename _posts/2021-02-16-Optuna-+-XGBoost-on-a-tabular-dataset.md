@@ -458,7 +458,7 @@ Then, some of the most important parameters are `learning_rate`, `max_depth`, `m
 
 So we can imagine to start by tuning the `learning_rate` and then adjust sequentially some groups of parameters, by order of importance. But here we are going to optimize most of these parameters all together, to make it shorter. 
 
-Also, an important setting is the interval range for each parameter.  That would be kind of very optimistic to set very wide search intervals for each parameters, so we are going to reduce these intervals. This is a really empirical process here and I actually looked at other kaggle kernels using XGBoost to limit the search space ([this](https://www.kaggle.com/tunguz/tps-02-21-feature-importance-with-xgboost-and-shap) very interesting kernel by Bojan Tunguz for example). 
+Also, an important setting is the interval range for each parameter.  That would be kind of very optimistic to set very wide search intervals for each parameter, so we are going to reduce these intervals. This is a really empirical process here and I actually looked at other kaggle kernels using XGBoost to limit the search space ([this](https://www.kaggle.com/tunguz/tps-02-21-feature-importance-with-xgboost-and-shap) very interesting kernel by Bojan Tunguz for example). 
 
 Remarks :  
 - Unpromising trials are pruned using `XGBoostPruningCallback`, based on the RMSE on the current validation fold.  
@@ -521,7 +521,7 @@ def objective(
     return np.sqrt(mean_squared_error(y_train, y_pred))
 ```
 
-Now let's define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with `TPESampler`. We also need to create a study with `create_study` in order to start the optimization process. [Here](https://arxiv.org/pdf/1907.10902.pdf) is a paper with some references about the algorithms found in Optuna.
+Now let's define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with `TPESampler`. We also need to create a study with `create_study` in order to start the optimization process. [Here](https://arxiv.org/pdf/1907.10902.pdf) is a paper with some references about the algorithms found in Optuna. `n_trials` is the number of objective evaluations, set to 100 in the following.
 
 
 ```python
