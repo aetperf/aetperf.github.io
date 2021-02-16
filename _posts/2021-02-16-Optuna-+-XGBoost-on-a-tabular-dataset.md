@@ -421,7 +421,7 @@ evaluate_model_rkf(
 
     0.8485711113354382
 
-If we have a look 	at the leaderboard of the competition, we can see that the best RMSE scores are between 0.841 and 0.842 at the the time of writing this post. The 3 algorithms above with default settings leads to scores above 0.846, with `HistGradientBoostingRegressor`being by far the most efficient if we take computational time into account. Anyway, let's try to tune the parameters of XGBoost in order to decrease this score.
+If we have a look 	at the leaderboard of the competition, we can see that the best RMSE scores are between 0.841 and 0.842 at the the time of writing this post. The 3 algorithms above with default settings leads to scores above 0.846, with `HistGradientBoostingRegressor`being by far the most efficient if we also take computational time into account. Anyway, let's try to tune the parameters of XGBoost in order to decrease this score.
 
 # Optuna + XGBoost
 
