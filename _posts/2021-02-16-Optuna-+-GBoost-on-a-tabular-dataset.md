@@ -14,24 +14,17 @@ The purpose of this Python notebook is to give a simple example of hyper-paramet
 
 [XGBoost](https://github.com/dmlc/xgboost) is a well-known gradient boosting library, with some hyper-parameters, and [Optuna](https://github.com/optuna/optuna) is a powerful hyper-parameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.
 
-We are going to use a dataset from Kaggle : [Tabular Playground Series - Feb 2021](https://www.kaggle.com/c/tabular-playground-series-feb-2021/overview). These playground competitions are great to practice machine learning skills. If you have a kaggle account and installed the `kaggle` package, you can download the data by running :
+We are going to use a dataset from Kaggle : [Tabular Playground Series - Feb 2021](https://www.kaggle.com/c/tabular-playground-series-feb-2021/overview). These playground competitions are great for practicing machine learning skills. If you have a kaggle account and installed the `kaggle` package, you can download the data by running :
 
 ```bash
 kaggle competitions download -c tabular-playground-series-feb-2021
 ```
 
-Note that this is not really real-world data. As described in the competition page :
+Note that this is not real-world data. As described in the competition page :
 
 > The dataset used for this competition is synthetic, but based on a real dataset and generated using a CTGAN. The original dataset deals with predicting the amount of an insurance claim. Although the features are anonymized, they have properties relating to real-world features.
 
-An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is **hyper-parameter optimization of XGBoost with Optuna** and it would be too long to describe the whole process of making a model with a new dataset. A complete approach might imply:  
-- start with an EDA (features and target)  
-- write the evaluation tools with the appropriate metrics  
-- create a basic model that will be the baseline  
-- FE : adding features and selecting features  
-- improve the model (more complex)  
-- combine different modeling algorithms  
-- etc...  
+An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is **hyper-parameter optimization of XGBoost with Optuna** and it would be too long to describe the whole process of making a model with a new dataset. 
 
 ## Imports
 
