@@ -24,7 +24,7 @@ Note that this is not exactly real-world data. As described in the competition p
 
 > The dataset used for this competition is synthetic, but based on a real dataset and generated using a CTGAN. The original dataset deals with predicting the amount of an insurance claim. Although the features are anonymized, they have properties relating to real-world features.
 
-An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is **hyper-parameter optimization of XGBoost with Optuna** and it would be too long to describe the whole process of making a model with a new dataset. 
+An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is **hyper-parameter optimization of XGBoost with Optuna** and it would be too long to describe here the whole process of making a model with a new dataset. 
 
 ## Imports
 
@@ -388,7 +388,7 @@ def evaluate_model_rkf(model, X_df, y_df, n_splits=5, n_repeats=2, random_state=
     return np.sqrt(mean_squared_error(y_train, y_pred))
 ```
 
-We use a repeated k-fold cross-validation for model evaluation. Actually, because the dataset is sufficiently large (300000 samples), we do not repeat the k-fold process in the following (n_repeats=1). The aggregation of all out-of-fold predictions are being used to compute the model performance, Root Mean Square Error (RMSE), of the full training dataset.
+We use a repeated k-fold cross-validation for model evaluation. Actually, because the dataset is sufficiently large (300000 samples), we do not repeat the k-fold process in the following (n_repeats=1). The collection of  all the out-of-fold predictions are being used to compute the model performance, Root Mean Square Error (RMSE), of the full training dataset.
 
 Let's try some models from scikit-learn, such as [`RandomForestRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html) and [`HistGradientBoostingRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html?highlight=histgradientboostingregressor#sklearn.ensemble.HistGradientBoostingRegressor) with default settings :
 
