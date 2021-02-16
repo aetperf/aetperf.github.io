@@ -549,7 +549,7 @@ for key, value in hp.items():
 print(f"{'best objective value':>20s} : {study.best_value}")
 ```
 
-We do not display the log here, which is kind of verbose. Here are the final parameter values found by Optuna :
+We do not display the log here, which is kind of verbose. Here are the final parameter values found by Optuna, and the corresponding objective value :
 
                max_depth : 8
            learning_rate : 0.037288466802750865
@@ -560,7 +560,7 @@ We do not display the log here, which is kind of verbose. Here are the final par
         min_child_weight : 837.0649573787646
     best objective value : 0.8425081635928959
 
-So we should get a score between 0.842 and 0.843 on the test dataset.
+So we should get a score between 0.842 and 0.843 on the test set.
 
 # Submit and evaluate the prediction
 
