@@ -564,7 +564,7 @@ So we should get a score between 0.842 and 0.843 on the test dataset.
 
 # Submit and evaluate the prediction
 
-Now we are going to retrain the model with the optimal parameter dictionary `hp`, make a prediction on the test dataset and submit this prediction on the kaggle website :
+We are going to retrain the model with the optimal parameter dictionary `hp`, make a prediction on the test dataset and submit this prediction on the kaggle website :
 
 ```python
 hp["verbosity"] = 0
@@ -629,7 +629,7 @@ Here is a capture of the leaderboard web page :
   <img width="400" src="/img/2021-02-16_01/leaderboard.png" alt="leaderboard">
 </p>
 
-Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do if we would like to improve this score (EDA, FE, other algorihms, stacking, magic tricks, ...).
+Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of things to do to improve this score (EDA, FE, other algorihms, stacking, magic tricks, ...).
 
 
 {% if page.comments %}
