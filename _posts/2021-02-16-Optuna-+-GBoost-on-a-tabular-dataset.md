@@ -592,7 +592,7 @@ for train_index, test_index in rkf.split(X_values):
 y_pred /= N_REPEATS * N_SPLITS
 ```
 
-The prediction is made of the average of the different out-of-fold predictions on the test set. We use the same cross-validation strategy as in the HPO process, in order to be consistent and achieve a similar level of error.
+The prediction is made of the average of the different out-of-fold predictions on the test set. We use the same cross-validation strategy as in the HPO process, in order to be consistent and achieve a similar level of error (0.8425081635928959).
 
 In the following we are going to increment the submission file name and write the prediction as a CSV file :
 
@@ -629,7 +629,7 @@ Here is a capture of the leaderboard web page :
   <img width="400" src="/img/2021-02-16_01/leaderboard.png" alt="leaderboard">
 </p>
 
-Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do if we would like to improve this score (EDA, FE, other algothms, stacking, ...).
+Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do if we would like to improve this score (EDA, FE, other algorihms, stacking, magic tricks, ...).
 
 
 {% if page.comments %}
