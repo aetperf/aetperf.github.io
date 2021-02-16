@@ -1,4 +1,10 @@
-# Optuna + XGBoost on a tabular dataset
+---
+title: Optuna + XGBoost on a tabular dataset
+layout: post
+comments: true
+author: François Pacull
+tags: Python XGBoost Optuna HPO kaggle tabular regression supervised
+---
 
 <p align="center">
   <img width="400" src="../img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
@@ -629,3 +635,27 @@ Here is a capture of the leaderboard web page :
 </p>
 
 Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do if we would like to improve this score (EDA, FE, other algothms, stacking, ...).
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
