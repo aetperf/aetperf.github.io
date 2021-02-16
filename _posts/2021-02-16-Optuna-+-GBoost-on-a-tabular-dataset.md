@@ -10,7 +10,7 @@ tags: Python XGBoost Optuna HPO kaggle tabular regression supervised
   <img width="400" src="/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
 </p>
 
-The purpose of this Python notebook is to give a simple example of hyper-parameter optimization using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
+The purpose of this Python notebook is to give a simple example of hyper-parameter optimization (HPO) using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
 
 [XGBoost](https://github.com/dmlc/xgboost) is a well-known gradient boosting library, with some hyper-parameters, and [Optuna](https://github.com/optuna/optuna) is a powerful hyper-parameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.
 
@@ -388,7 +388,7 @@ def evaluate_model_rkf(model, X_df, y_df, n_splits=5, n_repeats=2, random_state=
     return np.sqrt(mean_squared_error(y_train, y_pred))
 ```
 
-We use a repeated k-fold cross-validation for model evaluation. Actually, because the dataset is sufficiently large (300000 samples), we do not repeat the k-fold process in the following (n_repeats=1). The collection of  all the out-of-fold predictions are being used to compute the model performance, Root Mean Square Error (RMSE), of the full training dataset.
+We use a repeated k-fold cross-validation for model evaluation. Actually, because the dataset is sufficiently large (300000 samples), we do not repeat the k-fold process in the following (n_repeats=1). The collection of all the out-of-fold predictions are being used to compute the model performance, Root Mean Square Error (RMSE), of the full training dataset.
 
 Let's try some models from scikit-learn, such as [`RandomForestRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html) and [`HistGradientBoostingRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html?highlight=histgradientboostingregressor#sklearn.ensemble.HistGradientBoostingRegressor) with default settings :
 
@@ -454,11 +454,11 @@ In this post, we are not going into much details about the gradient boosting alg
 A pragmatic approach is to use a large number of `n_estimators` and then activates early stopping with `early_stopping_rounds` (we use `early_stopping_rounds`=100 in this post) in the `fit()`method :
 > Validation metric needs to improve at least once in every `early_stopping_rounds` round(s) to continue training.
  
-Then, some of the most important parameters are `learning_rate`, `max_depth`, `min_child_weight`. In maybe another level of importance comes  `subsample` and `colsample_bytree`. 
+Then, some of the most important parameters are `learning_rate`, `max_depth`, `min_child_weight`. In maybe another lower level of importance comes  the parameters `subsample` and `colsample_bytree`. 
 
-So we can imagine to start by tuning the `learning_rate` and then adjust sequentially some groups of parameters. But here we are going to optimize most of these parameters all together. 
+So we can imagine to start by tuning the `learning_rate` and then adjust sequentially some groups of parameters, by order of importance. But here we are going to optimize most of these parameters all together, to make it shorter. 
 
-Also, an important setting is also the interval range for each parameter.  That would be kind of very optimistic to set very wide search intervals for each parameters, so we are going to reduce these intervals. This is really intuitive and I actually looked at other kaggle kernels using XGBoost to limit the search space ([this](https://www.kaggle.com/tunguz/tps-02-21-feature-importance-with-xgboost-and-shap) very interesting kernel by Bojan Tunguz for example). 
+Also, an important setting is the interval range for each parameter.  That would be kind of very optimistic to set very wide search intervals for each parameters, so we are going to reduce these intervals. This is a really empirical process here and I actually looked at other kaggle kernels using XGBoost to limit the search space ([this](https://www.kaggle.com/tunguz/tps-02-21-feature-importance-with-xgboost-and-shap) very interesting kernel by Bojan Tunguz for example). 
 
 Remarks :  
 - Unpromising trials are pruned using `XGBoostPruningCallback`, based on the RMSE on the current validation fold.  
@@ -521,7 +521,7 @@ def objective(
     return np.sqrt(mean_squared_error(y_train, y_pred))
 ```
 
-Now let's define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with `TPESampler`. We also need to create a study with `create_study` in order to start the optimization process. [Here](https://arxiv.org/pdf/1907.10902.pdf) is a paper with some references about the algorithms of Optuna.
+Now let's define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with `TPESampler`. We also need to create a study with `create_study` in order to start the optimization process. [Here](https://arxiv.org/pdf/1907.10902.pdf) is a paper with some references about the algorithms found in Optuna.
 
 
 ```python
@@ -549,7 +549,7 @@ for key, value in hp.items():
 print(f"{'best objective value':>20s} : {study.best_value}")
 ```
 
-We do not display the Optuna log here, which is kind of verbose. Here are the final parameter values found by Optuna :
+We do not display the log here, which is kind of verbose. Here are the final parameter values found by Optuna :
 
                max_depth : 8
            learning_rate : 0.037288466802750865
@@ -564,7 +564,7 @@ So we should get a score between 0.842 and 0.843 on the test dataset.
 
 # Submit and evaluate the prediction
 
-So let's retrain the model with the optimal parameter dictionary `hp`, make a prediction on the test dataset and submit this prediction on the kaggle website :
+Now we are going to retrain the model with the optimal parameter dictionary `hp`, make a prediction on the test dataset and submit this prediction on the kaggle website :
 
 ```python
 hp["verbosity"] = 0
@@ -591,6 +591,8 @@ for train_index, test_index in rkf.split(X_values):
     y_pred += model.predict(X_test.values)
 y_pred /= N_REPEATS * N_SPLITS
 ```
+
+The prediction is made of the average of the different out-of-fold predictions on the test set. We use the same cross-validation strategy as in the HPO process, in order to be consistent and achieve a similar level of error.
 
 In the following we are going to increment the submission file name and write the prediction as a CSV file :
 
