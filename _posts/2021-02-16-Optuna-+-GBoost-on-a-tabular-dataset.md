@@ -139,16 +139,16 @@ train_df.head(3)
     </tr>
     <tr>
       <th>2</th>
+      <td>B</td>
       <td>A</td>
-      <td>F</td>
       <td>...</td>
       <td>0.808464</td>
       <td>8.071256</td>
     </tr>
     <tr>
       <th>3</th>
-      <td>C</td>
-      <td>N</td>
+      <td>A</td>
+      <td>A</td>
       <td>...</td>
       <td>0.828352</td>
       <td>5.760456</td>
