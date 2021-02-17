@@ -521,7 +521,9 @@ def objective(
     return np.sqrt(mean_squared_error(y_train, y_pred))
 ```
 
-Now let's define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with `TPESampler`. We also need to create a study with `create_study` in order to start the optimization process. [Here](https://arxiv.org/pdf/1907.10902.pdf) is a paper with some references about the algorithms found in Optuna. `n_trials` is the number of objective evaluations, set to 100 in the following.
+Now let's define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with `TPESampler` . We also need to create a study with `create_study` in order to start the optimization process. [Here](https://arxiv.org/pdf/1907.10902.pdf) is a paper with some references about the algorithms found in Optuna. `n_trials` is the number of objective evaluations, set to 100 in the following. 
+
+Note that we activate the experimantal multivariate option of the TPE sampler. 
 
 
 ```python
