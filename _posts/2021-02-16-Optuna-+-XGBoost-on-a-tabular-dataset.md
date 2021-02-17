@@ -454,7 +454,7 @@ In this post, we are not going into much details about the gradient boosting alg
 A pragmatic approach is to use a large number of `n_estimators` and then activates early stopping with `early_stopping_rounds` (we use `early_stopping_rounds`=100 in this post) in the `fit()`method :
 > Validation metric needs to improve at least once in every `early_stopping_rounds` round(s) to continue training.
  
-Then, some of the most important parameters are `learning_rate`, `max_depth`, `min_child_weight`. In maybe a little lower level of importance comes the parameters `subsample` and `colsample_bytree`. 
+Then, some of the most important parameters are `learning_rate`, `max_depth`, `min_child_weight`. In maybe a little lower level of importance comes the parameters `subsample`, `colsample_bytree` and the regularization terms. 
 
 So we can imagine to start by tuning the `learning_rate` and then adjust sequentially some groups of parameters, by order of importance. But here we are going to optimize most of these parameters all together, to make it shorter. 
 
