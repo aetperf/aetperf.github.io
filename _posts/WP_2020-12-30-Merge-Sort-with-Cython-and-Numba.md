@@ -42,7 +42,7 @@ An additional storage is used during the `merge` step, which size is of the orde
 > To do so, we arrange the recursive calls such that the computation switches the roles of the input array and the auxiliary array at each level.
 
 Here are the optimizations performed in the following implementation:
-- Eliminate the copy to the auxiliary array (reducing` ` the cost of copying).
+- Eliminate the copy to the auxiliary array (reducing` ` The cost of copying).
 - Use an in-place sorting algorithm (`insertion sort`) for small subarrays (length smaller than a constant `SMALL_MERGESORT=40`). This may be referred to as *tiled merge sort*.
 - Stop if already sorted (test if the array is already in order before merging : `A[mid] <= A[mid + 1]`).  
 
