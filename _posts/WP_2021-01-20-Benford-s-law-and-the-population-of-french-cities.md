@@ -1,7 +1,7 @@
 
 In this Python notebook, we are going to look at Benford's law, which predicts the leading digit distribution, when dealing with some real-world collections of numbers. This distribution usually occurs when the numbers are rather smoothly distributed over several orders of magnitute. This can be observed with population data, file size data, stock prices, river lengths, ...
 
-We are going to check this law with a dataset of the population of all french cities (actually all settlements), as a simple experiment. 
+We are going to check this law with a dataset of the population of all french cities [actually all settlements], as a simple experiment. 
 
 Finally, we will look at the generalized version of this first-digit law : the significant-digit law, which also predicts the occurence of other significant digits.
 
@@ -28,7 +28,7 @@ Here is the definition from [wikipedia](https://en.wikipedia.org/wiki/Benford%27
 </p>
 
 This was first discovered by Canadian-American astronomer Simon Newcomb in 1881, when he
-> noticed that in logarithm tables the earlier pages (that started with 1) were much more worn than the other pages.
+> noticed that in logarithm tables the earlier pages [that started with 1] were much more worn than the other pages.
 
 Let's have a look at this distribution :
 
@@ -60,7 +60,7 @@ Now let's check our population data.
 
 ## Population of french cities
 
-Data from 2017 can be found [here](https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511), from the website of the french institute of statistics and economic studies (INSEE). The chosen archive has several CSV files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an "arrondissement", which is some kind of district (e.g. twenty arrondissements in Paris). Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.
+Data from 2017 can be found [here](https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511), from the website of the french institute of statistics and economic studies [INSEE]. The chosen archive has several CSV files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an "arrondissement", which is some kind of district [e.g. twenty arrondissements in Paris]. Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.
 
 Let's start by downloading and extracting the data :
 
@@ -306,7 +306,7 @@ _ = plt.title("Distribution of the communes' population")
 
 
 So even if it is not uniform in the log space, it is smooth and wide enough to approximately follow Bendford's law. As explained in [wikipedia](https://en.wikipedia.org/wiki/Benford%27s_law):
-> Benford's law can be seen in the larger area covered by red (first digit one) compared to blue (first digit 8) shading.
+> Benford's law can be seen in the larger area covered by red [first digit one] compared to blue [first digit 8] shading.
 
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-01-20_01/wikipedia_02.png" alt="Distribution">
@@ -324,7 +324,7 @@ Here is the generalization of Benford's law, from Hill [1] :
 P(D_1 = d_1, ... ,D_k = d_k) = log_{10} \left[ 1 + \left( \sum_{i=1}^k d_i 10^{k-i} \right)^{-1} \right], k \geq 1
 \end{equation}
 
-where $d_j$ is the $j$-th significant digit ($d_1 \in (1, ..., 9)$ and $d_j \in (0, ..., 9)$ for $j>1$).
+where $d_j$ is the $j$-th significant digit [$d_1 \in (1, ..., 9)$ and $d_j \in (0, ..., 9)$ for $j>1$].
 
 So the distribution of the second digit is the following one :
 
@@ -371,7 +371,7 @@ df.loc[df.PTOT > 9, "second_digit"] = df[df.PTOT > 9].PTOT.map(lambda x: int(str
 sd_occ_pc = df.second_digit.value_counts() / len(df)
 ```
 
-Again, we can observe that the data follows (the generalized) Benford's law pretty well :
+Again, we can observe that the data follows [the generalized] Benford's law pretty well :
 
 
 ```python
