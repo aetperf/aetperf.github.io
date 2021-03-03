@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img width="200" src="/img/2021-01-29_01/1024px-Keras_logo.svg.png" alt="Keras logo">
+  <img width="200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-01-29_01/1024px-Keras_logo.svg.png" alt="Keras logo">
 </p>
 
 Training a DL model might take some time, and make use of some special hardware. So you may want to save the model for using it later, or on another computer.
@@ -143,7 +143,7 @@ _ = ax.legend(["Training loss", "Trainig accuracy"])
 
 
 <p align="center">
-  <img width="600" src="/img/2021-01-29_01/output_14_0.png" alt="Training loss and accuracy">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-01-29_01/output_14_0.png" alt="Training loss and accuracy">
 </p>
     
 

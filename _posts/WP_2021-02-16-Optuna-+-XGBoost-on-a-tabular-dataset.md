@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img width="400" src="/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
+  <img width="400" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
 </p>
 
 The purpose of this Python notebook is to give a simple example of hyperparameter optimization (HPO) using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
@@ -190,7 +190,7 @@ _ = ax.set(title="Train target distribution", xlabel="Target values")
 ```
 
 <p align="center">
-  <img width="600" src="/img/2021-02-16_01/output_11_0.png" alt="Train target distribution">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-02-16_01/output_11_0.png" alt="Train target distribution">
 </p>
 
 There is no missing data [not a very common situation!] : 
@@ -595,7 +595,7 @@ Now let's submit :
 Here is a capture of the leaderboard web page :
 
 <p align="center">
-  <img width="400" src="/img/2021-02-16_01/leaderboard.png" alt="leaderboard">
+  <img width="400" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-02-16_01/leaderboard.png" alt="leaderboard">
 </p>
 
 Not so bad, the public leaderboard score of the submission is 0.84244 [rank 142 / 826]. Of course there would be a lot of work to do to improve this score [EDA, FE, other algorithms, stacking, magic tricks, ...].
