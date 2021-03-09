@@ -3,7 +3,7 @@
   <img width="400" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo">
 </p>
 
-The purpose of this Python notebook is to give a simple example of hyperparameter optimization (HPO) using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
+The purpose of this Python notebook is to give a simple example of hyperparameter optimization [HPO] using Optuna and XGBoost. We are going to perform a regression on tabular data with single output. 
 
 [XGBoost](https://github.com/dmlc/xgboost) is a well-known gradient boosting library, with some hyperparameters, and [Optuna](https://github.com/optuna/optuna) is a powerful hyperparameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.
 
