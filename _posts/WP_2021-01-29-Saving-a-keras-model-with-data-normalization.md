@@ -7,7 +7,7 @@ Training a DL model might take some time, and make use of some special hardware.
 
 In this short Python notebook, we are going to create a very simple `tensorflow.keras` model, train it, save it into a directory along with the training data scaling factors [standard scaling], and then load and call it.
 
-The dataset is the [breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html) from scikit-learn (binary classification). The point of this post is not the model but rather saving and loading the entire Keras model with the training dataset feature-wise mean and std. 
+The dataset is the [breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html) from scikit-learn [binary classification]. The point of this post is not the model but rather saving and loading the entire Keras model with the training dataset feature-wise mean and std. 
 
 ## Imports
 
@@ -54,7 +54,7 @@ X.shape
 
 We are going to use a `Normalization layer`. As explained in the [documentation](https://keras.io/api/layers/preprocessing_layers/core_preprocessing_layers/normalization/) :
 
-> This layer will coerce its inputs into a distribution centered around 0 with standard deviation 1. It accomplishes this by precomputing the mean and variance of the data, and calling (input-mean)/sqrt(var) at runtime.
+> This layer will coerce its inputs into a distribution centered around 0 with standard deviation 1. It accomplishes this by precomputing the mean and variance of the data, and calling [input-mean]/sqrt[var] at runtime.
 
 
 ```python
