@@ -329,7 +329,7 @@ ax.autoscale(enable=True, axis="x", tight=True)
 
 ## Departement with the worst COVID-19 rate
 
-First we need to select departments with a rather large population size (at least 50000 inhabitants):
+First we need to select departments with a rather large population size (at least 50000 inhabitants for example):
 
 
 ```python
