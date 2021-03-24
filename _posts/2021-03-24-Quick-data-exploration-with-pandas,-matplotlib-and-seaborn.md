@@ -443,6 +443,7 @@ cr_alldep.head(2)
     <tr style="text-align: right;">
       <th>dep</th>
       <th>48</th>
+      <th>23</th>
       <th>...</th>
       <th>75</th>
       <th>59</th>
@@ -453,12 +454,14 @@ cr_alldep.head(2)
       <th></th>
       <th></th>
       <th></th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>2020-05-13</th>
       <td>0.0</td>
+      <td>0.860067</td>
       <td>...</td>
       <td>1.768864</td>
       <td>1.390505</td>
@@ -466,6 +469,7 @@ cr_alldep.head(2)
     <tr>
       <th>2020-05-14</th>
       <td>0.0</td>
+      <td>0.860067</td>
       <td>...</td>
       <td>2.606747</td>
       <td>1.622255</td>
