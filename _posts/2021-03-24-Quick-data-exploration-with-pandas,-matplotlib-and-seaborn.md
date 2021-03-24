@@ -133,7 +133,7 @@ _ = ax.set(
 
    
 <p align="center">
-  <img width="600" src="/img/2021-03-24_01/output_7_0.png" alt="">
+  <img width="800" src="/img/2021-03-24_01/output_7_0.png" alt="">
 </p>
     
 
@@ -305,7 +305,7 @@ ax.autoscale(enable=True, axis="x", tight=True)
 
 
 <p align="center">
-  <img width="600" src="/img/2021-03-24_01/output_14_0.png" alt="">
+  <img width="800" src="/img/2021-03-24_01/output_14_0.png" alt="">
 </p>
     
 
@@ -323,7 +323,7 @@ ax.autoscale(enable=True, axis="x", tight=True)
 ```
 
 <p align="center">
-  <img width="600" src="/img/2021-03-24_01/output_16_0.png" alt="">
+  <img width="800" src="/img/2021-03-24_01/output_16_0.png" alt="">
 </p>
 
 
@@ -528,7 +528,7 @@ ax.autoscale(enable=True, axis="x", tight=True)
 
     
 <p align="center">
-  <img width="600" src="/img/2021-03-24_01/output_25_0.png" alt="">
+  <img width="800" src="/img/2021-03-24_01/output_25_0.png" alt="">
 </p>
     
 
@@ -691,7 +691,7 @@ _ = ax.set(
 
     
 <p align="center">
-  <img width="600" src="/img/2021-03-24_01/output_31_0.png" alt="">
+  <img width="800" src="/img/2021-03-24_01/output_31_0.png" alt="">
 </p>
     
 
