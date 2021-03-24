@@ -679,7 +679,7 @@ _ = ax.set(
 
     
 <p align="center">
-  <img width="800" src="/img/2021-03-24_01/output_31_0.png" alt="">
+  <img width="1600" src="/img/2021-03-24_01/output_31_0.png" alt="">
 </p>
     
 
