@@ -75,14 +75,14 @@ tests.head(2)
 
 
 We have 6 columns here:  
-- `dep` : "department"'s code  
+- `dep` : department's code  
 - `jour` :  date  
 - `P` : number of positive tests per day   
 - `T` : number of tests per day  
 - `cl_age90` : age group   
 - `pop` : population corresponding to an age group and a department
 
-We have 11 age group values, however 0 gather all age groups:
+We have 11 age group values, however 0 gathers all age groups:
 
 
 ```python
@@ -513,7 +513,7 @@ dep_ag.head(2)
 
 
 
-Also, we compute the weakly average and transpose the table:
+Also, we compute the weekly average and transpose the table:
 
 
 ```python
