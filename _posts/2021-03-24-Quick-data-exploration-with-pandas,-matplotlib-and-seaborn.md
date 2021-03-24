@@ -1,5 +1,3 @@
-# Quick data exploration with pandas, matplotlib and seaborn
-
 ---
 title: Quick data exploration with pandas, matplotlib and seaborn
 layout: post
@@ -9,7 +7,7 @@ tags: Python pandas matplotlib seaborn
 ---
 
 <p align="center">
-  <img width="400" src="https://pandas.pydata.org/static/img/pandas_secondary.svg" alt="Pandas">
+  <img width="300" src="https://pandas.pydata.org/static/img/pandas_secondary.svg" alt="Pandas">
 </p>
 
 In this JupyterLab Python notebook we are going to look at the rate of coronavirus (COVID-19) cases in french departments (administrative divisions of France). The data source is the french government's [open data](https://www.data.gouv.fr/fr/datasets/taux-dincidence-de-lepidemie-de-covid-19/#_).
@@ -43,8 +41,6 @@ tests = pd.read_csv(
 )
 tests.head(2)
 ```
-
-
 
 
 <div>
@@ -112,8 +108,6 @@ We have 11 age group values, however 0 gather all age groups:
 ```python
 tests.cl_age90.unique().tolist()
 ```
-
-
 
 
     [9, 19, 29, 39, 49, 59, 69, 79, 89, 90, 0]
@@ -419,7 +413,7 @@ large_deps[:5]
 
 
 
-Now we pivot the table suwh that each column corresponds to a department:
+Now we pivot the table such that each column corresponds to a department:
 
 
 ```python
@@ -456,43 +450,12 @@ cr_alldep.head(2)
       <th>dep</th>
       <th>978</th>
       <th>48</th>
-      <th>23</th>
-      <th>90</th>
-      <th>05</th>
-      <th>15</th>
-      <th>09</th>
-      <th>2A</th>
-      <th>04</th>
-      <th>52</th>
       <th>...</th>
-      <th>44</th>
-      <th>78</th>
-      <th>62</th>
-      <th>92</th>
-      <th>33</th>
-      <th>93</th>
-      <th>69</th>
-      <th>13</th>
       <th>75</th>
       <th>59</th>
     </tr>
     <tr>
       <th>Date</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -506,23 +469,7 @@ cr_alldep.head(2)
       <th>2020-05-13</th>
       <td>0.0</td>
       <td>0.0</td>
-      <td>0.860067</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.000000</td>
-      <td>0.656177</td>
-      <td>2.462736</td>
-      <td>0.605338</td>
-      <td>1.181684</td>
       <td>...</td>
-      <td>0.417497</td>
-      <td>2.208991</td>
-      <td>0.894837</td>
-      <td>1.301307</td>
-      <td>0.244882</td>
-      <td>4.789992</td>
-      <td>1.066069</td>
-      <td>3.096631</td>
       <td>1.768864</td>
       <td>1.390505</td>
     </tr>
@@ -530,23 +477,7 @@ cr_alldep.head(2)
       <th>2020-05-14</th>
       <td>0.0</td>
       <td>0.0</td>
-      <td>0.860067</td>
-      <td>0.713547</td>
-      <td>4.938063</td>
-      <td>1.400452</td>
-      <td>0.000000</td>
-      <td>1.231368</td>
-      <td>1.210676</td>
-      <td>0.590842</td>
       <td>...</td>
-      <td>0.417497</td>
-      <td>1.449651</td>
-      <td>0.894837</td>
-      <td>2.664581</td>
-      <td>0.306102</td>
-      <td>3.951743</td>
-      <td>2.185442</td>
-      <td>2.457644</td>
       <td>2.606747</td>
       <td>1.622255</td>
     </tr>
@@ -606,7 +537,7 @@ Now we are going to focus on the department with highest COVID-19 rate.
 
 ## Heatmap of the COVID-19 rate by age group in the most affected department
 
-We start by picvoting the table such that each column corresponds to an age group:
+We start by pivoting the table such that each column corresponds to an age group:
 
 
 ```python
@@ -617,8 +548,6 @@ dep_ag.drop(["dep", "P", "T", "pop"], axis=1, inplace=True)
 dep_ag = dep_ag.pivot_table(index="Date", columns="cl_age90", values="ir")
 dep_ag.head(2)
 ```
-
-
 
 
 <div>
@@ -641,22 +570,12 @@ dep_ag.head(2)
       <th>cl_age90</th>
       <th>9</th>
       <th>19</th>
-      <th>29</th>
-      <th>39</th>
-      <th>49</th>
-      <th>59</th>
-      <th>69</th>
-      <th>79</th>
+      <td>...</td>
       <th>89</th>
       <th>90</th>
     </tr>
     <tr>
       <th>Date</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -669,12 +588,7 @@ dep_ag.head(2)
       <th>2020-05-13</th>
       <td>1.160501</td>
       <td>1.324369</td>
-      <td>1.799451</td>
-      <td>4.296724</td>
-      <td>5.627706</td>
-      <td>5.07120</td>
-      <td>5.568704</td>
-      <td>12.027760</td>
+      <td>...</td>
       <td>19.272929</td>
       <td>96.936797</td>
     </tr>
@@ -682,12 +596,7 @@ dep_ag.head(2)
       <th>2020-05-14</th>
       <td>0.000000</td>
       <td>0.000000</td>
-      <td>2.699177</td>
-      <td>4.687335</td>
-      <td>3.896104</td>
-      <td>5.57832</td>
-      <td>3.480440</td>
-      <td>9.622208</td>
+      <td>...</td>
       <td>26.500277</td>
       <td>9.693680</td>
     </tr>
