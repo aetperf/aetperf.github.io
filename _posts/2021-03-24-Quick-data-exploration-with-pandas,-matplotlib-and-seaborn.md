@@ -215,7 +215,7 @@ tests.head(2)
 
 
 
-## Positive and test rates in the Rhône department
+## COVID-19 and test rates in the Rhône department
 
 Now we select a department (Rhône department with code 69):
 
