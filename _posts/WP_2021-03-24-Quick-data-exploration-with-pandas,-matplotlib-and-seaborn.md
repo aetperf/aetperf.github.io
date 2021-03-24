@@ -582,3 +582,7 @@ _ = ax.set(
     ylabel="Age group",
 )
 ```
+
+<p align="center">
+  <img width="1600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-03-24_01/output_31_0.png" alt="">
+</p>
