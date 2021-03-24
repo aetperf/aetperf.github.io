@@ -95,12 +95,12 @@ tests.head(2)
 
 
 We have 6 columns here:  
-- `dep` : "departement"'s code  
+- `dep` : "department"'s code  
 - `jour` :  date  
 - `P` : number of positive tests per day   
 - `T` : number of tests per day  
 - `cl_age90` : age group   
-- `pop` : population corresponding to an age group and a departement
+- `pop` : population corresponding to an age group and a department
 
 We have 11 age group values, however 0 gather all age groups:
 
@@ -329,7 +329,7 @@ ax.autoscale(enable=True, axis="x", tight=True)
 
 ## Departement with the worst COVID-19 rate
 
-First we need to select departments with a significative population size (at least 20000 inhabitants):
+First we need to select departments with a rather large population size (at least 20000 inhabitants):
 
 
 ```python
@@ -511,7 +511,7 @@ deps
 
 
 
-We can now plot the evalution of the COVID-19 rate in these 5 most affected department:
+We can now plot the evolution of the COVID-19 rate in these 5 most affected departments:
 
 
 ```python
@@ -606,7 +606,7 @@ dep_ag.head(2)
 
 
 
-Also, we computer the weakly average and transpose the table:
+Also, we compute the weakly average and transpose the table:
 
 
 ```python
