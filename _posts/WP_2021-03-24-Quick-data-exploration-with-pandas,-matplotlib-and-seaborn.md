@@ -353,9 +353,9 @@ Now we pivot the table such that each column corresponds to a department:
 
 ```python
 cr_alldep = tests[tests.cl_age90 == 0][["dep", "P", "pop"]]
-cr_alldep["ir"] = 100000 * cr_alldep.P / cr_alldep["pop"]
+cr_alldep["cr"] = 100000 * cr_alldep.P / cr_alldep["pop"]
 cr_alldep.drop(["pop", "P"], axis=1, inplace=True)
-cr_alldep = cr_alldep.pivot_table(index="Date", columns="dep", values="ir")
+cr_alldep = cr_alldep.pivot_table(index="Date", columns="dep", values="cr")
 cr_alldep = cr_alldep[
     large_deps
 ]  # Here we remove the smallest department regarding population
@@ -463,9 +463,9 @@ We start by pivoting the table such that each column corresponds to an age group
 ```python
 depnum = deps[0]
 dep_ag = tests[(tests.dep == depnum) & (tests.cl_age90 != 0)].copy(deep=True)
-dep_ag["ir"] = 100000 * dep_ag.P / dep_ag["pop"]
+dep_ag["cr"] = 100000 * dep_ag.P / dep_ag["pop"]
 dep_ag.drop(["dep", "P", "T", "pop"], axis=1, inplace=True)
-dep_ag = dep_ag.pivot_table(index="Date", columns="cl_age90", values="ir")
+dep_ag = dep_ag.pivot_table(index="Date", columns="cl_age90", values="cr")
 dep_ag.head(2)
 ```
 
