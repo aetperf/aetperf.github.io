@@ -283,7 +283,7 @@ ax.autoscale(enable=True, axis="x", tight=True)
 
 ## Departement with the worst COVID-19 rate
 
-First we need to select departments with a rather large population size [at least 50000 inhabitants for example]:
+First we need to select departments with a rather large population size [at least 50000 inhabitants for example] in order to compute a significative rate per 100000. Here is the population per department:
 
 
 ```python
@@ -339,7 +339,7 @@ pop.head()
 </div>
 
 
-
+We create a list of departments with population above a threshold value:
 
 ```python
 pop_th = 50000
