@@ -19,7 +19,7 @@ We block all public access to this bucket, disable bucket versioning, and config
 
 ![Default encryption](/img/2021-03-25_01/2021-03-25_11-46_2.png)
 
-Note that we will be using the same bucket as input and output. This is not recommended when using a S3 "create file" trigger for the lambda function. However, we will only trigger the lambda function on files with a specific *7z* extension and be careful not to output 7zip files from the lambda function.
+Note that we will be using the same bucket as input and output. This is not recommended when using a S3 "create file" trigger for the lambda function. However, we will only trigger the lambda function on files with a specific *7z* extension and be careful not to output 7-zip files in the lambda function.
 
 ## Create a role
 
@@ -51,7 +51,7 @@ The lambda function will be triggered when an object ending with *7z*  is create
 
 You can edit these parameters, increase the RAM up to 10240 MB. Increasing the timeout is important if you provide an archive with all the Python virtual environment, and is the process is the function is a long one. Also make sure to change the handler in the Runtime settings if ever you change it; this is the entry point in the Python code:
 
- ![Default config](/img/2021-03-25_01/2021-03-25_17-16.png)
+ ![Handler](/img/2021-03-25_01/2021-03-25_17-16.png)
 
 As a first version, we use this function:
 
