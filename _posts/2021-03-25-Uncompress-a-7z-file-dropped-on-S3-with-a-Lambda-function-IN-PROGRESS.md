@@ -2,7 +2,7 @@
 title: Uncompress a 7-zip file dropped on S3 with a Lambda function IN PROGRESS
 layout: post
 comments: true
-author: François Pacull
+author: François Pacull & Romain Ferraton
 tags: Python AWS Lambda S3 CloudWatch 7-Zip Uncompress
 ---
 
