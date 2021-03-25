@@ -51,7 +51,7 @@ The lambda function will be triggered when an object ending with *7z*  is create
 
 You can edit these parameters, increase the RAM up to 10240 MB. Increasing the timeout is important if you provide an archive with all the Python virtual environment, and is the process is the function is a long one. Also make sure to change the handler in the Runtime settings if ever you change it; this is the entry point in the Python code:
 
- ![Handler](/img/2021-03-25_01/2021-03-25_17-16.png)
+![Handler](/img/2021-03-25_01/2021-03-25_17-16.png)
 
 As a first version, we use this function:
 
