@@ -358,7 +358,7 @@ cr_alldep.drop(["pop", "P"], axis=1, inplace=True)
 cr_alldep = cr_alldep.pivot_table(index="Date", columns="dep", values="cr")
 cr_alldep = cr_alldep[
     large_deps
-]  # Here we remove the smallest department regarding population
+]  # Here we select the largest departments regarding population
 cr_alldep.head(2)
 ```
 
