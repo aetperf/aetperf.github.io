@@ -13,11 +13,11 @@ We want an AWS Lambda function to be triggered when a file is dropped on a given
 
 Firstly, let's go to the AWS management console (I used my default profile), look for the S3 service and create a bucket. We create a bucket called *lambda-7z-test*:
 
-![General configuration](./img/2021-03-25_01/2021-03-25_11-45_1.png)
+![General configuration](/img/2021-03-25_01/2021-03-25_11-45_1.png)
 
 We block all public access to this bucket, disable bucket versioning, and configure some kind of encryption:
 
-![Default encryption](./img/2021-03-25_01/2021-03-25_11-46_2.png)
+![Default encryption](/img/2021-03-25_01/2021-03-25_11-46_2.png)
 
 Note that we will be using the same bucket as input and output. This is not recommended when using a S3 "create file" trigger for the lambda function. However, we will only trigger the lambda function on files with a specific *7z* extension and be careful not to output 7zip files from the lambda function.
 
@@ -25,7 +25,7 @@ Note that we will be using the same bucket as input and output. This is not reco
 
 Now we look for the IAM service, click on Roles and Create a new role. We choose the Lambda use case:
 
-![Create role](./img/2021-03-25_01/2021-03-25_14-45.png)
+![Create role](/img/2021-03-25_01/2021-03-25_14-45.png)
 
 We give a name to this role, *lambda_s3_7z* and configure some polices:
 
@@ -33,25 +33,25 @@ We give a name to this role, *lambda_s3_7z* and configure some polices:
 - Lambda full access
 - CloudWatch full access (used to monitor the lambda function executions)
 
-![Create role review](./img/2021-03-25_01/2021-03-25_14-49.png)
+![Create role review](/img/2021-03-25_01/2021-03-25_14-49.png)
 
 ## Create a Lambda function
 
 We now look for the Lambda service on the management console and choose to create a new lambda, in Python 3.7 with the *lambda_s3_7z* existing role:
 
-![Create lambda](./img/2021-03-25_01/2021-03-25_14-50.png)
+![Create lambda](/img/2021-03-25_01/2021-03-25_14-50.png)
 
 We call this lambda function *uncompress_7z*, and create a S3 trigger:
 
-![Add trigger](./img/2021-03-25_01/2021-03-25_14-53.png)
+![Add trigger](/img/2021-03-25_01/2021-03-25_14-53.png)
 
 The lambda function will be triggered when an object ending with *7z*  is created in the *lambda-7z-test* bucket. Also, it's important to configure the lambda function in order to increase the default timeout (3 s) and RAM (128 MB):
 
-![Default config](./img/2021-03-25_01/2021-03-25_16-58_1.png)
+![Default config](/img/2021-03-25_01/2021-03-25_16-58_1.png)
 
 You can edit these parameters, increase the RAM up to 10240 MB. Increasing the timeout is important if you provide an archive with all the Python virtual environment, and is the process is the function is a long one. Also make sure to change the handler in the Runtime settings if ever you change it; this is the entry point in the Python code:
 
- ![Default config](./img/2021-03-25_01/2021-03-25_17-16.png)
+ ![Default config](/img/2021-03-25_01/2021-03-25_17-16.png)
 
 As a first version, we use this function:
 
@@ -162,5 +162,5 @@ delete: s3://lambda-7z-test/2488-h.tar.7z
 
 References:
 
-- https://github.com/pimlock/s3-uncompressor-sam  
-- https://www.tutorialspoint.com/aws_lambda/aws_lambda_using_lambda_function_with_amazon_s3.htm
+- [1](https://github.com/pimlock/s3-uncompressor-sam)
+- [2](https://www.tutorialspoint.com/aws_lambda/aws_lambda_using_lambda_function_with_amazon_s3.htm)
