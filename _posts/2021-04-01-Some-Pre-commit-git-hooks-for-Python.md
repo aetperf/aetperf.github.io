@@ -34,7 +34,7 @@ repos:
     -   id: end-of-file-fixer
 ```
 
-It is called ``.pre-commit-config.yaml`. So far, it deals with trailing white spaces and end of files. What we want to use as pre-commit hooks, are the following tools:
+It is called `.pre-commit-config.yaml`. So far, it deals with trailing white spaces and end of files. What we want to use as pre-commit hooks, are the following tools:
 
 - [black](https://github.com/psf/black): a Python code formatter
 - [pycln](https://github.com/hadialqattan/pycln): a formatter for finding and removing unused import statements
