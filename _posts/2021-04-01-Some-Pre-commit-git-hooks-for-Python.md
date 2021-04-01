@@ -86,6 +86,7 @@ A lot of settings can be specified... A concern might be the line length. Now we
 ```python 
 $ echo "pre-commit" >> requirements-dev.txt
 $ echo "black" >> requirements-dev.txt
+$ echo "pycln" >> requirements-dev.txt
 $ echo "isort" >> requirements-dev.txt
 $ pip install -r requirements-dev.txt
 ```
@@ -186,7 +187,7 @@ What if we want to add a hook and update the process? Let's say we want to add t
 
 - [Mypy](https://github.com/python/mypy): optional static type checker for Python
 
-We just update the YAML pre-commit config file ``.pre-commit-config.yaml` by adding the Mypy hook:
+We just update the YAML pre-commit config file `.pre-commit-config.yaml` by adding the Mypy hook:
 
 ```yaml
 -   repo: https://github.com/pre-commit/mirrors-mypy
