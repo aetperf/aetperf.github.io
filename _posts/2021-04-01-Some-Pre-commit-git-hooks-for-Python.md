@@ -11,9 +11,9 @@ tags: Python Git Hooks Black ISort Pycln Mypy Linter
 </p>
 
 
-The pre-commit hooks are a great way to check and clean the code with no pain. They are executed automatically when committing changes. This can be usefull when several people are working on the some package with different code styles, but also can help finding some mistakes, typos, etc... 
+Pre-commit hooks are a great way to automatically check and clean the code. They are executed when committing changes to . This can be useful when several people are working on the same package with different code styles, but also to help finding some mistakes, typos, etc... 
 
-In this post we are dealing with git pre-commit hooks for Python code. We are going to use the `pre-commit` package. We are not gonna go into much details regarding all the different possible configurations of the many hooks available. What we want is basically to format the code, to remove unused imports and to sort and classify these imports (standard library, external libraries, and local imports).
+In this post we are dealing with `git` pre-commit hooks for Python code, with the `pre-commit` package. We are not gonna go into much details regarding the different configurations of all the possible hooks. What we want is basically to format the code, to remove unused imports and to sort and classify these imports (standard library < external libraries < local imports).
 
 First we need to install [`pre-commit`](https://github.com/pre-commit/pre-commit), which is a framework for managing and maintaining multi-language pre-commit hooks:
 
@@ -23,7 +23,7 @@ $ pre-commit --version
 pre-commit 2.11.1
 ```
 
-Next we need to go to our git repository of interest and create a config file for `pre-commit`. So we create this initial YAML config file that we are going to complete later:
+Next we need to go to our git repository of interest and create a config file for `pre-commit`. Here is the initial YAML config file that we are going to complete later:
 
 ```
 repos:
@@ -34,7 +34,7 @@ repos:
     -   id: end-of-file-fixer
 ```
 
-It needs to be called ``.pre-commit-config.yaml`. But what we also want to use as pre-commit hooks, are the following tools:
+It is called ``.pre-commit-config.yaml`. So far, it deals with trailing white spaces and end of files. What we want to use as pre-commit hooks, are the following tools:
 
 - [black](https://github.com/psf/black): a Python code formatter
 - [pycln](https://github.com/hadialqattan/pycln): a formatter for finding and removing unused import statements
@@ -81,20 +81,20 @@ use_parentheses = true
 ensure_newline_before_comments = true
 ```
 
-Now we add pre-commit to the requirements-dev.txt file. We assume here that it has already been created:
+A lot of settings can be specified... My main concern is the line length. Now we add `pre-commit` to the `requirements-dev.txt` file. We assume here that it has already been created:
 
 ```python 
 $ echo "pre-commit" >> requirements-dev.txt
 ```
 
-Also we need to register the git hook scripts:
+Also we need to "register" `pre-commit`:
 
 ```python 
 $ pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 ```
 
-Now we can try to tun the hooks to check that everything is working and to initialize the hooks:
+Now we can try to run the hooks to check that everything is working and to initialize the whole process:
 
 ```bash
 $ pre-commit run --all-files
@@ -133,7 +133,7 @@ Fixing /home/francois/Workspace/PCH/src/model_tls.py
 Fixing /home/francois/Workspace/PCH/src/train.py
 ```
 
-And now everything runs smoothly:
+Now everything runs smoothly if we commit some changes:
 
 ```bash
 $ git commit -m "pre-commit hook test"
@@ -144,8 +144,7 @@ pycln....................................................................Passed
 isort....................................................................Passed
 ```
 
-
-We can test these hooks with a piece of code. Here we are just looking at the imports part:
+We can test these hooks with a "dirty" piece of code. Here we are just looking at the imports part:
 
 ```python
 from sklearn.metrics import max_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, r2_score
@@ -158,7 +157,7 @@ from sklearn.linear_model importLinearRegression
 from sklearn.model_selection import KFold
 ```
 
-They are rather messy. Also, the sys, sklearn.linear imports are not used later in the code. After committing this source code, it looks quite better:
+They are rather messy. Also, the `sys` and `sklearn.linear` imports are not used later in the code. After committing this source code, it looks quite better:
 
 
 ```python
@@ -180,12 +179,11 @@ import model_cfg
 import model_tls
 ```
 
-What if we want to add a hook and update pre-commit? Let's say we want to add this tool:
+What if we want to add a hook and update the process? Let's say we want to add this tool:
 
 - [Mypy](https://github.com/python/mypy): optional static type checker for Python
 
-
-We need to update the YAML pre-commit config file ``.pre-commit-config.yaml`by adding the Mypy hook:
+We just update the YAML pre-commit config file ``.pre-commit-config.yaml` by adding the Mypy hook:
 
 ```yaml
 -   repo: https://github.com/pre-commit/mirrors-mypy
@@ -194,7 +192,7 @@ We need to update the YAML pre-commit config file ``.pre-commit-config.yaml`by a
     -   id: mypy
 ```
 
-Now let's run the pre-commit hooks:
+We do not specify any settings for Mypy in the  `pyproject.toml`. Llet's run the pre-commit hooks:
 
 ```bash
 $ pre-commit run --all-files
@@ -210,7 +208,7 @@ isort....................................................................Passed
 mypy.....................................................................Passed
 ```
 
-This seems to be OK. Let's not forget to commit the YAML file change:
+This seems to be OK! Let's not forget to commit the YAML file change:
 
 ```bash
 $ git add .pre-commit-config.yaml
@@ -222,3 +220,27 @@ pycln....................................................................Passed
 isort....................................................................Passed
 mypy.....................................................................Passed
 ```
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
