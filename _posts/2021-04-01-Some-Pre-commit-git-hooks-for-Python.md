@@ -13,7 +13,7 @@ tags: Python Git Hooks Black ISort Pycln Mypy Linter
 
 Pre-commit hooks are a great way to automatically check and clean the code. They are executed when committing changes to git . This can be useful when several people are working on the same package with different code styles, but also to help finding some typos, mistakes, etc... 
 
-In this post we are dealing with `git` pre-commit hooks for Python code, with the [`pre-commit`](https://github.com/pre-commit/pre-commit) package. We will not go into much details regarding the different configurations of all the possible hooks. What we want is basically to format the code, remove unused imports and sort and classify these imports (standard library < external libraries < local imports).
+In this post we are dealing with git pre-commit hooks for Python code, with the [`pre-commit`](https://github.com/pre-commit/pre-commit) package. We will not go into much details regarding the different configurations of all the possible hooks. [Here](https://pre-commit.com/hooks.html) is a list of some supported hooks. What we want is basically to format the code, remove unused imports and sort and classify these imports (standard library < external libraries < local imports).
 
 First we need to install [`pre-commit`](https://github.com/pre-commit/pre-commit), which is a framework for managing and maintaining multi-language pre-commit hooks:
 
