@@ -81,13 +81,13 @@ use_parentheses = true
 ensure_newline_before_comments = true
 ```
 
-A lot of settings can be specified... My main concern is the line length. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file. We assume here that it has already been created:
+A lot of settings can be specified... A concern might be the line length. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file. We assume here that it has already been created:
 
 ```python 
 $ echo "pre-commit" >> requirements-dev.txt
 $ echo "black" >> requirements-dev.txt
 $ echo "isort" >> requirements-dev.txt
-$ pip install -r  requirements-dev.txt
+$ pip install -r requirements-dev.txt
 ```
 
 Also we need to "register" `pre-commit`:
@@ -97,7 +97,7 @@ $ pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 ```
 
-Now we can try to run the hooks to check that everything is working and to initialize the whole process:
+Now we can try to run the hooks in order to check that everything is working and to initialize the whole process:
 
 ```bash
 $ pre-commit run --all-files
@@ -136,7 +136,7 @@ Fixing /home/francois/Workspace/PCH/src/model_tls.py
 Fixing /home/francois/Workspace/PCH/src/train.py
 ```
 
-Now everything runs smoothly if we commit some changes:
+Now everything runs smoothly when we commit some changes:
 
 ```bash
 $ git commit -m "pre-commit hook test"
@@ -156,7 +156,7 @@ import pandas as pd
 import model_cfg, model_tls
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model importLinearRegression
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import KFold
 ```
 
