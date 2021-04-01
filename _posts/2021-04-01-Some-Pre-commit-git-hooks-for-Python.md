@@ -11,9 +11,9 @@ tags: Python Git Hooks Black ISort Pycln Mypy Linter
 </p>
 
 
-Pre-commit hooks are a great way to automatically check and clean the code. They are executed when committing changes to . This can be useful when several people are working on the same package with different code styles, but also to help finding some typos, mistakes, etc... 
+Pre-commit hooks are a great way to automatically check and clean the code. They are executed when committing changes to git . This can be useful when several people are working on the same package with different code styles, but also to help finding some typos, mistakes, etc... 
 
-In this post we are dealing with `git` pre-commit hooks for Python code, with the [`pre-commit`](https://github.com/pre-commit/pre-commit) package. We are not gonna go into much details regarding the different configurations of all the possible hooks. What we want is basically to format the code, to remove unused imports and to sort and classify these imports (standard library < external libraries < local imports).
+In this post we are dealing with `git` pre-commit hooks for Python code, with the [`pre-commit`](https://github.com/pre-commit/pre-commit) package. We will not go into much details regarding the different configurations of all the possible hooks. What we want is basically to format the code, remove unused imports and sort and classify these imports (standard library < external libraries < local imports).
 
 First we need to install [`pre-commit`](https://github.com/pre-commit/pre-commit), which is a framework for managing and maintaining multi-language pre-commit hooks:
 
@@ -81,10 +81,13 @@ use_parentheses = true
 ensure_newline_before_comments = true
 ```
 
-A lot of settings can be specified... My main concern is the line length. Now we add `pre-commit` to the `requirements-dev.txt` file. We assume here that it has already been created:
+A lot of settings can be specified... My main concern is the line length. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file. We assume here that it has already been created:
 
 ```python 
 $ echo "pre-commit" >> requirements-dev.txt
+$ echo "black" >> requirements-dev.txt
+$ echo "isort" >> requirements-dev.txt
+$ pip install -r  requirements-dev.txt
 ```
 
 Also we need to "register" `pre-commit`:
@@ -192,7 +195,7 @@ We just update the YAML pre-commit config file ``.pre-commit-config.yaml` by add
     -   id: mypy
 ```
 
-We do not specify any settings for Mypy in the  `pyproject.toml`. Llet's run the pre-commit hooks:
+The we add `mypy` to the `requirements-dev.txt` file. We do not specify any settings for Mypy in the  `pyproject.toml`. Let's run the pre-commit hooks:
 
 ```bash
 $ pre-commit run --all-files
