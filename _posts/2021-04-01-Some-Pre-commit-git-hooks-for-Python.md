@@ -95,7 +95,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 ```
 
-A lot of settings can be specified... A concern might be the line length. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file:
+A lot of settings can be specified... A concern might be the line length abd to make Black compatible with isort. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file:
 
 ```python 
 $ cat requirements-dev.txt
