@@ -39,19 +39,19 @@ It is called `.pre-commit-config.yaml`. So far, it deals with trailing white spa
 - [black](https://github.com/psf/black): a Python code formatter
 
 <p align="center">
-  <img width="200" src="/img/2021-04-01_01/black.png" alt="Black">
+  <img width="250" src="/img/2021-04-01_01/black.png" alt="Black">
 </p>
 
 - [pycln](https://github.com/hadialqattan/pycln): a formatter for finding and removing unused import statements
 
 <p align="center">
-  <img width="200" src="/img/2021-04-01_01/pycln.png" alt="Pycln">
+  <img width="250" src="/img/2021-04-01_01/pycln.png" alt="Pycln">
 </p>
 
 - [isort](https://github.com/PyCQA/isort): a Python utility / library to sort imports alphabetically, and automatically separated into sections and by type
 
 <p align="center">
-  <img width="200" src="/img/2021-04-01_01/isort.png" alt="Isort">
+  <img width="250" src="/img/2021-04-01_01/isort.png" alt="Isort">
 </p>
 
 So we need to add the following lines to the pre-commit config file:
