@@ -210,7 +210,7 @@ We just update the YAML pre-commit config file `.pre-commit-config.yaml` by addi
     -   id: mypy
 ```
 
-The we add `mypy` to the `requirements-dev.txt` file. We do not specify any specific setting for Mypy in the  `pyproject.toml`. Let's run the pre-commit hooks:
+Then we add `mypy` to the `requirements-dev.txt` file. We do not specify any specific setting for Mypy in the  `pyproject.toml`. Let's run the pre-commit hooks:
 
 ```bash
 $ pre-commit run --all-files
