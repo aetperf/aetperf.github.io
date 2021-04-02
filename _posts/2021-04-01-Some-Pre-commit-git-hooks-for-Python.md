@@ -80,8 +80,6 @@ Also, we need to create a TOML settings file for theses tools, named `pyproject.
 ```toml
 [tool.black]
 line-length = 79
-target-version = ['py36', 'py37', 'py38']
-include = '\.pyi?$'
 
 [tool.pycln]
 all = true
