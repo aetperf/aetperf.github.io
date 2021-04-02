@@ -34,11 +34,25 @@ repos:
     -   id: end-of-file-fixer
 ```
 
-It is called `.pre-commit-config.yaml`. So far, it deals with trailing white spaces and end of files. What we want to use as pre-commit hooks, are the following tools:
+It is called `.pre-commit-config.yaml`. So far, it deals with trailing white spaces and end of files. What we want to use as pre-commit hooks, in this post, are the following tools:
 
 - [black](https://github.com/psf/black): a Python code formatter
+
+<p align="center">
+  <img width="200" src="/img/2021-04-01_01/black.png" alt="Black">
+</p>
+
 - [pycln](https://github.com/hadialqattan/pycln): a formatter for finding and removing unused import statements
+
+<p align="center">
+  <img width="200" src="/img/2021-04-01_01/pycln.png" alt="Pycln">
+</p>
+
 - [isort](https://github.com/PyCQA/isort): a Python utility / library to sort imports alphabetically, and automatically separated into sections and by type
+
+<p align="center">
+  <img width="200" src="/img/2021-04-01_01/isort.png" alt="Isort">
+</p>
 
 So we need to add the following lines to the pre-commit config file:
 
@@ -81,13 +95,14 @@ use_parentheses = true
 ensure_newline_before_comments = true
 ```
 
-A lot of settings can be specified... A concern might be the line length. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file. We assume here that it has already been created:
+A lot of settings can be specified... A concern might be the line length. Now we add `pre-commit` and the different formatting tools to the `requirements-dev.txt` file:
 
 ```python 
-$ echo "pre-commit" >> requirements-dev.txt
-$ echo "black" >> requirements-dev.txt
-$ echo "pycln" >> requirements-dev.txt
-$ echo "isort" >> requirements-dev.txt
+$ cat requirements-dev.txt
+pre-commit
+black
+pycln
+isort
 $ pip install -r requirements-dev.txt
 ```
 
@@ -98,7 +113,7 @@ $ pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 ```
 
-Now we can try to run the hooks in order to check that everything is working and to initialize the whole process:
+We can run the hooks manually in order to check that everything is working and to initialize the whole process:
 
 ```bash
 $ pre-commit run --all-files
@@ -148,7 +163,7 @@ pycln....................................................................Passed
 isort....................................................................Passed
 ```
 
-We can test these hooks with a "dirty" piece of code. Here we are just looking at the imports part:
+We can test these hooks with a "dirty" piece of code. Here we are just looking at some imports part:
 
 ```python
 from sklearn.metrics import max_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, r2_score
@@ -161,8 +176,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import KFold
 ```
 
-They are rather messy. Also, the `sys` and `sklearn.linear` imports are not used later in the code. After committing this source code, it looks quite better:
-
+These imports are a little bit messy. Also, the `sys` and `sklearn.linear.LinearRegression` imports are not used later in the code. After committing this source code, it looks quite better:
 
 ```python
 import os
@@ -196,7 +210,7 @@ We just update the YAML pre-commit config file `.pre-commit-config.yaml` by addi
     -   id: mypy
 ```
 
-The we add `mypy` to the `requirements-dev.txt` file. We do not specify any settings for Mypy in the  `pyproject.toml`. Let's run the pre-commit hooks:
+The we add `mypy` to the `requirements-dev.txt` file. We do not specify any specific setting for Mypy in the  `pyproject.toml`. Let's run the pre-commit hooks:
 
 ```bash
 $ pre-commit run --all-files
