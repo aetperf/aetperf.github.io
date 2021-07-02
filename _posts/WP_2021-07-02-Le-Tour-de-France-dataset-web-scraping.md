@@ -1,11 +1,3 @@
---- 
-title: Le Tour de France dataset webscraping
-layout: post
-author: Romain Ferraton
-tags: Tour_de_France webscraping beautifulsoup python dataset
----
-
-
 
 # LeTour data set 
 This file downloads raw data about every rider of every Tour de France (from 1903 up to 2020). This data will then be postprocessed and stored in CSV format.
@@ -70,19 +62,7 @@ dflink
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -340,19 +320,7 @@ dfrankoutput
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
