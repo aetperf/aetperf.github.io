@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Goldbach primes Python Numba Datashader visualization
 ---
 
-This Python post is about computing and plotting Goldbach function. It is using some very basic mathematical knowledge, nothing fancy! The point is to perform some computations with [Numba](http://numba.pydata.org/). We also use [Datashader](https://datashader.org/) to perform some efficient plotting.
+This Python post is about computing and plotting Goldbach function. It is using some very basic mathematical knowledge, nothing fancy! The point is to do some computations with [Numba](http://numba.pydata.org/). We also use [Datashader](https://datashader.org/) to perform some efficient plotting.
 
 Here is the definition of the Goldbach function from [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
@@ -221,7 +221,9 @@ _ = ax.set_title("Timings of generate_is_prime_vector")
 <p align="center">
   <img width="600" src="/img/2021-07-22_01/output_18_0.png" alt="Timings of generate_is_prime_vector">
 </p>
- 
+
+
+The timings of the same function in pure Python is not shown. It is usually slower by a factor 10 or 100 (more probably 100 than 10).
 
 
 ## Find the number of prime pairs for a given even number E
