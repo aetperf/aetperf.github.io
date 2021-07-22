@@ -262,7 +262,7 @@ print(f"{count} prime pairs")
 
 ## Loop over all even numbers E not larger than n
 
-Now we apply the previous process to all $E$s smaller or equal to $n$, which is related to the length of `is_prime_vec`. We only compute the latter once and use it for all the evaluations of $g(E)$. Note that in the following `compute_g_vector` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$.
+Now we apply the previous process to all $E$s smaller or equal to $n$. We only compute `is_prime_vec` once and use it for all the evaluations of $g(E)$. Note that in the following `compute_g_vector` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$.
 
 
 ```python
