@@ -496,12 +496,12 @@ plt.legend()
 plt.grid("on")
 _ = ax.set_ylabel("Runtime [s]")
 _ = ax.set_xlabel("N")
-_ = ax.set_title("Timings of find_distinct_prime_pairs_count")
+_ = ax.set_title("Timings of compute_g_vector")
 ```
 
 
 <p align="center">
-  <img width="600" src="/img/2021-07-22_01/output_35_0.png" alt="Timings of find_distinct_prime_pairs_count">
+  <img width="600" src="/img/2021-07-22_01/output_35_0.png" alt="Timings of compute_g_vector">
 </p>
 
     
