@@ -322,36 +322,9 @@ and so on... We can check the values of $g$ at least for some for some small val
 n = 56
 is_prime_vec = generate_is_prime_vector(n)
 g_vec = compute_g_vector(is_prime_vec)
-g_vec_ref = [
-    1,
-    1,
-    1,
-    2,
-    1,
-    2,
-    2,
-    2,
-    2,
-    3,
-    3,
-    3,
-    2,
-    3,
-    2,
-    4,
-    4,
-    2,
-    3,
-    4,
-    3,
-    4,
-    5,
-    4,
-    3,
-    5,
-    3,
-]
-np.testing.assert_array_equal(g_vec[2:], g_vec_ref)
+g_vec_ref = [0, 0, 1, 1, 1, 2, 1, 2, 2, 2, 2, 3, 3, 3, 2, 3, 2, 4, 4, 2, 3, 4, 
+    3, 4, 5, 4, 3, 5, 3]
+np.testing.assert_array_equal(g_vec, g_vec_ref)
 ```
 
 ## First plot of the comet
