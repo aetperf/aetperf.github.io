@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python Goldbach primes Python Numba Datashader visualization
 ---
 
-This Python post is about computing and plotting Goldbach function. However, it is based on some very basic mathematical knowledge, nothing fancy! The point is to see how [Numba](http://numba.pydata.org/) can easily accelerate some computations. We also use [Datashader](https://datashader.org/) to perform some efficient plotting.
+This Python post is about computing and plotting Goldbach function. It is using some very basic mathematical knowledge, nothing fancy! The point is to perform some computations with [Numba](http://numba.pydata.org/). We also use [Datashader](https://datashader.org/) to perform some efficient plotting.
 
 Here is the definition of the Goldbach function from [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
