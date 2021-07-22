@@ -76,7 +76,7 @@ def generate_is_prime_vector(n: int) -> np.ndarray:
     Returns
     -------
     is_prime_vec : ndarray
-        an array of type bool (`i` is prime if `is_prime[i]` is True).
+        an array of type bool (`i` is prime if `is_prime_vec[i]` is True).
     """
 
     # initialize all entries as True, except 0 and 1
@@ -264,7 +264,7 @@ print(f"{count} prime pairs")
 
 ## Loop over all even numbers E not larger than n
 
-Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size.
+Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous values of $E/2$ instead of even values of $E$.
 
 
 ```python
@@ -302,7 +302,7 @@ def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
     return g_vec
 ```
 
-The $i$th value of `g_vec` correponds to $g(2 \; i)$ with $i \leq 0 $:
+The $i$th value of `g_vec` correponds to $g(2 \, i)$ with $i \geq 0 $:
 
 
 | i |  E  | g_vec[i] |
@@ -469,6 +469,7 @@ def compute_g_vector_par(is_prime_vec: np.ndarray) -> np.ndarray:
     return g_vec
 ```
 
+Here we check that the sequential and parallel versions retrun the same values:
 
 ```python
 g_vec_par = compute_g_vector_par(is_prime_vec)
@@ -557,7 +558,7 @@ g_vec_par = compute_g_vector_par(is_prime_vec)
     Wall time: 1min 28s
 
 
-So computing $g$ with $n = 1e7$ should take one or several hours on the laptop with `compute_g_vector_par`... Let's do that next.
+So computing $g$ with $n = 1e7$ should take one or a few hours on the laptop with `compute_g_vector_par`... Let's do that next.
 
 ## Compute more data
 
@@ -668,7 +669,7 @@ _ = plt.xticks(np.arange(0.5, 3, 0.1))
 ## Prime E/2 values only
 
 
-Finally, we are going to isolate part of the most dense line from the comet tail. As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
+Finally, we are going to isolate a part of the most dense line from the comet tail (around $E=0.66$). As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
     
 > Of particular interest is the peak formed by selecting only values of E/2 that are prime. [...] The peak is very close to a Gaussian form. 
 
