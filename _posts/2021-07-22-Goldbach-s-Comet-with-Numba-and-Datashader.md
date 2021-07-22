@@ -12,7 +12,7 @@ Here is the definition of the Goldbach function from [wikipedia](https://en.wiki
 
 > The function $g ( E )$  is defined for all even integers $E > 2$ to be the number of different ways in which E can be expressed as the sum of two primes. For example, $g ( 22 ) = 3$  since 22 can be expressed as the sum of two primes in three different ways ( 22 = 11 + 11 = 5 + 17 = 3 + 19).
 
-Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewhere.
+Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewhere 🤯.
 
 Anyway, here are the steps used in this post to compute Golbach function: 
 - Define a maximum positive integer $n$.
