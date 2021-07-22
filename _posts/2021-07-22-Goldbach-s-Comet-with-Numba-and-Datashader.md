@@ -8,13 +8,13 @@ tags: Python Goldbach primes Python Numba Datashader visualization
 
 This Python post is about computing and plotting Goldbach function. However, it is based on some very basic mathematical knowledge, nothing fancy! The point is to see how [Numba](http://numba.pydata.org/) can easily accelerate some computations. We also use [Datashader](https://datashader.org/) to perform some efficient plotting.
 
-Here is the definition of the Goldbach function from [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet) :
+Here is the definition of the Goldbach function from [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
 > The function $g ( E )$  is defined for all even integers $E > 2$ to be the number of different ways in which E can be expressed as the sum of two primes. For example, $g ( 22 ) = 3$  since 22 can be expressed as the sum of two primes in three different ways ( 22 = 11 + 11 = 5 + 17 = 3 + 19).
 
 Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewhere.
 
-Anyway, here are the steps used in this post to compute Golbach function : 
+Anyway, here are the steps used in this post to compute Golbach function: 
 - Define a maximum positive integer $n$.
 - For each natural number smaller or equal to $n$, build a quick way to check if it is a prime or not. In order to do that, we are going to create a boolean vector using the sieve of Eratosthenes.
 
@@ -22,7 +22,7 @@ Anyway, here are the steps used in this post to compute Golbach function :
 is_prime_vec = generate_is_prime_vector(n)  
 ```
 
-- for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ smaller or equal to $E/2$.
+- for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$.
 
 ```python
 g_vec = compute_g_vector(is_prime_vec)
@@ -43,10 +43,10 @@ from datashader import transfer_functions as tf
 from colorcet import palette
 ```
 
-Package versions :
+Package versions:
 
 ```python
-    Python version       : 3.9.6
+    Python    : 3.9.6
     pandas    : 1.3.0
     datashader: 0.13.0
     primesieve: 2.3.0
@@ -95,7 +95,7 @@ def generate_is_prime_vector(n: int) -> np.ndarray:
     return is_prime_vec
 ```
 
-Let's run it with a small value of `n` :
+Let's run it with a small value of `n`:
 
 
 ```python
@@ -111,7 +111,7 @@ generate_is_prime_vector(n)
 
 
 
-We can get the list of primes from the `is_prime` vector using `np.nonzero` : 
+We can get the list of primes from the `is_prime` vector using `np.nonzero`: 
 
 
 ```python
@@ -125,7 +125,7 @@ np.nonzero(generate_is_prime_vector(n))[0]
 
 
 
-The list of primes not greater then `n` can also be computed using the `primesieve` library :
+The list of primes not greater then `n` can also be computed using the `primesieve` library:
 
 
 ```python
@@ -139,7 +139,7 @@ primesieve.primes(n)
 
 
 
-Let's check that the list of primes found is correct with a larger value of `n` :
+Let's check that the list of primes found is correct with a larger value of `n`:
 
 
 ```python
@@ -170,10 +170,6 @@ out = perfplot.bench(
     n_range=[10 ** k for k in range(1, 10)],
 )
 ```
-
-
-    Output()
-
 
 
 ```python
@@ -227,14 +223,14 @@ _ = ax.set_title("Timings of generate_is_prime_vector")
 ```
 
 <p align="center">
-  <img width="800" src="/img/2021-07-22_01/output_18_0.png" alt="Timings of generate_is_prime_vector">
+  <img width="600" src="/img/2021-07-22_01/output_18_0.png" alt="Timings of generate_is_prime_vector">
 </p>
  
 
 
 ## Find the number of prime pairs for a given even number E
 
-Now we show how $g(E)$ can be computed for a given value of $E$ :
+Now we show how $g(E)$ can be computed for a given value of $E$:
 
 
 ```python
@@ -266,9 +262,9 @@ print(f"{count} prime pairs")
     3 prime pairs
 
 
-## Loop over all even numbers E smaller or equal to n
+## Loop over all even numbers E not larger than n
 
-Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this step size.
+Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size.
 
 
 ```python
@@ -287,7 +283,7 @@ def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
     Returns
     -------
     g_vec : ndarray
-        an array of type uint (g_vec[i] corresponds to g(E) where E = 2i).
+        an array of type uint (`g_vec[i]` corresponds to g(E) where E = 2i).
     """
 
     n_max = len(is_prime_vec) - 1
@@ -306,7 +302,20 @@ def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
     return g_vec
 ```
 
-We can check $g$ at least for some for some small values of $E$ :
+The $i$th value of `g_vec` correponds to $g(2 \; i)$ with $i \leq 0 $:
+
+
+| i |  E  | g_vec[i] |
+|--:|----:|---------:|
+| 0 |  0  |        0 |
+| 1 |  2  |        0 |
+| 2 |  4  |        1 |
+| 3 |  6  |        1 |
+| 4 |  8  |        1 |
+| 5 | 10  |        2 |
+
+
+and so on... We can check the values of $g$ at least for some for some small values of $E$:
 
 
 ```python
@@ -345,7 +354,7 @@ g_vec_ref = [
 np.testing.assert_array_equal(g_vec[2:], g_vec_ref)
 ```
 
-## First plot
+## First plot of the comet
 
 
 ```python
@@ -506,13 +515,6 @@ out
 
 
 
-
-
-
-    
-
-
-
 Basically, running the parallel version on 8 cores divides the running time by 3.
 
 
@@ -537,11 +539,11 @@ _ = ax.set_title("Timings of find_distinct_prime_pairs_count")
 
 
 <p align="center">
-  <img width="800" src="/img/2021-07-22_01/output_35_0.png" alt="Timings of find_distinct_prime_pairs_count">
+  <img width="600" src="/img/2021-07-22_01/output_35_0.png" alt="Timings of find_distinct_prime_pairs_count">
 </p>
 
     
-If we run the parallel version with $n=1e6$, we might estimate if the running time with $n=1e7$ and see if this is affordable.
+If we run the parallel version with $n=1e6$, we might estimate the running time of $n=1e7$ and see if this is affordable.
 
 
 ```python
@@ -555,9 +557,9 @@ g_vec_par = compute_g_vector_par(is_prime_vec)
     Wall time: 1min 28s
 
 
-So computing $g$ with $n = 1e7$ should take one or several hours on my laptop with `compute_g_vector_par`... Let's do that next.
+So computing $g$ with $n = 1e7$ should take one or several hours on the laptop with `compute_g_vector_par`... Let's do that next.
 
-## Compute g
+## Compute more data
 
 
 ```python
@@ -582,7 +584,7 @@ g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>
     Wall time: 1h 49min 9s  
 
 
-## Plotting g
+## Plotting g with Datashader
 
 
 ```python
@@ -611,7 +613,7 @@ img
 </p>
 
 
-We can clearly observe some dense lines is this "comet tail". In order to visualize this vertical distribution of prime pairs, we are are going to normalize $g$.
+We can clearly observe some dense lines in this "comet tail". In order to visualize this vertical distribution of prime pairs, we are are going to normalize $g$.
 
 
 ```python
@@ -643,7 +645,7 @@ img
 </p>
 
 
-We can now proceed to plot the histogram of the comet data, which will lead to som kind of cross section of the above plot :
+We can now proceed to plot the histogram of the comet data, which will lead to som kind of cross section of the above plot:
 
 
 ```python
@@ -666,7 +668,7 @@ _ = plt.xticks(np.arange(0.5, 3, 0.1))
 ## Prime E/2 values only
 
 
-Finally, we are going to isolate part of the most dense line from the comet tail. As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet) :
+Finally, we are going to isolate part of the most dense line from the comet tail. As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
     
 > Of particular interest is the peak formed by selecting only values of E/2 that are prime. [...] The peak is very close to a Gaussian form. 
 
