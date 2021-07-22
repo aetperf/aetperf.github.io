@@ -250,7 +250,7 @@ count = 0  # number of prime pairs
 # we loop over all the prime numbers smaller than or equal to half of num
 while i <= E_half:
     if is_prime_vec[i] and is_prime_vec[E - i]:
-        print(f"({i:{len(str(E_half))}d}, {E- i:{len(str(E_half))}d})")
+        print(f"({i:2d}, {E- i:2d})")
         count += 1
     i += 1
 print(f"{count} prime pairs")
@@ -264,7 +264,7 @@ print(f"{count} prime pairs")
 
 ## Loop over all even numbers E not larger than n
 
-Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous values of $E/2$ instead of even values of $E$.
+Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$.
 
 
 ```python
