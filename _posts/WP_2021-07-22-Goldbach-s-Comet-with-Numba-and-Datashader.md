@@ -149,7 +149,7 @@ np.testing.assert_array_equal(prime_list_1, prime_list_2)
 
 ### Elapsed time
 
-This `generate_is_prime_vector` function is rather efficient compared to the next step of computing $g(E)$ for all $E$s. This classical implementation of the sieve of Eratosthenes is supposed to be $O(n \; log \; log \; n)$.
+This `generate_is_prime_vector` function is rather efficient compared to the next step of computing $g(E)$ for all $E$s. This classical implementation of the sieve of Eratosthenes is supposed to be $O(n log  log  n)$.
 
 
 ```python
