@@ -469,7 +469,7 @@ def compute_g_vector_par(is_prime_vec: np.ndarray) -> np.ndarray:
     return g_vec
 ```
 
-Here we check that the sequential and parallel versions retrun the same values:
+Here we check that the sequential and parallel versions return the same values:
 
 ```python
 g_vec_par = compute_g_vector_par(is_prime_vec)
@@ -558,7 +558,7 @@ g_vec_par = compute_g_vector_par(is_prime_vec)
     Wall time: 1min 28s
 
 
-So computing $g$ with $n = 1e7$ should take one or a few hours on the laptop with `compute_g_vector_par`... Let's do that next.
+So computing $g$ with $n = 1e7$ should take one or a few hours on the laptop executing `compute_g_vector_par`... Let's do that next.
 
 ## Compute more data
 
@@ -584,6 +584,8 @@ g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>
     CPU times: user 8h 48min 44s, sys: 558 ms, total: 8h 48min 44s  
     Wall time: 1h 49min 9s  
 
+A bit less than 2 hours...
+        
 
 ## Plotting g with Datashader
 
