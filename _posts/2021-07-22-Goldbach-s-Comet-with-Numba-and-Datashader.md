@@ -577,7 +577,7 @@ img
 </p>
 
 
-We can clearly observe some dense lines in this "comet tail". In order to visualize this vertical distribution of prime pairs, we are are going to normalize $g$. As explained on the wikipedia [page](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
+We can clearly observe some dense lines in this "comet tail". In order to visualize this vertical distribution of prime pairs count, we are are going to normalize $g$. As explained on the wikipedia [page](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
 > An illuminating way of presenting the comet data is as a histogram. The function g(E) can be normalized by dividing by the locally averaged value of g, gav, taken over perhaps 1000 neighboring values of the even number E. The histogram can then be accumulated over a range of up to about 10% either side of a central E. 
 
@@ -634,7 +634,7 @@ _ = plt.xticks(np.arange(0.5, 3, 0.1))
 ## Prime E/2 values only
 
 
-Finally, we are going to isolate a part of the most dense line from the comet tail (for a normalized number of prim pairs around 0.66$). As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
+Finally, we are going to isolate a part of the most dense line from the comet tail (for a normalized number of prime pairs around 0.66). As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
     
 > Of particular interest is the peak formed by selecting only values of E/2 that are prime. [...] The peak is very close to a Gaussian form. 
 
