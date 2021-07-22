@@ -618,7 +618,7 @@ img
 
 We can clearly observe some dense lines in this "comet tail". In order to visualize this vertical distribution of prime pairs, we are are going to normalize $g$. As explained on the wikipedia [page](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
-> An illuminating way of presenting the comet data is as a histogram. The function g ( E ) {\displaystyle g(E)} g(E) can be normalized by dividing by the locally averaged value of g, gav, taken over perhaps 1000 neighboring values of the even number E. The histogram can then be accumulated over a range of up to about 10% either side of a central E. 
+> An illuminating way of presenting the comet data is as a histogram. The function g(E) can be normalized by dividing by the locally averaged value of g, gav, taken over perhaps 1000 neighboring values of the even number E. The histogram can then be accumulated over a range of up to about 10% either side of a central E. 
 
 
 ```python
