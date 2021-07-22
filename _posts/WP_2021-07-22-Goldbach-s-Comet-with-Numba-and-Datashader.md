@@ -14,7 +14,7 @@ Anyway, here are the steps used in this post to compute Goldbach function:
 is_prime_vec = generate_is_prime_vector(n)  
 ```
 
-- for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$ ( $\left(p, E-p\tight)$ is a Goldbach partition of $E$ if they are both primes).
+- for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$ ( $\left(p, E-p\right)$ is a Goldbach partition of $E$ if they are both primes).
 
 ```python
 g_vec = compute_g_vector(is_prime_vec)
