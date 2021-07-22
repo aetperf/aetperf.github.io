@@ -215,7 +215,7 @@ _ = ax.set_title("Timings of generate_is_prime_vector")
 </p>
 
 
-The timings of the same function in pure Python is not shown. It is usually slower by a factor 10 or 100 (100 is more likely than 10 for this kind of CPU bound function).
+The timings of the same function in pure Python is not shown. It is usually slower by a factor 10 or 100 [100 is more likely than 10 for this kind of CPU bound function].
 
 
 ## Find the number of prime pairs for a given even number E
@@ -292,7 +292,7 @@ def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
     return g_vec
 ```
 
-The $i$-th value of `g_vec` correponds to $g(2 \, i)$ with $i \geq 0 $:
+The $i$-th value of `g_vec` correponds to $g(2 i)$ with $i \geq 0 $:
 
 
 | i |  E  | g_vec[i] |
@@ -428,7 +428,7 @@ np.testing.assert_array_equal(g_vec, g_vec_par)
 
 ### Elapsed time
 
-Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores (Intel(R) i7-7700HQ CPU @ 2.80GHz).
+Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores [Intel i7-7700HQ CPU @ 2.80GHz].
 
 
 ```python
