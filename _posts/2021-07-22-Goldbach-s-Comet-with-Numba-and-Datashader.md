@@ -169,10 +169,6 @@ out = perfplot.bench(
     labels=["generate_is_prime_vector(n)"],
     n_range=[10 ** k for k in range(1, 10)],
 )
-```
-
-
-```python
 out
 ```
 
@@ -464,14 +460,6 @@ out = perfplot.bench(
     labels=["jit", "njit"],
     n_range=[10 ** k for k in range(1, 6)],
 )
-```
-
-
-    Output()
-
-
-
-```python
 out
 ```
 
