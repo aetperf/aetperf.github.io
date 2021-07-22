@@ -14,7 +14,7 @@ Here is the definition of the Goldbach function from [wikipedia](https://en.wiki
 
 Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewhere 🤯.
 
-Anyway, here are the steps used in this post to compute Golbach function: 
+Anyway, here are the steps used in this post to compute Goldbach function: 
 - Define a maximum positive integer $n$.
 - For each natural number smaller or equal to $n$, build a quick way to check if it is a prime or not. In order to do that, we are going to create a boolean vector using the sieve of Eratosthenes.
 
@@ -268,9 +268,9 @@ Now we apply the previous process to all $E$s smaller or equal to $n$. We only c
 ```python
 @jit(nopython=True)
 def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
-    """Evaluate the Golbach function.
+    """Evaluate the Goldbach function.
 
-    This evatuates the Golbach function for all even integers E not
+    This evatuates the Goldbach function for all even integers E not
     larger than the largest integer from the argument is_prime.
 
     Parameters
@@ -408,9 +408,9 @@ We are now going to parallelize `compute_g_vector` just by using the Numba `njit
 ```python
 @njit(parallel=True)
 def compute_g_vector_par(is_prime_vec: np.ndarray) -> np.ndarray:
-    """Evaluate the Golbach function.
+    """Evaluate the Goldbach function.
 
-    This evatuates the Golbach function for all even integers E not
+    This evatuates the Goldbach function for all even integers E not
     larger than the largest integer from the argument is_prime.
 
     Parameters
