@@ -223,7 +223,7 @@ _ = ax.set_title("Timings of generate_is_prime_vector")
 </p>
 
 
-The timings of the same function in pure Python is not shown. It is usually slower by a factor 10 or 100 (more probably 100 than 10).
+The timings of the same function in pure Python is not shown. It is usually slower by a factor 10 or 100 (100 is more likely than 10 for this kind of CPU bound function).
 
 
 ## Find the number of prime pairs for a given even number E
