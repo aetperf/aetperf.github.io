@@ -157,7 +157,7 @@ np.testing.assert_array_equal(prime_list_1, prime_list_2)
 
 ### Elapsed time
 
-This `generate_is_prime_vector` function is rather efficient compared to the next step of computing $g(E)$ for all $E$s. This classical implementation is supposed to be $O(n \; log \; log \; n)$.
+This `generate_is_prime_vector` function is rather efficient compared to the next step of computing $g(E)$ for all $E$s. This classical implementation of the sieve of Eratosthenes is supposed to be $O(n \; log \; log \; n)$.
 
 
 ```python
@@ -264,7 +264,7 @@ print(f"{count} prime pairs")
 
 ## Loop over all even numbers E not larger than n
 
-Note that the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$.
+Now we apply the previous process to all $E$s smaller or equal to $n$, which is related to the length of `is_prime_vec`. We only compute the latter once and use it for all the evaluations of $g(E)$. Note that in the following `compute_g_vector` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$.
 
 
 ```python
@@ -302,7 +302,7 @@ def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
     return g_vec
 ```
 
-The $i$th value of `g_vec` correponds to $g(2 \, i)$ with $i \geq 0 $:
+The $i$-th value of `g_vec` correponds to $g(2 \, i)$ with $i \geq 0 $:
 
 
 | i |  E  | g_vec[i] |
