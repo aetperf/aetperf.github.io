@@ -240,7 +240,7 @@ count = 0  # number of prime pairs
 # we loop over all the prime numbers smaller than or equal to half of num
 while i <= E_half:
     if is_prime_vec[i] and is_prime_vec[E - i]:
-        print(f"({i:2d}, {E- i:2d})")
+        print(f"({i:2d}, {E-i:2d})")
         count += 1
     i += 1
 print(f"{count} prime pairs")
