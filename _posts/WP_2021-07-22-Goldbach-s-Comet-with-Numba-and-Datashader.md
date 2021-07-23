@@ -533,7 +533,7 @@ A bit less than 2 hours...
 
 
 ```python
-cmap = palette["kbc"]
+cmap = palette["kbc"][::-1]
 bg_col = "white"
 height = 800
 width = int(np.round(1.6180 * height))
