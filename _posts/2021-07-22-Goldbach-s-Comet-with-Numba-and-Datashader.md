@@ -681,7 +681,7 @@ _ = ax.set_title("Timings of the compute_g_vector function")
     
 
 
-If we run the parallel version with $n=1e6$, we might estimate if the running time with $n=1e7$ and see if this is affordable.
+If we run the parallel version with $n=1e6$, we might estimate if the running time with a larger value of $n$ is affordable.
 
 
 ```python
