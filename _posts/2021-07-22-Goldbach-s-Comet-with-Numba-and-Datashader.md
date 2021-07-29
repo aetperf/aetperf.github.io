@@ -198,10 +198,6 @@ out = perfplot.bench(
 out
 ```
 
-
-    Output()
-
-
     CPU times: user 7.2 s, sys: 281 ms, total: 7.48 s
     Wall time: 7.3 s
 
@@ -387,9 +383,6 @@ out = perfplot.bench(
 )
 out
 ```
-
-
-    Output()
 
 
     CPU times: user 11.3 s, sys: 111 ms, total: 11.4 s
@@ -631,9 +624,6 @@ out = perfplot.bench(
 )
 out
 ```
-
-
-    Output()
 
 
     CPU times: user 1min 18s, sys: 265 ms, total: 1min 19s
