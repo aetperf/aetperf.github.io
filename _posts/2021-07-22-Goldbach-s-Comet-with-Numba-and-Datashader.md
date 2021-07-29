@@ -491,7 +491,7 @@ and so on...
 
 ### Parallel loop
 
-We are now going to parallelize `compute_g_vector` just by using the Numba `njit` decorator and `prange` on the outer explicit loop. The vector `g_vec` is shared across threads but each thread is only writing into its own partition.
+We are now going to parallelize `compute_g_vector_seq` by using the Numba `njit` decorator and `prange` on the outer explicit loop. The vector `g_vec` is shared across threads but each thread is only writing into its own partition.
 
 
 ```python
