@@ -676,7 +676,7 @@ _ = ax.set_title("Timings of the compute_g_vector function")
 
 
 <p align="center">
-  <img width="800" src="/img/2021-07-22_01/output_44_0.png" alt="Timings of the compute_g_vector function">
+  <img width="600" src="/img/2021-07-22_01/output_44_0.png" alt="Timings of the compute_g_vector function">
 </p>  
     
 
