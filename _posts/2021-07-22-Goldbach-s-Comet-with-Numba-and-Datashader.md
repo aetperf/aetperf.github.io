@@ -440,11 +440,11 @@ _ = ax.set_title("Timings of the compute_g functions")
 
 The `compute_g_3` is the most efficient of the three variations. Let's use this approach to compute many value of $g(E)$.
 
-The algorithms' complexity is $O(n)$, because we basically loop over an array proportional to $n$.
+The algorithms' complexity is $O(n)$, because we basically loop over an array proportional to $n$ to perform a $O(1)$ operation.
 
 ## Loop over all even numbers E smaller or equal to n
 
-Now we just loop over all even natural numbers $E \leq n$. Note that in the following `compute_g_vector_seq` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$. Also, we only compute `is_prime_vec` and `primes` only once and use it for all the evaluations of $g(E)$.
+Now we just loop over all even natural numbers $E \leq n$. Note that in the following `compute_g_vector_seq` function, the outer loop has a step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$. Also, we only compute `is_prime_vec` and `primes` only once and use it for all the evaluations of $g(E)$.
 
 `n` is calculted from the length of `is_prime_vec`. In the arguments, we assume that `primes` is corresponding to the primes of `is_prime_vec`.
 
