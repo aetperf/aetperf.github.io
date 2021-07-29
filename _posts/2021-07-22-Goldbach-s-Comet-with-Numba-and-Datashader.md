@@ -645,14 +645,7 @@ out
 
 
 
-
-
-
-    
-
-
-
-Basically, running the parallel version on 8 cores divides the running time by 2.
+Basically, running the parallel version on 8 cores divides the running time by a factor 2 to 3.
 
 
 ```python
