@@ -701,10 +701,10 @@ So computing $g$ with $n = 5e6$ should take one or two minutes on my laptop with
 
 
 ```python
-# %%time
-# n = 5_000_000
-# primes, is_prime_vec = generate_primes_primesieve(n)
-# g_vec = compute_g_vector_par(is_prime_vec, primes)
+%%time
+n = 5_000_000
+primes, is_prime_vec = generate_primes_primesieve(n)
+g_vec = compute_g_vector_par(is_prime_vec, primes)
 ```
 
 ```
@@ -712,20 +712,9 @@ CPU times: user 10min 51s, sys: 494 ms, total: 10min 52s
 Wall time: 2min 30s
 ```
 
-
 ```python
-# %%time
-
-# COMPUTE
-
-# g_df = pd.DataFrame(data={"E": 2 * np.arange(len(g_vec)), "g": g_vec})
-# g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>2
-
-# g_df.to_parquet("g_vec_5e6.parquet")
-# READ
-g_df = pd.read_parquet("g_vec_5e6.parquet")
-
-# ----
+g_df = pd.DataFrame(data={"E": 2 * np.arange(len(g_vec)), "g": g_vec})
+g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>2
 ```
 
 ## Plotting g with Datashader
