@@ -822,10 +822,6 @@ Pi2
     CPU times: user 318 ms, sys: 76 ms, total: 394 ms
     Wall time: 405 ms
 
-
-
-
-
     0.6601618161644595
 
 
