@@ -601,7 +601,7 @@ ax.grid(True)
 
 
 <p align="center">
-  <img width="600" src="/img/2021-07-22_01/output_40_0.png" alt="Goldbach's comet n=1e4">
+  <img width="800" src="/img/2021-07-22_01/output_40_0.png" alt="Goldbach's comet n=1e4">
 </p>
     
 
