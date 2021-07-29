@@ -19,7 +19,7 @@ Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewh
 - For each natural number smaller or equal to $n$, build a quick way to check if it is a prime or not, and also list these primes. In order to do that, we are going to use the sieve of Eratosthenes.
 - for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$.  
 
-If $E-p$ is prime for a given prime $p \leq E/2$ then $(p, E-p)$ is indeed a partition of $E$. By looping over all primes $p \leq E/2$, we count all the partitions for $E$.
+If $E-p$ is prime for a given prime $p \leq E/2$ then $(p, E-p)$ is indeed a partition of $E$. We count all the partitions for $E$ by looping over all primes $p \leq E/2$, .
 
 ## Imports
 
