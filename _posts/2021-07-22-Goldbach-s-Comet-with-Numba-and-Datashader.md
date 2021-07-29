@@ -115,7 +115,7 @@ primes
 
 ### Using primesieve
 
-As an alternate way, these two arrays, `primes` and `is_prime_vec`, can be computed using the optimized C/C++ [primesieve](https://github.com/kimwalisch/primesieve) library :
+As an alternate way, these two arrays, `primes` and `is_prime_vec`, can be computed using the optimized C/C++ [primesieve](https://github.com/kimwalisch/primesieve) library:
 
 
 ```python
@@ -292,11 +292,11 @@ def compute_g_1(is_prime_vec: np.ndarray, E: int) -> int:
     return count
 ```
 
-In the second version, we loop on all primes $p$ with a `while` loop : 
+In the second version, we loop on all primes $p$ with a `while` loop: 
 - If $E-p$ is a prime, $(p, E-P)$ is a partition. 
 - If $p > E/2$, we exit the loop. 
 
-The function `compute_g_2` takes both `is_prime_vec` and `primes` as arguments :
+The function `compute_g_2` takes both `is_prime_vec` and `primes` as arguments:
 
 
 ```python
@@ -524,7 +524,7 @@ def compute_g_vector_par(is_prime_vec: np.ndarray, primes: np.ndarray) -> np.nda
     return g_vec
 ```
 
-We can check $g$ at least for some for some small values of $E$ :
+We can check $g$ at least for some for some small values of $E$:
 
 
 ```python
@@ -823,11 +823,11 @@ _ = plt.xticks(np.arange(0.5, 3.0, 0.1))
 
 ## The Hardy-Littlewood estimate
 
-As described on the [wikipedia page](](https://en.wikipedia.org/wiki/Goldbach%27s_comet)) for Goldbach's comet, the number of Goldbach partitions can be estimated using the following formulae from Hardy and Littlewood (1922) :
+As described on the [wikipedia page](](https://en.wikipedia.org/wiki/Goldbach%27s_comet)) for Goldbach's comet, the number of Goldbach partitions can be estimated using the following formulae from Hardy and Littlewood (1922):
 
 $$\frac{g(E)}{g_{av}} = \Pi_2 \prod \frac{p-1}{p-2}$$
 
-where the product is taken over all primes p that are factors of $E/2$, $\Pi_2$ being the twin primes constant :
+where the product is taken over all primes p that are factors of $E/2$, $\Pi_2$ being the twin primes constant:
 
 $$\Pi_2 = \prod_{p \geq 3} \left( 1 - \frac{1}{(1-p)^2} \right)$$
 
@@ -851,7 +851,7 @@ Pi2
 
 
 
-So let's compute this estimate of the normalized Goldbach function with Numba `njit` :
+So let's compute this estimate of the normalized Goldbach function with Numba `njit`:
 
 
 ```python
