@@ -688,7 +688,7 @@ g_vec = compute_g_vector_par(is_prime_vec, primes)
     Wall time: 6.28 s
 
 
-So computing $g$ with $n = 5e6$ should a few minutes on my laptop with `compute_g_vector_par`... Let's do that next.
+So computing $g$ with $n = 5e6$ should take a few minutes on my laptop with `compute_g_vector_par`... Let's do that next.
 
 ## Compute a larger vector of g values
 
