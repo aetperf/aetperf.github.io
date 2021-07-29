@@ -53,6 +53,7 @@ Package versions:
     colorcet  : 2.0.6
     perfplot  : 0.9.6
     numba     : 0.53.1
+```
 
 ## Sieve of Eratosthenes
 
