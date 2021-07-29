@@ -914,7 +914,7 @@ _ = ax.set_xlim(0.5, 2.5)
      
 
 
-Note that the Goldbach function is computed up to $n=5e6$, against $n=1e6$ for the estimate, which may explain some of the differences in the densities. However, we can clearly observe that the peaks are located at the same places.
+Note that the Goldbach function is computed up to $n=5e6$, against $n=1e6$ for the estimate, which might explain some of the differences between the densities. However, we can clearly observe that the peaks are located at the same places.
 
 ## Prime E/2 values only
 
