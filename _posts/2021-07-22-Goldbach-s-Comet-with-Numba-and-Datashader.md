@@ -889,8 +889,7 @@ img
 
 
 
-
-The vertical distribution of the dense lines seems to be similar to the one from normalized Goldbach function. This can be checked by computing and plotting both kernel density estimates.
+The vertical distribution of the dense lines seems to be similar to the one from the normalized Goldbach function. This can be checked by computing and plotting both kernel density estimates.
 
 ### Kernel density estimates
 
