@@ -444,7 +444,7 @@ The algorithms' complexity is $O(n)$, because we basically loop over an array pr
 
 ## Loop over all even numbers E smaller or equal to n
 
-Now we just loop over even all $E \leq n$. Note that in the following `compute_g_vector_seq` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$. Also, we only compute `is_prime_vec` and `primes` only once and use it for all the evaluations of $g(E)$.
+Now we just loop over all even natural numbers $E \leq n$. Note that in the following `compute_g_vector_seq` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$. Also, we only compute `is_prime_vec` and `primes` only once and use it for all the evaluations of $g(E)$.
 
 `n` is calculted from the length of `is_prime_vec`. In the arguments, we assume that `primes` is corresponding to the primes of `is_prime_vec`.
 
