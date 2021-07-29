@@ -288,7 +288,7 @@ def compute_g_1(is_prime_vec: np.ndarray, E: int) -> int:
     return count
 ```
 
-In the second version, we loop on all primes $p$ with a `while` loop: 
+In the second version, we loop on primes $p$ instead on integers, with a `while` loop: 
 - If $E-p$ is a prime, $(p, E-P)$ is a partition. 
 - If $p > E/2$, we exit the loop. 
 
