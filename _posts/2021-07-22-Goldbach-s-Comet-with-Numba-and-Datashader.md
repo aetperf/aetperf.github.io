@@ -808,6 +808,8 @@ $$\Pi_2 = \prod_{p \geq 3} \left( 1 - \frac{1}{(1-p)^2} \right)$$
 %%time
 n = 100_000_000
 primes = np.array(primesieve.primes(n))
+
+# twin primes constant
 Pi2 = np.prod(1.0 - 1.0 / np.power(1.0 - primes[1:], 2))
 Pi2
 ```
