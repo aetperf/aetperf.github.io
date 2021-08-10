@@ -6,6 +6,7 @@ author: François Pacull
 tags: Python Goldbach primes Python Numba Datashader visualization
 ---
 
+**Updated** 2021/07/29  
 
 This Python notebook is about computing and plotting Goldbach function. It requires some basic mathematical knowledge, nothing fancy! The main point is to perfom some computations with [Numba](http://numba.pydata.org/) and some efficient plotting with [Datashader](https://datashader.org/).
 
@@ -717,7 +718,7 @@ g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>
 cmap = palette["dimgray"]
 bg_col = "black"
 height = 800
-width = int(np.round(1.6180 * height))
+width = int(np.round(1.6 * height))
 ```
 
 
