@@ -503,11 +503,6 @@ assert expect.success
 ```
 
 
-```python
-expect = df.expect_column_values_to_be_between(column="Age", min_value=0)
-assert expect.success
-```
-
 One can also use `strict_min` and `strict_max` to include the bounds or not (`default=False`). 
 
 
