@@ -436,9 +436,6 @@ expect = df.expect_column_values_to_be_in_set(
 assert expect.success
 ```
 
-Again, we can use the `mostly` argument:
-
-
 ```python
 expect = df.expect_column_values_to_be_in_set(
     column="Embarked", value_set=["C", "S"], mostly=0.9
