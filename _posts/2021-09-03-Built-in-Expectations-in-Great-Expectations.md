@@ -558,7 +558,7 @@ expect = df.expect_column_values_to_be_increasing(column="PassengerId")
 assert expect.success
 ```
 
-Other posible arguments are:
+Other possible arguments are:
 - `strictly` (Boolean or None) – If True, values must be strictly greater than previous values
 - `parse_strings_as_datetimes` (boolean or None) – If True, all non-null column values to datetimes before making comparisons
 - `mostly`
