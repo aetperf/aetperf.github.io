@@ -588,7 +588,7 @@ ax.grid(True)
 
 ### Elapsed time
 
-Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores (Intel(R) i7-7700HQ CPU @ 2.80GHz).
+Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores [Intel(R) i7-7700HQ CPU @ 2.80GHz].
 
 
 ```python
