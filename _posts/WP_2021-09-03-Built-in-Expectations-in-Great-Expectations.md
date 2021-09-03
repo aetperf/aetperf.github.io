@@ -1,7 +1,3 @@
-<p align="center">
-  <img width="200" src="https://github.com/great-expectations/great_expectations/blob/develop/generic_dickens_protagonist.png?raw=true" alt="Great Expectations">
-</p>
-
 [Great expectation](https://github.com/great-expectations/great_expectations) is a Python tool for data testing, documentation, and profiling. Here is a figure from the [documentation](https://docs.greatexpectations.io/docs/) describing its purpose:
 
 <p align="center">
