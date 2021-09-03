@@ -199,7 +199,7 @@ expect.success
 
 
 
-So let's start with the available Expectations. Note that some Expectations have not yet been migrated to the v3 (Batch Request) API, so we did not include them in this post. Also, we did not investigate [distributional Expectations](https://docs.greatexpectations.io/docs/reference/expectations/distributional_expectations) that much. They are not so easy to use.
+So let's start with the available Expectations. Note that some Expectations have not yet been migrated to the v3 (Batch Request) API, so we did not include them in this post. Also, we did not investigate [distributional Expectations](https://docs.greatexpectations.io/docs/reference/expectations/distributional_expectations), which are not so easy to use.
 
 
 
