@@ -1,29 +1,25 @@
-This Python post is about computing and plotting Goldbach function. It is using some very basic mathematical knowledge, nothing fancy! The point is to do some computations with [Numba](http://numba.pydata.org/). We also use [Datashader](https://datashader.org/) to perform some efficient plotting.
+**Updated** Jul 29, 2021  
+
+This Python notebook is about computing and plotting Goldbach function. It requires some basic mathematical knowledge, nothing fancy! The main point is to perfom some computations with [Numba](http://numba.pydata.org/) and some efficient plotting with [Datashader](https://datashader.org/).
 
 Here is the definition of the Goldbach function from [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
 > The function $g ( E )$  is defined for all even integers $E > 2$ to be the number of different ways in which E can be expressed as the sum of two primes. For example, $g ( 22 ) = 3$  since 22 can be expressed as the sum of two primes in three different ways ( 22 = 11 + 11 = 5 + 17 = 3 + 19).
 
-Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewhere 🤯.
+The different prime pairs $(p_1, p_2)$ that sum to an even integer $E=p_1+p_2$ are called Goldbach partitions. 
 
-Anyway, here are the steps used in this post to compute Goldbach function: 
-- Define a maximum positive integer $n$.
-- For each natural number smaller or equal to $n$, build a quick way to check if it is a prime or not. In order to do that, we are going to create a boolean vector using the sieve of Eratosthenes.
+Note that for Goldbach's conjecture to be false, there must be $g(E) = 0$ somewhere for $E > 2$. Anyway, here are the steps used in this notebook to compute Goldbach function. Given a maximum positive integer $n$:
+- For each natural number smaller or equal to $n$, build a quick way to check if it is a prime or not, and also list the corresponding primes. In order to do that, we are going to use the sieve of Eratosthenes.
+- for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$.  
 
-```python
-is_prime_vec = generate_is_prime_vector(n)  
-```
-
-- for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$ [ [$p$, $E-p$] is a Goldbach partition of $E$ if they are both primes].
-
-```python
-g_vec = compute_g_vector(is_prime_vec)
-```
+If $E-p$ is prime for a given prime $p \leq E/2$ then $(p, E-p)$ is indeed a partition of $E$. We count all the partitions for $E$ by looping over all primes $p \leq E/2$, .
 
 ## Imports
 
 
 ```python
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import primesieve
@@ -33,6 +29,9 @@ import perfplot
 import datashader as ds
 from datashader import transfer_functions as tf
 from colorcet import palette
+
+FS_R = (20, 10)  # rectangular figure size
+FS_S = (10, 10)  # square figure size
 ```
 
 Package versions:
@@ -49,27 +48,15 @@ Package versions:
     numba     : 0.53.1
 ```
 
+## Sieve of Eratosthenes
 
-## Sieve of Eratosthenes with Numba
+### Simple implementation with Numba
 
 This code is inspired from [wikipedia](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes#Pseudocode) and [geeksforgeeks](https://www.geeksforgeeks.org/sieve-of-eratosthenes/). It flags all primes not greater than $n$. The algorithm includes a common optimization, which is to start enumerating the multiples of each prime $p$ from $p^2$.
-
 
 ```python
 @jit(nopython=True)
 def generate_is_prime_vector(n: int) -> np.ndarray:
-    """Sieve of Eratosthenes.
-
-    Parameters
-    ----------
-    n : int
-        `n` is the largest number that we want to flag ad prime or not.
-
-    Returns
-    -------
-    is_prime_vec : ndarray
-        an array of type bool (`i` is prime if `is_prime_vec[i]` is True).
-    """
 
     # initialize all entries as True, except 0 and 1
     is_prime_vec = np.ones(n + 1, dtype=np.bool_)
@@ -92,7 +79,8 @@ Let's run it with a small value of `n`:
 
 ```python
 n = 11
-generate_is_prime_vector(n)
+is_prime_vec = generate_is_prime_vector(n)
+is_prime_vec
 ```
 
 
@@ -103,81 +91,122 @@ generate_is_prime_vector(n)
 
 
 
-We can get the list of primes from the `is_prime` vector using `np.nonzero`: 
+We can get the list of primes from `is_prime_vec` using `np.flatnonzero`: 
 
 
 ```python
-np.nonzero(generate_is_prime_vector(n))[0]
+primes = np.flatnonzero(is_prime_vec).astype(np.uint64)
+primes
 ```
 
 
 
 
-    array([ 2,  3,  5,  7, 11])
+    array([ 2,  3,  5,  7, 11], dtype=uint64)
 
 
 
-The list of primes not greater then `n` can also be computed using the `primesieve` library:
+### Using primesieve
+
+As an alternate way, these two arrays, `primes` and `is_prime_vec`, can be computed using the optimized C/C++ [primesieve](https://github.com/kimwalisch/primesieve) library:
 
 
 ```python
-primesieve.primes(n)
+primes = np.array(primesieve.primes(n))
+primes
 ```
 
 
 
 
-    array('Q', [2, 3, 5, 7, 11])
+    array([ 2,  3,  5,  7, 11], dtype=uint64)
 
 
 
-Let's check that the list of primes found is correct with a larger value of `n`:
+
+```python
+is_prime_vec = np.zeros(n + 1, dtype=np.bool_)
+is_prime_vec[primes] = True
+is_prime_vec
+```
+
+
+
+
+    array([False, False,  True,  True, False,  True, False,  True, False,
+           False, False,  True])
+
+
+
+### Value check
+
+As a sanity check, we compare the prime lists obtained with the different methods for a larger value of `n`:
+
+
+```python
+def generate_primes_simple(n: int) -> Tuple[np.ndarray, np.ndarray]:
+    is_prime_vec = generate_is_prime_vector(n)
+    primes = np.flatnonzero(is_prime_vec).astype(np.uint64)
+    return primes, is_prime_vec
+```
+
+
+```python
+def generate_primes_primesieve(n: int) -> Tuple[np.ndarray, np.ndarray]:
+    primes = np.array(primesieve.primes(n))
+    is_prime_vec = np.zeros(n + 1, dtype=np.bool_)
+    is_prime_vec[primes] = True
+    return primes, is_prime_vec
+```
 
 
 ```python
 %%time
 n = 1_000_000
-is_prime_vec = generate_is_prime_vector(n)
-prime_list_1 = list(np.nonzero(is_prime_vec)[0])
-prime_list_2 = primesieve.primes(n)
-np.testing.assert_array_equal(prime_list_1, prime_list_2)
+primes_1, is_prime_vec_1 = generate_primes_simple(n)
+primes_2, is_prime_vec_2 = generate_primes_primesieve(n)
+np.testing.assert_array_equal(primes_1, primes_2)
+np.testing.assert_array_equal(is_prime_vec_1, is_prime_vec_2)
 ```
 
-    CPU times: user 37.1 ms, sys: 69 µs, total: 37.2 ms
-    Wall time: 36.5 ms
+    CPU times: user 36.5 ms, sys: 15 µs, total: 36.5 ms
+    Wall time: 60.3 ms
 
 
 ### Elapsed time
 
-This `generate_is_prime_vector` function is rather efficient compared to the next step of computing $g(E)$ for all $E$s. This classical implementation of the sieve of Eratosthenes is supposed to be $O(n log  log  n)$.
-
 
 ```python
+%%time
 out = perfplot.bench(
     setup=lambda n: n,
     kernels=[
-        lambda n: generate_is_prime_vector(n),
+        lambda n: generate_primes_simple(n),
+        lambda n: generate_primes_primesieve(n),    
     ],
-    labels=["generate_is_prime_vector(n)"],
-    n_range=[10 ** k for k in range(1, 10)],
+    labels=["generate_primes_simple", "generate_primes_primesieve"],
+    n_range=[10 ** k for k in range(1, 8)],
+    equality_check=None
 )
 out
 ```
 
+    CPU times: user 7.2 s, sys: 281 ms, total: 7.48 s
+    Wall time: 7.3 s
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃<span style="font-weight: bold"> n          </span>┃<span style="font-weight: bold"> generate_is_prime_vector(n) </span>┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 10         │ 6.3e-07                     │
-│ 100        │ 7.070000000000001e-07       │
-│ 1000       │ 1.7830000000000001e-06      │
-│ 10000      │ 1.2794000000000002e-05      │
-│ 100000     │ 0.000149319                 │
-│ 1000000    │ 0.002291595                 │
-│ 10000000   │ 0.081507009                 │
-│ 100000000  │ 1.119336045                 │
-│ 1000000000 │ 11.769184520000001          │
-└────────────┴─────────────────────────────┘
+
+
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n        </span>┃<span style="font-weight: bold"> generate_primes_simple </span>┃<span style="font-weight: bold"> generate_primes_primesieve </span>┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 10       │ 4.693000000000001e-06  │ 6.4000000000000006e-06     │
+│ 100      │ 5.1700000000000005e-06 │ 6.233e-06                  │
+│ 1000     │ 9.468e-06              │ 7.658e-06                  │
+│ 10000    │ 3.2039e-05             │ 1.4255000000000002e-05     │
+│ 100000   │ 0.000283582            │ 8.438300000000001e-05      │
+│ 1000000  │ 0.004541556            │ 0.000679709                │
+│ 10000000 │ 0.07260718000000001    │ 0.008423457                │
+└──────────┴────────────────────────┴────────────────────────────┘
 </pre>
 
 
@@ -192,107 +221,252 @@ out
 
 ```python
 ms = 10
-fig = plt.figure(figsize=(10, 10))
+fig = plt.figure(figsize=FS_S)
 ax = fig.add_subplot(1, 1, 1)
 plt.loglog(
     out.n_range,
-    1.0e-9 * out.n_range * np.log(np.log(out.n_range)),
+    1.0e-8 * out.n_range * np.log(np.log(out.n_range)),
     "-",
-    label="$O(n \; log \; log \; n)$",
+    label="$O(n \, log \, log \, n)$",
 )
+plt.loglog(out.n_range, out.timings_s[0], "v-", ms=ms, label="generate_primes_simple")
 plt.loglog(
-    out.n_range, out.timings_s[0], "v-", ms=ms, label="generate_is_prime_vector(n)"
+    out.n_range, out.timings_s[1], "^-", ms=ms, label="generate_primes_primesieve"
 )
 plt.legend()
 plt.grid(True)
 _ = ax.set_ylabel("Runtime [s]")
 _ = ax.set_xlabel("n")
-_ = ax.set_title("Timings of generate_is_prime_vector")
+_ = ax.set_title("Timings of the generate_primes functions")
 ```
+
 
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_18_0.png" alt="Timings of generate_is_prime_vector">
 </p>
+   
 
 
-The timings of the same function in pure Python is not shown. It is usually slower by a factor 10 or 100 [100 is more likely than 10 for this kind of CPU bound function].
+The run time of both of these `generate_primes` functions is very small compared to the rest of the Goldbach function evaluation. Anyway, the primesieve version is way more efficient, so we are going to stick with it in the following. Note that is it is supposed to have a run time complexity of $0(n \, log \, log \, n)$ operations.
 
+The timings of the `generate_primes_simple` function in pure Python (without Numba) is not shown. It is usually slower by a factor 10 or 100 (100 is more likely than 10 for this kind of CPU bound function).
 
 ## Find the number of prime pairs for a given even number E
 
-Now we show how $g(E)$ can be computed for a given value of $E$:
+Now we show how $g(E)$ can be computed for a given value of $E$. We are going to compare 3 different implementations with Numba.  
 
+### Three different implementations
 
-```python
-# E is the even number that we want to decompose into prime pairs
-E = 22
-assert E % 2 == 0
-
-E_half = int(0.5 * E)
-
-# we generate the boolean prime vector for all the integer up E
-is_prime_vec = generate_is_prime_vector(E)
-
-# initialization
-i = 2  # loop counter (we know that 0 and 1 are not primes)
-count = 0  # number of prime pairs
-
-# we loop over all the prime numbers smaller than or equal to half of num
-while i <= E_half:
-    if is_prime_vec[i] and is_prime_vec[E - i]:
-        print(f"({i:2d}, {E-i:2d})")
-        count += 1
-    i += 1
-print(f"{count} prime pairs")
-```
-
-    ( 3, 19)
-    ( 5, 17)
-    (11, 11)
-    3 prime pairs
-
-
-## Loop over all even numbers E not larger than n
-
-Now we apply the previous process to all $E$s smaller or equal to $n$. We only compute `is_prime_vec` once and use it for all the evaluations of $g(E)$. Note that in the following `compute_g_vector` function, the outer loop has a constant step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$.
+In the fist version, `compute_g_1`, we loop over all natural numbers $2 \leq i \leq E/2$. If $i$ and $E-i$ are primes, then $(i, E-1)$ is a partition. The function `compute_g_1` takes the `is_prime_vec` boolean vector as argument, but not the `primes` array.
 
 
 ```python
 @jit(nopython=True)
-def compute_g_vector(is_prime_vec: np.ndarray) -> np.ndarray:
-    """Evaluate the Goldbach function.
+def compute_g_1(is_prime_vec: np.ndarray, E: int) -> int:
 
-    This evatuates the Goldbach function for all even integers E not
-    larger than the largest integer from the argument is_prime.
+    assert E < len(is_prime_vec)
+    assert E % 2 == 0
+    E_half = int(0.5 * E)
 
-    Parameters
-    ----------
-    is_prime_vec : ndarray
-        an array of type bool (`i` is prime iif `is_prime[i]` is True).
+    # initialization
+    i = 2  # loop counter (we know that 0 and 1 are not primes)
+    count = 0  # number of prime pairs
 
-    Returns
-    -------
-    g_vec : ndarray
-        an array of type uint (`g_vec[i]` corresponds to g(E) where E = 2i).
-    """
+    # we loop over all the prime numbers smaller than or equal to half of num
+    while i <= E_half:
+        if is_prime_vec[i] and is_prime_vec[E - i]:
+            count += 1
+        i += 1
+
+    return count
+```
+
+In the second version, we loop on primes $p$ instead on integers, with a `while` loop: 
+- If $E-p$ is a prime, $(p, E-P)$ is a partition. 
+- If $p > E/2$, we exit the loop. 
+
+The function `compute_g_2` takes both `is_prime_vec` and `primes` as arguments:
+
+
+```python
+@jit(nopython=True)
+def compute_g_2(is_prime_vec: np.ndarray, primes: np.ndarray, E: int) -> int:
+
+    assert E < len(is_prime_vec)
+    assert E % 2 == 0
+    E_half = int(0.5 * E)
+
+    # initialization
+    count = 0  # number of prime pairs
+
+    # we loop over all the prime numbers smaller than or equal to half of num
+    i = 0
+    p = primes[i]
+    while p <= E_half:
+
+        if is_prime_vec[E - p]:
+            count += 1
+        i += 1
+        p = primes[i]
+
+    return count
+```
+
+The third function `compute_g_3` is similar to the previous one, but uses a `for` loop instead of `while`. The upper bound of the `for` loop is computed using `np.searchsorted`, since primes are sorted within the `primes` vector.
+
+
+```python
+@jit(nopython=True)
+def compute_g_3(is_prime_vec: np.ndarray, primes: np.ndarray, E: int) -> int:
+
+    assert E < len(is_prime_vec)
+    assert E % 2 == 0
+    E_half = int(0.5 * E)
+
+    # initialization
+    count = 0  # number of prime pairs
+
+    # we loop over all the prime numbers smaller than or equal to half of num
+    i_max = np.searchsorted(primes, E_half, side="right")
+    for i in range(i_max):
+        p = primes[i]
+        if is_prime_vec[E - p]:
+            count += 1
+
+    return count
+```
+
+### Value check
+
+
+```python
+%%time
+E = 22
+assert E % 2 == 0
+assert E > 0
+n = 100
+primes, is_prime_vec = generate_primes_primesieve(n)
+print(compute_g_1(is_prime_vec, E))
+print(compute_g_2(is_prime_vec, primes, E))
+print(compute_g_3(is_prime_vec, primes, E))
+```
+
+    3
+    3
+    3
+    CPU times: user 1.04 s, sys: 3.89 ms, total: 1.04 s
+    Wall time: 1.12 s
+
+
+### Elapsed time
+
+
+```python
+%%time
+out = perfplot.bench(
+    setup=lambda n: generate_primes_primesieve(n),
+    kernels=[
+        lambda x: compute_g_1(x[1], len(x[1])-1),
+        lambda x: compute_g_2(x[1], x[0], len(x[1])-1),    
+        lambda x: compute_g_3(x[1], x[0], len(x[1])-1),
+    ],
+    labels=["compute_g_1", "compute_g_2", "compute_g_3"],
+    n_range=[10 ** k for k in range(3, 8)],
+    equality_check=None
+)
+out
+```
+
+
+    CPU times: user 11.3 s, sys: 111 ms, total: 11.4 s
+    Wall time: 11.9 s
+
+
+
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n        </span>┃<span style="font-weight: bold"> compute_g_1           </span>┃<span style="font-weight: bold"> compute_g_2            </span>┃<span style="font-weight: bold"> compute_g_3           </span>┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1000     │ 1.072e-06             │ 9.660000000000002e-07  │ 1.057e-06             │
+│ 10000    │ 1.147e-05             │ 2.2370000000000004e-06 │ 1.825e-06             │
+│ 100000   │ 8.608e-05             │ 1.0703e-05             │ 7.805e-06             │
+│ 1000000  │ 0.0009804660000000001 │ 8.4447e-05             │ 5.1739e-05            │
+│ 10000000 │ 0.00576324            │ 0.000573377            │ 0.0005268870000000001 │
+└──────────┴───────────────────────┴────────────────────────┴───────────────────────┘
+</pre>
+
+
+
+
+
+
+    
+
+
+
+
+```python
+ms = 10
+fig = plt.figure(figsize=FS_S)
+ax = fig.add_subplot(1, 1, 1)
+plt.loglog(
+    out.n_range,
+    1.0e-9 * out.n_range,
+    "-",
+    label="$O(n)$",
+)
+plt.loglog(out.n_range, out.timings_s[0], "v-", ms=ms, label="compute_g_1")
+plt.loglog(out.n_range, out.timings_s[1], "^-", ms=ms, label="compute_g_2")
+plt.loglog(out.n_range, out.timings_s[2], "^-", ms=ms, label="compute_g_3")
+plt.legend()
+plt.grid(True)
+_ = ax.set_ylabel("Runtime [s]")
+_ = ax.set_xlabel("n")
+_ = ax.set_title("Timings of the compute_g functions")
+```
+
+
+<p align="center">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_30_0.png" alt="Timings of the compute_g functions">
+</p>
+   
+
+
+The `compute_g_3` is the most efficient of the three variations. Let's use this approach to compute many value of $g(E)$.
+
+The algorithms' complexity is $O(n)$, because we basically loop over an array proportional to $n$ to perform a $O(1)$ operation.
+
+## Loop over all even numbers E smaller or equal to n
+
+Now we simply loop over all even natural numbers $E \leq n$ to compute all respective values of $g(E)$. Note that in the following `compute_g_vector_seq` function, the outer loop has a step size of 1, in order to later use Numba `prange`, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$. Also, we compute `is_prime_vec` and `primes` only once and use it for all the evaluations of $g(E)$.
+
+`n` is calculted from the length of `is_prime_vec`. In the arguments, we assume that `primes` is corresponding to the primes of `is_prime_vec`.
+
+### Sequential loop
+
+
+```python
+@jit(nopython=True)
+def compute_g_vector_seq(is_prime_vec: np.ndarray, primes: np.ndarray) -> np.ndarray:
 
     n_max = len(is_prime_vec) - 1
     n_max_half = int(0.5 * n_max) + 1
 
     g_vec = np.empty(n_max_half, dtype=np.uint)
 
-    for i in range(n_max_half):
+    for E_half in range(n_max_half):
         count = 0
-        E = 2 * i
-        for j in range(2, i + 1):
-            if is_prime_vec[j] and is_prime_vec[E - j]:
+        E = 2 * E_half
+        i_max = np.searchsorted(primes, E_half, side="right")
+        for i in range(i_max):
+            p = primes[i]
+            if is_prime_vec[E - p]:
                 count += 1
-        g_vec[i] = count
+        g_vec[E_half] = np.uint(count)
 
     return g_vec
 ```
 
-The $i$-th value of `g_vec` correponds to $g(2 i)$ with $i \geq 0 $:
+The $i$-th value of `g_vec` correponds to $g(2 \, i)$ with $i \geq 0 $:
 
 
 | i |  E  | g_vec[i] |
@@ -305,16 +479,49 @@ The $i$-th value of `g_vec` correponds to $g(2 i)$ with $i \geq 0 $:
 | 5 | 10  |        2 |
 
 
-and so on... We can check the values of $g$ at least for some for some small values of $E$:
+and so on...
+
+
+### Parallel loop
+
+We are now going to parallelize `compute_g_vector_seq` by using the Numba `njit` decorator and `prange` on the outer explicit loop. The vector `g_vec` is shared across threads but each thread is only writing into its own partition.
+
+
+```python
+@njit(parallel=True)
+def compute_g_vector_par(is_prime_vec: np.ndarray, primes: np.ndarray) -> np.ndarray:
+
+    n_max = len(is_prime_vec) - 1
+    n_max_half = int(0.5 * n_max) + 1
+
+    g_vec = np.empty(n_max_half, dtype=np.uint)
+
+    for E_half in prange(n_max_half):
+        count = 0
+        E = 2 * E_half
+        i_max = np.searchsorted(primes, E_half, side="right")
+        for i in range(i_max):
+            p = primes[i]
+            if is_prime_vec[E - p]:
+                count += 1
+
+        g_vec[E_half] = np.uint(count)
+
+    return g_vec
+```
+
+We can check $g$ at least for some for some small values of $E$:
 
 
 ```python
 n = 56
-is_prime_vec = generate_is_prime_vector(n)
-g_vec = compute_g_vector(is_prime_vec)
+primes, is_prime_vec = generate_primes_primesieve(n)
+g_vec_1 = compute_g_vector_seq(is_prime_vec, primes)
+g_vec_2 = compute_g_vector_par(is_prime_vec, primes)
 g_vec_ref = [0, 0, 1, 1, 1, 2, 1, 2, 2, 2, 2, 3, 3, 3, 2, 3, 2, 4, 4, 2, 3, 4, 
     3, 4, 5, 4, 3, 5, 3]
-np.testing.assert_array_equal(g_vec, g_vec_ref)
+np.testing.assert_array_equal(g_vec_1, g_vec_ref)
+np.testing.assert_array_equal(g_vec_2, g_vec_ref)
 ```
 
 ## First plot of the comet
@@ -323,21 +530,34 @@ np.testing.assert_array_equal(g_vec, g_vec_ref)
 ```python
 %%time
 n = 10_000
-is_prime_vec = generate_is_prime_vector(n)
-g_vec = compute_g_vector(is_prime_vec)
+primes, is_prime_vec = generate_primes_primesieve(n)
+g_vec = compute_g_vector_par(is_prime_vec, primes)
 g_df = pd.DataFrame(data={"g": g_vec}, index=2 * np.arange(len(g_vec)))
 g_df = g_df[g_df.index > 2]  # The function g(E) is defined for all even integers E>2
 g_df.head(2)
 ```
 
-    CPU times: user 59.9 ms, sys: 150 µs, total: 60.1 ms
-    Wall time: 60.5 ms
+    CPU times: user 19.1 ms, sys: 0 ns, total: 19.1 ms
+    Wall time: 4.36 ms
 
 
 
 
 
 <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -362,7 +582,7 @@ g_df.head(2)
 
 
 ```python
-ax = g_df.plot(style=".", ms=5, alpha=0.5, legend=False, figsize=FS)
+ax = g_df.plot(style=".", ms=5, alpha=0.5, legend=False, figsize=FS_R)
 _ = ax.set(
     title="Goldbach's comet",
     xlabel="E",
@@ -374,102 +594,62 @@ ax.grid(True)
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_27_0.png" alt="Goldbach's comet n=1e4">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_40_0.png" alt="Goldbach's comet n=1e4">
 </p>
     
 
 
-## Parallel loop
-
-We are now going to parallelize `compute_g_vector` just by using the Numba `njit` decorator and `prange` on the outer loop. The vector `g_vec` is shared across threads but each thread is only writing into its own partition.
-
-
-```python
-@njit(parallel=True)
-def compute_g_vector_par(is_prime_vec: np.ndarray) -> np.ndarray:
-    """Evaluate the Goldbach function.
-
-    This evatuates the Goldbach function for all even integers E not
-    larger than the largest integer from the argument is_prime.
-
-    Parameters
-    ----------
-    is_prime_vec : ndarray
-        an array of type bool (`i` is prime iif `is_prime[i]` is True).
-
-    Returns
-    -------
-    g_vec : ndarray
-        an array of type uint (g_vec[i] corresponds to g(E) where E = 2i).
-    """
-
-    n_max = len(is_prime_vec) - 1
-    n_max_half = int(0.5 * n_max) + 1
-
-    g_vec = np.empty(n_max_half, dtype=np.uint)
-
-    for i in prange(n_max_half):
-        count = 0
-        E = 2 * i
-        for j in range(2, i + 1):
-            if is_prime_vec[j] and is_prime_vec[E - j]:
-                count += 1
-        g_vec[i] = count
-
-    return g_vec
-```
-
-Here we check that the sequential and parallel versions return the same values:
-
-```python
-g_vec_par = compute_g_vector_par(is_prime_vec)
-np.testing.assert_array_equal(g_vec, g_vec_par)
-```
-
 ### Elapsed time
 
-Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores [Intel i7-7700HQ CPU @ 2.80GHz].
+Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores (Intel(R) i7-7700HQ CPU @ 2.80GHz).
 
 
 ```python
+%%time
 out = perfplot.bench(
-    setup=lambda n: generate_is_prime_vector(n),
+    setup=lambda n: generate_primes_primesieve(n),
     kernels=[
-        lambda is_prime_vec: compute_g_vector(is_prime_vec),
-        lambda is_prime_vec: compute_g_vector_par(is_prime_vec),
+        lambda x: compute_g_vector_seq(x[1], x[0]),
+        lambda x: compute_g_vector_par(x[1], x[0]),
     ],
     labels=["jit", "njit"],
-    n_range=[10 ** k for k in range(1, 6)],
+    n_range=[10 ** k for k in range(1, 7)],
 )
 out
 ```
 
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃<span style="font-weight: bold"> n      </span>┃<span style="font-weight: bold"> jit                   </span>┃<span style="font-weight: bold"> njit                   </span>┃
-┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 10     │ 8.480000000000001e-07 │ 6.506e-06              │
-│ 100    │ 2.271e-06             │ 7.0370000000000006e-06 │
-│ 1000   │ 0.000224464           │ 6.1258e-05             │
-│ 10000  │ 0.033075403           │ 0.010347824            │
-│ 100000 │ 2.923607557           │ 1.1248999480000001     │
-└────────┴───────────────────────┴────────────────────────┘
+    CPU times: user 1min 18s, sys: 265 ms, total: 1min 19s
+    Wall time: 35.6 s
+
+
+
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n       </span>┃<span style="font-weight: bold"> jit                    </span>┃<span style="font-weight: bold"> njit                  </span>┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 10      │ 9.740000000000001e-07  │ 7.213e-06             │
+│ 100     │ 1.8400000000000002e-06 │ 7.474000000000001e-06 │
+│ 1000    │ 3.7302e-05             │ 2.0854e-05            │
+│ 10000   │ 0.001960103            │ 0.0009358410000000001 │
+│ 100000  │ 0.182704941            │ 0.07333213200000001   │
+│ 1000000 │ 20.137010665000002     │ 7.841122203           │
+└─────────┴────────────────────────┴───────────────────────┘
 </pre>
 
 
 
-Basically, running the parallel version on 8 cores divides the running time by 3.
+Basically, running the parallel version on 8 cores divides the running time by a factor 2 to 3.
 
 
 ```python
 ms = 10
-fig = plt.figure(figsize=(10, 10))
+fig = plt.figure(figsize=FS_S)
 ax = fig.add_subplot(1, 1, 1)
 plt.loglog(
     out.n_range,
-    1.0e-9 * np.power(out.n_range, 2),
+    1.0e-10 * np.power(out.n_range, 2),
     "-",
-    label="$O(N^2)$",
+    label="$O(n^2)$",
 )
 plt.loglog(out.n_range, out.timings_s[0], "v-", ms=ms, label="jit")
 plt.loglog(out.n_range, out.timings_s[1], "^-", ms=ms, label="njit")
@@ -477,66 +657,60 @@ plt.legend()
 plt.grid("on")
 _ = ax.set_ylabel("Runtime [s]")
 _ = ax.set_xlabel("N")
-_ = ax.set_title("Timings of compute_g_vector")
+_ = ax.set_title("Timings of the compute_g_vector function")
 ```
 
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_35_0.png" alt="Timings of compute_g_vector">
-</p>
-
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_44_0.png" alt="Timings of the compute_g_vector function">
+</p>  
     
-If we run the parallel version with $n=1e6$, we might estimate the running time of $n=1e7$ and see if this is affordable.
+
+
+If we run the parallel version with $n=1e6$, we might estimate if the running time with a larger value of $n$ is affordable.
 
 
 ```python
 %%time
 n = 1_000_000
-is_prime_vec = generate_is_prime_vector(n)
-g_vec_par = compute_g_vector_par(is_prime_vec)
+primes, is_prime_vec = generate_primes_primesieve(n)
+g_vec = compute_g_vector_par(is_prime_vec, primes)
 ```
 
-    CPU times: user 6min 9s, sys: 428 ms, total: 6min 9s
-    Wall time: 1min 28s
+    CPU times: user 26.5 s, sys: 23.5 ms, total: 26.6 s
+    Wall time: 6.28 s
 
 
-So computing $g$ with $n = 1e7$ should take one or a few hours on the laptop executing `compute_g_vector_par`... Let's do that next.
+So computing $g$ with $n = 5e6$ should take one or two minutes on my laptop with `compute_g_vector_par`... Let's do that next.
 
-## Compute more data
+## Compute a larger vector of g values
 
 
 ```python
 %%time
-n = 10_000_000
-is_prime_vec = generate_is_prime_vector(n)
+n = 5_000_000
+primes, is_prime_vec = generate_primes_primesieve(n)
+g_vec = compute_g_vector_par(is_prime_vec, primes)
 ```
 
-    CPU times: user 162 ms, sys: 0 ns, total: 162 ms
-    Wall time: 68.7 ms
-
-
+```
+CPU times: user 8min 33s, sys: 6.11 ms, total: 8min 33s
+Wall time: 1min 37s
+```
 
 ```python
-%%time
-g_vec_par = compute_g_vector_par(is_prime_vec)
-g_df = pd.DataFrame(data={"E": 2 * np.arange(len(g_vec_par)), "g": g_vec_par})
+g_df = pd.DataFrame(data={"E": 2 * np.arange(len(g_vec)), "g": g_vec})
 g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>2
 ```
-
-    CPU times: user 8h 48min 44s, sys: 558 ms, total: 8h 48min 44s  
-    Wall time: 1h 49min 9s  
-
-A bit less than 2 hours...
-        
 
 ## Plotting g with Datashader
 
 
 ```python
-cmap = palette["kbc"][::-1]
-bg_col = "white"
+cmap = palette["dimgray"]
+bg_col = "black"
 height = 800
-width = int(np.round(1.6180 * height))
+width = int(np.round(1.6 * height))
 ```
 
 
@@ -549,18 +723,18 @@ img = tf.set_background(img, bg_col)
 img
 ```
 
-    CPU times: user 809 ms, sys: 23.9 ms, total: 833 ms
-    Wall time: 826 ms
+    CPU times: user 1.1 s, sys: 16 ms, total: 1.12 s
+    Wall time: 1.11 s
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_45_1.png" alt="Goldbach's comet n=1e7">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_54_1.png" alt="Goldbach's comet n=1e7">
 </p>
 
 
 We can clearly observe some dense lines in this "comet tail". In order to visualize this vertical distribution of prime pairs count, we are are going to normalize $g$. As explained on the wikipedia [page](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
 
-> An illuminating way of presenting the comet data is as a histogram. The function $g(E)$ can be normalized by dividing by the locally averaged value of g, gav, taken over perhaps 1000 neighboring values of the even number E. The histogram can then be accumulated over a range of up to about 10% either side of a central E. 
+> An illuminating way of presenting the comet data is as a histogram. The function g(E) can be normalized by dividing by the locally averaged value of g, gav, taken over perhaps 1000 neighboring values of the even number E. The histogram can then be accumulated over a range of up to about 10% either side of a central E. 
 
 
 ```python
@@ -569,8 +743,8 @@ g_df["g_av"] = g_df["g"].rolling(window=1000, center=True).mean()
 g_df["g_norm"] = g_df["g"] / g_df["g_av"]
 ```
 
-    CPU times: user 170 ms, sys: 67.8 ms, total: 238 ms
-    Wall time: 230 ms
+    CPU times: user 128 ms, sys: 23.9 ms, total: 152 ms
+    Wall time: 153 ms
 
 
 
@@ -583,12 +757,12 @@ img = tf.set_background(img, bg_col)
 img
 ```
 
-    CPU times: user 644 ms, sys: 27.9 ms, total: 672 ms
-    Wall time: 674 ms
+    CPU times: user 885 ms, sys: 12 ms, total: 897 ms
+    Wall time: 908 ms
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_48_1.png" alt="Normalized Goldbach function">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_57_1.png" alt="Goldbach's comet n=1e7">
 </p>
 
 
@@ -603,30 +777,148 @@ _ = ax.set(
     xlabel="Normalized number of prime pairs",
     ylabel="Number of occurrences",
 )
-_ = plt.xticks(np.arange(0.5, 3, 0.1))
+_ = plt.xticks(np.arange(0.5, 3.0, 0.1))
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_50_0.png" alt="Histogram of the normalized Goldbach function">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_59_0.png" alt="Histogram of the normalized Goldbach function">
 </p>
     
 
 
+## The Hardy-Littlewood estimate
+
+As described on the [wikipedia page](](https://en.wikipedia.org/wiki/Goldbach%27s_comet)) for Goldbach's comet, the number of Goldbach partitions can be estimated using the following formulae from Hardy and Littlewood (1922):
+
+$$\frac{g(E)}{g_{av}} = \Pi_2 \prod \frac{p-1}{p-2}$$
+
+where the product is taken over all primes p that are factors of $E/2$, $\Pi_2$ being the twin primes constant:
+
+$$\Pi_2 = \prod_{p \geq 3} \left( 1 - \frac{1}{(1-p)^2} \right)$$
+
+
+```python
+%%time
+n = 100_000_000
+primes = np.array(primesieve.primes(n))
+
+# twin primes constant
+Pi2 = np.prod(1.0 - 1.0 / np.power(1.0 - primes[1:], 2))
+Pi2
+```
+
+    CPU times: user 318 ms, sys: 76 ms, total: 394 ms
+    Wall time: 405 ms
+
+    0.6601618161644595
+
+
+
+So let's compute this estimate of the normalized Goldbach function with Numba `njit`:
+
+
+```python
+@njit(parallel=True)
+def compute_g_hl_vector_par(primes: np.ndarray, n_max: int, Pi2: float) -> np.ndarray:
+
+    n_max_half = int(0.5 * n_max) + 1
+
+    g_hl_vec = np.empty(n_max_half, dtype=np.float64)
+
+    for E_half in prange(n_max_half):
+        i_max = np.searchsorted(primes, E_half, side="right")
+        prod = 1.0
+        for i in range(1, i_max):
+            p = primes[i]
+            if E_half % p == 0:
+                prod *= (p - 1.0) / (p - 2.0)
+
+        g_hl_vec[E_half] = np.float64(prod)
+    g_hl_vec *= Pi2
+
+    return g_hl_vec
+```
+
+
+```python
+%%time
+n = 1_000_000
+g_hl_vec = compute_g_hl_vector_par(np.array(primesieve.primes(n)), n, Pi2)
+```
+
+    CPU times: user 1min 17s, sys: 83 ms, total: 1min 17s
+    Wall time: 18.1 s
+
+
+### Plotting the estimate with Datashader
+
+
+```python
+g_hl_df = pd.DataFrame(data={"E": 2 * np.arange(len(g_hl_vec)), "g_norm": g_hl_vec})
+```
+
+
+```python
+%%time
+cvs = ds.Canvas(plot_width=width, plot_height=height)
+agg = cvs.points(g_hl_df, "E", "g_norm")
+img = tf.shade(agg, cmap=cmap)
+img = tf.set_background(img, bg_col)
+img
+```
+
+    CPU times: user 106 ms, sys: 16 ms, total: 122 ms
+    Wall time: 117 ms
+
+
+<p align="center">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_67_1.png" alt="Estimate of the normalized Goldbach function">
+</p>
+
+
+
+The vertical distribution of the dense lines seems to be similar to the one from the normalized Goldbach function. This can be checked by computing and plotting both kernel density estimates.
+
+### Kernel density estimates
+
+
+```python
+%%time
+ax = g_df["g_norm"].plot.density(alpha=0.5, figsize=FS_R, label='Golbach function')
+ax = g_hl_df.g_norm.plot.density(alpha=0.5, ax=ax, label='Hardy-Littlewood estimate')
+ax.grid(True)
+_ = ax.set(
+    title="KDEs of the normalized Goldbach function and its Hardy-Littlewood estimate",
+    xlabel="Normalized number of prime pairs",
+    ylabel="Density",
+)
+_ = ax.legend()
+_ = plt.xticks(np.arange(0.5, 3.0, 0.1))
+_ = ax.set_xlim(0.5, 2.5)
+```
+
+    CPU times: user 1min 6s, sys: 792 ms, total: 1min 6s
+    Wall time: 1min 5s
+
+
+<p align="center">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_69_1.png" alt="Kernel density estimates">
+</p>
+     
+
+
+Note that the Goldbach function is computed up to $n=5e6$, against $n=1e6$ for the estimate, which might explain some of the differences between the densities. However, we can clearly observe that the peaks are located at the same places.
+
 ## Prime E/2 values only
 
-
-Finally, we are going to isolate a part of the most dense line from the comet tail [for a normalized number of prime pairs around 0.66]. As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
+Finally, we are going to isolate a part of the most dense line from the comet tail (for a normalized number of prime pairs around 0.66). As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
     
 > Of particular interest is the peak formed by selecting only values of E/2 that are prime. [...] The peak is very close to a Gaussian form. 
 
 
 ```python
 g_df["E_half"] = (0.5 * g_df["E"]).astype(int)
-```
-
-
-```python
-g_df_primes = g_df[g_df["E_half"].isin(np.nonzero(is_prime_vec)[0])]
+g_df_primes = g_df[g_df["E_half"].isin(primes)]
 ```
 
 
@@ -639,18 +931,20 @@ img = tf.set_background(img, bg_col)
 img
 ```
 
-    CPU times: user 79 ms, sys: 0 ns, total: 79 ms
-    Wall time: 75.9 ms
+    CPU times: user 97.9 ms, sys: 3.98 ms, total: 102 ms
+    Wall time: 99.7 ms
+
+
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_55_1.png" alt="Normalized Goldbach function for prime E/2 values">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_73_1.png" alt="Normalized Goldbach function for prime E/2 values">
 </p>
 
 
 
 ```python
-ax = g_df_primes["g_norm"].hist(bins=500, alpha=0.5, figsize=(20, 10))
+ax = g_df_primes["g_norm"].hist(bins=500, alpha=0.5, figsize=FS_R)
 ax.grid(True)
 _ = ax.set(
     title="Histogram of the normalized Goldbach function for prime E/2 values only",
@@ -659,6 +953,7 @@ _ = ax.set(
 )
 ```
 
+
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_56_0.png" alt="Histogram of the normalized Goldbach function for prime E/2 values only">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-07-22_01/output_74_0.png" alt="Histogram of the normalized Goldbach function for prime E/2 values only">
 </p>
