@@ -44,14 +44,10 @@ import numpy as np
 import great_expectations as ge
 ```
 
-
-```python
-print(ge.__version__)
-print(pd.__version__)
-```
-
-    0.13.31
-    1.3.2
+Version:  
+Python 3.9.7  
+great_expectations 0.13.31   
+pandas 1.3.2  
 
 
 ### Load the data into a dataframe
