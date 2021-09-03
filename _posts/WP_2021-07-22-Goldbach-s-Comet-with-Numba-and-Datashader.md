@@ -588,7 +588,7 @@ ax.grid(True)
 
 ### Elapsed time
 
-Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores [Intel(R) i7-7700HQ CPU @ 2.80GHz].
+Now we compare the running time of the sequential and parallel versions of `compute_g_vector`. The code is running on a laptop with 8 cores [Intel[R] i7-7700HQ CPU @ 2.80GHz].
 
 
 ```python
@@ -898,7 +898,7 @@ Note that the Goldbach function is computed up to $n=5e6$, against $n=1e6$ for t
 
 ## Prime E/2 values only
 
-Finally, we are going to isolate a part of the most dense line from the comet tail (for a normalized number of prime pairs around 0.66). As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
+Finally, we are going to isolate a part of the most dense line from the comet tail [for a normalized number of prime pairs around 0.66]. As explained in [wikipedia](https://en.wikipedia.org/wiki/Goldbach%27s_comet):
     
 > Of particular interest is the peak formed by selecting only values of E/2 that are prime. [...] The peak is very close to a Gaussian form. 
 
