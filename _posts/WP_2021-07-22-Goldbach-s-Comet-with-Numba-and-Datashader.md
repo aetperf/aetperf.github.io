@@ -249,7 +249,7 @@ _ = ax.set_title("Timings of the generate_primes functions")
 
 The run time of both of these `generate_primes` functions is very small compared to the rest of the Goldbach function evaluation. Anyway, the primesieve version is way more efficient, so we are going to stick with it in the following. Note that is it is supposed to have a run time complexity of $0(n \, log \, log \, n)$ operations.
 
-The timings of the `generate_primes_simple` function in pure Python \(without Numba\) is not shown. It is usually slower by a factor 10 or 100 (100 is more likely than 10 for this kind of CPU bound function).
+The timings of the `generate_primes_simple` function in pure Python \\(without Numba\\) is not shown. It is usually slower by a factor 10 or 100 (100 is more likely than 10 for this kind of CPU bound function).
 
 ## Find the number of prime pairs for a given even number E
 
