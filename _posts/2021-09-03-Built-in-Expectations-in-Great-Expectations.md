@@ -266,7 +266,7 @@ expect = df.expect_table_row_count_to_be_between(min_value=700, max_value=1000)
 assert expect.success
 ```
 
-One can skip on of the argument `min_value` or `max_value`. The default value is `None`:
+One can skip one of the arguments `min_value` or `max_value`. The default value is `None`:
 
 
 ```python
