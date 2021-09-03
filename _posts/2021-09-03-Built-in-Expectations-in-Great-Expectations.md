@@ -17,11 +17,11 @@ tags: Python MLOps data quality testing
   <img width="600" src="https://docs.greatexpectations.io/assets/images/ge_overview-12fb8aa5caade62567e21be108526231.png" alt="Data validation with Great Expectations">
 </p>
 
-Great Expectations makes it easy to include data testing in your ML pipeline, when dealing with tabular data. Data testing is similar to software testing. You launch a test suite to check various assumptions on a given dataset: column names, types, min-max values, distributions, proportion of missing values, categories, string content... These are called Expectations. A set of declared Expectations is called an expectation suite. Once the latter has been created, you can use it to validate any new/modified data. If ever it fails, you can adapt the pipeline depending on the type of data failure. The library also allows the automatic creation of data quality reports and documentation. 
+Great Expectations makes it easy to include data testing in your ML pipeline, when dealing with tabular data. Data testing is similar to software testing. You launch a test suite to check various assumptions on a given dataset: column names, types, min-max values, distributions, proportion of missing values, categories, string content... These are called Expectations. A set of declared Expectations is called an Expectation Suite. Once a Suite has been created, you can use it to validate any new/modified data. If ever it fails, you can adapt the pipeline depending on the type of data failure. The library also allows the automatic creation of data quality reports and documentation. 
 
 Data checking makes it easier to identify the source of an error in an ML model, but also helps identifying some drifts or other problems with the input data. So, more generally it helps build trust around data. 
 
-Great Expectations has many components and many features. In this post, we are going to focus on a single subject: Expectations, which is a central element of the library. We are going to list built-in Expectations, and apply them to an example dataset: the ubiquitous Titanic dataset. We are NOT going to deal with other subjects such as Expectations Suite, Datasources, Checkpoint, Stores, Data Contexts, CLI, deployment, metrics...
+Great Expectations has many components and many features. In this post, we are going to focus on a single subject: Expectations, which is a central element of the library. We are going to list built-in Expectations, and apply them to an example dataset: the ubiquitous Titanic dataset. We are NOT going to deal with other subjects such as Expectations Suites, Datasources, Checkpoints, Stores, Data Contexts, CLI, deployment, metrics...
 
 ## Expectations
 
