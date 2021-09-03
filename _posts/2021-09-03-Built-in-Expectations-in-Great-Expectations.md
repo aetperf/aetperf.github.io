@@ -45,9 +45,9 @@ import great_expectations as ge
 ```
 
 Versions:  
-Python 3.9.7  
-great_expectations 0.13.31   
-pandas 1.3.2  
+- Python 3.9.7  
+- great_expectations 0.13.31   
+- pandas 1.3.2  
 
 
 ### Load the data into a dataframe
