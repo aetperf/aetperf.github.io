@@ -63,7 +63,7 @@ df = ge.read_csv(
 
 
 Here is a small description of each feature:  
-- Survival - Survival (0 = No; 1 = Yes). Not included in test.csv file.  
+- Survival - Survival (0 = No; 1 = Yes)
 - Pclass - Passenger Class (1 = 1st; 2 = 2nd; 3 = 3rd)  
 - Name - Name  
 - Sex - Sex  ("male or "female")
@@ -185,7 +185,7 @@ expect
 
 
 
-It returns a dict-like validation report. The level of verbosity can be changed when creating reports. But anyway, in the present post, we are only interested in the "success" key:
+It returns a dict-like validation report. The level of verbosity can be changed when creating reports. But in the present post, we are only interested in the "success" key:
 
 
 ```python
@@ -199,7 +199,7 @@ expect.success
 
 
 
-So let's start with the available Expectations. Note that some Expectations have not yet been migrated to the v3 (Batch Request) API, so we did not include them in this post. Also, we did not investigate [distributional Expectations](https://docs.greatexpectations.io/docs/reference/expectations/distributional_expectations), which are not so easy to use.
+So let's start with the available Expectations. Note that some Expectations have not yet been migrated to the v3 (Batch Request) API, so we did not include them in this post. Also, we did not investigate [distributional Expectations](https://docs.greatexpectations.io/docs/reference/expectations/distributional_expectations), which are a bit more complicated to use...
 
 
 
@@ -736,7 +736,7 @@ df.drop(["latitude", "longitude", "json_example"], axis=1, inplace=True)
 
 ## Expectations : Aggregate functions
 
-`expect_column_distinct_values_to_be_in_set` is not really different from `expect_column_values_to_be_in_set`. Note that it also supporst the `parse_strings_as_datetimes` argument.
+`expect_column_distinct_values_to_be_in_set` is not really different from `expect_column_values_to_be_in_set`. Note that it also supports the `parse_strings_as_datetimes` argument.
 
 
 ```python
@@ -867,21 +867,6 @@ expect = df.expect_column_max_to_be_between(column="Age", min_value=40, max_valu
 assert expect.success
 ```
 
-
-```python
-df.Pclass.value_counts()
-```
-
-
-
-
-    3    491
-    1    216
-    2    184
-    Name: Pclass, dtype: int64
-
-
-
 For the `expect_column_kl_divergence_to_be_less_than` Expectation, we used some coefficients found on the [github repository](https://github.com/great-expectations/great_expectations/blob/4a0aa8c67420aadcafeff7a45fbbe54943be543a/tests/profile/fixtures/expected_evrs_BasicSuiteBuilderProfiler_on_titanic_demo_mode.json):
 
 
@@ -902,6 +887,9 @@ df.expect_column_kl_divergence_to_be_less_than(
 assert expect.success
 ```
 
+`expect_column_kl_divergence_to_be_less_than` is some kind of distribution Expectation, which expects a `partition_object` argument.
+
+
 ## Conditional Expectations
 
 Finally we are going to have a look at conditional Expectations with the `row_condition` argument. As explained in the [documentation](https://docs.greatexpectations.io/docs/reference/expectations/conditional_expectations):
@@ -919,7 +907,7 @@ df.expect_column_values_to_be_in_set(
 assert expect.success
 ```
 
-Note that some of the Expectations do not take the `row_condition` argument:
+Some of the Expectations do not take the `row_condition` argument:
 - `expect_column_to_exist`
 - `expect_table_columns_to_match_ordered_list`
 - `expect_table_column_count_to_be_between`
