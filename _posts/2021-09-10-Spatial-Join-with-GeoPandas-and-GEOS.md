@@ -10,7 +10,7 @@ The purpose of this post is to perform an "efficient" spatial join in Python. Wh
 
 > A Spatial join is a GIS operation that affixes data from one feature layer’s attribute table to another from a spatial perspective.
 
-For example in this following, we are going to perform a spatial join between a point layer and a polygon layer. One of the attributes of the polygon layer is a string code that we want to attach to the points located within each polygon.
+For example, in the following, we are going to perform a spatial join between a point layer and a polygon layer. One of the attributes of the polygon layer is a string code that we want to attach to the points located within each polygon.
 
 ## The Datasets
 
