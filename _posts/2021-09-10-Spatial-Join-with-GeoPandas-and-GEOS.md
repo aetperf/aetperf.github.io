@@ -12,6 +12,9 @@ The purpose of this post is to perform an "efficient" spatial join in Python. Wh
 
 For example, in the following, we are going to perform a spatial join between a point layer and a polygon layer. One of the attributes of the polygon layer is a string code that we want to attach to the points located within each polygon.
 
+Disclaimer: the time measurements given in the following correspond to different Jupyter sessions with various other jobs running alongside, so they would vary if run again. They are only presented to give idea of the order of magnitude.
+
+
 ## The Datasets
 
 ### Point layer
@@ -274,7 +277,7 @@ len(dvf_df)
 
 
 
-This reduces the size of the point dataset significantly! Let's transfrom the dataframe into a geodataframe:
+This reduces the size of the point dataset significantly! Let's transform the dataframe into a geodataframe:
 
 
 ```python
@@ -372,7 +375,7 @@ iris_gdf.head(3)
 ```
 
     CPU times: user 4.5 s, sys: 220 ms, total: 4.72 s
-    Wall time: 4.72 s
+    Wall time: 3.19 s
 
 
 
@@ -420,15 +423,17 @@ iris_gdf.head(3)
 </table>
 </div>
 
+There is no real difference regarding the elapsed time with or without GEOS for this loading operation:
 
+
+|         With GEOS |  Without GEOS |
+|------------------:|--------------:|
+|             3.19s |         3.94s |
 
 
 ```python
 len(iris_gdf)
 ```
-
-
-
 
     48589
 
