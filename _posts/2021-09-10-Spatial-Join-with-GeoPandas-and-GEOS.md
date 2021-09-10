@@ -19,7 +19,7 @@ For example in this following, we are going to perform a spatial join between a 
 The point dataset deals with real estate price. Its called DVF and is provided by the french open data. Here is a description from [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/5c4ae55a634f4117716d5656/):
 >The “Requests for real estate values” database, or DVF, lists all the sales of real estate made over the last five years, in mainland France and in the overseas departments and territories - except in Mayotte and Alsace-Moselle. The goods concerned can be built (apartment and house) or not built (land lot, fields).
 
-The locations of most of these real estate transfers have been geocoded, so they have a `longitude` and `latitude` attributes. The data can be downloaded from [here](https://files.data.gouv.fr/geo-dvf/latest/csv/) as yearly CSVs. For a given year, different files correspond to different levels of administrative divisions (communes, departements):
+The locations of most of these real estate transfers have been geocoded, so they exhibit some `longitude` and `latitude` attributes. The data can be downloaded from [here](https://files.data.gouv.fr/geo-dvf/latest/csv/) as yearly CSVs. For a given year, different files correspond to different levels of administrative divisions (communes, departements):
 ```
 Index of /geo-dvf/latest/csv/2020/
 ../
@@ -29,7 +29,7 @@ full.csv.gz                                        01-Jun-2021 12:48            
 ```
 However, here we are going to use the "full" data files corresponding to the whole territory: `full2016.csv.gz`, `full2017.csv.gz`, ..., `full2020.csv.gz`. Although data is only available for the last five years, we also included 2 previously collected files: `full2014.csv.gz` and `full2015.csv.gz`, for a total 7 years time span. This results in a dataframe witht 19 895 888 rows (note that a property transfer can hold several distinct rows).
 
-The csv files have been previously loaded with Pandas, concatenated and saved as a Parquet file (`dfv_fps` is a list with the gzipped CSV file paths). Here is the snippet used:
+The csv files have been previously loaded with Pandas, concatenated and saved as a Parquet file. Here is the snippet used (`dfv_fps` is a list with the gzipped CSV file paths):
 
 ```python
 df = pd.DataFrame()
