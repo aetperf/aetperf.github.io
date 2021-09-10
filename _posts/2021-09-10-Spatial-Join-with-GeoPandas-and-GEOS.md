@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python GeoPandas GEOS GeoSpatial GeoDataScience
 ---
 
-The point of this post is perform an "efficient" spatial join in Python. What is a spatial join? here is the definition from [wiki.gis.com](http://wiki.gis.com/wiki/index.php/Spatial_Join):
+The purpose of this post is to perform an "efficient" spatial join in Python. What is a spatial join? Here is the definition from [wiki.gis.com](http://wiki.gis.com/wiki/index.php/Spatial_Join):
 
 > A Spatial join is a GIS operation that affixes data from one feature layer’s attribute table to another from a spatial perspective.
 
