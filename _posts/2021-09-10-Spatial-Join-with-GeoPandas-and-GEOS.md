@@ -46,7 +46,7 @@ df.to_parquet("dvf.parquet")
 
 ### Polygon layer
 
-For the polygon layer, we are going to use the IRIS zones. Here is a definition of these zones from INSEE (National Institute of Statistics and Economic Studies) [website]((https://www.insee.fr/en/metadonnees/definition/c1523):
+For the polygon layer, we are going to use the IRIS zones. Here is a definition of these zones from INSEE (National Institute of Statistics and Economic Studies) [website](https://www.insee.fr/en/metadonnees/definition/c1523):
 
 > In order to prepare for the dissemination of the 1999 population census, INSEE developed a system for dividing the country into units of equal size, known as IRIS2000. In French, IRIS is an acronym of ‘aggregated units for statistical information’, and the 2000 refers to the target size of 2000 residents per basic unit.
 > Since that time IRIS (the term which has replaced IRIS2000) has represented the fundamental unit for dissemination of infra-municipal data. These units must respect geographic and demographic criteria and have borders which are clearly identifiable and stable in the long term.
@@ -285,7 +285,7 @@ del dvf_df
 ```
 
     CPU times: user 1.86 s, sys: 649 ms, total: 2.51 s
-    Wall time: 2.53 s
+    Wall time: 1.98 s
 
 
 This is where the GEOS library starts to make a significant difference regarding the elapsed time:
@@ -482,7 +482,7 @@ iris_gdf = iris_gdf.to_crs("EPSG:4326")
 ```
 
     CPU times: user 4.68 s, sys: 68.3 ms, total: 4.75 s
-    Wall time: 4.76 s
+    Wall time: 4.48 s
 
 
 Again we observe an improvement with GEOS:  
@@ -557,10 +557,6 @@ dvf_gdf.sindex
     CPU times: user 7.38 s, sys: 855 ms, total: 8.23 s
     Wall time: 8.24 s
 
-
-
-
-
     <geopandas.sindex.PyGEOSSTRTreeIndex at 0x7fa8b3e2c0a0>
 
 
@@ -591,13 +587,13 @@ dvf_gdf_sjoin.drop("index_right", axis=1, inplace=True)
 ```
 
     CPU times: user 19.8 s, sys: 2.69 s, total: 22.5 s
-    Wall time: 22.5 s
+    Wall time: 17.7 s
 
 
 
 |         With GEOS |  Without GEOS |
 |------------------:|--------------:|
-|             15.7s |      3min 1s |
+|             17.7s |      3min 1s |
 
 
 
@@ -805,7 +801,7 @@ Although it is not mandatory here, we switch to a projected CRS before looking f
 
 ```python
 %%time
-orphans_gpd = orphans_gdf.to_crs("EPSG:2154")
+orphans_gpd = orphans_gdf.to_crs("EPSG:2154")  # RGF93 / Lambert-93 -- France
 iris_gdf = iris_gdf.to_crs("EPSG:2154")
 ```
 
@@ -856,9 +852,6 @@ points
 
     CPU times: user 186 ms, sys: 560 µs, total: 186 ms
     Wall time: 177 ms
-
-
-
 
 
     array([<pygeos.Geometry POINT (6.36 43.1)>,
@@ -917,10 +910,6 @@ iris_gdf.distance(orphans_gdf.geometry.values[0]).sort_values().index[0]
 
     CPU times: user 252 ms, sys: 0 ns, total: 252 ms
     Wall time: 250 ms
-
-
-
-
 
     18258
 
