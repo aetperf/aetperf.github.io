@@ -244,7 +244,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="600" src="/img/2021-09-10_01/output_19_1.png" alt="Points">
+  <img width="800" src="/img/2021-09-10_01/output_19_1.png" alt="Points">
 </p>  
 
 
@@ -507,7 +507,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="600" src="/img/2021-09-10_01/output_37_1.png" alt="Polygones">
+  <img width="800" src="/img/2021-09-10_01/output_37_1.png" alt="Polygones">
 </p> 
 
 
@@ -528,7 +528,7 @@ So we won't get the same index with or without GEOS, but both will be some kind 
 Simple example of an R-tree for 2D rectangles from [wikipedia](https://en.wikipedia.org/wiki/R-tree):
 
 <p align="center">
-  <img width="600" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/R-tree.svg/1280px-R-tree.svg.png" alt="R-trees">
+  <img width="800" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/R-tree.svg/1280px-R-tree.svg.png" alt="R-trees">
 </p>
 
 
@@ -757,7 +757,7 @@ ax = france.plot(facecolor="none", edgecolor="black", ax=ax)
 
 
 <p align="center">
-  <img width="600" src="/img/2021-09-10_01/output_53_0.png" alt="Orphan points">
+  <img width="800" src="/img/2021-09-10_01/output_53_0.png" alt="Orphan points">
 </p>  
     
 
@@ -787,7 +787,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="600" src="/img/2021-09-10_01/output_56_0.png" alt="Plouguerneau">
+  <img width="800" src="/img/2021-09-10_01/output_56_0.png" alt="Plouguerneau">
 </p>  
     
 
