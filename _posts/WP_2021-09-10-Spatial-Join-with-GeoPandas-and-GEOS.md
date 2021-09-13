@@ -1,3 +1,7 @@
+<p align="center">
+  <img width="500" src="https://geopandas.readthedocs.io/en/latest/_images/geopandas_logo.png" alt="GeoPandas">
+</p>  
+
 The purpose of this post is to perform an "efficient" spatial join in Python. What is a spatial join? Here is the definition from [wiki.gis.com](http://wiki.gis.com/wiki/index.php/Spatial_Join):
 
 > A Spatial join is a GIS operation that affixes data from one feature layer’s attribute table to another from a spatial perspective.
