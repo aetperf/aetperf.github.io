@@ -12,7 +12,7 @@ The purpose of this post is to perform an "efficient" spatial join in Python. Wh
 
 For example, in the following, we are going to perform a spatial join between a point layer and a polygon layer. One of the attributes of the polygon layer is a string code that we want to attach to the points located within each polygon.
 
-Warning: the time measurements given in the following correspond to different Jupyter sessions with various other jobs running alongside, so they would vary if run again. They are only presented to give an idea of the order of magnitude.
+Warning: the time measurements given in the following correspond to different Jupyter sessions with various other jobs running alongside, so they would vary if run again. They are only presented to provide an order of magnitude.
 
 
 ## The Datasets
