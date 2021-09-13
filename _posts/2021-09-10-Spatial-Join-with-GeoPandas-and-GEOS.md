@@ -516,7 +516,7 @@ ax.set_axis_off()
 
 ## Spatial indexing
 
-In order to perform the spatial join between 10256266 points and 48589 Poygons.MultiPolygons, we need some spatial indexing. What is it? Here is a definition from [ucgis.org](https://gistbok.ucgis.org/bok-topics/spatial-indexing):
+In order to perform the spatial join between 10256266 points and 48589 Poygons/MultiPolygons, we need some spatial indexing. What is it? Here is a definition from [ucgis.org](https://gistbok.ucgis.org/bok-topics/spatial-indexing):
 
 > A spatial index is a data structure that allows for accessing a spatial object efficiently. It is a common technique used by spatial databases.  Without indexing, any search for a feature would require a "sequential scan" of every record in the database, resulting in much longer processing time. In a spatial index construction process, the minimum bounding rectangle serves as an object approximation. Various types of spatial indices across commercial and open-source databases yield measurable performance differences. Spatial indexing techniques are playing a central role in time-critical applications and the manipulation of spatial big data.
 
