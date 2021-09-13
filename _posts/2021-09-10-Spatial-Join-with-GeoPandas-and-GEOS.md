@@ -59,7 +59,7 @@ Data can be downloaded from [here](https://professionnels.ign.fr/contoursiris). 
 
 `ftp://Contours_IRIS_ext:ao6Phu5ohJ4jaeji@ftp3.ign.fr/CONTOURS-IRIS_2-1__SHP__FRA_2021-01-01.7z`.
 
-There are 48589 zones that forms a partition without overlap of mainland France and Corsica.
+There are 48589 zones that form a partition without overlap of mainland France and Corsica.
 
 ## GeoPandas and PyGeos
 
