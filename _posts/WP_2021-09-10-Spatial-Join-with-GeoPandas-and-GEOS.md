@@ -496,7 +496,7 @@ So we won't use the piece of code with or without GEOS, but it will use some kin
 
 > R-trees are tree data structures used for spatial access methods, i.e., for indexing multi-dimensional information such as geographical coordinates, rectangles or polygons. The R-tree was proposed by Antonin Guttman in 1984 and has found significant use in both theoretical and applied contexts. A common real-world usage for an R-tree might be to store spatial objects such as restaurant locations or the polygons that typical maps are made of: streets, buildings, outlines of lakes, coastlines, etc. and then find answers quickly to queries such as "Find all museums within 2 km of my current location", "retrieve all road segments within 2 km of my location" (to display them in a navigation system) or "find the nearest gas station" (although not taking roads into account).
 
-Simple example of an R-tree for 2D rectangles from [wikipedia](https://en.wikipedia.org/wiki/R-tree):
+Simple example of a R-tree for 2D rectangles from [wikipedia](https://en.wikipedia.org/wiki/R-tree):
 
 <p align="center">
   <img width="800" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/R-tree.svg/1280px-R-tree.svg.png" alt="R-trees">
