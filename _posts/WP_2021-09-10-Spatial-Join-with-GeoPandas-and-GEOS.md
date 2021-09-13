@@ -492,7 +492,7 @@ From GeoPandas [documentation](https://geopandas.org/docs/reference/sindex.html#
 
 > GeoPandas offers built-in support for spatial indexing using an R-Tree algorithm. Depending on the ability to import `pygeos`, `GeoPandas` will either use `pygeos.STRtree` or `rtree.index.Index`.
 
-So we won't use the piece of code with or without GEOS, but it will use some kind of R-trees in both cases. Here is the definition of R-trees from [wikipedia](https://en.wikipedia.org/wiki/R-tree):
+So we won't use the same piece of code with or without GEOS, but it will use some kind of R-trees in both cases. Here is the definition of R-trees from [wikipedia](https://en.wikipedia.org/wiki/R-tree):
 
 > R-trees are tree data structures used for spatial access methods, i.e., for indexing multi-dimensional information such as geographical coordinates, rectangles or polygons. The R-tree was proposed by Antonin Guttman in 1984 and has found significant use in both theoretical and applied contexts. A common real-world usage for an R-tree might be to store spatial objects such as restaurant locations or the polygons that typical maps are made of: streets, buildings, outlines of lakes, coastlines, etc. and then find answers quickly to queries such as "Find all museums within 2 km of my current location", "retrieve all road segments within 2 km of my location" (to display them in a navigation system) or "find the nearest gas station" (although not taking roads into account).
 
