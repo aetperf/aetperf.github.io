@@ -113,7 +113,7 @@ gpd.options.use_pygeos = True
 ## Load/prepare the point data
 
 In order to perform the spatial join, we only load 3 columns:
-- `id_parcelle` is an string identification for plots of land, that we are going to use later to join with the full dataset (attribute join).
+- `id_parcelle` is a string identification for plots of land, that we are going to use later to join with the full dataset (attribute join).
 - `longitude` and `latitude` are the geographical coordinates (WGS 84 - EPSG:4326)
 
 
