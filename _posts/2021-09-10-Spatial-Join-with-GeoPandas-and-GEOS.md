@@ -421,7 +421,7 @@ iris_gdf.head(3)
 </table>
 </div>
 
-There is no real difference regarding the elapsed time with or without GEOS for this loading operation:
+There is no significant difference regarding the elapsed time with or without GEOS for this loading operation:
 
 
 |         With GEOS |  Without GEOS |
