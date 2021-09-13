@@ -239,7 +239,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="800" src="/img/2021-09-10_01/output_19_1.png" alt="Points">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-09-10_01/output_19_1.png" alt="Points">
 </p>  
 
 
@@ -478,7 +478,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="800" src="/img/2021-09-10_01/output_37_1.png" alt="Polygones">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-09-10_01/output_37_1.png" alt="Polygones">
 </p> 
 
 
@@ -702,7 +702,7 @@ ax = france.plot(facecolor="none", edgecolor="black", ax=ax)
 
 
 <p align="center">
-  <img width="800" src="/img/2021-09-10_01/output_53_0.png" alt="Orphan points">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-09-10_01/output_53_0.png" alt="Orphan points">
 </p>  
     
 
@@ -732,7 +732,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="800" src="/img/2021-09-10_01/output_56_0.png" alt="Plouguerneau">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2021-09-10_01/output_56_0.png" alt="Plouguerneau">
 </p>  
     
 
