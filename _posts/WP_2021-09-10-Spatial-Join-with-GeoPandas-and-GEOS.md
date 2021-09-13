@@ -4,7 +4,7 @@ The purpose of this post is to perform an "efficient" spatial join in Python. Wh
 
 For example, in the following, we are going to perform a spatial join between a point layer and a polygon layer. One of the attributes of the polygon layer is a string code that we want to attach to the points located within each polygon.
 
-Warning: the time measurements given in the following correspond to different Jupyter sessions with various other jobs running alongside, so they would vary if run again. They are only presented to give an idea of the order of magnitude.
+Warning: the time measurements given in the following correspond to different Jupyter sessions with various other jobs running alongside, so they would vary if run again. They are only presented to provide order of magnitude.
 
 
 ## The Datasets
@@ -22,7 +22,7 @@ communes/                                          01-Jun-2021 15:30            
 departements/                                      01-Jun-2021 15:30                   -
 full.csv.gz                                        01-Jun-2021 12:48            71045047
 ```
-However, here we are going to use the "full" data files corresponding to the whole territory: `full2016.csv.gz`, `full2017.csv.gz`, ..., `full2020.csv.gz`. Although data is only available for the last five years, we also included 2 previously collected files: `full2014.csv.gz` and `full2015.csv.gz`, for a total 7 years time span. This results in a dataframe witht 19 895 888 rows (note that a property transfer can hold several distinct rows).
+However, here we are going to use the "full" data files corresponding to the whole territory: `full2016.csv.gz`, `full2017.csv.gz`, ..., `full2020.csv.gz`. Although data is only available for the last five years, we also included 2 previously collected files: `full2014.csv.gz` and `full2015.csv.gz`, for a total 7 years time span. This results in a dataframe with 19 895 888 rows (note that a property transfer can hold several distinct rows).
 
 The csv files have been previously loaded with Pandas, concatenated and saved as a Parquet file. Here is the snippet used (`dfv_fps` is a list with the gzipped CSV file paths):
 
