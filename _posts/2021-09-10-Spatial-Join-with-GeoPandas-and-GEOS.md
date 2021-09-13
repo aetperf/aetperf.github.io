@@ -68,7 +68,7 @@ Most of the treatments in the following are made with the great [GeoPandas](http
 ```bash
 conda install -c conda-forge geopandas
 ```
-GeoPandas may use GEOS as an "booster", using the PyGeos interface. Here is a presentation of PyGeos from its [documentation](https://pygeos.readthedocs.io/en/stable/#pygeos):
+GeoPandas may use GEOS as a "booster", using the PyGeos interface. Here is a presentation of PyGeos from its [documentation](https://pygeos.readthedocs.io/en/stable/#pygeos):
 
 > PyGEOS is a C/Python library with vectorized geometry functions. The geometry operations are done in the open-source geometry library GEOS. PyGEOS wraps these operations in NumPy ufuncs providing a performance improvement when operating on arrays of geometries.
 
