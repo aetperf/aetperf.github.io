@@ -825,23 +825,16 @@ iris_gdf.has_sindex
 
 
 
-    True
+    False
 
 
 
-We see that the `iris_gdf` has an index, which has been built when performing the spatial join:
+We see that the `iris_gdf` does not have an index, let's do that with GEOS (very quick process):
 
 
 ```python
 iris_gdf.sindex
 ```
-
-
-
-
-    <geopandas.sindex.PyGEOSSTRTreeIndex at 0x7fbdc1c0b280>
-
-
 
 Now we create an array of pygeos.Geometry objects:
 
@@ -866,7 +859,7 @@ points
 
 
 
-Also, we need a function retruning the nearest Polygon:
+Also, we need a function returning the nearest Polygon:
 
 
 ```python
@@ -874,7 +867,7 @@ def find_nearest_idx(point):
     return iris_gdf.sindex.nearest(point)[1][0]
 ```
 
-The following actually only works with GEOS. Otherwise I get the following error message:
+The following vectorization actually only works with GEOS. Otherwise we get the following error message:
 ```
 TypeError: Bounds must be a sequence
 ```
