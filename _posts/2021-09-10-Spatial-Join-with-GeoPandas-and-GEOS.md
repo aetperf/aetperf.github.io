@@ -476,7 +476,7 @@ iris_gdf.crs
 
 
 
-We need to have use the same CRS between the point and polygon layers. So let's convert the the polugon layer to EPSG4326:
+We need to use the same CRS between the point and polygon layers. So let's convert the the polugon layer to EPSG4326:
 
 
 ```python
