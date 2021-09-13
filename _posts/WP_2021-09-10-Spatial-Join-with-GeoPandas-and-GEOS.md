@@ -69,10 +69,10 @@ GeoPandas may use GEOS as a "booster", using the PyGeos interface. Here is a pre
 As explained in the GeoPandas [documentation](https://geopandas.org/getting_started/install.html?highlight=pygeos#using-the-optional-pygeos-dependency):
 
 > whether the speedups are used or not is determined by:
-> - If PyGEOS >= 0.8 is installed, it will be used by default (but installing GeoPandas will not yet automatically install PyGEOS as dependency, you need to do this manually).
->  - You can still toggle the use of PyGEOS when it is available, by:
 
-> Setting an option: geopandas.options.use_pygeos = True/False. Note, although this variable can be set during an interactive session, it will only work if the GeoDataFrames you use are created (e.g. reading a file with read_file) after changing this value.
+> If PyGEOS >= 0.8 is installed, it will be used by default (but installing GeoPandas will not yet automatically install PyGEOS as dependency, you need to do this manually).
+
+> You can still toggle the use of PyGEOS when it is available, by [...] setting an option: geopandas.options.use_pygeos = True/False. Note, although this variable can be set during an interactive session, it will only work if the GeoDataFrames you use are created (e.g. reading a file with read_file) after changing this value.
 
 Here we installed pygeos version 0.10.2, which uses libgeos 3.9.1:
 

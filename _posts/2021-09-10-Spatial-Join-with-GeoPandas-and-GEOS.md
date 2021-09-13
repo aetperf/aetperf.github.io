@@ -59,7 +59,7 @@ Data can be downloaded from [here](https://professionnels.ign.fr/contoursiris). 
 
 `ftp://Contours_IRIS_ext:ao6Phu5ohJ4jaeji@ftp3.ign.fr/CONTOURS-IRIS_2-1__SHP__FRA_2021-01-01.7z`.
 
-There are 48589 zones that form a partition without overlap of mainland France and Corsica.
+There are 48589 zones that forms a partition without overlap of mainland France and Corsica.
 
 ## GeoPandas and PyGeos
 
@@ -68,7 +68,7 @@ Most of the treatments in the following are made with the great [GeoPandas](http
 ```bash
 conda install -c conda-forge geopandas
 ```
-GeoPandas may use GEOS as a "booster", using the PyGeos interface. Here is a presentation of PyGeos from its [documentation](https://pygeos.readthedocs.io/en/stable/#pygeos):
+GeoPandas may use GEOS as an "booster", using the PyGeos interface. Here is a presentation of PyGeos from its [documentation](https://pygeos.readthedocs.io/en/stable/#pygeos):
 
 > PyGEOS is a C/Python library with vectorized geometry functions. The geometry operations are done in the open-source geometry library GEOS. PyGEOS wraps these operations in NumPy ufuncs providing a performance improvement when operating on arrays of geometries.
 
@@ -78,9 +78,7 @@ As explained in the GeoPandas [documentation](https://geopandas.org/getting_star
 
 > whether the speedups are used or not is determined by:
 > - If PyGEOS >= 0.8 is installed, it will be used by default (but installing GeoPandas will not yet automatically install PyGEOS as dependency, you need to do this manually).
->  - You can still toggle the use of PyGEOS when it is available, by:
-
-> Setting an option: geopandas.options.use_pygeos = True/False. Note, although this variable can be set during an interactive session, it will only work if the GeoDataFrames you use are created (e.g. reading a file with read_file) after changing this value.
+>  - You can still toggle the use of PyGEOS when it is available, by [...] setting an option: geopandas.options.use_pygeos = True/False. Note, although this variable can be set during an interactive session, it will only work if the GeoDataFrames you use are created (e.g. reading a file with read_file) after changing this value.
 
 Here we installed pygeos version 0.10.2, which uses libgeos 3.9.1:
 
