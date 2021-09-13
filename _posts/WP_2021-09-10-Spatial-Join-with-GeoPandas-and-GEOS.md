@@ -778,6 +778,7 @@ We see that the `iris_gdf` does not have an index, let's do that with (very quic
 iris_gdf.sindex
 ```
 
+Note that the required indices are built automatically if needed when performing the spatial join. It is not required to call the index contructor by hand. 
 
 Now we create an array of pygeos.Geometry objects:
 
