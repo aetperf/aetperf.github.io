@@ -466,11 +466,11 @@ Remarks :
 - Unpromising trials are pruned using `XGBoostPruningCallback`, based on the RMSE on the current validation fold.  
 - We set n_jobs=8 (the number of cores of my laptop) for XGBoost and 1 for the HPO process.  
 
-**Update** Following an insightful comment by @k_nzw, I understood that it is not appropriate to use the pruning callback within k-fold cross validation. It appears that it is meant to be used when there is a single training per trial. As explained by @k_nzw:
+**Update :** Following an insightful comment by @k_nzw, I understood that it is not appropriate to use the pruning callback within k-fold cross validation. It appears that it is meant to be used when there is a single training per trial. As explained by @k_nzw:
 
 > This is because at each trial, we can report intermediate value once at each step.
 
-So in our case with several trainings per trial, the callback might only be used in the first step of the cross validation loop but not in the following steps... Which is not what I expected. Thanks again @k_nzw for your comment, ありがとう！ Although the pruning is kind of useless here, I keep the code as it was first written and hope that someone else might learn from this mistake.
+So in our case with several trainings per trial, the callback might only be used in the first step of the cross validation loop but not in the following steps... Which is not what I expected. Thanks again @k_nzw for your comment, ありがとう！Although the pruning is kind of useless here, I keep the code as it was first written and hope that someone else might learn from this mistake.
 
 
 So here is the objective function :
