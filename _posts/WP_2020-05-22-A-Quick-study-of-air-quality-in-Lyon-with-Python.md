@@ -29,7 +29,7 @@ FS = (16, 9)  # figure size
 CODE_INSEE = 69384
 
 # api-token
-API_TOKEN = "8ff64072eafffb9f02d20db396001d07"
+API_TOKEN = "8xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx7"
 
 # api-endpoint
 URL = f"https://api.atmo-aura.fr/communes/{CODE_INSEE}/indices?api_token={API_TOKEN}"
