@@ -1,5 +1,5 @@
 
-The goal of this post is to perform an embarrassingly parallel loop in Python, with the same code running on different platforms (Linux and Windows). From wikipedia, here is a definition of [embarassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
+The goal of this post is to perform an embarrassingly parallel loop in Python, with the same code running on different platforms [Linux and Windows]. From wikipedia, here is a definition of [embarassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
 
 > In parallel computing, an embarrassingly parallel workload or problem [...] is one where little or no effort is needed to separate the problem into a number of parallel tasks. This is often the case where there is little or no dependency or need for communication between those parallel tasks, or for results between them.
 
