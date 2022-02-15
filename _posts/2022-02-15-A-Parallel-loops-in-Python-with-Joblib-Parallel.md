@@ -10,7 +10,7 @@ The goal of this post is to perform an embarrassingly parallel loop in Python, w
 
 > In parallel computing, an embarrassingly parallel workload or problem [...] is one where little or no effort is needed to separate the problem into a number of parallel tasks. This is often the case where there is little or no dependency or need for communication between those parallel tasks, or for results between them.
 
-In the following, we are going to parallelize a loop with independent iterations. More specifically, we have list of natural numbers and want to check each number for primality. Each test being independent from the others, this makes the loop easy to parallelize over several processes. 
+In the following, we are going to parallelize a loop with independent iterations. More specifically, we have list of natural numbers and want to check each number for primality. Each test being independent from the others, this makes the loop easy to parallelize. 
 
 ## Imports
 
