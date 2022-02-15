@@ -197,7 +197,7 @@ We are going to use [joblib](https://joblib.readthedocs.io/en/latest/index.html)
 
 This might be useful when writing a cross-platform library. We won't go much into details about how new processes are created with `multiprocessing` in Linux and Windows systems, but [here](https://www.pythonforthelab.com/blog/differences-between-multiprocessing-windows-and-linux/) is for example a post describing this issue, written by Aquiles Carattino on the [pythonforthelab](https://www.pythonforthelab.com/) website. 
 
-The current code is working with `loky` and `multiprocessing` on both Linux and Windows, but this is because it is running in a JupyterLab notebook. Recall that it would get trickier for a Python module on Windows with `multiprocessing` to avoid recursive spawning of subprocesses. 
+The current code is working with `loky` and `multiprocessing` on both Linux and Windows, but this is because it is running in a JupyterLab notebook. It would get trickier for a Python module on Windows with `multiprocessing` to avoid recursive spawning of subprocesses. 
 
 Also, note that is possible to use the [dask](https://dask.org/) backend on a distributed cluster.
 
