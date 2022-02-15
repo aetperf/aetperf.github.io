@@ -1,4 +1,10 @@
-# A Parallel loop in Python with Joblib.Parallel
+---
+title: A Parallel loop in Python with Joblib.Parallel
+layout: post
+comments: true
+author: François Pacull
+tags: Python parallel Joblib primes
+---
 
 The goal of this post is to perform an embarrassingly parallel loop in Python, with the same code running on different platforms (Linux and Windows). From wikipedia, here is a definition of [embarassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel):
 
@@ -403,3 +409,27 @@ We can observe that the overhead of the parallelization is really significant: i
 ## Conclusion
 
 Thanks to Joblib with the loky backend, it is fairly easy to run an efficient embarrassingly parallel loop in Python. Furthermore, this code is going to work on both Linux and Windows systems. However, one should make sure that the task distributed to each worker is large enough, so that the overhead induced by the pickling operation (happening when creating child processes) is negligible with regards to the worker computational load.
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
