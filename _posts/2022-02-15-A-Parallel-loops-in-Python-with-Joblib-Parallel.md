@@ -24,9 +24,7 @@ import perfplot
 import primesieve
 ```
 
-Computations are performed on a laptop with an 8 cores Intel(R) i7-7700HQ CPU @ 2.80GHz with Linux.
-
-Package versions:
+Computations are performed on a laptop with an 8 cores Intel(R) i7-7700HQ CPU @ 2.80GHz running Linux. Package versions:
 
     Python implementation: CPython
     Python version       : 3.9.10
@@ -52,7 +50,7 @@ Let's say that we have a list of `k` natural numbers $\left[ n_1, n_2, ..., n_k 
 A primality test is an algorithm for determining whether an input number is prime. We are going to proceed with an old-school **trial division** method. For a given positive integer $n$, we check whether it can be divided by a smaller integer $p$. Also, we are going to perform two simple optimizations:
 
 1. If $n$ is not prime, it can be written as a product $n=p \, q$, and we obviously cannot have both $p$ and $q$ larger than $\sqrt{n}$. So we only test if $n$ can be divided by $p$ smaller or equal to $\sqrt{n}$. For example, when testing 25 for primality, we would check if 2, 3 or 5 are divisors. Numbers between 9 and 24 are either prime or multiple of 2 or 3. Numbers between 4 and 8 are either prime or even. 
-2. We observe that any integer $p \geq 5$ can be written as a multiple of 6 plus an integer $i$ between -1 and 4: $p=6k+i$, with $k \geq 1$ and $i \in \{-1, 0, 1 , 2, 3, 4\}$, and that if $ i \in \{0, 3\}$ then $p$ is a multiple of 3, and if $i \in \{2, 4\}$ then $p$ is a multiple of 2. So if we already made sure that $n$ is not a multiple of 2 or 3, we only need to check if $n$ can be divided by $p=6 \, k \pm 1$. 
+2. Any integer $p \geq 5$ can be written as a multiple of 6 plus an integer $i$ between -1 and 4: $p=6k+i$, with $k \geq 1$ and $i \in \left{-1, 0, 1 , 2, 3, 4\right}$. If $ i \in \left{0, 3\right}$ then $p$ is a multiple of 3, and if $i \in \left{2, 4\right}$ then $p$ is a multiple of 2. So if we already made sure that $n$ is not a multiple of 2 or 3, we only need to check if $n$ can be divided by $p=6 \, k \pm 1$. 
 
 To summarize, we need to: 
 1. deal first with $n \leq 3$
