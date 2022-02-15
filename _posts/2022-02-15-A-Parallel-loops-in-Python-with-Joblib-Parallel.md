@@ -354,7 +354,7 @@ res_df_par.head(3)
 pd.testing.assert_frame_equal(res_df_seq, res_df_par)
 ```
 
-Now let's compare the execution time of the sequential and parallel versions.
+Let's compare the execution time of the sequential with the parallel version.
 
 
 ```python
