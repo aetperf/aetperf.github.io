@@ -397,7 +397,7 @@ We can observe that the overhead of the parallelization is really significant: i
 
 ## Conclusion
 
-Thanks to Joblib with the loky backend, it is fairly easy to run an efficient embarrassingly parallel loop in Python. Furthermore, this code is going to work on both Linux and Windows systems. However, one should make sure that the task distributed to each worker is large enough, so that the overhead induced by the pickling operation (happening when creating child processes) is negligible with regards to the worker computational load.
+Thanks to Joblib with the loky backend, it is fairly easy to run an efficient embarrassingly parallel loop in Python. Furthermore, the same code is going to work on both Linux and Windows systems. However, one should make sure that the task distributed to each worker is large enough, so that the overhead induced by the pickling operation (happening when creating child processes) is negligible with regards to the worker computational load.
 
 
 {% if page.comments %}
