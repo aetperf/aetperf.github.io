@@ -346,7 +346,7 @@ _ = ax.set(
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-02-15_01/output_31_0.png" alt="output_31_0">
 </p>  
 
-We can observe that the overhead of the parallelization is really significant: in the present case, it is only when $n \geq 10^{15}$ that the parallel version is faster than the sequential one, due to the heavier computational burden per worker. Also, `n_jobs=4` is the faster that `n_jobs=8`, probalbly because some other jobs were running on the laptop.
+We can observe that the overhead of the parallelization is really significant: in the present case, it is only when $n \geq 10^{15}$ that the parallel version is faster than the sequential one, due to the heavier computational burden per worker. Also, `n_jobs=4` is faster than `n_jobs=8`, probalbly because some other jobs were running on the laptop.
 
 ## Conclusion
 
