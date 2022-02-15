@@ -104,7 +104,7 @@ prime_indices_ref
 
 
 
-Then we compute the same thing using the `is_prime()` function, and check it is the same as the above reference array:
+Then we also compute this list of primes using `is_prime()` and check it is equal to the above reference array:
 
 
 ```python
