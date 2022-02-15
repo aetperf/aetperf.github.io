@@ -17,7 +17,7 @@ import perfplot
 import primesieve
 ```
 
-Computations are performed on a laptop with an 8 cores Intel(R) i7-7700HQ CPU @ 2.80GHz running Linux. Package versions:
+Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.80GHz running Linux. Package versions:
 
     Python implementation: CPython
     Python version       : 3.9.10
