@@ -191,7 +191,7 @@ OK this is much faster with Numba. We are now ready to parallelize the loop on t
 
 ## Parallel loop with Joblib
 
-We are going to use [joblib](https://joblib.readthedocs.io/en/latest/index.html) with the default [loky](https://loky.readthedocs.io/en/stable/) backend. Loky is a cross-platform and cross-version implementation of the [ProcessPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ProcessPoolExecutor) class of [concurrent.futures](https://docs.python.org/3/library/concurrent.futures.html#module-concurrent.futures). One of its main features is (from [Loky's github account](https://github.com/joblib/loky)):
+We are going to use [joblib](https://joblib.readthedocs.io/en/latest/index.html) with the default [loky](https://loky.readthedocs.io/en/stable/) backend. Loky is a cross-platform and cross-version implementation of the [ProcessPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ProcessPoolExecutor) class of [concurrent.futures](https://docs.python.org/3/library/concurrent.futures.html#module-concurrent.futures). One of its main features is (from [Loky's github repository](https://github.com/joblib/loky)):
 
 > No need for `if __name__ == "__main__":` in scripts: thanks to the use of cloudpickle to call functions defined in the __main__ module, it is not required to protect the code calling parallel functions under Windows.
 
