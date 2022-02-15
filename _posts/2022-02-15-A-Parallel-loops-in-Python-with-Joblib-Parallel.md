@@ -117,10 +117,6 @@ The `is_prime` function seems to work fine, but let's try to accelerate it with 
 
 ## Numba
 
-> Any sufficiently advanced technology is indistinguishable from magic
-
-Arthur C. Clarke
-
 We just add the magic `jit` decorator to the function and perform the compilation by calling it once:
 
 
@@ -150,19 +146,14 @@ is_prime_numba(1234)
 
 
 
-In order to measure the performance amelioration, we create a random number generator and generate an array of 1000 random integers:
+In order to measure the performance amelioration, we create a random number generator and generate an array of 1000 random integers. We then compare the `is_prime` and `is_prime_numba` functions by applying them to a range of integer arrays.
 
 
 ```python
 SD = 124
 rng = np.random.default_rng(seed=SD)
 SIZE = 1_000
-```
 
-We compare the `is_prime` and `is_prime_numba` functions by applying them to a range of integers.
-
-
-```python
 out = perfplot.bench(
     setup=lambda n: rng.integers(
         np.power(10, n),
