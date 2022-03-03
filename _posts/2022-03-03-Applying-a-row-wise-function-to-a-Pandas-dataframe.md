@@ -887,7 +887,7 @@ This is not so bad but one can wonder if a large part of the elapsed time is not
          7         1          0.0      0.0      0.0      return det_pd
 
 
-Most of the time is actually spent within the `apply` method. However, we believe that there is a copy process in the `from_pandas` step, which is not optimal regarding memory usage.
+Most of the time is actually spent within the `apply` method. However, we believe that there is a copy process in the `from_pandas` step, which would not be not optimal regarding memory usage?
 
 ## Polars vectorize
 
