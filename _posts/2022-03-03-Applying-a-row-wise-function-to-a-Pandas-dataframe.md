@@ -252,7 +252,7 @@ def pandas_vectorize(df):
     )
 ```
 
-We store the resulting pandas Series in order to check that later computations leads to the same result:
+We store the resulting Pandas Series into the `det_ref` variable, in order to check that the later computations lead to the same result:
 
 
 ```python
