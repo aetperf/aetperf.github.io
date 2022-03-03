@@ -390,8 +390,8 @@ The `apply` method also iterate over DataFrame rows (with the `axis=1` argument)
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |----|--------|------------------|--------------|---|
-|apply_series| pandas.DataFrame.apply | pandas.Series | det_sym33_series | pandas.Series  |
-|apply_array| pandas.DataFrame.apply | numpy.ndarray | det_sym33_array | array  |
+|apply_series| pd.DataFrame.apply | pd.Series | det_sym33_series | pd.Series  |
+|apply_array| pd.DataFrame.apply | np.ndarray | det_sym33_array | array  |
 
 ### pandas.Series argument
 
@@ -471,9 +471,9 @@ The `itertuples` method allows to iterate over DataFrame rows as namedtuples. Th
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |-------|--------|------------------|--------------|---|
-|itertuples_scalars| pandas.DataFrame.itertuples | namedtuple | det_sym33_scalars | float64  |
-|itertuples_array| pandas.DataFrame.itertuples | namedtuple | det_sym33_array | array  |
-|itertuples_series| pandas.DataFrame.itertuples | namedtuple | det_sym33_series | pandas.Series  |
+|itertuples_scalars| pd.DataFrame.itertuples | namedtuple | det_sym33_scalars | float64  |
+|itertuples_array| pd.DataFrame.itertuples | namedtuple | det_sym33_array | array  |
+|itertuples_series| pd.DataFrame.itertuples | namedtuple | det_sym33_series | pd.Series  |
 
 ### Scalar arguments
 
@@ -591,7 +591,7 @@ Let's try out this method allowing to apply a function to a 1D slice along a giv
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |-----|--------|------------------|--------------|---|
-|np_apply_along_axis| numpy.apply_along_axis | numpy.ndarray | det_sym33_array | array  |
+|np_apply_along_axis| np.apply_along_axis | np.ndarray | det_sym33_array | array  |
 
 
 ```python
@@ -626,8 +626,8 @@ Numpy vectorize evaluates the row-wise function over each element of the input n
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
-|np_vectorize_scalars| numpy.vectorize | float64 | det_sym33_scalars | float64  |
-|np_vectorize_array| numpy.vectorize | numpy.ndarray | det_sym33_array | array  |
+|np_vectorize_scalars| np.vectorize | float64 | det_sym33_scalars | float64  |
+|np_vectorize_array| np.vectorize | np.ndarray | det_sym33_array | array  |
 
 ### Scalar arguments
 
@@ -756,7 +756,7 @@ Performance seems to be similar between `map` and `numpy.vectorize.`
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
-|swifter_apply| swifter.apply | numpy.ndarray | det_sym33_array | array  |
+|swifter_apply| swifter.apply | np.ndarray | det_sym33_array | array  |
 
 
 ```python
@@ -786,7 +786,7 @@ We tried to use the great [dask](https://github.com/dask/dask) library with the 
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
-|dask_df_map_partitions| dask.dataframe.DataFrame.map_partitions | pandas.Series | det_sym33_series |  pandas.Series  |
+|dask_df_map_partitions| dask.dataframe.DataFrame.map_partitions | pd.Series | det_sym33_series |  pd.Series  |
 
 
 ```python
