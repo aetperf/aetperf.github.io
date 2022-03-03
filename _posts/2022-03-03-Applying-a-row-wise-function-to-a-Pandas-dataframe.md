@@ -953,6 +953,7 @@ If we run the line profiler, we can observe that most of the elapsed time is now
 
 ## Numba
 
+[Numba](https://numba.pydata.org/) makes Python code fast! Here we use the the Numba `@jit` decorator with `nogil=True` for the Numba dedicated row-wise function. In the `apply_func_numba` function, we basically implement the loop over the dataframe rows.
 
 ```python
 @jit(
@@ -1004,9 +1005,11 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
+Well this is the fastest implementation so far.
+
 ## Numba parallel
 
-We use `njit` and `prange`. By default, all available cores are used.
+Now we use the Numba `@njit` decorator along with `prange` looping. By default, all available cores are used. The previous row-wise function `apply_func_numba` is used here.
 
 
 ```python
@@ -1046,6 +1049,9 @@ print(f"Elapsed time: {t:8.7f} s")
 ```python
 pd.testing.assert_series_equal(det, det_ref)
 ```
+
+The parallel version is not a large improvement over the sequantial Numba version. This might be because of the relatively small size of the dataframe.
+
 
 ## Cython
 
