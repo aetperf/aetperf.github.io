@@ -83,8 +83,6 @@ import swifter
 
 SD = 124  # random seed
 rng = np.random.default_rng(SD)  # random number generator
-
-FS = (12, 12)  # figure size
 ```
 
     Python version       : 3.9.10
@@ -1256,10 +1254,10 @@ out = perfplot.bench(
 
 
 ```python
-def plot_timings(out):
+def plot_timings(out, figsize=(12,12)):
     labels = out.labels
     ms = 10
-    fig = plt.figure(figsize=FS)
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(1, 1, 1)
 
     for i, label in enumerate(labels):
