@@ -266,14 +266,14 @@ print(f"Elapsed time: {t:8.7f} s")
 
 We know that the `iterrows` method is kind of slow. It loops over DataFrame rows as (index, Series) pairs. Here, we are going to compare the 3 different argument types of the row-wise function, given that the row is returned by `iterrows` as a Pandas Series:
 - scalar values
-- a NumPy array
+- a Numpy array
 - a Pandas Series
 
 |function name | method | returning rows as | row-wise function | argument type  |
 |---|--------|------------------|--------------|---|
-|iterrows_scalars | pandas.DataFrame.iterrows | pandas.Series | df_iterrows_scalars | float64  |
-|iterrows_array| pandas.DataFrame.iterrows() | pandas.Series | df_iterrows_array   | array  |
-|iterrows_series| pandas.DataFrame.iterrows() | pandas.Series | df_iterrows_series  | pandas.Series  |
+|iterrows_scalars | pd.DataFrame.iterrows | pd.Series | df_iterrows_scalars | float64  |
+|iterrows_array| pd.DataFrame.iterrows | pd.Series | df_iterrows_array   | array  |
+|iterrows_series| pd.DataFrame.iterrows | pd.Series | df_iterrows_series  | pd.Series  |
 
 ### Scalar arguments
 
