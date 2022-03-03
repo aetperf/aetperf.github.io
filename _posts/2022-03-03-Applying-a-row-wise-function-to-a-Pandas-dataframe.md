@@ -100,7 +100,7 @@ Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.8
 
 ### Timing function
 
-This function is returning the best elapsed time over `r` trials, and the result of the computations: 
+This function is returning the best elapsed time over `r` trials, and the result of the computation: 
 
 
 ```python
