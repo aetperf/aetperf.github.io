@@ -117,7 +117,7 @@ def timing(func, df, r=10):
 
 ### Create a dataframe with random floats
 
-We start by creating a rather small size dataframe to perform a first comparison. We will later compare the most efficient methods with longer dataframes.
+We start by creating a medium-sized dataframe to perform a first comparison. We will later compare the most efficient methods with longer dataframes.
 
 
 ```python
