@@ -34,7 +34,7 @@ Here is a list of all the options tested in the following:
   <img width="600" src="/img/2022-03-03_01/rowwise_func.png" alt="Row-wise function">
 </p>
 
-The focus is on looping over the rows of a Pandas dataframe holding some numerical data. All the elements of the dataframe are of `float64` data type. A function is applied to each row, taking the row elements as input, either as distinct scalar arguments, as an array, or as a Pandas Series. The computation returns a scalar value per row, so that the process eventually returns a numeric Pandas series with same index as the original dataframe. For this post, a toy function computing the determinant of a 3-by-3 symmetric real matrix is used:
+The focus is on looping over the rows of a Pandas dataframe holding some numerical data. All the elements of the dataframe are of `np.float64` data type. A function is applied to each row, taking the row elements as input, either as distinct scalar arguments, as an array, or as a Pandas Series. The computation returns a scalar value per row, so that the process eventually returns a numeric Pandas series with same index as the original dataframe. For this post, a toy function computing the determinant of a 3-by-3 symmetric real matrix is used:
 
 $$\begin{equation*}
 M = 
