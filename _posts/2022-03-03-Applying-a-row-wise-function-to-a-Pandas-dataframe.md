@@ -830,7 +830,7 @@ Also, we guess that there might be a dataframe copy from Pandas to Dask? This me
 
 ## polars.DataFrame.apply
 
-[Polars](https://github.com/pola-rs/polars) is a fast multi-threaded DataFrame library written in Rust but also available in Python and Node.js. Here we are going to use `DataFrame.apply()` which allows to apply a custom function over the rows of a Polars dataFrame. The rows are passed as tuple. However, note this warning from Polars' [documentation](https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.apply.html) says:
+[Polars](https://github.com/pola-rs/polars) is a fast multi-threaded DataFrame library written in Rust but also available in Python and Node.js. Here we are going to use `DataFrame.apply()` which allows to apply a custom function over the rows of a Polars dataFrame. The rows are passed as tuple. However, note this warning from Polars' [documentation](https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.apply.html):
 > Beware, this is slow.
 
 |function name| method | returning rows as | row-wise function | argument type  |
