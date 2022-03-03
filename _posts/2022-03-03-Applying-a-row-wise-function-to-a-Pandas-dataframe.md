@@ -20,6 +20,7 @@ Here is a list of all the options tested in the following:
 - swifter
 - dask.dataframe.map_partitions
 - polars.DataFrame.apply
+- polars.vetorize
 - Numba
 - Numba parallel
 - Cython
@@ -942,7 +943,7 @@ If we run the line profiler, we can observe that most of the elapsed time is now
         11         1          1.0      1.0      0.0      return det_pd
 
 
-## Numba loop
+## Numba
 
 
 ```python
@@ -995,7 +996,7 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
-## Numba parallel loop
+## Numba parallel
 
 We use `njit` and `prange`. By default, all available cores are used.
 
@@ -1082,7 +1083,7 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
-## Cython parallel loop
+## Cython parallel
 
 
 ```cython
