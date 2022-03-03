@@ -746,7 +746,7 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
-Performance seems to be similar between `map` and `numpy.vectorize.`
+Performance seems to be similar between `map_scalars` and `np_vectorize_scalars.`
 
 ## Swifter
 
