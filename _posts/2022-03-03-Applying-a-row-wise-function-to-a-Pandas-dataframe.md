@@ -781,7 +781,7 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
-The computation is rather slow, we are probably missing something here and did not use this package as it is supposed to.
+The computation is rather slow, we are probably missing something here and did not use this package correctly.
 
 ## dask.dataframe.map_partitions
 
