@@ -953,7 +953,7 @@ If we run the line profiler, we can observe that most of the elapsed time is now
 
 ## Numba
 
-[Numba](https://numba.pydata.org/) makes Python code fast! Here we use the the Numba `@jit` decorator with `nogil=True` for the Numba dedicated row-wise function. In the `apply_func_numba` function, we basically implement the loop over the dataframe rows.
+[Numba](https://numba.pydata.org/) makes Python code fast! Here we use the Numba `@jit` decorator with `nogil=True` for the Numba dedicated row-wise function. In the `apply_func_numba` function, we basically implement the loop over the dataframe rows.
 
 ```python
 @jit(
