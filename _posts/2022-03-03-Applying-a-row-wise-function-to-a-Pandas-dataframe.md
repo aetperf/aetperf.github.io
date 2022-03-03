@@ -201,7 +201,7 @@ df.head(3)
 
 ### Row-wise functions
 
-We now create 3 different row-wise functions, with different argument types for the current row values:
+We now create 3 different row-wise functions, with different argument types for input the row values:
 - distinct scalar arguments
 - an array
 - a Pandas Series
