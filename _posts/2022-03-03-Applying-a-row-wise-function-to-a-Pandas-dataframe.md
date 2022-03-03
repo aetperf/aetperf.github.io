@@ -750,7 +750,7 @@ Performance seems to be similar between `map_scalars` and `np_vectorize_scalars.
 
 ## Swifter
 
-[Swifter](https://github.com/jmcarpenter2/swifter) is a "package which efficiently applies any function to a pandas dataframe or series in the fastest available manner". we use the `raw=True` argument. here is a quote from the [documentation ](https://github.com/jmcarpenter2/swifter/blob/master/docs/documentation.md):
+[Swifter](https://github.com/jmcarpenter2/swifter) is a "package which efficiently applies any function to a pandas dataframe or series in the fastest available manner". we use the `raw=True` argument. Here is a quote from the [documentation ](https://github.com/jmcarpenter2/swifter/blob/master/docs/documentation.md):
 
 > raw : bool, default False   
 > False : passes each row or column as a Series to the function.   
@@ -781,7 +781,7 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
-The computation is rather slow, we are probably missing something here and did not use this package correctly.
+The computation is rather slow, we are probably missing something here and did not use this package correctly?
 
 ## dask.dataframe.map_partitions
 
