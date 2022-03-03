@@ -891,7 +891,7 @@ Most of the time is actually spent within the `apply` method. However, we believ
 
 ## Polars vectorize
 
-We can also use Polars built-in vectorization the same way we did with Pandas. This does not make use of any row-wise function.
+We can also use Polars built-in vectorization the same way we did with Pandas. This does not make use of the previous row-wise functions.
 
 
 ```python
