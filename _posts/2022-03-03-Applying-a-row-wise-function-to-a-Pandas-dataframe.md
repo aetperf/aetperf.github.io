@@ -1496,7 +1496,7 @@ ax = plot_timings(out)
 
 ## Conclusion
 
-Pandas built-in is very good solution when possible. If we want to be faster with no extra pain, Numba is the best solution. 
+Pandas built-in vectorization is a very good solution when possible. If we want to be faster with no extra pain, Numba is the best solution. Cython is about as fast as Numba, flexible, but more involving.
 
 
 
