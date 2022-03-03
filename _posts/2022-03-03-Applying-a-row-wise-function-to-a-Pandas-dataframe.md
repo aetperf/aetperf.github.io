@@ -1376,6 +1376,65 @@ _ = ax.set(
   <img width="800" src="/img/2022-03-03_01/output_133_0.png" alt="Timings large 1">
 </p>
 
+```python
+time_df.T
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1000000</th>
+      <th>10000000</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>pandas_vectorize</th>
+      <td>3.95e-02</td>
+      <td>4.10e-01</td>
+    </tr>
+    <tr>
+      <th>numba_loop</th>
+      <td>3.92e-03</td>
+      <td>7.33e-02</td>
+    </tr>
+    <tr>
+      <th>cython_loop</th>
+      <td>4.40e-03</td>
+      <td>5.29e-02</td>
+    </tr>
+    <tr>
+      <th>cython_loop_para</th>
+      <td>3.21e-03</td>
+      <td>3.55e-02</td>
+    </tr>
+    <tr>
+      <th>numba_loop_para</th>
+      <td>2.35e-03</td>
+      <td>2.53e-02</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
 Let's focus on the Numba and Cython methods.
 
 
