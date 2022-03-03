@@ -7,7 +7,7 @@ tags: Python Pandas DataFrame row-wise apply
 ---
 
 
-More than 3 years ago, we posted a small comparative study about [Looping over Pandas data](https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html). Because a lot of things evolved since 2018, this post is kind of an update. For example Pandas tag version was `0.23.3` at that time, it is now `1.4.0`. Also, we added some more options. 
+More than 3 years ago, we posted a comparative study about [Looping over Pandas data](https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html). Because a lot of things evolved since 2018, this post is kind of an update. For example Pandas tag version was `0.23.3` at that time, it is now `1.4.0`. Also, we added some more options. 
 
 Here is a list of all the options tested in the following:
 - Pandas built-in vectorization
@@ -29,6 +29,10 @@ Here is a list of all the options tested in the following:
 ## Introduction
 
 ### Motivation
+
+<p align="center">
+  <img width="600" src="/img/2022-03-03_01/rowwise_func.png" alt="Row-wise function">
+</p>
 
 The focus is on looping over the rows of a Pandas dataframe holding some numerical data. All the elements of the dataframe are of `float64` data type. A function is applied to each row, taking the row elements as input, either as distinct scalar arguments, as an array, or as a Pandas Series. The computation returns a scalar value per row, so that the process eventually returns a numeric Pandas series with same index as the original dataframe. For this post, a toy function computing the determinant of a 3-by-3 symmetric real matrix is used:
 
@@ -57,10 +61,6 @@ def det_sym33(m11, m12, m13, m22, m23, m33):
         - m22 * m13**2
     )
 ```
-
-<p align="center">
-  <img width="600" src="rowwise_func.png" alt="Row-wise function">
-</p>
 
 ### Imports
 
