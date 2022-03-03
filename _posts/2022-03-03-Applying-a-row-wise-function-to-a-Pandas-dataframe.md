@@ -240,7 +240,7 @@ In the following, we may try several of these row-wise functions for a given dat
 
 ## Pandas built-in vectorization
 
-First we are going to use the built-in vectorization operations from Pandas. In the present case the row-wise computation is straightforward and can be performed with basic universal functions applied to the entire columns. This does not make use of a row-wise function, but allows to have a reference baseline timing.
+First we are going to use the built-in vectorization operations from Pandas. In the present case the row-wise computation is straightforward and can be performed with basic universal functions applied to the entire columns. This does not make use of any row-wise function, but allows to have a reference baseline timing.
 
 
 ```python
