@@ -382,11 +382,11 @@ _ = ax.set(
     
 
 
-We observe that using the array of values from the pandas.Series as argument of the row-wise function, and accessing the data with indices is the fastest when using `.iterrows()`. However, all three `iterrows` methods are incredibly slow.
+We observe that using the array of values from the pandas.Series as argument of the row-wise function, and accessing the data with indices is the fastest method when using `.iterrows()`. However, all three `iterrows` methods are very slow.
 
 ## pandas.DataFrame.apply
 
-The `apply` method also iterate over DataFrame rows (with the `axis=1` argument), returning either a Series (default) or an array (with `raw=True`). Here is what Pandas' [documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html) says about this:
+The `apply` method also iterates over dataframe rows (with the `axis=1` argument), returning either a Series (default) or an array (with `raw=True`). Here is what Pandas' [documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html) says about this:
 > the passed function will receive ndarray objects instead. If you are just applying a NumPy reduction function this will achieve much better performance.
 
 |function name| method | returning rows as | row-wise function | argument type  |
@@ -468,7 +468,7 @@ Indeed using arrays instead of Series is way faster! But still a lot slower than
 
 ## pandas.DataFrame.itertuples
 
-The `itertuples` method allows to iterate over DataFrame rows as namedtuples. Thus, the row values can either be accessed by name or by index. The function `det_sym33_scalars` is used in the first case, and `det_sym33_array` in the second.
+The `itertuples` method allows to iterate over dataframe rows as namedtuples. Thus, the row values can either be accessed by name or by index. The function `det_sym33_scalars` is used in the first case, and `det_sym33_array` in the second.
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |-------|--------|------------------|--------------|---|
