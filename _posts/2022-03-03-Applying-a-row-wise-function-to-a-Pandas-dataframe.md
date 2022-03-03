@@ -7,7 +7,7 @@ tags: Python Pandas DataFrame row-wise apply
 ---
 
 
-More than 3 years ago, we posted a little comparative study about [Looping over Pandas data](https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html). This is kind of an update, since a lot of things evolved since 2018. For example Pandas tag version was `0.23.3` at that time, it is now `1.4.0`. Also, we added some more options regarding multi-threading/multi-processing. 
+More than 3 years ago, we posted a small comparative study about [Looping over Pandas data](https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html). Because a lot of things evolved since 2018, this post is kind of an update. For example Pandas tag version was `0.23.3` at that time, it is now `1.4.0`. Also, we added some more options. 
 
 Here is a list of all the options tested in the following:
 - Pandas built-in vectorization
@@ -23,7 +23,7 @@ Here is a list of all the options tested in the following:
 - Numba
 - Numba parallel
 - Cython
-- Cython / openMP
+- Cython parallel
 
 ## Introduction
 
