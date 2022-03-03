@@ -826,7 +826,7 @@ pd.testing.assert_series_equal(det, det_ref)
 Not so bad but still slower than Pandas built_in vectorization. Here is what can be found on [dask's documentaion](https://docs.dask.org/en/stable/generated/dask.dataframe.from_pandas.html?highlight=from_pandas):
 > Note that, despite parallelism, Dask.dataframe may not always be faster than Pandas. We recommend that you stay with Pandas for as long as possible before switching to Dask.dataframe.
 
-Also, we guess that there is a dataframe copy from Pandas to Dask? This method is probably more recommended with very large dataframes distributed on clusters.
+Also, we guess that there might be a dataframe copy from Pandas to Dask? This method is probably more recommended when dealing with very large dataframes distributed on clusters.
 
 ## polars.DataFrame.apply
 
