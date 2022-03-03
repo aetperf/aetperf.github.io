@@ -789,7 +789,7 @@ We tried to use the great [dask](https://github.com/dask/dask) library with the 
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
-|dask_df_map_partitions| dask.dataframe.DataFrame.map_partitions | pd.Series | det_sym33_series |  pd.Series  |
+|dask_df_map_partitions| dd.DataFrame.map_partitions | pd.Series | det_sym33_series |  pd.Series  |
 
 
 ```python
