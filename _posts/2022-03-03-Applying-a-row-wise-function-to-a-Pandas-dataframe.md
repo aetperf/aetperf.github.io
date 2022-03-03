@@ -236,7 +236,7 @@ def det_sym33_series(s):
     )
 ```
 
-In the following, we may try several of these row-wise functions for a given dataframe looping method, depending on how the dataframe rows are returned by this method.
+In the following, we may try several of these row-wise functions for a given dataframe looping method, depending on how the dataframe rows are returned by the method.
 
 ## Pandas built-in vectorization
 
