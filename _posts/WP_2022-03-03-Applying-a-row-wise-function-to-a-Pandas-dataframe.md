@@ -773,8 +773,7 @@ The following implementation does work but there might be more efficient ways to
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
-|dask_df_map_partitions| dd.DataFrame.| pd.Series | det_sym33_series |  pd.Series  |
-|                       | map_partitions | | | |
+|dask_df_map_partitions| dd.map_partitions| pd.Series | det_sym33_series |  pd.Series  |
 
 
 ```python
@@ -1034,7 +1033,7 @@ The parallel version is not a large improvement over the sequantial Numba versio
 
 ## Cython
 
-[Cython](https://cython.org/) is a mix between C and Python. Writing Cython code is a little more involving than writing pure Python. Note that in the following we used `%%cython` magic command at the begining of the notebook cell to compile the Cython code (also we loaded the Cython extension at the begining of the notebook).
+[Cython](https://cython.org/) is a mix between C and Python. Writing Cython code is a little more involving than writing pure Python. Note that in the following we used `%%cython` magic command at the begining of the notebook cell to compile the Cython code [also we loaded the Cython extension at the begining of the notebook].
 
 ```cython
 %%cython
@@ -1084,7 +1083,7 @@ This is not as fast as Numba but close.
 
 Similarly to what we did with Numba, we use here the `prange` looping function. Here is a quote from the [documentation](https://cython.readthedocs.io/en/latest/src/userguide/parallelism.html):
 
-> cython.parallel.prange([start,] stop[, step][, nogil=False][, schedule=None[, chunksize=None]][, num_threads=None])  
+> cython.parallel.prange[[start,] stop[, step][, nogil=False][, schedule=None[, chunksize=None]][, num_threads=None]]  
 > This function can be used for parallel loops. OpenMP automatically starts a thread pool and distributes the work according to the schedule used.
 > Thread-locality and reductions are automatically inferred for variables.
 
