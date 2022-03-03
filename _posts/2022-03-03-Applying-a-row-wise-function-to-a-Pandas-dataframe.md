@@ -238,7 +238,7 @@ def det_sym33_series(s):
 
 ## Pandas built-in vectorization
 
-We start by using built-in vectorization operations from Pandas. In the present case the row-wise computation is straightforward and can be performed with basic universal functions applied to the entire columns. This does not make use of the row-wise function, but allows to have a reference baseline.
+First we are going to use the built-in vectorization operations from Pandas. In the present case the row-wise computation is straightforward and can be performed with basic universal functions applied to the entire columns. This does not make use of a row-wise function, but allows to have a reference baseline timing.
 
 
 ```python
@@ -250,7 +250,7 @@ def pandas_vectorize(df):
     )
 ```
 
-We store the result in order to check that later computations and measure the elapsed time:
+We store the resulting pandas Series in order to check that later computations leads to the same result:
 
 
 ```python
