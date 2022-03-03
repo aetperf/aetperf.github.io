@@ -794,7 +794,8 @@ The following implementation does work but there might be really more efficient 
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
-|dask_df_map_partitions| dd.DataFrame.map_partitions | pd.Series | det_sym33_series |  pd.Series  |
+|dask_df_map_partitions| dd.DataFrame.| pd.Series | det_sym33_series |  pd.Series  |
+|                       | map_partitions | | | |
 
 
 ```python
