@@ -468,7 +468,7 @@ Indeed using arrays instead of Series is way faster! But still a lot slower than
 
 ## pandas.DataFrame.itertuples
 
-The `itertuples` method allows the iteratation over dataframe rows, returning them as namedtuples. Thus, the row values can either be accessed by name or by index. The function `det_sym33_scalars` is used in the first case, and `det_sym33_array` in the second.
+The `itertuples` method allows the iteratation over dataframe rows, returning them as namedtuples. Thus, the row values can either be accessed by name or by index. The function `det_sym33_scalars` and `det_sym33_series` are used in the former case, and `det_sym33_array` in the latter.
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |-------|--------|------------------|--------------|---|
