@@ -20,7 +20,7 @@ Here is a list of all the options tested in the following:
 - swifter
 - dask.dataframe.map_partitions
 - polars.DataFrame.apply
-- polars.vectorize
+- polars built-in vectorization
 - Numba
 - Numba parallel
 - Cython
