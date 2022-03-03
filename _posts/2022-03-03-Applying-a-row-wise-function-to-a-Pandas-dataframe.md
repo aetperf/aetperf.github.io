@@ -785,7 +785,12 @@ The computation is rather slow, we are probably missing something here and did n
 
 ## dask.dataframe.map_partitions
 
-We tried to use the great [dask](https://github.com/dask/dask) library with the `map_partitions` method. Unfortunately, we are not so sure how to handle the `meta` argument. The following implementation does work but there might be really more efficient ways to do it...
+We tried to use the great [dask](https://github.com/dask/dask) library with the `map_partitions` method. Unfortunately, we don't really know how to handle the `meta` argument. 
+
+> meta : pd.DataFrame, pd.Series, dict, iterable, tuple, optional
+>    An empty pd.DataFrame or pd.Series that matches the dtypes and column names of the output. This metadata is necessary for many algorithms in dask dataframe to work. For ease of use, some alternative inputs are also available. Instead of a DataFrame, a dict of {name: dtype} or iterable of (name, dtype) can be provided (note that the order of the names should match the order of the columns). Instead of a series, a tuple of (name, dtype) can be used. If not provided, dask will try to infer the metadata. This may lead to unexpected results, so providing meta is recommended. For more information, see dask.dataframe.utils.make_meta.
+
+The following implementation does work but there might be really more efficient ways to do it...
 
 |function name| method | returning rows as | row-wise function | argument type  |
 |--------|--------|------------------|--------------|---|
