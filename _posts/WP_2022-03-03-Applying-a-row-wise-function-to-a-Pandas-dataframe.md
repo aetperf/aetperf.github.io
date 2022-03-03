@@ -365,7 +365,7 @@ We observe that using the array of values from the pandas.Series as argument of 
 
 ## pandas.DataFrame.apply
 
-The `apply` method also iterates over dataframe rows (with the `axis=1` argument), returning either a Series (default) or an array (with `raw=True`). Here is what Pandas' [documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html) says about it:
+The `apply` method also iterates over dataframe rows (with the `axis=1` argument), returning either a Series [default] or an array (with `raw=True`). Here is what Pandas' [documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html) says about it:
 > the passed function will receive ndarray objects instead. If you are just applying a NumPy reduction function this will achieve much better performance.
 
 |function name| method | returning rows as | row-wise function | argument type  |
