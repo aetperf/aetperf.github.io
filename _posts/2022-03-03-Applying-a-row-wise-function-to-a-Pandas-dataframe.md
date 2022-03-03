@@ -862,7 +862,7 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
-This is not so bad but one can wonder if a large part of the elapsed time is not used to convert the dataframe from Pandas to Polars and backward. Let's measure the elepased time per line with a line profiler:
+This is not so bad but one can wonder if a large part of the elapsed time is not spent converting the dataframe from Pandas to Polars and backward. Let's measure the elepased time per line with a line profiler:
 
 
 ```python
