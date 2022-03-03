@@ -256,8 +256,7 @@ We store the resulting Pandas Series into the `det_ref` variable, in order to ch
 
 
 ```python
-det_ref = pandas_vectorize(df)
-_, t = timing(pandas_vectorize, df)
+det_ref, t = timing(pandas_vectorize, df)
 print(f"Elapsed time: {t:8.7f} s")
 ```
 
