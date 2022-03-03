@@ -1055,6 +1055,7 @@ The parallel version is not a large improvement over the sequantial Numba versio
 
 ## Cython
 
+[Cython](https://cython.org/) is a mix between C and Python. Writing Cython code is a little more involving than writing pure Python. Note that in the following we used `%%cython` magic command at the begining og the notebook cell to compile the Cython code (also we loaded the Cython extension at the begining of the notebook).
 
 ```cython
 %%cython
@@ -1097,8 +1098,16 @@ print(f"Elapsed time: {t:8.7f} s")
 pd.testing.assert_series_equal(det, det_ref)
 ```
 
+This is not as fast as Numba but close.
+
+
 ## Cython parallel
 
+Similarly to what we did with Numba, we use here the `prange` looping function. Here is a quote from the [documentation](https://cython.readthedocs.io/en/latest/src/userguide/parallelism.html):
+
+> cython.parallel.prange([start,] stop[, step][, nogil=False][, schedule=None[, chunksize=None]][, num_threads=None])  
+> This function can be used for parallel loops. OpenMP automatically starts a thread pool and distributes the work according to the schedule used.
+> Thread-locality and reductions are automatically inferred for variables.
 
 ```cython
 %%cython --compile-args=-fopenmp --link-args=-fopenmp
@@ -1136,6 +1145,9 @@ print(f"Elapsed time: {t:8.7f} s")
 ```
 
     Elapsed time: 0.0003041 s
+
+
+The parallel version is a little faster that the sequential one but we should test it on laregr dataframes.
 
 
 ## Global comparison
@@ -1211,6 +1223,122 @@ _ = ax.set(
 
 
 Only the Numba and Cython methods are significantly faster than Pandas' built_in vectorization!
+
+
+
+```python
+pd.options.display.float_format = "{:,.2e}".format
+```
+
+
+```python
+time_df.T
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1000</th>
+      <th>10000</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>iterrows_array</th>
+      <td>2.50e-02</td>
+      <td>2.76e-01</td>
+    </tr>
+    <tr>
+      <th>swifter_apply</th>
+      <td>4.08e-03</td>
+      <td>4.41e-02</td>
+    </tr>
+    <tr>
+      <th>apply_array</th>
+      <td>3.56e-03</td>
+      <td>3.75e-02</td>
+    </tr>
+    <tr>
+      <th>np_apply_along_axis</th>
+      <td>2.79e-03</td>
+      <td>3.71e-02</td>
+    </tr>
+    <tr>
+      <th>dask_df_map_partitions</th>
+      <td>1.11e-02</td>
+      <td>1.92e-02</td>
+    </tr>
+    <tr>
+      <th>itertuples_scalars</th>
+      <td>1.66e-03</td>
+      <td>1.56e-02</td>
+    </tr>
+    <tr>
+      <th>polars_apply</th>
+      <td>2.82e-03</td>
+      <td>1.21e-02</td>
+    </tr>
+    <tr>
+      <th>map_scalars</th>
+      <td>9.42e-04</td>
+      <td>9.08e-03</td>
+    </tr>
+    <tr>
+      <th>np_vectorize_scalars</th>
+      <td>7.03e-04</td>
+      <td>6.39e-03</td>
+    </tr>
+    <tr>
+      <th>polars_vectorize</th>
+      <td>2.39e-03</td>
+      <td>2.30e-03</td>
+    </tr>
+    <tr>
+      <th>pandas_vectorize</th>
+      <td>1.50e-03</td>
+      <td>1.52e-03</td>
+    </tr>
+    <tr>
+      <th>numba_loop_para</th>
+      <td>1.68e-04</td>
+      <td>1.84e-04</td>
+    </tr>
+    <tr>
+      <th>cython_loop_para</th>
+      <td>1.43e-04</td>
+      <td>1.81e-04</td>
+    </tr>
+    <tr>
+      <th>cython_loop</th>
+      <td>1.06e-04</td>
+      <td>1.20e-04</td>
+    </tr>
+    <tr>
+      <th>numba_loop</th>
+      <td>8.01e-05</td>
+      <td>9.84e-05</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 ### Medium to large size dataframes
 
