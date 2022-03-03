@@ -459,7 +459,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2022-03-03_01/output_48_0.png" alt="apply">
+  <img width="800" src="/img/2022-03-03_01/output_48_0.png" alt="apply">
 </p>
 
 
@@ -580,7 +580,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2022-03-03_01/output_64_0.png" alt="itertuples">
+  <img width="800" src="/img/2022-03-03_01/output_64_0.png" alt="itertuples">
 </p>
 
 
@@ -707,7 +707,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2022-03-03_01/output_81_0.png" alt="np.vectorize">
+  <img width="800" src="/img/2022-03-03_01/output_81_0.png" alt="np.vectorize">
 </p>
     
     
@@ -1191,7 +1191,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2022-03-03_01/output_129_0.png" alt="Timings small 1">
+  <img width="800" src="/img/2022-03-03_01/output_129_0.png" alt="Timings small 1">
 </p>
     
 
@@ -1231,7 +1231,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="600" src="/img/2022-03-03_01/output_133_0.png" alt="Timings large 1">
+  <img width="800" src="/img/2022-03-03_01/output_133_0.png" alt="Timings large 1">
 </p>
 
 Let's focus on the Numba and Cython methods.
@@ -1288,7 +1288,7 @@ ax = plot_timings(out)
 
     
 <p align="center">
-  <img width="600" src="/img/2022-03-03_01/output_137_0.png" alt="Timings large 2">
+  <img width="800" src="/img/2022-03-03_01/output_137_0.png" alt="Timings large 2">
 </p>
 
 
