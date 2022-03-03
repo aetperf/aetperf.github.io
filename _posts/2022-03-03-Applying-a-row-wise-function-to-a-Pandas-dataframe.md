@@ -1055,7 +1055,7 @@ The parallel version is not a large improvement over the sequantial Numba versio
 
 ## Cython
 
-[Cython](https://cython.org/) is a mix between C and Python. Writing Cython code is a little more involving than writing pure Python. Note that in the following we used `%%cython` magic command at the begining og the notebook cell to compile the Cython code (also we loaded the Cython extension at the begining of the notebook).
+[Cython](https://cython.org/) is a mix between C and Python. Writing Cython code is a little more involving than writing pure Python. Note that in the following we used `%%cython` magic command at the begining of the notebook cell to compile the Cython code (also we loaded the Cython extension at the begining of the notebook).
 
 ```cython
 %%cython
@@ -1222,7 +1222,7 @@ _ = ax.set(
     
 
 
-Only the Numba and Cython methods are significantly faster than Pandas' built_in vectorization!
+Only the Numba and Cython methods are significantly faster than Pandas' built_in vectorization (`pandas_vectorize`)!
 
 
 
