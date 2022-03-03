@@ -713,7 +713,7 @@ _ = ax.set(
     
 
 
-The version with scalar arguments is quite interesting, faster than `itertuples`, but still slwer than Pandas built-in vectorization.
+The version with scalar arguments is quite interesting, faster than `itertuples`.
 
 ## map
 
