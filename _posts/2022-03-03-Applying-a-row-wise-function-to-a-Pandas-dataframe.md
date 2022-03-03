@@ -117,7 +117,7 @@ def timing(func, df, r=10):
 
 ### Create a dataframe with random floats
 
-We start by creating a small/medium size dataframe to perform a first comparison. We will later compare the most efficient methods with longer dataframes.
+We start by creating a rather small size dataframe to perform a first comparison. We will later compare the most efficient methods with longer dataframes.
 
 
 ```python
@@ -203,7 +203,7 @@ df.head(3)
 
 We now create 3 different row-wise functions, with different argument types for the current row values:
 - distinct scalar arguments
-- a NumPy array
+- an array
 - a Pandas Series
 
 
