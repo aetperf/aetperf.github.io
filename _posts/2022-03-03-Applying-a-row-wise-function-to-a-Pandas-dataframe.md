@@ -752,7 +752,9 @@ Performance seems to be similar between `map` and `numpy.vectorize.`
 
 [Swifter](https://github.com/jmcarpenter2/swifter) is a "package which efficiently applies any function to a pandas dataframe or series in the fastest available manner". we use the `raw=True` argument. here is a quote from the [documentation ](https://github.com/jmcarpenter2/swifter/blob/master/docs/documentation.md):
 
-> raw : bool, default False False : passes each row or column as a Series to the function. True : the passed function will receive ndarray objects instead. If you are just applying a NumPy reduction function this will achieve much better performance.
+> raw : bool, default False   
+> False : passes each row or column as a Series to the function.   
+> True : the passed function will receive ndarray objects instead. If you are just applying a NumPy reduction function this will achieve much better performance.
 
 
 |function name| method | returning rows as | row-wise function | argument type  |
