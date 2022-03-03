@@ -92,6 +92,7 @@ rng = np.random.default_rng(SD)  # random number generator
     swifter   : 1.0.9
     pandas    : 1.4.1
     cython    : 0.29.28
+    numba     : 0.55.1
     perfplot  : 0.10.1
     dask      : 2022.2.1
     
