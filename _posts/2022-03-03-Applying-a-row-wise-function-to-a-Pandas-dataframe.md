@@ -1146,7 +1146,7 @@ print(f"Elapsed time: {t:8.7f} s")
     Elapsed time: 0.0003041 s
 
 
-The parallel version is a little faster that the sequential one but we should test it on laregr dataframes.
+The parallel version is a little faster that the sequential one but we should test it on larger dataframes.
 
 
 ## Global comparison
