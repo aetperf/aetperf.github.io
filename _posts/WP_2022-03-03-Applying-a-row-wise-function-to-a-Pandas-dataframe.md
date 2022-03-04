@@ -484,7 +484,7 @@ pd.testing.assert_series_equal(det, det_ref)
 
 ### numpy.array argument
 
-When a row values are accessed by index, we need to account for the index values, which is index by 0.
+When row values are accessed by index, we need to account for the dataframe index, which is indexed by 0.
 
 
 ```python
