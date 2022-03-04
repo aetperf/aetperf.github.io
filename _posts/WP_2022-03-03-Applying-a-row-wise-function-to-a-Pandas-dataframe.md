@@ -31,8 +31,8 @@ The focus is on looping over the rows of a Pandas dataframe holding some numeric
 $$\begin{equation*}
 M = 
 \begin{pmatrix}
-m_{1,1} & m_{1,2} & m_{1,3} \\\
-m_{1,2} & m_{2,2} & m_{2,3} \\\
+m_{1,1} & m_{1,2} & m_{1,3} \\\\
+m_{1,2} & m_{2,2} & m_{2,3} \\\\
 m_{1,3} & m_{2,3} & m_{3,3}
 \end{pmatrix}
 \end{equation*}$$
