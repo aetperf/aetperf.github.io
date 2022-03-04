@@ -181,7 +181,7 @@ df.head(3)
 
 ### Row-wise functions
 
-We now create 3 different row-wise functions, with different argument types for input the row values:
+We now create 3 different row-wise functions, with different argument types for the input row values:
 - distinct scalar arguments
 - an array
 - a Pandas Series
@@ -276,7 +276,6 @@ print(f"Elapsed time: {t_scalars:8.7f} s")
 ```
 
     Elapsed time: 5.6840575 s
-
 
 
 ```python
