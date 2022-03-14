@@ -1,6 +1,6 @@
 
 
-More than 3 years ago, we posted a comparative study about [Looping over Pandas data](https://www.architecture-performance.fr/ap_blog/looping-over-pandas/). Because a lot of things evolved since 2018, this post is kind of an update. For example Pandas tag version was `0.23.3` at that time, it is now `1.4.0`. Also, we added some more options. 
+More than 3 years ago, we posted a comparative study about [Looping over Pandas data](https://www.architecture-performance.fr/ap_blog/looping-over-pandas/) using a CPU. Because a lot of things evolved since 2018, this post is kind of an update. For example Pandas tag version was `0.23.3` at that time, it is now `1.4.0`. Also, we added some more options. 
 
 Here is a list of all the options tested in the following:
 - Pandas built-in vectorization
