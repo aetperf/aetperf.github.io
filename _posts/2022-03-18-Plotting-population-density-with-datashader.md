@@ -10,9 +10,11 @@ In this short post, we are using the [Global Human Settlement Layer](https://ghs
 
 > This spatial raster dataset depicts the distribution of population, expressed as the number of people per cell.
 
-The file we used has a resolution of 250m, with a World Mollweide coordinates reference system. Values are expressed as decimals (float32) and represent the absolute number of inhabitants of the cell. A value of -200 is found whenever there is no data (e.g. in the oceans). We downloaded the file corresponding to the 2015 population estimates.
+The downloaded file has a worldwide resolution of 250m, with a World Mollweide coordinates reference system. Values are expressed as decimals (float32) and represent the absolute number of inhabitants of the cell. A value of -200 is found whenever there is no data (e.g. in the oceans). Also, it corresponds to the 2015 population estimates.
 
-[Datashader](https://github.com/holoviz/datashader) is a graphics pipeline system for creating meaningful representations of large datasets quickly and flexibly.
+We are going to load the data into a [xarray](https://github.com/pydata/xarray) DataArray and make some plots with [Datashader](https://github.com/holoviz/datashader). 
+
+> Datashader is a graphics pipeline system for creating meaningful representations of large datasets quickly and flexibly.
 
 ## Imports
 
@@ -23,8 +25,6 @@ import xarray as xr
 import datashader as ds
 from datashader import transfer_functions as tf
 from colorcet import palette
-
-%load_ext lab_black
 
 FP = "GHS_POP_E2015_GLOBE_R2019A_54009_250_V1_0.tif"  # file path
 ```
