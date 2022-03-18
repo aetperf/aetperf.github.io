@@ -947,7 +947,7 @@ Attributes:
 
 ## Total population
 
-Let's compute the total population:
+Let's compute the total population count:
 
 
 ```python
@@ -1014,6 +1014,7 @@ cvs = ds.Canvas(plot_width=size, plot_height=size)
 raster = cvs.raster(dac0)
 ```
 
+We are using the default `mean` downsampling operation to produce the image.
 
 ```python
 cmap = palette["fire"]
