@@ -998,7 +998,7 @@ dac = da.rio.clip_box(
 )
 ```
 
-Let's plot this selection:
+And plot this selection:
 
 
 ```python
@@ -1030,7 +1030,7 @@ img
 
 ## France
 
-We are now going to focus on France, by with cliping /re-projecting/re-cliping the data:
+We are now going to focus on France, by cliping /re-projecting/re-cliping the data:
 
 
 ```python
