@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python raster datashader population dataviz
 ---
 
-In this short post, we are using the [Global Human Settlement Layer](https://ghsl.jrc.ec.europa.eu/ghs_pop2019.php):
+In this short post, we are using the [Global Human Settlement Layer](https://ghsl.jrc.ec.europa.eu/ghs_pop2019.php) from the European Commission:
 
 > This spatial raster dataset depicts the distribution of population, expressed as the number of people per cell.
 
