@@ -367,10 +367,12 @@ print(tree_values)
     0.25711         0.05208         0.0601
 
 
+We actually built a max-heap manually. In the following let's see the general method to buil a max-heap.
+
 
 ## Build_max_heap
 
-We actually built a max-heap manually. The method used to build the max-heap with a sift-down-based heapify is called [Floyd's heap construction](https://en.wikipedia.org/wiki/Heapsort#Floyd's_heap_construction):
+The method used to build the max-heap with a sift-down-based heapify is called [Floyd's heap construction](https://en.wikipedia.org/wiki/Heapsort#Floyd's_heap_construction):
 
 > Floyd's algorithm starts with the leaves, observing that they are trivial but valid heaps by themselves, and then adds parents. Starting with element n/2 and working backwards, each internal node is made the root of a valid heap by sifting down. The last step is sifting down the first element, after which the entire array obeys the heap property.
 
