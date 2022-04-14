@@ -789,7 +789,7 @@ _ = ax.set(
 
 ## Conclusion
 
-Going from Python to Numba is seamless and is allowing us to reach a similar level of efficiency as with Cython. We can observe that the NumPy *heapsort* implementation is faster, but we do not know which version did they implement.
+Going from Python to Numba is seamless and is allowing us to reach a similar level of efficiency as with Cython [that turned 20 years old last week]. We can observe that the NumPy *heapsort* implementation is faster, but we do not know which optimizations did they implement.
 
 
 ## References
