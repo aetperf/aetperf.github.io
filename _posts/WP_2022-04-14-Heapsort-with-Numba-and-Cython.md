@@ -783,7 +783,7 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/masterhttps://github.com/aetperf/aetperf.github.io/blob/master/img/2022-04-14_01/output_54_0.png" alt="Timings">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-04-14_01/output_54_0.png" alt="Timings">
 </p>
     
 
