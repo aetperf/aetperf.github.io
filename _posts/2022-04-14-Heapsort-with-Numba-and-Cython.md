@@ -213,9 +213,6 @@ So here is a Python implementation:
 
 ```python
 def max_heapify(A, size, node_idx=0):
-    """Re-order sub-tree under a given node (given its node index)
-    until it satisfies the heap property.
-    """
 
     largest = node_idx
     l = left_child(largest)
@@ -357,19 +354,19 @@ And finally we need to fix the root value:
 
 ```python
 max_heapify(A, len(A), node_idx=0)
-ree_values = build(list(A.round(5)))
+tree_values = build(list(A.round(5)))
 print(tree_values)
 ```
+    
 
-    
-                                 __________________0.33093___________
-                                /                                    \
-                 ___________0.71576__________                   ___0.98946___
-                /                            \                 /             \
-         ___0.70234___                  ___0.15937         0.50589         0.66411
-        /             \                /
-    0.25711         0.05208         0.0601
-    
+                             __________________0.98946___________
+                            /                                    \
+             ___________0.71576__________                   ___0.66411___
+            /                            \                 /             \
+     ___0.70234___                  ___0.15937         0.50589         0.33093
+    /             \                /
+0.25711         0.05208         0.0601
+
 
 
 ## Build_max_heap
