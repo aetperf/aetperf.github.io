@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python heapsort algorithms numba cython
 ---
 
-*Heapsort* is a classical sorting algorithm. We are not going into much details about the algorithm and refer to Corman et al. [1] for example, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort) for example. The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method (keeping items with the same key in the  original order).
+*Heapsort* is a classical sorting algorithm. We are not going into much details about the algorithm and refer to Corman et al. [1] for example, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method (keeping items with the same key in the  original order).
 
 In this post, we are going to implement the classical *heapsort* in Python, Python/Numba and Cython.
 
@@ -16,17 +16,29 @@ In this post, we are going to implement the classical *heapsort* in Python, Pyth
 ```python
 from itertools import cycle
 
+from binarytree import build
 import cython
+from numba import njit
 import numpy as np
 import perfplot
-from binarytree import build
-from numba import njit
-
 %load_ext cython
 
 SD = 124  # random seed
 rng = np.random.default_rng(SD)  # random number generator
 ```
+
+Package versions:
+
+Python implementation: CPython
+Python version       : 3.9.12
+IPython version      : 8.2.0
+binarytree: 6.5.1
+matplotlib: 3.5.1
+perfplot  : 0.10.2
+numpy     : 1.21.5
+cython    : 0.29.28
+numba     : 0.55.1
+
 
 ## Float array creation
 
