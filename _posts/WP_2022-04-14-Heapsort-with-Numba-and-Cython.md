@@ -1,5 +1,5 @@
 
-*Heapsort* is a classical sorting algorithm. We are not going into much details about the algorithm and refer to Corman et al. [1] for example, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method [keeping items with the same key in the  original order].
+*Heapsort* is a classical sorting algorithm. We are not going into much theory about the algorithm and refer to Corman et al. [1] for example, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method [keeping items with the same key in the  original order].
 
 In this post, we are going to implement the classical *heapsort* in Python, Python/Numba and Cython.
 
