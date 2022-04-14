@@ -721,20 +721,6 @@ out = perfplot.bench(
 ```
 
 
-    Output()
-
-
-
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-
-
-
-
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
-</pre>
-
-
-
 
 ```python
 out
@@ -794,7 +780,7 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="800" src="/img/2022-04-14_01/bin-output_54_0.png" alt="Timings">
+  <img width="800" src="/img/2022-04-14_01/output_54_0.png" alt="Timings">
 </p>
     
 
