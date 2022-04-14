@@ -190,7 +190,7 @@ A[0] >= A[2]
 
 
 
-We need to build the max-heap from an array by moving around the elements. In order to do that, we use a function called `max_heapify` from the leaves to the root of the tree, in a bottum-up manner. So let's implement this function.
+We need to build the max-heap from an array by moving around the elements. In order to do that, we use a function called `max_heapify` from the leaves to the root of the tree, in a bottom-up manner. So let's implement this function.
 
 ## Max_heapify
 
