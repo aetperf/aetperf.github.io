@@ -22,15 +22,15 @@ rng = np.random.default_rng(SD)  # random number generator
 
 Language/package versions:
 
-Python implementation: CPython
-Python version       : 3.9.12
-IPython version      : 8.2.0
-binarytree           : 6.5.1
-matplotlib           : 3.5.1
-perfplot             : 0.10.2
-numpy                : 1.21.5
-cython               : 0.29.28
-numba                : 0.55.1
+    Python implementation: CPython
+    Python version       : 3.9.12
+    IPython version      : 8.2.0
+    binarytree           : 6.5.1
+    matplotlib           : 3.5.1
+    perfplot             : 0.10.2
+    numpy                : 1.21.5
+    cython               : 0.29.28
+    numba                : 0.55.1
 
 
 ## Float array creation
