@@ -154,7 +154,7 @@ $$A[parent(i)] \geq A[i]$$
 
 Thus value of the root node `A[0]` of a max-heap is greater than or equal to all the tree values. This is also true for any sub-tree of the binary heap: the root node of any sub-tree `A[i]` is greater than or equal to all the values in this sub-tree.
 
-An important point is that not all the array elements might be in the heap. We differentiate the heap `size` from the array length $n$. We have $0 \leq size \leq n$. The element in heap are the `size` elements in the left part of the array: `A[0:size]` (with a Python slicing indexing). All remaining elements `A[size:n]` are not in the heap, implicitely.
+An important point is that not all the array elements might be in the heap. We differentiate the heap `size` from the array length $n$. We have $0 \leq size \leq n$. The element in heap are the `size` elements in the left part of the array: `A[0:size]` [with a Python slicing indexing]. All remaining elements `A[size:n]` are not in the heap, implicitely.
 
 Initially, given the above array `A`, it mostly likely does not satisfy the max-heap property, which would imply in our case:
 `A[0] >= A[1], A[0] >= A[2], A[1] >= A[3], A[1] >= A[4], A[3] >= A[7], A[3] >= A[8 ], A[2] >= A[5], A[2] >= A[6]`. Indeed we have:
