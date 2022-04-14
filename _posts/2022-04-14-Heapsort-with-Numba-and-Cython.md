@@ -17,13 +17,11 @@ In this post, we are going to implement the classical *heapsort* in Python, Pyth
 from itertools import cycle
 
 import cython
-import matplotlib.pyplot as plt
 import numpy as np
 import perfplot
 from binarytree import build
 from numba import njit
 
-plt.style.use("fivethirtyeight")
 %load_ext cython
 
 SD = 124  # random seed
