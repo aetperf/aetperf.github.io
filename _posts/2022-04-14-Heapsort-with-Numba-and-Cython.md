@@ -367,7 +367,7 @@ print(tree_values)
     0.25711         0.05208         0.0601
 
 
-We actually built a max-heap manually. In the following let's see the general method to buil a max-heap.
+We actually built a max-heap manually. In the following let's see the general method to build it.
 
 
 ## Build_max_heap
