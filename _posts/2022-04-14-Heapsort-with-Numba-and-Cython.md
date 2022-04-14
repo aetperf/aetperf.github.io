@@ -194,7 +194,7 @@ We need to build the max-heap from an array by moving around the elements. In or
 
 ## Max_heapify
 
-The `max_heapify(A, size, i)` function assumes that sub-trees rooted at the children nodes of `i` do satisfy the max-heap property. But the `i`-th node may violate it, i.e. `A[i] < A[left_child(i)]` or `A[i] < A[right_child(i)]`, assuming that the children are in the heap. If this is the case, the `i`-th node is swapped with its child with `largest` value: 
+The `max_heapify(A, size, i)` function presupposes that sub-trees rooted at the children nodes of `i` do satisfy the max-heap property. But the `i`-th node may violate it, i.e. `A[i] < A[left_child(i)]` or `A[i] < A[right_child(i)]`, assuming that the children are in the heap. If this is the case, the `i`-th node is swapped with its child with `largest` value: 
 ```Python
 A[i], A[largest] = A[largest], A[i]
 ```
