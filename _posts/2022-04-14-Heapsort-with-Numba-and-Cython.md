@@ -27,17 +27,17 @@ SD = 124  # random seed
 rng = np.random.default_rng(SD)  # random number generator
 ```
 
-Package versions:
+Language/package versions:
 
 Python implementation: CPython
 Python version       : 3.9.12
 IPython version      : 8.2.0
-binarytree: 6.5.1
-matplotlib: 3.5.1
-perfplot  : 0.10.2
-numpy     : 1.21.5
-cython    : 0.29.28
-numba     : 0.55.1
+binarytree           : 6.5.1
+matplotlib           : 3.5.1
+perfplot             : 0.10.2
+numpy                : 1.21.5
+cython               : 0.29.28
+numba                : 0.55.1
 
 
 ## Float array creation
@@ -441,7 +441,7 @@ print(tree_values)
 
 ## Heapsort
 
-The classical heapsort has two steps:
+The classical *heapsort* has two steps:
 
 1 - build the heap  
 2 - destroy the heap by removing the root from the heap and moving it to the end of the heap $n$ time.  
@@ -716,7 +716,7 @@ np.testing.assert_array_equal(A_sorted_cython, A_ref)
 
 ## Performance comparison
 
-We do not include the Python version and compare the Numba and Cython versions with the NumPy *heapsort* implementation. I guess that this NumPy *heapsort* is written in C++ and fairly optimized.
+We do not include the Python version and compare the Numba and Cython versions with the NumPy *heapsort* implementation. I guess that this NumPy *heapsort* is written in C++ and probably fairly well optimized.
 
 
 ```python
@@ -795,6 +795,11 @@ _ = ax.set(
   <img width="800" src="/img/2022-04-14_01/output_54_0.png" alt="Timings">
 </p>
     
+
+## Conclusion
+
+Going from Python to Numba is seamless and allows to reach a similar level of efficiency as with Cython. We can observe that the NumPy *heapsort* implementation is faster, but we do not know which version did they implemented.
+
 
 ## References
 
