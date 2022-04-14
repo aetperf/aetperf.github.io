@@ -442,7 +442,7 @@ print(tree_values)
 The classical *heapsort* has two steps:
 
 1 - build the heap  
-2 - destroy the heap by removing the root from the heap and moving it to the end of the heap $n$ time.  
+2 - destroy the heap by removing the root from the heap and moving it to the end of the heap $n$ times.  
 
 Step 2 corresponds to the following iterations:
 - swap the root (largest element) with the last leaf
