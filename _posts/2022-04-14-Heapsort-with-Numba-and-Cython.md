@@ -6,9 +6,9 @@ author: François Pacull
 tags: Python heapsort algorithms numba cython
 ---
 
-*Heapsort* is a classical sorting algorithm. We are not going into much theory about the algorithm and refer to Corman et al. [1] for example, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method (keeping items with the same key in the  original order).
+*Heapsort* is a classical sorting algorithm. We are going into a litle bit of theory about the algorithm, but refer to Corman et al. [1] for example for more details, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). 
 
-In this post, we are going to implement the classical *heapsort* in Python, Python/Numba and Cython.
+In this post, we are going to implement the classical *heapsort* in Python, Python/Numba and Cython. The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method (keeping items with the same key in the  original order). 
 
 ## Imports
 
@@ -248,7 +248,7 @@ print(tree_values)
     
 
 
-This array is random, but we can observe that the max-heap property is satisfied everywhere except at the root! The sub-trees rooted at nodes 1 and 2 do happen to satisfy the max-heap property already. So let's call the `max_heapify` function on the root node. It's going to swap the root node with one of its child, and repeat the process until the node value is not smaller than its parent value and larger than the children values.
+This array is random, but we can observe that the max-heap property is satisfied everywhere except at the root! The sub-trees rooted at nodes 1 and 2 do happen to satisfy the max-heap property already. So let's call the `max_heapify` function on the root node.
 
 
 ```python
@@ -509,29 +509,24 @@ A_ref = np.sort(A)
 np.testing.assert_array_equal(A_sorted_python, A_ref)
 ```
 
+Let's use Numba to make this Python code running fast.
+
 ## Numba
 
 
 ```python
 @njit
 def left_child_numba(node_idx):
-    """Returns the left child node."""
     return 2 * node_idx + 1
 
 
 @njit
 def right_child_numba(node_idx):
-    """Returns the right child node."""
     return 2 * (node_idx + 1)
 
 
 @njit
 def max_heapify_numba(A, size, node_idx=0):
-    """Re-order sub-tree under a given node (given its node index)
-    until it satisfies the heap property.
-
-    Note that this function is recursive.
-    """
 
     largest = node_idx
     l = left_child_numba(largest)
@@ -555,18 +550,13 @@ def heapsort_numba(A_in):
 
     # build a max heap
     size = len(A)
-    node_idx = size // 2 - 1  # last non-leaf node index
+    node_idx = size // 2 - 1  
     for i in range(node_idx, -1, -1):
         max_heapify_numba(A, size, node_idx=i)
 
     for i in range(size - 1, 0, -1):
-        # swap the root (largest element) with the last leaf
         A[i], A[0] = A[0], A[i]
-
-        # removing largest element from the heap
         size -= 1
-
-        # call _max_heapify from the root on the heap with remaining elements
         max_heapify_numba(A, size)
     return A
 ```
@@ -606,13 +596,11 @@ cimport numpy as cnp
 @cython.binding(False)
 @cython.initializedcheck(False) 
 cdef size_t _left_child_cython(size_t node_idx) nogil:
-    """Returns the left child node."""
     return 2 * node_idx + 1
 
 @cython.binding(False)
 @cython.initializedcheck(False) 
 cdef size_t _right_child_cython(size_t node_idx) nogil:
-    """Returns the right child node."""
     return 2 * (node_idx + 1)
 
 @cython.binding(False)
@@ -622,7 +610,6 @@ cdef void _exchange_nodes_cython(
     cnp.float64_t[:] A,
     size_t node_i,
     size_t node_j) nogil:
-    """Exchange two nodes in the heap."""
     
     cdef: 
         cnp.float64_t tmp_val
@@ -638,11 +625,7 @@ cdef void _max_heapify_cython(
     cnp.float64_t[:] A,
     size_t size,
     size_t node_idx) nogil:
-    """Re-order sub-tree under a given node (given its node index) 
-    until it satisfies the heap property.
 
-    Note that this function is recursive.
-    """
     cdef: 
         size_t l, r, s = node_idx
 
@@ -668,20 +651,14 @@ cdef void _heapsort_cython(cnp.float64_t[:] A) nogil:
     cdef:
         size_t size, i, node_idx
 
-    # build a max heap
     size = len(A)
-    node_idx = size // 2 - 1  # last non-leaf node index
+    node_idx = size // 2 - 1
     for i in range(node_idx, -1, -1):
         _max_heapify_cython(A, size, i)
 
     for i in range(size - 1, 0, -1):
-        # move largest elements from the root to the end
         _exchange_nodes_cython(A, i, 0)
-
-        # removing max element from the heap
         size -= 1
-
-        # call _max_heapify from the root
         _max_heapify_cython(A, size, 0)
 
         
