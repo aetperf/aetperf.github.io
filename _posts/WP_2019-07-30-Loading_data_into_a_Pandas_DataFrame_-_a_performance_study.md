@@ -5,10 +5,10 @@
 
 Because doing machine learning implies trying many options and algorithms with different parameters, from data cleaning to model validation, the **Python** programmers will often load a full dataset into a [Pandas](https://pandas.pydata.org/) dataframe, without actually modifying the stored data. This loading part might seem relatively long sometimes... In this post, we look at different options regarding the storage, in terms of elapsed time and disk space.
 
-We are going to measure the **loading time** of a small- to medium-size table stored in different formats, either in a file (CSV file, [Feather](https://github.com/wesm/feather), [Parquet](https://parquet.apache.org/) or 
- [HDF5](https://support.hdfgroup.org/HDF5/whatishdf5.html)) or in a database (Microsoft SQL Server). For the file storage formats (as opposed to DB storage, even if DB stores data in files...), we also look at **file size** on disk.
+We are going to measure the **loading time** of a small- to medium-size table stored in different formats, either in a file [CSV file, [Feather](https://github.com/wesm/feather), [Parquet](https://parquet.apache.org/) or 
+ [HDF5](https://support.hdfgroup.org/HDF5/whatishdf5.html)] or in a database [Microsoft SQL Server]. For the file storage formats [as opposed to DB storage, even if DB stores data in files...], we also look at **file size** on disk.
 
-Measurements are going to be performed for different tables lengths, table widths and "data entropy" (number of unique values per columns).
+Measurements are going to be performed for different tables lengths, table widths and "data entropy" [number of unique values per columns].
 
 This performance study is inspired by this great post [*Extreme IO performance with parallel Apache Parquet in Python*](http://wesmckinney.com/blog/python-parquet-multithreading/) by [Wes McKinney](https://wesmckinney.com/). 
 
@@ -39,7 +39,7 @@ Here is the list of the different options we used for saving the data and the Pa
 For the purpose of the comparison, we are going to create a fake table dataset of variable length `n`, and variable number of columns: 
 * `n_int` columns of `int64` type, generated randomnly in the between 0 and `i_max`-1,
 * `n_float` columns of `float64` type, drawn randomly between 0 and 1,
-* `n_str` columns of `category` type, of categorigal data with `n_cat` unique `str` in each column (`n_cat` different words drawn randomly from Shakespeare's *King Lear*)  
+* `n_str` columns of `category` type, of categorigal data with `n_cat` unique `str` in each column [`n_cat` different words drawn randomly from Shakespeare's *King Lear*]  
 
 So we have a total of `n_col` = `n_int` + `n_float` + `n_str` columns. The parameters `i_max` and `n_cat` control the "level of entropy" in the integer and categorical columns, i.e. the number of unique values per column.
 
@@ -93,13 +93,13 @@ df[col] = df[col].astype(categories)
 
 For the **HDF_fixed** format, one further have to explicitly convert the categorical column into strings before writing the dataframe into a file.
 
-Also, we checked that the read data is exactly the same as the written data by using a small dataframe (only a few rows), storing it in each format, reading it and comparing the input and output dataframes:
+Also, we checked that the read data is exactly the same as the written data by using a small dataframe [only a few rows], storing it in each format, reading it and comparing the input and output dataframes:
 ```python
 pd.testing.assert_frame_equal(df_written, df_read)
 ```
 ## Results
 
-First, we change the table length but keep a fixed number of columns, then vary the number of columns with a fixed length. Finally we are going to change the number of unique values in each `int` and `category` columns (for a fixed number of rows and columns).
+First, we change the table length but keep a fixed number of columns, then vary the number of columns with a fixed length. Finally we are going to change the number of unique values in each `int` and `category` columns [for a fixed number of rows and columns].
 
 ### Loop on different lengths
 
@@ -109,9 +109,9 @@ We loop on different table lengths `n`, from 10 to 1000000, with the following s
   <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-07-30_01/output_32_0.png">
 </p>
 
-In the above figure, the format are sorted in ascending order of reading time for the largest table length (`n`=1000000). This is why the **HDF_table** format appears first. However we can observe that this format performs poorly on small table sizes. Overall, **Parquet_pyarrow** is the fastest reading format for the given tables. The **Parquet_pyarrow** format is about 3 times as fast as the **CSV** one. 
+In the above figure, the format are sorted in ascending order of reading time for the largest table length [`n`=1000000]. This is why the **HDF_table** format appears first. However we can observe that this format performs poorly on small table sizes. Overall, **Parquet_pyarrow** is the fastest reading format for the given tables. The **Parquet_pyarrow** format is about 3 times as fast as the **CSV** one. 
 
-Also, regarding the Microsoft SQL storage, it is interesting to see that **turbobdc** performs slightly better than the two other drivers (**pyodbc** and **pymssql**). It actually achieves similar timings as **CSV**, which is not bad.
+Also, regarding the Microsoft SQL storage, it is interesting to see that **turbobdc** performs slightly better than the two other drivers [**pyodbc** and **pymssql**]. It actually achieves similar timings as **CSV**, which is not bad.
 
 Now let's have a look at the file size of the stored tables. First, here is the memory usage of each dataframe:
 
@@ -132,15 +132,15 @@ We can see that the tables are pretty small: at most 81 MB! In the next figure, 
 
 It appears that the **Parquet_fastparquet_gzip**, **Parquet_pyarrow_gzip** and **Parquet_pyarrow** formats are rather compact. **HDF** formats seems rather inadequate when dealing with small tables. The **Parquet_pyarrow_gzip** file is about 3 times smaller than the **CSV** one. 
 
-Also, note that many of these formats use equal or more space to store the data on a file than in memory (**Feather**, **Parquet_fastparquet**, **HDF_table**, **HDF_fixed**, **CSV**). This might be because the categorical columns are stored as `str` columns in the files, which is a redundant storage.
+Also, note that many of these formats use equal or more space to store the data on a file than in memory [**Feather**, **Parquet_fastparquet**, **HDF_table**, **HDF_fixed**, **CSV**]. This might be because the categorical columns are stored as `str` columns in the files, which is a redundant storage.
 
-Now let us focus on longer tables in order to see whether **HDF** or **Parquet** performs better. We do not consider a DB storage anymore (tests are too long to perform, especially for data injection), but only single file storage. We set `n`=10000000 (memory usage of the dataframe: 810.629 MB).
+Now let us focus on longer tables in order to see whether **HDF** or **Parquet** performs better. We do not consider a DB storage anymore [tests are too long to perform, especially for data injection], but only single file storage. We set `n`=10000000 [memory usage of the dataframe: 810.629 MB].
  
 <p align="center">
   <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-07-30_01/output_32_1.png">
 </p>
 
-We observe above that **HDF_table** is faster than other file formats for longer tables, but this may be partly because we don't have to convert the string columns back into the categorical type. At best, it only takes 3.77 s to load the data, instead of 29.80 s for **CSV** format (8.21 s for **Parquet_pyarrow**). On the other hand, file size is larger when using **HDF_table** (932.57 MB) than **Parquet_pyarrow** (464.13 MB). The **CSV** format file is is the largest: 1522.37 MB!
+We observe above that **HDF_table** is faster than other file formats for longer tables, but this may be partly because we don't have to convert the string columns back into the categorical type. At best, it only takes 3.77 s to load the data, instead of 29.80 s for **CSV** format [8.21 s for **Parquet_pyarrow**]. On the other hand, file size is larger when using **HDF_table** [932.57 MB] than **Parquet_pyarrow** [464.13 MB]. The **CSV** format file is is the largest: 1522.37 MB!
 
 <p align="center">
   <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-07-30_01/output_34_1.png">
@@ -149,7 +149,7 @@ We observe above that **HDF_table** is faster than other file formats for longer
 
 ## Loop on different widths
 
-The table length `n` is now fixed (`n`=100000) and only the number of columns is changed, always with the same proportion of int, float and categorical columns (1/3 each). We start from 15 and increases the column count up to 150. Here are the results:
+The table length `n` is now fixed [`n`=100000] and only the number of columns is changed, always with the same proportion of int, float and categorical columns [1/3 each]. We start from 15 and increases the column count up to 150. Here are the results:
 
 <p align="center">
   <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-07-30_01/output_36_0.png">
@@ -168,7 +168,7 @@ It seems that the gzip compression is really more effective when applied to **Pa
 
 ## Loop on different entropies
 
-For this section, we are just going to look at the elapsed time (not the file size). The table length `n` is still fixed (`n`=100000), as well as the number of columns: 100 (`n_int`=50, `n_float`=0, `n_str`=50). Only the "entropy coefficient" `e` does vary betwen 0 and 1000. `e` is related to the number of unique values in each column in the following way: `i_max` = 50 + `e` and `n_cat` = 10 + `e`.
+For this section, we are just going to look at the elapsed time [not the file size]. The table length `n` is still fixed [`n`=100000], as well as the number of columns: 100 [`n_int`=50, `n_float`=0, `n_str`=50]. Only the "entropy coefficient" `e` does vary betwen 0 and 1000. `e` is related to the number of unique values in each column in the following way: `i_max` = 50 + `e` and `n_cat` = 10 + `e`.
 
 <p align="center">
   <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2019-07-30_01/output_40_0.png">
