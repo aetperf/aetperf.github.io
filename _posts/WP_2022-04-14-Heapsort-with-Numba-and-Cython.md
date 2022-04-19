@@ -1,3 +1,4 @@
+# Heapsort with Numba and Cython
 
 *Heapsort* is a classical sorting algorithm. We are going into a little bit of theory about the algorithm, but refer to Corman et al. [1] for more details, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). 
 
