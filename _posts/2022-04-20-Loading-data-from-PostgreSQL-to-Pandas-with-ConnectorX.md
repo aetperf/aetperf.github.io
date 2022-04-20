@@ -447,6 +447,7 @@ We did not include here the code associated with time measurements. Basically, f
   <img width="1000" src="/img/2022-04-20_01/output_92_0.png" alt="Elapsed time">
 </p>
 
+`read_sql` corrrespond to the time to load the data into a container, while `to_frame` is the time to convert this container into a Pandas dataframe, if necessary.
 
 We can see that ConnectorX is an efficient tool. We did not measure memory efficiency in this post, but it is supposed to be interesting as well. The supported data sources are the following (from the [documentation](https://sfu-db.github.io/connector-x/intro.html)): Postgres, Mysql, Mariadb (through mysql protocol), Sqlite, Redshift (through postgres protocol), Clickhouse (through mysql protocol), SQL Server, Azure SQL Database (through mssql protocol), Oracle. It would be great if more data sources could be supported, such as SAP Hana for example!
 
