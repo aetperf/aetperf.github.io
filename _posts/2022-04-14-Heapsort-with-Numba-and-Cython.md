@@ -6,6 +6,8 @@ author: François Pacull
 tags: Python heapsort algorithms numba cython
 ---
 
+**Updated** April 20, 2022 following usefull comments by [@scoder](https://github.com/scoder). Thank you very much for your pull requests!
+
 *Heapsort* is a classical sorting algorithm. We are going into a little bit of theory about the algorithm, but refer to Corman et al. [1] for more details, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). 
 
 In this post, we are going to implement the classical *heapsort* in Python, Python/Numba and Cython. The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method (keeping items with the same key in the  original order). 
