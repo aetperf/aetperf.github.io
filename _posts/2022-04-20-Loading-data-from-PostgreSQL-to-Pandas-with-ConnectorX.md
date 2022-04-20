@@ -10,7 +10,7 @@ tags: Python Pandas PostgreSQL DataFrame Loading data SQLAlchemy
 
 Wang, Xiaoying, et al. *ConnectorX: Accelerating Data Loading From Databases to Dataframes.* 2021
 
-They provide a detailed analysis for the `pandas.read_sql` function, which lead to some surprises:
+Where the authors provide a detailed analysis for the `pandas.read_sql` function. This lead to some surprises:
 
 > A surprising finding is that the majority of the time is actually spent on the client side rather than on the query execution or the data transfer.
 
@@ -22,13 +22,13 @@ In the present post, we want to load some data in Python from PostgreSQL to Pand
   <img width="1000" src="/img/2022-04-20_01/faker.png" alt="faker">
 </p>
 
-The table has 1000000 rows and 16 columns. The query used to load the data is rather basic:
+The table has a million rows and 16 columns. The query used to load the data is rather basic:
 
 ```python
 QUERY = 'SELECT * FROM "faker_s1000000i"'
 ```
 
-We are going to compare the loading time using different drivers and methods. We do not measure the peak memory, but just the elapsed time for loading the data into Pandas. Database server and client are on the same machine.
+We are going to compare the loading time using different drivers and methods. We do not measure the peak memory, but just the elapsed time for loading the data into Pandas. Database server and client are on the same machine (my laptop).
 
 ## Imports
 
@@ -85,7 +85,7 @@ assert df.shape == (1000000, 16)
 
 ## SQLAlchemy + psycopg2 by chunks
 
-Now let's imagine that we want to reduce the memory usage of the previous process by loading the data by chunks.
+Now let's imagine that we want to reduce the memory usage of the previous process by loading the data by chunks. This code is inspired from the ConnectorX github [repository](https://github.com/sfu-db/connector-x/tree/main/benchmarks), where a lot of benchmark code can be foun.
 
 
 ```python
@@ -180,7 +180,7 @@ assert df.shape == (1000000, 16)
 
 ## ConnectorX
 
-We are going to connect the data source with this connection string URI:
+We are going to connect the data source with this connection string URI and use the `cx.read_sql` function:
 
 
 ```python
@@ -320,7 +320,7 @@ type(df)
 
 
 
-Each partition in a Dask DataFrame is a Pandas DataFrame. Since we are using a single partition in the present case, converting to Pandas is almost instentaneous:
+Each partition in a Dask DataFrame is a Pandas DataFrame. Since we are presumably using a single partition in the present case, converting to Pandas is almost instentaneous:
 
 
 ```python
@@ -441,7 +441,7 @@ assert df.shape == (1000000, 16)
 ## Comparison
 
 
-We did not include here the code associated with time measurement. Basically, for each startegy, the loading process is repeated 5 times and only the best elapsed time is kept.
+We did not include here the code associated with time measurements. Basically, for each strategy, the loading process is repeated 5 times and only the best elapsed time is kept.
 
 <p align="center">
   <img width="1000" src="/img/2022-04-20_01/output_92_0.png" alt="Elapsed time">
