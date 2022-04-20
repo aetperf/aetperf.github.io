@@ -6,6 +6,8 @@ author: François Pacull
 tags: Python heapsort algorithms numba cython
 ---
 
+**Updated** April 20, 2022 following usefull comments by [@scoder](https://github.com/scoder). Thank you very much for your pull requests!
+
 *Heapsort* is a classical sorting algorithm. We are going into a little bit of theory about the algorithm, but refer to Corman et al. [1] for more details, or the [heapsort wikipedia page](https://en.wikipedia.org/wiki/Heapsort). 
 
 In this post, we are going to implement the classical *heapsort* in Python, Python/Numba and Cython. The regular implementation is array-based and performed in-place. We use 0-based indices. Note that this is not a stable sorting method (keeping items with the same key in the  original order). 
@@ -516,32 +518,21 @@ Let's use Numba to make this Python code running fast.
 
 ```python
 @njit
-def left_child_numba(node_idx):
-    return 2 * node_idx + 1
-
-
-@njit
-def right_child_numba(node_idx):
-    return 2 * (node_idx + 1)
-
-
-@njit
 def max_heapify_numba(A, size, node_idx=0):
 
     largest = node_idx
-    l = left_child_numba(largest)
-    r = right_child_numba(largest)
+    left_child = 2 * node_idx + 1
+    right_child = 2 * (node_idx + 1)
 
-    if (l < size) and (A[l] > A[largest]):
-        largest = l
+    if (left_child < size) and (A[left_child] > A[largest]):
+        largest = left_child
 
-    if (r < size) and (A[r] > A[largest]):
-        largest = r
+    if (right_child < size) and (A[right_child] > A[largest]):
+        largest = right_child
 
     if largest != node_idx:
         A[node_idx], A[largest] = A[largest], A[node_idx]  # exchange 2 nodes
         max_heapify_numba(A, size, largest)
-
 
 @njit
 def heapsort_numba(A_in):
@@ -550,13 +541,18 @@ def heapsort_numba(A_in):
 
     # build a max heap
     size = len(A)
-    node_idx = size // 2 - 1  
+    node_idx = size // 2 - 1  # last non-leaf node index
     for i in range(node_idx, -1, -1):
         max_heapify_numba(A, size, node_idx=i)
 
     for i in range(size - 1, 0, -1):
+        # swap the root (largest element) with the last leaf
         A[i], A[0] = A[0], A[i]
+
+        # removing largest element from the heap
         size -= 1
+
+        # call _max_heapify from the root on the heap with remaining elements
         max_heapify_numba(A, size)
     return A
 ```
@@ -598,20 +594,21 @@ from cython import ssize_t, double
 @cython.nogil
 @cython.cfunc
 def _max_heapify(A: double[::1], size: ssize_t, node_idx: ssize_t) -> cython.void:
-    s: ssize_t = node_idx
+    largest: ssize_t = node_idx
 
     left_child = 2 * node_idx + 1
     right_child = 2 * (node_idx + 1)
 
-    if left_child < size and A[left_child] > A[s]:
-        s = left_child
+    if left_child < size and A[left_child] > A[largest]:
+        largest = left_child
 
-    if right_child < size and A[right_child] > A[s]:
-        s = right_child
+    if right_child < size and A[right_child] > A[largest]:
+        largest = right_child
 
-    if s != node_idx:
-        A[node_idx], A[s] = A[s], A[node_idx]
-        _max_heapify(A, size, s)
+
+    if largest != node_idx:
+        A[node_idx], A[largest] = A[largest], A[node_idx]
+        _max_heapify(A, size, largest)
 
 
 @cython.exceptval(check=False)
@@ -682,18 +679,18 @@ out
 ```
 
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
-┃<span style="font-weight: bold"> n         </span>┃<span style="font-weight: bold"> Numba                  </span>┃<span style="font-weight: bold"> Cython                 </span>┃<span style="font-weight: bold"> NumPy                 </span>┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 10        │ 1.2250000000000001e-06 │ 1.6340000000000002e-06 │ 1.782e-06             │
-│ 100       │ 5.713e-06              │ 5.5150000000000006e-06 │ 2.996e-06             │
-│ 1000      │ 0.000117238            │ 6.7284e-05             │ 6.0084e-05            │
-│ 10000     │ 0.001821654            │ 0.00097561             │ 0.0009554790000000001 │
-│ 100000    │ 0.025252571            │ 0.013767965            │ 0.013360057000000002  │
-│ 1000000   │ 0.360377728            │ 0.258093831            │ 0.20741599500000002   │
-│ 10000000  │ 5.3753188540000005     │ 5.025356240000001      │ 3.1862356600000004    │
-│ 100000000 │ 71.629593688           │ 81.052108108           │ 43.231860565000005    │
-└───────────┴────────────────────────┴────────────────────────┴───────────────────────┘
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n         </span>┃<span style="font-weight: bold"> Numba                 </span>┃<span style="font-weight: bold"> Cython                </span>┃<span style="font-weight: bold"> NumPy                  </span>┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 10        │ 1.015e-06             │ 1.605e-06             │ 1.748e-06              │
+│ 100       │ 5.548e-06             │ 6.942000000000001e-06 │ 3.089e-06              │
+│ 1000      │ 0.000117169           │ 6.707100000000001e-05 │ 6.0178000000000006e-05 │
+│ 10000     │ 0.0018590490000000002 │ 0.000903012           │ 0.0009388980000000001  │
+│ 100000    │ 0.027251730000000002  │ 0.018747982           │ 0.017145886000000003   │
+│ 1000000   │ 0.552383987           │ 0.37286854            │ 0.267286028            │
+│ 10000000  │ 7.30429932            │ 6.469945386           │ 3.9912235160000002     │
+│ 100000000 │ 91.580351554          │ 95.15815346000001     │ 46.736913824000005     │
+└───────────┴───────────────────────┴───────────────────────┴────────────────────────┘
 </pre>
 
 
@@ -741,7 +738,7 @@ _ = ax.set(
 
 ## Conclusion
 
-Going from Python to Numba is seamless and is allowing us to reach a similar level of efficiency as with Cython (that turned 20 years old last week). We can observe that the NumPy *heapsort* implementation is faster, but we do not know which optimizations did they implement.
+Going from Python to Numba is seamless and is allowing us to reach a similar level of efficiency as with Cython (that turned 20 years old last week, happy birthday!!). We can observe that the NumPy *heapsort* implementation is faster, but we do not know which optimizations did they implement.
 
 
 ## References
