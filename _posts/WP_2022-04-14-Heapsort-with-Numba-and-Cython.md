@@ -573,7 +573,7 @@ np.testing.assert_array_equal(A_sorted_numba, A_ref)
 ## Cython
 
 
-```cython
+```python
 %%cython --compile-args=-Ofast
 
 # cython: boundscheck=False, initializedcheck=False, wraparound=False
@@ -581,23 +581,24 @@ np.testing.assert_array_equal(A_sorted_numba, A_ref)
 import cython
 import numpy as np
 
-from cython import size_t, double
+from cython import ssize_t, double
 
 
 @cython.exceptval(check=False)
 @cython.nogil
 @cython.cfunc
-def _max_heapify(A: double[::1], size: size_t, node_idx: size_t) -> cython.void:
+def _max_heapify(A: double[::1], size: ssize_t, node_idx: ssize_t) -> cython.void:
+    largest: ssize_t = node_idx
 
-    largest: size_t = node_idx
-    left_child: size_t = 2 * node_idx + 1
-    right_child: size_t = 2 * (node_idx + 1)
+    left_child = 2 * node_idx + 1
+    right_child = 2 * (node_idx + 1)
 
     if left_child < size and A[left_child] > A[largest]:
         largest = left_child
 
     if right_child < size and A[right_child] > A[largest]:
         largest = right_child
+
 
     if largest != node_idx:
         A[node_idx], A[largest] = A[largest], A[node_idx]
@@ -608,9 +609,9 @@ def _max_heapify(A: double[::1], size: size_t, node_idx: size_t) -> cython.void:
 @cython.nogil
 @cython.cfunc
 def _heapsort(A: double[::1]) -> cython.void:
-    i: size_t
-    size: size_t = cython.cast(size_t, len(A))
-    node_idx: size_t = size // 2 - 1
+    i: ssize_t
+    size: ssize_t = len(A)
+    node_idx: ssize_t = size // 2 - 1
 
     for i in range(node_idx, -1, -1):
         _max_heapify(A, size, i)
@@ -672,20 +673,19 @@ out
 ```
 
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃<span style="font-weight: bold"> n         </span>┃<span style="font-weight: bold"> Numba                 </span>┃<span style="font-weight: bold"> Cython                </span>┃<span style="font-weight: bold"> NumPy                  </span>┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ 10        │ 1.015e-06             │ 1.605e-06             │ 1.748e-06              │
-│ 100       │ 5.548e-06             │ 6.942000000000001e-06 │ 3.089e-06              │
-│ 1000      │ 0.000117169           │ 6.707100000000001e-05 │ 6.0178000000000006e-05 │
-│ 10000     │ 0.0018590490000000002 │ 0.000903012           │ 0.0009388980000000001  │
-│ 100000    │ 0.027251730000000002  │ 0.018747982           │ 0.017145886000000003   │
-│ 1000000   │ 0.552383987           │ 0.37286854            │ 0.267286028            │
-│ 10000000  │ 7.30429932            │ 6.469945386           │ 3.9912235160000002     │
-│ 100000000 │ 91.580351554          │ 95.15815346000001     │ 46.736913824000005     │
-└───────────┴───────────────────────┴───────────────────────┴────────────────────────┘
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n         </span>┃<span style="font-weight: bold"> Numba               </span>┃<span style="font-weight: bold"> Cython                </span>┃<span style="font-weight: bold"> NumPy                  </span>┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 10        │ 1.266e-06           │ 1.819e-06             │ 1.7500000000000002e-06 │
+│ 100       │ 5.587e-06           │ 5.004000000000001e-06 │ 3.0430000000000003e-06 │
+│ 1000      │ 0.000116266         │ 6.1561e-05            │ 6.2518e-05             │
+│ 10000     │ 0.001819482         │ 0.0008792880000000001 │ 0.000939073            │
+│ 100000    │ 0.028507956         │ 0.014659915           │ 0.013501216000000002   │
+│ 1000000   │ 0.42401333100000005 │ 0.26564063200000004   │ 0.224838018            │
+│ 10000000  │ 5.938197069         │ 5.285706523           │ 3.4547337810000003     │
+│ 100000000 │ 78.544810064        │ 84.04674386900001     │ 49.002946636000004     │
+└───────────┴─────────────────────┴───────────────────────┴────────────────────────┘
 </pre>
-
 
 
 
