@@ -16,14 +16,13 @@ They provide a detailed analysis fot the `pandas.read_sql` function, which lead 
 
 Most of the time is spent on deserialization and conversion to dataframe. Besides optimizing this process, they also implement an efficient parallelization based on query partitioning.
 
-In the present post, we want to load data in Python from PostgreSQL to Pandas. We have a table created in Python with the [Faker](https://github.com/joke2k/faker) package. This table has been loaded into Postgresql:
+In the present post, we want to load some data in Python from PostgreSQL to Pandas. We have a table created in Python with the [Faker](https://github.com/joke2k/faker) package. Initially, this table has been loaded into PostgreSQL:
 
 <p align="center">
   <img width="1000" src="/img/2022-04-20_01/faker.png" alt="faker">
 </p>
 
-It has 1000000 rows and 16 columns. The query used to load the data is rather basic:
-
+The table has 1000000 rows and 16 columns. The query used to load the data is rather basic:
 
 ```python
 QUERY = 'SELECT * FROM "faker_s1000000i"'
@@ -38,8 +37,6 @@ We are going to compare the loading time using different drivers and methods. We
 import urllib
 
 import connectorx as cx
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import psycopg2
 import pyodbc
@@ -80,73 +77,6 @@ with engine_psycopg2.connect() as connection:
 
 
 
-```python
-df.head(1)
-```
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
 
 ```python
 assert isinstance(df, pd.core.frame.DataFrame)
@@ -174,73 +104,6 @@ connection.close()
 
     CPU times: user 9.39 s, sys: 428 ms, total: 9.82 s
     Wall time: 11 s
-
-
-
-```python
-df.head(1)
-```
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
 
 
 ```python
@@ -278,76 +141,6 @@ connection.close()
 
 
 ```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
 assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
@@ -381,76 +174,6 @@ connection.close()
 
 
 ```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
 assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
@@ -474,76 +197,6 @@ df = cx.read_sql(conn=connect_string, query=QUERY, return_type="pandas")
 
     CPU times: user 3.71 s, sys: 278 ms, total: 3.99 s
     Wall time: 3.96 s
-
-
-
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
 
 
 
@@ -586,76 +239,6 @@ df = table.to_pandas()
 
     CPU times: user 1.21 s, sys: 209 ms, total: 1.42 s
     Wall time: 1.4 s
-
-
-
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
 
 
 
@@ -706,75 +289,6 @@ df = df._to_pandas()
 
 
 
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
 
 ```python
 assert isinstance(df, pd.core.frame.DataFrame)
@@ -816,75 +330,6 @@ df = df.compute()
 
     CPU times: user 1.53 ms, sys: 86 µs, total: 1.62 ms
     Wall time: 1.15 ms
-
-
-
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
 
 
 
@@ -930,77 +375,6 @@ df = df.to_pandas()
     Wall time: 982 ms
 
 
-
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
 ```python
 assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
@@ -1021,76 +395,6 @@ df = cx.read_sql(conn=connect_string, query=QUERY, return_type="pandas", partiti
 
 
 ```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
 assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
@@ -1105,75 +409,6 @@ df = cx.read_sql(conn=connect_string, query=QUERY, return_type="pandas", partiti
 
     CPU times: user 5.95 s, sys: 657 ms, total: 6.61 s
     Wall time: 2.2 s
-
-
-
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
 
 
 
@@ -1196,75 +431,6 @@ df = cx.read_sql(conn=connect_string, query=QUERY, return_type="pandas", partiti
 
 
 
-```python
-df.head(1)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>index</th>
-      <th>name</th>
-      <th>job</th>
-      <th>birthdate</th>
-      <th>email</th>
-      <th>last_connect</th>
-      <th>company</th>
-      <th>industry</th>
-      <th>city</th>
-      <th>state</th>
-      <th>zipcode</th>
-      <th>netNew</th>
-      <th>sales1_rounded</th>
-      <th>sales2_decimal</th>
-      <th>priority</th>
-      <th>sales2_rounded</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>0</td>
-      <td>Klothilde Adolph</td>
-      <td>運転士</td>
-      <td>1960-03-16</td>
-      <td>xwatanabe@sato.com</td>
-      <td>2022-02-08 14:07:24</td>
-      <td>万迅电脑科技有限公司</td>
-      <td>Retail</td>
-      <td>玉华市</td>
-      <td>Iowa</td>
-      <td>716532</td>
-      <td>True</td>
-      <td>1058</td>
-      <td>907.409184</td>
-      <td>5</td>
-      <td>907</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
 
 ```python
 assert isinstance(df, pd.core.frame.DataFrame)
@@ -1284,7 +450,7 @@ We did not include here the code associated with time measurement. Basically, fo
 
 We can see that ConnectorX is an efficient tool. We did not measure memory efficiency, but it is supposed to be interesting as well. The supported data sources are the following (from the [documentation](https://sfu-db.github.io/connector-x/intro.html)): Postgres, Mysql, Mariadb (through mysql protocol), Sqlite, Redshift (through postgres protocol), Clickhouse (through mysql protocol), SQL Server, Azure SQL Database (through mssql protocol), Oracle. It would be great if more data sources could be supported, such as SAP Hana for example!
 
-Although we loaded the data into a Pandas dataframe in the present post, we could also use ConnectorX along [Polars](https://github.com/pola-rs/polars) dataframes to perform some efficient data analysis tasks.
+Although we loaded the data into a Pandas dataframe in the present post, we could also imagin to use ConnectorX along with [Polars](https://github.com/pola-rs/polars) dataframes to perform some data analysis tasks.
 
 
 {% if page.comments %}
