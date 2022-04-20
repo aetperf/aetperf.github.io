@@ -605,7 +605,6 @@ def _max_heapify(A: double[::1], size: ssize_t, node_idx: ssize_t) -> cython.voi
     if right_child < size and A[right_child] > A[largest]:
         largest = right_child
 
-
     if largest != node_idx:
         A[node_idx], A[largest] = A[largest], A[node_idx]
         _max_heapify(A, size, largest)
@@ -615,7 +614,7 @@ def _max_heapify(A: double[::1], size: ssize_t, node_idx: ssize_t) -> cython.voi
 @cython.nogil
 @cython.cfunc
 def _heapsort(A: double[::1]) -> cython.void:
-    i: ssize_t
+    i: cython.int
     size: ssize_t = len(A)
     node_idx: ssize_t = size // 2 - 1
 
