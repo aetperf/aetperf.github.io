@@ -516,32 +516,21 @@ Let's use Numba to make this Python code running fast.
 
 ```python
 @njit
-def left_child_numba(node_idx):
-    return 2 * node_idx + 1
-
-
-@njit
-def right_child_numba(node_idx):
-    return 2 * (node_idx + 1)
-
-
-@njit
 def max_heapify_numba(A, size, node_idx=0):
 
     largest = node_idx
-    l = left_child_numba(largest)
-    r = right_child_numba(largest)
+    left_child = 2 * node_idx + 1
+    right_child = 2 * (node_idx + 1)
 
-    if (l < size) and (A[l] > A[largest]):
-        largest = l
+    if (left_child < size) and (A[left_child] > A[largest]):
+        largest = left_child
 
-    if (r < size) and (A[r] > A[largest]):
-        largest = r
+    if (right_child < size) and (A[right_child] > A[largest]):
+        largest = right_child
 
     if largest != node_idx:
         A[node_idx], A[largest] = A[largest], A[node_idx]  # exchange 2 nodes
         max_heapify_numba(A, size, largest)
-
 
 @njit
 def heapsort_numba(A_in):
@@ -550,13 +539,18 @@ def heapsort_numba(A_in):
 
     # build a max heap
     size = len(A)
-    node_idx = size // 2 - 1  
+    node_idx = size // 2 - 1  # last non-leaf node index
     for i in range(node_idx, -1, -1):
         max_heapify_numba(A, size, node_idx=i)
 
     for i in range(size - 1, 0, -1):
+        # swap the root (largest element) with the last leaf
         A[i], A[0] = A[0], A[i]
+
+        # removing largest element from the heap
         size -= 1
+
+        # call _max_heapify from the root on the heap with remaining elements
         max_heapify_numba(A, size)
     return A
 ```
@@ -597,35 +591,21 @@ from cython import size_t, double
 @cython.exceptval(check=False)
 @cython.nogil
 @cython.cfunc
-def _left_child(node_idx: size_t) -> size_t:
-    return 2 * node_idx + 1
-
-
-@cython.exceptval(check=False)
-@cython.nogil
-@cython.cfunc
-def _right_child(node_idx: size_t) -> size_t:
-    return 2 * (node_idx + 1)
-
-
-@cython.exceptval(check=False)
-@cython.nogil
-@cython.cfunc
 def _max_heapify(A: double[::1], size: size_t, node_idx: size_t) -> cython.void:
-    s: size_t = node_idx
 
-    l: size_t = _left_child(s)
-    r: size_t = _right_child(s)
+    largest: size_t = node_idx
+    left_child: size_t = 2 * node_idx + 1
+    right_child: size_t = 2 * (node_idx + 1)
 
-    if l < size and A[l] > A[s]:
-        s = l
+    if left_child < size and A[left_child] > A[largest]:
+        largest = left_child
 
-    if r < size and A[r] > A[s]:
-        s = r
+    if right_child < size and A[right_child] > A[largest]:
+        largest = right_child
 
-    if s != node_idx:
-        A[node_idx], A[s] = A[s], A[node_idx]
-        _max_heapify(A, size, s)
+    if largest != node_idx:
+        A[node_idx], A[largest] = A[largest], A[node_idx]
+        _max_heapify(A, size, largest)
 
 
 @cython.exceptval(check=False)
@@ -755,7 +735,7 @@ _ = ax.set(
 
 ## Conclusion
 
-Going from Python to Numba is seamless and is allowing us to reach a similar level of efficiency as with Cython (that turned 20 years old last week). We can observe that the NumPy *heapsort* implementation is faster, but we do not know which optimizations did they implement.
+Going from Python to Numba is seamless and is allowing us to reach a similar level of efficiency as with Cython (that turned 20 years old last week, happy birthday!!). We can observe that the NumPy *heapsort* implementation is faster, but we do not know which optimizations did they implement.
 
 
 ## References
