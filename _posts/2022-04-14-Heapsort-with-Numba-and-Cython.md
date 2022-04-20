@@ -579,7 +579,7 @@ np.testing.assert_array_equal(A_sorted_numba, A_ref)
 ## Cython
 
 
-```cython
+```python
 %%cython --compile-args=-Ofast
 
 # cython: boundscheck=False, initializedcheck=False, wraparound=False
@@ -587,23 +587,24 @@ np.testing.assert_array_equal(A_sorted_numba, A_ref)
 import cython
 import numpy as np
 
-from cython import size_t, double
+from cython import ssize_t, double
 
 
 @cython.exceptval(check=False)
 @cython.nogil
 @cython.cfunc
-def _max_heapify(A: double[::1], size: size_t, node_idx: size_t) -> cython.void:
+def _max_heapify(A: double[::1], size: ssize_t, node_idx: ssize_t) -> cython.void:
+    largest: ssize_t = node_idx
 
-    largest: size_t = node_idx
-    left_child: size_t = 2 * node_idx + 1
-    right_child: size_t = 2 * (node_idx + 1)
+    left_child = 2 * node_idx + 1
+    right_child = 2 * (node_idx + 1)
 
     if left_child < size and A[left_child] > A[largest]:
         largest = left_child
 
     if right_child < size and A[right_child] > A[largest]:
         largest = right_child
+
 
     if largest != node_idx:
         A[node_idx], A[largest] = A[largest], A[node_idx]
@@ -614,9 +615,9 @@ def _max_heapify(A: double[::1], size: size_t, node_idx: size_t) -> cython.void:
 @cython.nogil
 @cython.cfunc
 def _heapsort(A: double[::1]) -> cython.void:
-    i: size_t
-    size: size_t = cython.cast(size_t, len(A))
-    node_idx: size_t = size // 2 - 1
+    i: ssize_t
+    size: ssize_t = len(A)
+    node_idx: ssize_t = size // 2 - 1
 
     for i in range(node_idx, -1, -1):
         _max_heapify(A, size, i)
