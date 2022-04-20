@@ -441,9 +441,8 @@ assert df.shape == (1000000, 16)
 ## Comparison
 
 
-We did not include here the code associated with time measurements. Basically, for each strategy, the loading process is repeated 5 times and only the best elapsed time is kept.
+We did not include here the code associated with time measurements. Basically, for each strategy, the loading process is repeated 5 times and only the best elapsed time is kept. Here is the resulting table:
 
-<div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
@@ -471,73 +470,73 @@ We did not include here the code associated with time measurements. Basically, f
       <th>pyodbc</th>
       <td>17.79901</td>
       <td>0.00000</td>
-      <td>35.59803</td>
+      <td>17.79901</td>
     </tr>
     <tr>
       <th>sqlalchemy_psycopg2_chunks</th>
       <td>10.87270</td>
       <td>0.00000</td>
-      <td>21.74540</td>
+      <td>10.87270</td>
     </tr>
     <tr>
       <th>sqlalchemy_psycopg2</th>
       <td>9.14140</td>
       <td>0.00000</td>
-      <td>18.28279</td>
+      <td>9.14140</td>
     </tr>
     <tr>
       <th>cx_modin</th>
       <td>6.42423</td>
       <td>1.54774</td>
-      <td>15.94393</td>
+      <td>7.97197</td>
     </tr>
     <tr>
       <th>turbodbc_arrow</th>
       <td>6.36288</td>
       <td>0.96034</td>
-      <td>14.64644</td>
+      <td>7.32322</td>
     </tr>
     <tr>
       <th>cx_dask</th>
       <td>5.29873</td>
       <td>0.00043</td>
-      <td>10.59831</td>
+      <td>5.29916</td>
     </tr>
     <tr>
       <th>cx_arrow</th>
       <td>3.16782</td>
       <td>1.11604</td>
-      <td>8.56770</td>
+      <td>4.28385</td>
     </tr>
     <tr>
       <th>cx_polars</th>
       <td>3.23051</td>
       <td>0.97591</td>
-      <td>8.41284</td>
+      <td>4.20642</td>
     </tr>
     <tr>
       <th>cx_pandas</th>
       <td>3.95265</td>
       <td>0.00000</td>
-      <td>7.90529</td>
+      <td>3.95265</td>
     </tr>
     <tr>
       <th>cx_pandas_2</th>
       <td>2.48966</td>
       <td>0.00000</td>
-      <td>4.97932</td>
+      <td>2.48966</td>
     </tr>
     <tr>
       <th>cx_pandas_8</th>
       <td>2.12081</td>
       <td>0.00000</td>
-      <td>4.24162</td>
+      <td>2.12081</td>
     </tr>
     <tr>
       <th>cx_pandas_4</th>
       <td>1.93755</td>
       <td>0.00000</td>
-      <td>3.87511</td>
+      <td>1.93755</td>
     </tr>
   </tbody>
 </table>
