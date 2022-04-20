@@ -586,87 +586,69 @@ np.testing.assert_array_equal(A_sorted_numba, A_ref)
 ```cython
 %%cython --compile-args=-Ofast
 
-cimport cython
+# cython: boundscheck=False, initializedcheck=False, wraparound=False
 
+import cython
 import numpy as np
 
-cimport numpy as cnp
+from cython import size_t, double
 
 
-@cython.binding(False)
-@cython.initializedcheck(False) 
-cdef size_t _left_child_cython(size_t node_idx) nogil:
+@cython.exceptval(check=False)
+@cython.nogil
+@cython.cfunc
+def _left_child(node_idx: size_t) -> size_t:
     return 2 * node_idx + 1
 
-@cython.binding(False)
-@cython.initializedcheck(False) 
-cdef size_t _right_child_cython(size_t node_idx) nogil:
+
+@cython.exceptval(check=False)
+@cython.nogil
+@cython.cfunc
+def _right_child(node_idx: size_t) -> size_t:
     return 2 * (node_idx + 1)
 
-@cython.binding(False)
-@cython.boundscheck(False)
-@cython.initializedcheck(False) 
-cdef void _exchange_nodes_cython(
-    cnp.float64_t[:] A,
-    size_t node_i,
-    size_t node_j) nogil:
-    
-    cdef: 
-        cnp.float64_t tmp_val
-    
-    tmp_val = A[node_i]
-    A[node_i] = A[node_j]
-    A[node_j] = tmp_val
 
-@cython.binding(False)
-@cython.boundscheck(False)
-@cython.initializedcheck(False) 
-cdef void _max_heapify_cython(
-    cnp.float64_t[:] A,
-    size_t size,
-    size_t node_idx) nogil:
+@cython.exceptval(check=False)
+@cython.nogil
+@cython.cfunc
+def _max_heapify(A: double[::1], size: size_t, node_idx: size_t) -> cython.void:
+    s: size_t = node_idx
 
-    cdef: 
-        size_t l, r, s = node_idx
+    l: size_t = _left_child(s)
+    r: size_t = _right_child(s)
 
-    l = _left_child_cython(s)
-    r = _right_child_cython(s)
-
-    if (l < size) and (A[l] > A[s]):
+    if l < size and A[l] > A[s]:
         s = l
 
-    if (r < size) and (A[r] > A[s]):
+    if r < size and A[r] > A[s]:
         s = r
 
     if s != node_idx:
-        _exchange_nodes_cython(A, node_idx, s)
-        _max_heapify_cython(A, size, s)
+        A[node_idx], A[s] = A[s], A[node_idx]
+        _max_heapify(A, size, s)
 
-@cython.binding(False)
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False) 
-cdef void _heapsort_cython(cnp.float64_t[:] A) nogil:
-    
-    cdef:
-        size_t size, i, node_idx
 
-    size = len(A)
-    node_idx = size // 2 - 1
+@cython.exceptval(check=False)
+@cython.nogil
+@cython.cfunc
+def _heapsort(A: double[::1]) -> cython.void:
+    i: size_t
+    size: size_t = cython.cast(size_t, len(A))
+    node_idx: size_t = size // 2 - 1
+
     for i in range(node_idx, -1, -1):
-        _max_heapify_cython(A, size, i)
+        _max_heapify(A, size, i)
 
     for i in range(size - 1, 0, -1):
-        _exchange_nodes_cython(A, i, 0)
+        A[i], A[0] = A[0], A[i]
         size -= 1
-        _max_heapify_cython(A, size, 0)
+        _max_heapify(A, size, 0)
 
-        
-cpdef heapsort_cython(A_in):
 
+@cython.ccall
+def heapsort_cython(A_in):
     A = np.copy(A_in)
-    _heapsort_cython(A)
-
+    _heapsort(A)
     return A
 ```
 
