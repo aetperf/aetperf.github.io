@@ -540,7 +540,6 @@ We did not include here the code associated with time measurements. Basically, f
     </tr>
   </tbody>
 </table>
-</div>
 
 <p align="center">
   <img width="1000" src="/img/2022-04-20_01/output_92_0.png" alt="Elapsed time">
