@@ -450,7 +450,7 @@ We did not include here the code associated with time measurement. Basically, fo
 
 We can see that ConnectorX is an efficient tool. We did not measure memory efficiency in this post, but it is supposed to be interesting as well. The supported data sources are the following (from the [documentation](https://sfu-db.github.io/connector-x/intro.html)): Postgres, Mysql, Mariadb (through mysql protocol), Sqlite, Redshift (through postgres protocol), Clickhouse (through mysql protocol), SQL Server, Azure SQL Database (through mssql protocol), Oracle. It would be great if more data sources could be supported, such as SAP Hana for example!
 
-Although we loaded the data into a Pandas dataframe in the present post, we could also imagin to use ConnectorX along with [Polars](https://github.com/pola-rs/polars) dataframes to perform some data analysis tasks.
+Although we loaded the data into a Pandas dataframe in the present post, we could also imagine to use ConnectorX along with [Polars](https://github.com/pola-rs/polars) dataframes to perform some data analysis tasks.
 
 
 {% if page.comments %}
