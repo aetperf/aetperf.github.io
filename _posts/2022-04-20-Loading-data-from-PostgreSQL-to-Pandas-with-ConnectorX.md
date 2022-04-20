@@ -28,7 +28,7 @@ The table has 1000000 rows and 16 columns. The query used to load the data is ra
 QUERY = 'SELECT * FROM "faker_s1000000i"'
 ```
 
-We are going to compare the loading time using different drivers and methods. We do not measure the peak memory, but just the elapsed time for loading the data into Pandas.
+We are going to compare the loading time using different drivers and methods. We do not measure the peak memory, but just the elapsed time for loading the data into Pandas. Database server and client are on the same machine.
 
 ## Imports
 
@@ -57,7 +57,7 @@ pg_database = "pgdb"
 
 ## SQLAlchemy + psycopg2
 
-This is the most common way to load the data from Postgres to Pandas.
+This is the most common way for loading data from Postgres into Pandas.
 
 
 ```python
@@ -113,7 +113,7 @@ assert df.shape == (1000000, 16)
 
 ## pyodbc
  
-The official PostgreSQL ODBC driver is used here with the default settings.
+The official PostgreSQL ODBC driver is used here with default settings.
 
 
 ```python
@@ -180,7 +180,7 @@ assert df.shape == (1000000, 16)
 
 ## ConnectorX
 
-We are going to connect the data source with this simple Connection string URI:
+We are going to connect the data source with this connection string URI:
 
 
 ```python
