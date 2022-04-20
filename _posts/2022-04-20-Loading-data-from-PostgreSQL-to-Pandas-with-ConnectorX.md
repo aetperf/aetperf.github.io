@@ -55,7 +55,7 @@ pg_port = 5432
 pg_database = "pgdb"
 ```
 
-## SQLAlchemy + psycopg2
+## SQLAlchemy + psycopg2 (`sqlalchemy_psychopg2`)
 
 This is the most common way for loading data from Postgres into Pandas.
 
@@ -83,7 +83,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-## SQLAlchemy + psycopg2 by chunks
+## SQLAlchemy + psycopg2 by chunks (`sqlalchemy_psychopg2_chunks`)
 
 Now let's imagine that we want to reduce the memory usage of the previous process by loading the data by chunks. This code is inspired from the ConnectorX github [repository](https://github.com/sfu-db/connector-x/tree/main/benchmarks), where a lot of benchmark code can be foun.
 
@@ -111,7 +111,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-## pyodbc
+## pyodbc (`pyodbc`)
  
 The official PostgreSQL ODBC driver is used here with default settings.
 
@@ -145,7 +145,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-## Turbodbc arrow
+## Turbodbc arrow (`turbodbc_arrow`)
 
 Here we do not use Pandas'`read_sql` function but Apache Arrow along with Turbodbc. See this blog post for more details: https://arrow.apache.org/blog/2017/06/16/turbodbc-arrow/
 
@@ -187,7 +187,7 @@ We are going to connect the data source with this connection string URI and use 
 connect_string = f"postgres://{pg_username}:{urllib.parse.quote_plus(pg_password)}@{pg_server}:{pg_port}/{pg_database}"
 ```
 
-### Pandas
+### Pandas (`cx_pandas`)
 
 
 ```python
@@ -205,7 +205,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-### Arrow
+### Arrow (`cx_arrow`)
 
 
 ```python
@@ -248,7 +248,7 @@ assert df.shape == (1000000, 16)
 ```
 
 
-### Modin
+### Modin (`cx_modin`)
 
 
 ```python
@@ -296,7 +296,7 @@ assert df.shape == (1000000, 16)
 ```
 
 
-### Dask
+### Dask (`cx_dask`)
 
 
 ```python
@@ -339,7 +339,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-### Polars
+### Polars (`cx_polars`)
 
 
 ```python
@@ -381,7 +381,7 @@ assert df.shape == (1000000, 16)
 ```
 
 
-### Pandas 2 partitions
+### Pandas 2 partitions (`cx_pandas_2`)
 
 
 ```python
@@ -399,7 +399,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-### Pandas 4 partitions
+### Pandas 4 partitions (`cx_pandas_4`)
 
 
 ```python
@@ -418,7 +418,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-### Pandas 8 partitions
+### Pandas 8 partitions (`cx_pandas_8`)
 
 
 ```python
