@@ -6,23 +6,76 @@ author: François Pacull
 tags: Python Pandas PostgreSQL DataFrame Loading data SQLAlchemy
 ---
 
-[ConnectorX](https://sfu-db.github.io/connector-x/intro.html) is a library written in Rust, which enables fast and memory-efficient data loading from various databases to different dataframes. We refer to an interesting [paper](https://wooya.me/files/ConnectorX.pdf): 
+[ConnectorX](https://sfu-db.github.io/connector-x/intro.html) is a library, written in Rust, that enables fast and memory-efficient data loading from various databases to different dataframes. We refer to this interesting [paper](https://wooya.me/files/ConnectorX.pdf), in which the authors provide a detailed analysis of the `pandas.read_sql` function: 
 
 Wang, Xiaoying, et al. *ConnectorX: Accelerating Data Loading From Databases to Dataframes.* 2021
 
-Where the authors provide a detailed analysis for the `pandas.read_sql` function. This lead to some surprises:
+This lead to some surprises:
 
 > A surprising finding is that the majority of the time is actually spent on the client side rather than on the query execution or the data transfer.
 
-Most of the time is spent on deserialization and conversion to dataframe. Besides optimizing this process, they also implement an efficient parallelization based on query partitioning.
+Most of the time is spent on deserialization and conversion to dataframe. So they tried to optimize these two steps, and also implemented an efficient parallelization based on query partitioning.
 
-In the present post, we want to load some data in Python from PostgreSQL to Pandas. We have a table created in Python with the [Faker](https://github.com/joke2k/faker) package. Initially, this table has been loaded into PostgreSQL:
+In the present post, we want to load some data with Python, from PostgreSQL to Pandas. 
+
+## The Data
+
+We have a table with fake data, created in Python with the [Faker](https://github.com/joke2k/faker) package, and stored as a Pandas dataframe `df`. Initially, this table has been loaded into PostgreSQL with the following piece of code, assumine the SQL `engine` has also already been created:
+
+```python
+from sqlalchemy.types import (
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    Integer,
+    SmallInteger,
+    String,
+    Unicode,
+)
+
+l_name = 100
+l_job = 200
+l_email = 40
+l_company = 150
+l_industry = 150
+l_city = 50
+l_state = 50
+l_zipcode = 15
+dtypes = {
+    "name": Unicode(length=l_name),
+    "job": Unicode(length=l_job),
+    "birthdate": Date(),
+    "email": String(length=l_email),
+    "last_connect": DateTime(timezone=False),
+    "company": Unicode(length=l_company),
+    "industry": Unicode(length=l_industry),
+    "city": Unicode(length=l_city),
+    "state": Unicode(length=l_state),
+    "zipcode": String(length=l_zipcode),
+    "netNew": Boolean(),
+    "sales1_rounded": Integer(),
+    "sales2_decimal": Float(),
+    "sales2_rounded": Integer(),
+    "priority": SmallInteger(),
+}
+df.to_sql(
+    "faker_s1000000i",
+    engine,
+    if_exists="replace",
+    index=True,
+    index_label="Index",
+    dtype=dtypes,
+)
+```
+ 
+Here is a SELECT on the table from pgAdmin:
 
 <p align="center">
   <img width="1000" src="/img/2022-04-20_01/faker.png" alt="faker">
 </p>
 
-The table has a million rows and 16 columns. The query used to load the data is rather basic:
+The table has a million rows and 16 columns. The query used to load the data is basic:
 
 ```python
 QUERY = 'SELECT * FROM "faker_s1000000i"'
@@ -46,6 +99,20 @@ from sqlalchemy import create_engine
 
 ray.init(ignore_reinit_error=True)
 ```
+
+Package versions:
+
+    Python    : 3.9.12
+    psycopg2  : 2.9.3
+    sqlalchemy: 1.4.35
+    numpy     : 1.22.3
+    ray       : 1.11.0
+    connectorx: 0.2.5
+    turbodbc  : 4.5.3
+    pyodbc    : 4.0.32
+    pandas    : 1.4.1
+
+## Credentials
 
 ```python
 pg_username = "****"
