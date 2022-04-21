@@ -193,7 +193,7 @@ connection = pyodbc.connect(dsn="PostgreSQL")
 df = pd.read_sql(sql=QUERY, con=connection)
 ```
 
-    /home/francois/miniconda3/envs/sql/lib/python3.9/site-packages/pandas/io/sql.py:761: UserWarning: pandas only support SQLAlchemy connectable(engine/connection) ordatabase string URI or sqlite3 DBAPI2 connectionother DBAPI2 objects are not tested, please consider using SQLAlchemy
+     UserWarning: pandas only support SQLAlchemy connectable(engine/connection) ordatabase string URI or sqlite3 DBAPI2 connectionother DBAPI2 objects are not tested, please consider using SQLAlchemy
       warnings.warn(
 
 
@@ -214,7 +214,7 @@ assert df.shape == (1000000, 16)
 
 ## Turbodbc arrow (`turbodbc_arrow`)
 
-Here we do not use Pandas'`read_sql` function but Apache Arrow along with Turbodbc. See this blog post for more details: https://arrow.apache.org/blog/2017/06/16/turbodbc-arrow/
+Here we do not use Pandas'`read_sql` function but Apache Arrow along with Turbodbc. See this blog post for more details: [https://arrow.apache.org/blog/2017/06/16/turbodbc-arrow/](https://arrow.apache.org/blog/2017/06/16/turbodbc-arrow/)
 
 
 ```python
