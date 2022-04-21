@@ -16,7 +16,7 @@ This lead to some surprises:
 
 Most of the time is spent on deserialization and conversion to dataframe. So they tried to optimize these two steps, and also implemented an efficient parallelization based on query partitioning.
 
-In the present post, we want to load some data with Python, from PostgreSQL to Pandas. 
+In the present post, we want the different ways to load some data with Python, from PostgreSQL to Pandas, incuding with ConnectorX. 
 
 ## The Data
 
