@@ -16,7 +16,20 @@ This lead to some surprises:
 
 Most of the time is spent on deserialization and conversion to dataframe. So they tried to optimize these two steps, and also implemented an efficient parallelization based on query partitioning.
 
-In the present post, we want to try the different ways to load some data with Python, from PostgreSQL to Pandas, incuding with ConnectorX. 
+In the present post, we want to try the different ways to load some data with Python, from PostgreSQL to Pandas, incuding with ConnectorX. Here are the different strategies tested:
+- SQLAlchemy + psycopg2  
+- SQLAlchemy + psycopg2 by chunks  
+- pyodbc  
+- turbodbc + arrow  
+- ConnectorX + pandas  
+- ConnectorX + arrow  
+- ConnectorX + modin  
+- ConnectorX + dask  
+- ConnectorX + polars  
+- ConnectorX + pandas with 2 partitions  
+- ConnectorX + pandas with 4 partitions  
+- ConnectorX + pandas with 8 partitions  
+
 
 ## The Data
 
@@ -212,7 +225,7 @@ assert isinstance(df, pd.core.frame.DataFrame)
 assert df.shape == (1000000, 16)
 ```
 
-## Turbodbc arrow (`turbodbc_arrow`)
+## Turbodbc + arrow (`turbodbc_arrow`)
 
 Here we do not use Pandas'`read_sql` function but Apache Arrow along with Turbodbc. See this blog post for more details: [https://arrow.apache.org/blog/2017/06/16/turbodbc-arrow/](https://arrow.apache.org/blog/2017/06/16/turbodbc-arrow/)
 
