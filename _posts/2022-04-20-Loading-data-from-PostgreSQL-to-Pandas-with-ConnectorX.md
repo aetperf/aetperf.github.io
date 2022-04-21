@@ -64,7 +64,7 @@ df.to_sql(
     engine,
     if_exists="replace",
     index=True,
-    index_label="Index",
+    index_label="index",
     dtype=dtypes,
 )
 ```
@@ -247,7 +247,7 @@ assert df.shape == (1000000, 16)
 
 ## ConnectorX
 
-We are going to connect the data source with this connection string URI and use the `cx.read_sql` function:
+We are going to connect the data source with the following connection string URI and use the `cx.read_sql` function:
 
 
 ```python
