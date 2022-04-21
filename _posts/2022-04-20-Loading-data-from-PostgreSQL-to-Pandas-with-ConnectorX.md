@@ -152,7 +152,7 @@ assert df.shape == (1000000, 16)
 
 ## SQLAlchemy + psycopg2 by chunks (`sqlalchemy_psychopg2_chunks`)
 
-Now let's imagine that we want to reduce the memory usage of the previous process by loading the data by chunks. This code is inspired from the ConnectorX github [repository](https://github.com/sfu-db/connector-x/tree/main/benchmarks), where a lot of benchmark code can be foun.
+Now let's imagine that we want to reduce the memory usage of the previous process by loading the data by chunks. This code is inspired by the ConnectorX github [repository](https://github.com/sfu-db/connector-x/tree/main/benchmarks), where a lot of usefull benchmark code can be found.
 
 
 ```python
