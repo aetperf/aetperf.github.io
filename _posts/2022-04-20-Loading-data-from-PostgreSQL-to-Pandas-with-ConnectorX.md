@@ -247,6 +247,8 @@ df = data.to_pandas(split_blocks=False, date_as_object=True)
     Wall time: 7.8 s
 
 
+The type of the `data` returned above by `fetchallarrow()` is an Arrow table, this is why it is later converted to a Pandas dataframe.
+
 
 ```python
 connection.close()
