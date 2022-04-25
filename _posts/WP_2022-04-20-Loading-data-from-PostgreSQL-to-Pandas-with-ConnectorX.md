@@ -79,7 +79,7 @@ df.to_sql(
 Here is a SELECT on the table from pgAdmin:
 
 <p align="center">
-  <img width="1000" src="/img/2022-04-20_01/faker.png" alt="faker">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-04-20_01/faker.png" alt="faker">
 </p>
 
 The table has a million rows and 16 columns. The query used to load the data is basic:
