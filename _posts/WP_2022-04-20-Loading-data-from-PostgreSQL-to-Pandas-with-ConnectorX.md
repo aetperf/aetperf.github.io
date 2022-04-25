@@ -519,19 +519,6 @@ assert df.shape == (1000000, 16)
 
 We did not include here the code associated with time measurements. Basically, for each strategy, the loading process is repeated 5 times and only the best elapsed time is kept. Here is the resulting table:
 
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
