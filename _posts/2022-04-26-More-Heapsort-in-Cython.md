@@ -29,14 +29,9 @@ import gc
 from time import perf_counter
 
 import cython
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import perfplot
-
-pd.options.display.float_format = "{:,.3e}".format
-
-plt.style.use("fivethirtyeight")
 
 %load_ext cython
 SD = 124  # random seed
@@ -175,7 +170,7 @@ This is a straight translation of [NumPy Source code](https://github.com/numpy/n
      * The original sorting code is due to Charles R. Harris who wrote
      * it for numarray.
      
-This time we have two distinct loops in the `_heapsort_2` function. But this is very similar to the code above (Heapsort 1). 
+This time we have two distinct loops in the `_heapsort_2` function. But this is very similar to the code above (Cython 1). 
 
 
 ```cython
@@ -338,22 +333,6 @@ out = perfplot.bench(
     n_range=[10**k for k in range(1, 9)],
 )
 ```
-
-
-    Output()
-
-
-
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-
-
-
-
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">
-</pre>
-
-
-
 
 ```python
 t_df = pd.DataFrame(out.timings_s.T, columns=out.labels, index=out.n_range)
@@ -539,7 +518,7 @@ t_df = pd.concat(
 t_df["n log(n)"] = 5.0e-8 * t_df.index * np.log(t_df.index)
 ```
 
-Note that we also included the curve corresponding to $O(n\log n)$ in the figure. However, we are aware that this is an asymptotic behavior on an abstract machine, but do not take into account some hardware effects, such has cache optimization.
+Note that we also included the curve corresponding to $O(n\log n)$ in the following figure. However, we are aware that this is an asymptotic behavior on an abstract machine, but do not take into account some hardware effects, such has cache optimization.
 
 
 ```python
