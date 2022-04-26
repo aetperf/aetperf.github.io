@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python heapsort algorithms cython
 ---
 
-This short post/notebook is the follow-up to a recent one : [Heapsort with Numba and Cython](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html), where we implemented *heapsort* in Python/Numba and Cython and compared the execution time with NumPy *heapsort*. However, *heapsort* in NumPy is written in C++ (wrapped in Python) and not exactly the same implementation as the one we used in the previous post. So in the following, we present two different *heapsort* implementations in Cython, which are a little bit more condensed than the previous one: 
+This short post/notebook is the follow-up to a recent one : [Heapsort with Numba and Cython](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html), where we implemented *heapsort* in Python/Numba and Cython and compared the execution time with NumPy *heapsort*. However, *heapsort* in NumPy is written in C++ (wrapped in Python) and not exactly the same implementation as the one we used in the previous post. So in the following, we present two different *heapsort* implementations translated into Cython, which are a little bit more condensed than the previous one: 
 - the first one (`Cython_1`) is taken from the book *Numerical recipes in C* [1]  
 - the second one (`Cython_2`) is taken from NumPy source code: [heapsort.cpp](https://github.com/numpy/numpy/blob/main/numpy/core/src/npysort/heapsort.cpp)
 
@@ -76,7 +76,7 @@ So we have two phases:
 This is very similar to what we described in the previous post: a first step where we build the heap in a bottom-up approach, a second step where we keep on extracting the root until the heap is empty. Both steps rely on a sift-down process. However, we have here a single main loop for both phases.
 
 
-```cython
+```python
 %%cython -3 --compile-args=-Ofast
 
 # cython: boundscheck=False, cdivision=True, initializedcheck=False, wraparound=False
@@ -173,7 +173,7 @@ This is a straight translation of [NumPy Source code](https://github.com/numpy/n
 This time we have two distinct loops in the `_heapsort_2` function. But this is very similar to the code above (Cython 1). 
 
 
-```cython
+```python
 %%cython -3 --compile-args=-Ofast
 
 # cython: boundscheck=False, cdivision=True, initializedcheck=False, wraparound=False
@@ -249,7 +249,7 @@ np.testing.assert_array_equal(A_2, np.sort(A))
 For the sake of completeness, we also included the implementation from the [previous post](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html), with the same compiler directives as above:
 
 
-```cython
+```python
 %%cython -3 --compile-args=-Ofast
 
 # cython: boundscheck=False, cdivision=True, initializedcheck=False, wraparound=False
