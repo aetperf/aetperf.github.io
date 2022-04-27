@@ -6,7 +6,7 @@ author: François Pacull
 tags: Python heapsort algorithms cython
 ---
 
-This short post/notebook is the follow-up to a recent one : [Heapsort with Numba and Cython](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html), where we implemented *heapsort* in Python/Numba and Cython and compared the execution time with NumPy *heapsort*. However, *heapsort* in NumPy is written in C++ (wrapped in Python) and not exactly the same implementation as the one we used in the previous post. So in the following, we present two different *heapsort* implementations translated into Cython, which are a little bit more condensed than the previous one: 
+This post/notebook is the follow-up to a recent one : [Heapsort with Numba and Cython](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html), where we implemented *heapsort* in Python/Numba and Cython and compared the execution time with NumPy *heapsort*. However, *heapsort* in NumPy is written in C++ (wrapped in Python) and not exactly the same implementation as the one we used in the [previous post](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html). So in the following, we present two different *heapsort* implementations translated into Cython, which are a little bit more refined than the previous one: 
 - the first one (`Cython_1`) is taken from the book *Numerical recipes in C* [1]  
 - the second one (`Cython_2`) is taken from NumPy source code: [heapsort.cpp](https://github.com/numpy/numpy/blob/main/numpy/core/src/npysort/heapsort.cpp)
 
@@ -57,7 +57,7 @@ A
 
 
 
-## Cython 1
+## Cython_1
 
 The authors of *Numerical recipes in C* [1] use a "corporate hierarchy metaphor":
 
@@ -73,7 +73,7 @@ So we have two phases:
 - hiring
 - retirement-and-promotion  
 
-This is very similar to what we described in the previous post: a first step where we build the heap in a bottom-up approach, a second step where we keep on extracting the root until the heap is empty. Both steps rely on a sift-down process. However, we have here a single main loop for both phases.
+This is very similar to what we described in the [previous post](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html): a first step where we build the heap in a bottom-up approach, a second step where we keep on extracting the root until the heap is empty. Both steps rely on a sift-down process. However, we have here a single main loop for both phases.
 
 
 ```python
@@ -158,7 +158,7 @@ A_1
 np.testing.assert_array_equal(A_1, np.sort(A))
 ```
 
-## Cython 2
+## Cython_2
 
 This is a straight translation of [NumPy Source code](https://github.com/numpy/numpy/blob/main/numpy/core/src/npysort/heapsort.cpp) from C++ to Cython. Here is what we can read in the source code about its origin:
 
@@ -170,7 +170,7 @@ This is a straight translation of [NumPy Source code](https://github.com/numpy/n
      * The original sorting code is due to Charles R. Harris who wrote
      * it for numarray.
      
-This time we have two distinct loops in the `_heapsort_2` function. But this is very similar to the code above (Cython 1). 
+This time we have two distinct loops in the `_heapsort_2()` function. But this is very similar to the code above (Cython_1). 
 
 
 ```python
