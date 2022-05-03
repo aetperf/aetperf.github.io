@@ -239,7 +239,7 @@ A_2 = heapsort_cython_2(A)
 np.testing.assert_array_equal(A_2, np.sort(A))
 ```
 
-## Cython 3
+## Cython_3
 
 For the sake of completeness, we also included the implementation from the [previous post](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html), with the same compiler directives as above:
 
