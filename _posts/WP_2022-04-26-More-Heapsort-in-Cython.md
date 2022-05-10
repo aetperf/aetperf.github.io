@@ -1,6 +1,3 @@
-# More Heapsort in Cython
-
-
 This post/notebook is the follow-up to a recent one : [Heapsort with Numba and Cython](https://www.architecture-performance.fr/ap_blog/heapsort-with-numba-and-cython/), where we implemented *heapsort* in Python/Numba and Cython and compared the execution time with NumPy *heapsort*. However, *heapsort* in NumPy is written in C++ [wrapped in Python] and not exactly the same implementation as the one we used in the [previous post](https://www.architecture-performance.fr/ap_blog/heapsort-with-numba-and-cython/). So in the following, we present two different *heapsort* implementations translated into Cython, which are a little bit more refined than the previous one: 
 - the first one [`Cython_1`] is taken from the book *Numerical recipes in C* [1]  
 - the second one [`Cython_2`] is taken from NumPy source code: [heapsort.cpp](https://github.com/numpy/numpy/blob/main/numpy/core/src/npysort/heapsort.cpp)
