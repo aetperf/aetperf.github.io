@@ -7,11 +7,11 @@ tags: Python Tableau Hyper CSV
 ---
 
 <p align="center">
-  <img width="600" src="/img/2022-05-09_01/hyper_logo_1.png" alt="Hyper">
+  <img width="600" src="/img/2022-05-09_01/hyper_logo_1.jpg" alt="Hyper">
 </p>
 
 
-Hyper is Tableau’s in-memory data engine technology, designed for fast data ingest and analytical query processing on large or complex data sets. In the present notebook, we are going to create a Tableau Hyper extract from CSV files in Python. The goal is to compare the efficiency of different possible SQL strategies.
+Hyper is Tableau’s *in-memory data engine technology, designed for fast data ingest and analytical query processing on large or complex data sets*. In the present notebook, we are going to create a Tableau Hyper extract from CSV files in Python. The goal is to compare the efficiency of different possible data ingestion techniques.
 
 We are using [Tableau Hyper Python API](https://help.tableau.com/current/api/hyper_api/en-us/reference/py/index.html). The Hyper API is a toolbox to deal with Tableau extract (.hyper) files, and "automate the boring stuff". As described in the [Hyper SQL documentation](https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-data-in-sql.html), Hyper has three different options to read external data in SQL:
 > 1 - External data can be copied into a Hyper table with the COPY SQL command.  
