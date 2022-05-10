@@ -235,7 +235,7 @@ connection.close()
 hyper.close()
 ```
 
-The COPY method seems to be the most efficient for loading data from CSV files into Hyper extracts. It benefits from some multi-threading while the `INSERT` techniques appear to be single-theaded all the way.
+The COPY method seems to be the most efficient for loading data from CSV files into Hyper extracts. It benefits from some amount of multi-threading while the other techniques appear to be single-theaded all the way.
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
