@@ -7,7 +7,7 @@ tags: Python Tableau Hyper CSV
 ---
 
 <p align="center">
-  <img width="600" src="/img/2022-05-09_01/hyper_logo_1.jpg" alt="Hyper">
+  <img width="300" src="/img/2022-05-09_01/hyper_logo_1.jpg" alt="Hyper">
 </p>
 
 
@@ -41,10 +41,12 @@ DATABASE = "./test.hyper"  # hyper file database
 
 # CSV file list
 CSV_FILES = ["./test_01.csv", "./test_02.csv", "./test_03.csv", "./test_04.csv"]
-csv_array = ", ".join(["'" + f + "'" for f in CSV_FILES])
+csv_array_str = ", ".join(["'" + f + "'" for f in CSV_FILES])
 ```
 
 ## Create a connection
+
+We start a local Hyper server instance first, and create a connection. We could also use a context manager here, so that we wouldn't have to close them explicitly at the end.
 
 
 ```python
@@ -53,14 +55,15 @@ hyper = HyperProcess(
     parameters={"default_database_version": "2"},
 )
 connection = Connection(
-        endpoint=hyper.endpoint,
-        create_mode=CreateMode.CREATE_AND_REPLACE,
-        database=DATABASE,
-    )
+    endpoint=hyper.endpoint,
+    create_mode=CreateMode.CREATE_AND_REPLACE,
+    database=DATABASE,
+)
 ```
 
 ## Create table definition
 
+We create a table named `faker` in the `extract` schema, with 15 columns of various types. 
 
 ```python
 # create schema
@@ -85,7 +88,7 @@ data_types = {
     "priority": SqlType.small_int(),
     "sales2_rounded": SqlType.int(),
 }
-is_nullable = Nullability.NOT_NULLABLE  # all columns are not nullable here
+is_nullable = Nullability.NOT_NULLABLE
 for column_name, dtype in data_types.items():
     columns.append(TableDefinition.Column(column_name, dtype, is_nullable))
 table = TableName("extract", "faker")
@@ -93,10 +96,9 @@ table_def = TableDefinition(table_name=table, columns=columns)
 connection.catalog.create_table(table_def)
 ```
 
-## COPY
+## 1 - COPY
 
-Here we loop on the 4 CSV files and insert them sequentially. However, each CSV reading step seems to be multithreaded.
-
+Here we loop on the 4 CSV files and insert them sequentially.
 
 ```python
 start = perf_counter()
@@ -108,11 +110,10 @@ for csv_file in CSV_FILES:
 
 end = perf_counter()
 elapsed_time = end - start
-print(f"Elapsed time: {elapsed_time} s")
+print(f"Elapsed time: {elapsed_time:6.2f} s")
 ```
 
-    Elapsed time: 8.200508020999678 s
-
+    Elapsed time:   7.90 s
 
 
 ```python
@@ -120,10 +121,7 @@ connection.execute_scalar_query("""SELECT COUNT(*) FROM  "extract"."faker" """)
 ```
 
 
-
-
     4000000
-
 
 
 
@@ -132,14 +130,14 @@ connection.execute_scalar_query("""SELECT COUNT(*) FROM  "extract"."faker" """)
 _ = connection.execute_command("""TRUNCATE TABLE "extract"."faker" """)
 ```
 
-## INSERT SELECT FROM EXTERNAL TABLE
+## 2 - INSERT SELECT FROM EXTERNAL TABLE
 
 
 ```python
 start = perf_counter()
 sql_command = f"""INSERT INTO "extract"."faker"
     SELECT * FROM external(
-    ARRAY[{csv_array}],
+    ARRAY[{csv_array_str}],
     COLUMNS => DESCRIPTOR(
         name             varchar(100),
         job              varchar(200),
@@ -161,10 +159,10 @@ sql_command = f"""INSERT INTO "extract"."faker"
 _ = connection.execute_command(sql_command)
 end = perf_counter()
 elapsed_time = end - start
-print(f"Elapsed time: {elapsed_time} s")
+print(f"Elapsed time: {elapsed_time:6.2f} s")
 ```
 
-    Elapsed time: 11.32282723299977 s
+    Elapsed time:  11.35 s
 
 
 
@@ -173,10 +171,7 @@ connection.execute_scalar_query("""SELECT COUNT(*) FROM  "extract"."faker" """)
 ```
 
 
-
-
     4000000
-
 
 
 
@@ -185,7 +180,7 @@ connection.execute_scalar_query("""SELECT COUNT(*) FROM  "extract"."faker" """)
 _ = connection.execute_command("""TRUNCATE TABLE "extract"."faker" """)
 ```
 
-## CREATE EXTERNAL TABLE & INSERT SELECT
+## 3 - CREATE EXTERNAL TABLE & INSERT SELECT
 
 
 ```python
@@ -206,7 +201,7 @@ sql_command = f"""CREATE TEMP EXTERNAL TABLE faker (
     sales2_decimal   double precision,
     priority         smallint,
     sales2_rounded   int)
-FOR ARRAY[{csv_array}]
+FOR ARRAY[{csv_array_str}]
 WITH ( FORMAT => 'csv', DELIMITER => ',')"""
 _ = connection.execute_command(sql_command)
 
@@ -214,11 +209,11 @@ sql_command = """INSERT INTO "extract"."faker" SELECT * FROM faker"""
 _ =  connection.execute_command(sql_command)
 end = perf_counter()
 elapsed_time = end - start
-print(f"Elapsed time: {elapsed_time} s")
+print(f"Elapsed time: {elapsed_time:6.2f} s")
 
 ```
 
-    Elapsed time: 10.639697628000249 s
+    Elapsed time: 12.88 s
 
 
 
@@ -241,10 +236,7 @@ connection.close()
 hyper.close()
 ```
 
-## Conclusion
-
-The COPY method is the fastest method to load CSV files into an Hyper extract.
-
+The COPY method seems to be the most efficient for loading data from CSV files into Hyper extracts. It benefits from some multi-threading while the `INSERT` techniques appear to be single-theaded all the way.
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
