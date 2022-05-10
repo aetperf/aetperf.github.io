@@ -210,7 +210,6 @@ _ =  connection.execute_command(sql_command)
 end = perf_counter()
 elapsed_time = end - start
 print(f"Elapsed time: {elapsed_time:6.2f} s")
-
 ```
 
     Elapsed time: 12.88 s
