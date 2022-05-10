@@ -1,5 +1,5 @@
 ---
-title: Load data from CSV files into a Tableau hyper extract
+title: Load data from CSV files into a Tableau Hyper extract
 layout: post
 comments: true
 author: François Pacull
@@ -85,7 +85,7 @@ data_types = {
     "priority": SqlType.small_int(),
     "sales2_rounded": SqlType.int(),
 }
-is_nullable = Nullability.NOT_NULLABLE  # all columns are nullable here
+is_nullable = Nullability.NOT_NULLABLE  # all columns are not nullable here
 for column_name, dtype in data_types.items():
     columns.append(TableDefinition.Column(column_name, dtype, is_nullable))
 table = TableName("extract", "faker")
@@ -95,7 +95,7 @@ connection.catalog.create_table(table_def)
 
 ## COPY
 
-Here we loop on the 4 CSV files and insert them sequentially. However, each CSV reading step seems to be a little bit multithreaded.
+Here we loop on the 4 CSV files and insert them sequentially. However, each CSV reading step seems to be multithreaded.
 
 
 ```python
@@ -243,7 +243,7 @@ hyper.close()
 
 ## Conclusion
 
-The COPY method seems to be the fastest one to load CSV files into an Hyper extract.
+The COPY method is the fastest method to load CSV files into an Hyper extract.
 
 
 {% if page.comments %}
