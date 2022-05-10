@@ -1,5 +1,5 @@
 ---
-title: Load data from CSV files into a Tableau Hyper extract
+title: Loading data from CSV files into a Tableau Hyper extract
 layout: post
 comments: true
 author: François Pacull

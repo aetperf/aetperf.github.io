@@ -1,4 +1,4 @@
-# Load data from CSV files into a Tableau Hyper extract
+# Loading data from CSV files into a Tableau Hyper extract
 
 <p align="center">
   <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-09_01/hyper_logo_1.jpg" alt="Hyper">
