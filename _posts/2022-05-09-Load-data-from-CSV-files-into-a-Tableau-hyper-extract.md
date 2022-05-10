@@ -6,10 +6,14 @@ author: François Pacull
 tags: Python Tableau Hyper CSV
 ---
 
+<p align="center">
+  <img width="600" src="/img/2022-05-09_01/hyper_logo_1.png" alt="Hyper">
+</p>
 
-Hyper is Tableau’s in-memory data engine technology, designed for fast data ingest and analytical query processing on large or complex data sets. In the present notebook, we are going to create a Tableau Hyper extract from CSV files in Python. The Goal is to compare the possible strategies regarding efficiency.
 
-We are using [Tableau Hyper Python API](https://help.tableau.com/current/api/hyper_api/en-us/reference/py/index.html). As described in the [Hyper SQL documentation](https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-data-in-sql.html), Hyper has three diffeerent options to read external data in SQL:
+Hyper is Tableau’s in-memory data engine technology, designed for fast data ingest and analytical query processing on large or complex data sets. In the present notebook, we are going to create a Tableau Hyper extract from CSV files in Python. The goal is to compare the efficiency of different possible SQL strategies.
+
+We are using [Tableau Hyper Python API](https://help.tableau.com/current/api/hyper_api/en-us/reference/py/index.html). The Hyper API is a toolbox to deal with Tableau extract (.hyper) files, and "automate the boring stuff". As described in the [Hyper SQL documentation](https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-data-in-sql.html), Hyper has three different options to read external data in SQL:
 > 1 - External data can be copied into a Hyper table with the COPY SQL command.  
 > 2 - External data can be read directly in a SQL query using the set returning function external. In this case, no Hyper table is involved, so such a query can even be used if no database is attached to the current session.  
 > 3 - External data can be exposed as if it was a table using the CREATE TEMPORARY EXTERNAL TABLE SQL command. It can then subsequently be queried using the name of the external table. Again, no Hyper table is involved; querying an external table will instead result in the data being read from the external source directly. 
