@@ -30,7 +30,7 @@ connection = engine.connect().execution_options(
     max_row_buffer=chunksize)
 ```
 
-Note that the result of the `stream_results` and `max_row_buffer` options might differ a lot depending on the database, DBAPI/database adapter. Here we load a table from PostgreSQL with the [psycopg2](https://pypi.org/project/psycopg2/) adapter. It seems that the server side cursor is the default with psycopg2 when using `chunksize` in `pd.read_sql`.
+Note that the result of the `stream_results` and `max_row_buffer` options might differ a lot depending on the database, DBAPI/database adapter. Here we load a table from PostgreSQL with the [psycopg2](https://pypi.org/project/psycopg2/) adapter. It seems that the server side cursor is the default with psycopg2 when using `chunksize` in `pd.read_sql()`.
 
 In the following, we are going to study how the *elapsed time* and *max memory usage* vary with respect to `chunksize`.
 
@@ -104,7 +104,7 @@ chunksizes
 
 
 
-The table that we are reading has 1000000 rows, so the largest chunks size corresponds to loading the full table at once.
+The table that we are reading has 1000000 rows, so the largest chunk size corresponds to loading the full table at once.
 
 ## Number of chunks
 
