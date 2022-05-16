@@ -9,7 +9,7 @@ tags: Python Pandas SQL SQLAlchemy chunks read_sql
 
 In this short Python notebook, we want to load a table from a relational database and write it into a CSV file. In order to that, we temporarily store the data into a Pandas dataframe. Pandas is used to load the data with `read_sql()` and later to write the CSV file with `to_csv()`. However, we have two constraints here:
 
-- we do not want to load the full table in memory. Indeed, Pandas is usually allocating a lot more memory than the table data size, which can be a problem if the table is large. 
+- we do not want to load the full table in memory. Indeed, Pandas is usually allocating a lot more memory than the table data size. That may be a problem if the table is rather large. 
 
 - we want the process to be efficient, that is, not dramatically increase the running time when using chunks as compared to loading the full table in memory.
 
@@ -19,17 +19,20 @@ In order to do that we are going to make use of two different things:
 
 ```python
 for df in pd.read_sql(sql_query, connection, chunksize=chunksize):
+    do something
 ```
 
 - A [Server Side Cursors](https://docs.sqlalchemy.org/en/14/core/connections.html#engine-stream-results):
 
 ```python
-connection = engine.connect().execution_options(stream_results=True, max_row_buffer=chunksize)
+connection = engine.connect().execution_options(
+    stream_results=True, 
+    max_row_buffer=chunksize)
 ```
 
 Note that the result of the `stream_results` and `max_row_buffer` options might differ a lot depending on the database, DBAPI/database adapter. Here we load a table from PostgreSQL with the [psycopg2](https://pypi.org/project/psycopg2/) adapter. It seems that the server side cursor is the default with psycopg2 when using `chunksize` in `pd.read_sql`.
 
-In the following, we are going to study how the *elapsed time* and *max memory usage* vary with respect to the `chunksize`.
+In the following, we are going to study how the *elapsed time* and *max memory usage* vary with respect to `chunksize`.
 
 ## Imports
 
@@ -45,7 +48,7 @@ from sqlalchemy import create_engine
 
 
 PG_USERNAME = "***************"
-PG_PASSWORD = ""***************""
+PG_PASSWORD = "***************"
 PG_SERVER = "localhost"
 PG_PORT = 5432
 PG_DATABASE = "test"
@@ -220,7 +223,7 @@ We can observe that in our case, an optimal chunk size is 10000 with an elapsed 
 
 ## Time based memory usage
 
-In this last section, we want to plot the temporal evolution of the memory usage, for each chunk size. In order to that, we use the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package with the command line and call the following instruction:
+In this last section, we want to plot the temporal evolution of the memory usage, for each chunk size. In order to that, we use the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package agin, bu from the command line. We use the following instruction:
 
 ```bash
 mprof run read_sql_stream_01.py
