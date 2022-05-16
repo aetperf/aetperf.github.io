@@ -281,3 +281,7 @@ _ = ax.set(
     ylabel="Memory usage (MB)",
 )
 ```
+
+<p align="center">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_24_0.png" alt="Time based memory usage">
+</p>
