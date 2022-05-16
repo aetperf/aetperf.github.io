@@ -117,7 +117,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_10_0.png" alt="Number of chunks">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_10_0.png" alt="Number of chunks">
 </p>
 
     
@@ -164,7 +164,7 @@ _ = ax.set(
 
     
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_14_0.png" alt="Elapsed time">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_14_0.png" alt="Elapsed time">
 </p>
 
 
@@ -209,7 +209,7 @@ _ = ax.set(
 
     
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_18_0.png" alt="Maximum memory usage">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_18_0.png" alt="Maximum memory usage">
 </p>
 
 
@@ -283,5 +283,5 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_24_0.png" alt="Time based memory usage">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-05-16_01/output_24_0.png" alt="Time based memory usage">
 </p>
