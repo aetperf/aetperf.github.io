@@ -223,7 +223,7 @@ We can observe that in our case, an optimal chunk size is 10000 with an elapsed 
 
 ## Time based memory usage
 
-In this last section, we want to plot the temporal evolution of the memory usage, for each chunk size. In order to that, we use the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package agin, bu from the command line. We use the following instruction:
+In this last section, we want to plot the temporal evolution of the memory usage, for each chunk size. In order to that, we use the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package again, but from the command line:
 
 ```bash
 mprof run read_sql_stream_01.py
