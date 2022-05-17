@@ -220,7 +220,7 @@ _ = ax.set(
 </p>
 
 
-We can observe that in our case, an optimal chunk size is 10000 with an elapsed time of 21.460 s and a max memory usage of 650.098 MB.
+We can observe that in our case, an optimal chunk size is 10000 with an elapsed time of 21.460 s and a max memory usage of 145.227 MB.
 
 ## Time based memory usage
 
