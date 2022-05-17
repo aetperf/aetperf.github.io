@@ -16,7 +16,7 @@ for df in pd.read_sql(sql_query, connection, chunksize=chunksize):
     do something
 ```
 
-- A [Server Side Cursors](https://docs.sqlalchemy.org/en/14/core/connections.html#engine-stream-results):
+- A [server-side cursor](https://docs.sqlalchemy.org/en/14/core/connections.html#engine-stream-results):
 
 ```python
 connection = engine.connect().execution_options(
