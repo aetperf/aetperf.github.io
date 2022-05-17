@@ -170,15 +170,23 @@ _ = ax.set(
 
 ## Maximum memory usage
 
-We compute the maximum memory usage using the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package.
+We compute the maximum memory usage using the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package. 
 
+**Warning:** we noticed that the results were different when measuring the maximum memory within the JupyterLab notebook or within the console, the former being significantly larger. So we used a Python script to call the memory profiler for each chunk size, in the following way:
 
 ```python
-max_mem_usage = []
-for i, chunksize in enumerate(chunksizes):
-    f = lambda: export_csv(chunksize=chunksize)
-    mem_usage = memory_usage(f)
-    max_mem_usage.append(max(mem_usage))
+mem_usage = memory_usage(export_csv)
+max_mem_usage = max(mem_usage)
+```
+Here are the resulting measures:
+
+```python
+max_mem_usage = [None] * 5
+max_mem_usage[0] = 114.28515625
+max_mem_usage[1] = 116.50390625
+max_mem_usage[2] = 145.2265625
+max_mem_usage[3] = 424.8359375
+max_mem_usage[4] = 2111.64453125
 ```
 
 
@@ -187,12 +195,11 @@ for chunksize, max_mem in zip(chunksizes, max_mem_usage):
     print(f"chunk size : {chunksize:8d} rows, max memory usage : {max_mem:8.3f} MB")
 ```
 
-    chunk size :      100 rows, max memory usage :  639.617 MB
-    chunk size :     1000 rows, max memory usage :  637.141 MB
-    chunk size :    10000 rows, max memory usage :  650.098 MB
-    chunk size :   100000 rows, max memory usage :  839.145 MB
-    chunk size :  1000000 rows, max memory usage : 2182.523 MB
-
+    chunk size :      100 rows, max memory usage :  114.285 MB
+    chunk size :     1000 rows, max memory usage :  116.504 MB
+    chunk size :    10000 rows, max memory usage :  145.227 MB
+    chunk size :   100000 rows, max memory usage :  424.836 MB
+    chunk size :  1000000 rows, max memory usage : 2111.645 MB
 
 
 ```python
