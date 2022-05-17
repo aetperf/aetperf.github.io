@@ -11,7 +11,7 @@ In this short Python notebook, we want to load a table from a relational databas
 
 - we do not want to load the full table in memory. Indeed, Pandas is usually allocating a lot more memory than the table data size. That may be a problem if the table is rather large. 
 
-- we want the process to be efficient, that is, not dramatically increase the running time when using chunks as compared to loading the full table in memory.
+- we want the process to be efficient, that is, not dramatically increase the running time when iterating over chunks as compared to loading the full table in memory.
 
 In order to do that we are going to make use of two different things:
 
@@ -30,7 +30,7 @@ connection = engine.connect().execution_options(
     max_row_buffer=chunksize)
 ```
 
-Note that the result of the `stream_results` and `max_row_buffer` options might differ a lot depending on the database, DBAPI/database adapter. Here we load a table from PostgreSQL with the [psycopg2](https://pypi.org/project/psycopg2/) adapter. It seems that the server side cursor is the default with psycopg2 when using `chunksize` in `pd.read_sql()`.
+Note that the result of the `stream_results` and `max_row_buffer` arguments might differ a lot depending on the database, DBAPI/database adapter. Here we load a table from PostgreSQL with the [psycopg2](https://pypi.org/project/psycopg2/) adapter. It seems that the server side cursor is the default with psycopg2 when using `chunksize` in `pd.read_sql()`.
 
 In the following, we are going to study how the *elapsed time* and *max memory usage* vary with respect to `chunksize`.
 
@@ -178,12 +178,20 @@ _ = ax.set(
 
 We compute the maximum memory usage using the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package. 
 
-**Warning:** we noticed that the results were different when measuring the maximum memory within the JupyterLab notebook or within the console, the former being significantly larger. So we used a Python script to call the memory profiler for each chunk size, in the following way:
+**Warning:** we noticed that the results were different when measuring the maximum memory within the JupyterLab notebook or within the console, the former being significantly larger. So we use a Python script `export_csv_script.py` to call the memory profiler for each chunk size, in the following way:
 
 ```python
 mem_usage = memory_usage(export_csv)
 max_mem_usage = max(mem_usage)
+print(f"max mem usage : {max_mem_usage}")
 ```
+
+And call the script with the Python interpreter:
+
+```bash
+python export_csv_script.py
+```
+
 Here are the resulting measures:
 
 ```python
