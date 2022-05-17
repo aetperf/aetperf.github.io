@@ -227,10 +227,10 @@ We can observe that in our case, an optimal chunk size is 10000 with an elapsed 
 In this last section, we want to plot the temporal evolution of the memory usage, for each chunk size. In order to that, we use the [`memory_profiler`](https://github.com/pythonprofilers/memory_profiler) package again, but from the command line:
 
 ```bash
-mprof run read_sql_stream_01.py
+mprof run export_csv_script.py
 ```
 
-`read_sql_stream_01.py` is a simple Python script calling the above `export_csv` function. Calling `mprof run` generates a `mprofile_*.dat` text file, that we open with Pandas `read_csv()`.
+`export_csv_script.py` is a simple Python script calling the above `export_csv` function. Calling `mprof run` generates a `mprofile_*.dat` text file, that we open with Pandas `read_csv()`.
 
 
 ```python
