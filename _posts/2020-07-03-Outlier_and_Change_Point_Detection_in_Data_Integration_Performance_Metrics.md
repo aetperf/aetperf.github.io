@@ -69,7 +69,6 @@ df["start"] = df.DT_DEB_DONNEES
 df.set_index("start", inplace=True, drop=True)
 
 # pivot, resample the time series
-CD_JOBS = []
 traces = pd.DataFrame()
 for CD_JOB in sorted(df.CD_JOB.unique()):
     s = df.loc[df.CD_JOB == CD_JOB].ET.copy(deep=True)
