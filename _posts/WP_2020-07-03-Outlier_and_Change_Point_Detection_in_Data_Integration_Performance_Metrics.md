@@ -79,7 +79,6 @@ cols = sorted(nan_count[nan_count < (1.0 - MIN_LENGTH_RATIO) * length].index.val
 traces = traces[cols]
 
 # rename the columns, due to confidentiality reasons
-traces.columns = sorted(traces.columns)
 traces.columns = ['c_' + str(i).zfill(2) for i in range(len(traces.columns))]
 ```
 
