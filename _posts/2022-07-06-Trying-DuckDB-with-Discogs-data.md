@@ -17,7 +17,9 @@ tags:
   <img width="400" src="https://github.com/duckdb/duckdb/blob/master/logo/DuckDB_Logo.png?raw=true" alt="DuckDB_Logo">
 </p>
 
-This notebook is a small example of using DuckDB with the Python API. What is [DuckDB](https://github.com/duckdb/duckdb)? 
+This notebook is a small example of using DuckDB with the Python API. 
+
+* What is [DuckDB](https://github.com/duckdb/duckdb)? 
 
 > DuckDB is an in-process SQL OLAP Database Management System
 
@@ -31,11 +33,13 @@ DuckDB is released under a MIT License. How do you install DuckDB with the Pyhto
 pip install duckdb
 ```
 
+Voilà!
+
 <p align="center">
   <img width="400" src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/Discogs_logo.svg/2560px-Discogs_logo.svg.png" alt="Discogs_Logo">
 </p>
 
-What is [Discogs](https://www.discogs.com/)? Here is a description from [wikipedia](https://en.wikipedia.org/wiki/Discogs):
+* What is [Discogs](https://www.discogs.com/)? Here is a description from [wikipedia](https://en.wikipedia.org/wiki/Discogs):
 
 > Discogs is a website and crowdsourced database of information about audio recordings, including commercial releases, promotional releases, and bootleg or off-label releases.
 
@@ -92,12 +96,6 @@ We also import some Jupyter extensions to create some SQL cells later:
 %config SqlMagic.autopandas = True
 %config SqlMagic.feedback = False
 %config SqlMagic.displaycon = False
-```
-
-
-```python
-plt.style.use("fivethirtyeight")
-plt.rcParams["font.size"] = "20"
 ```
 
 ## Import
