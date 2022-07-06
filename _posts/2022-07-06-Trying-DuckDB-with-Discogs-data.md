@@ -969,6 +969,9 @@ _ = ax.set(title="Query execution time", xlabel="DB", ylabel="Elapsed time (s)")
   <img width="500" src="/img/2022-07-06_01/output_61_0.png" alt="Query execution time">
 </p>
 
+So the same query on the same computer is executed about 10 times faster with DuckDB than with PostgreSQL (both DB with default settings). 
+
+To conclude this post, let's plot the result of the previous query with Pandas/Matplotlib.
 
 ### Evolution of the 10 more popular genres ever
 
