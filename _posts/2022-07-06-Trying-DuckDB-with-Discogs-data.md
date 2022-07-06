@@ -39,7 +39,7 @@ What is [Discogs](https://www.discogs.com/)? Here is a description from [wikiped
 
 > Discogs is a website and crowdsourced database of information about audio recordings, including commercial releases, promotional releases, and bootleg or off-label releases.
 
-Monthly dumps of Discogs data (Release, Artist, Label, and Master Release data) can be downloaded from their [website](http://data.discogs.com/?prefix=data/2022/), as compressed XML files. 
+Monthly dumps of Discogs data (Release, Artist, Label, and Master Release data) can be downloaded from their [website](http://data.discogs.com/?prefix=data/2022/), as compressed XML files. We used the nifty tool [discogs-xml2db](https://github.com/philipmat/discogs-xml2db) to convert the XML files into CSV files, that we are going to load into DuckDB. We also used it to load the same data into PostgreSQL in order to later compare the execution time measures of a query.
 
 In the following notebook, we are going to create a database with the following selection of tables (over 25+ available tables):
 
@@ -77,21 +77,6 @@ from sqlalchemy import create_engine
 
 Package versions:
 
-
-```python
-import sys
-
-print(f"{'Python':15s} : {sys.version.split('|')[0]}")
-print(f"{'duckdb':15s} : {duckdb.__version__}")
-import pyarrow
-
-print(f"{'pyarrow':15s} : {pyarrow.__version__}")
-import jupyterlab
-
-print(f"{'JupyterLab':15s} : {jupyterlab.__version__}")
-print(f"{'Pandas':15s} : {pd.__version__}")
-```
-
     Python          : 3.9.13 
     duckdb          : 0.4.0
     pyarrow         : 8.0.0
@@ -117,11 +102,9 @@ plt.rcParams["font.size"] = "20"
 
 ## Import
 
-In order to batch import the data into DuckDB, we need some CSV or Parquet files. We used the nifty tool [discogs-xml2db](https://github.com/philipmat/discogs-xml2db) to convert the XML files into CSV files, that we are going to load into DuckDB. We also used it to load the same data into PostgreSQL in order to later compare the execution time measures of a query.
-
 ### CSV files
 
-So we have a 6 CSV files, each one corresponding to a table from the Discogs database:
+In order to batch import the data into DuckDB, we need some CSV or Parquet files. Here we chose 6 CSV files, each one corresponding to a table from the Discogs database:
 
 
 ```python
