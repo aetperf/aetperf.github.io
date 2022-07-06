@@ -97,8 +97,6 @@ We also import some Jupyter extensions to create some SQL cells later:
 
 ## Data Loading
 
-### CSV files
-
 In order to batch import the data into DuckDB, we need some CSV or Parquet files. Here we chose 6 CSV files, each one corresponding to a table from the Discogs database:
 
 
@@ -150,7 +148,7 @@ Two files are actually created by DuckDB:
 - DiscogsDB.wal : 319 MB
 The `.wal` file is not necessary when we disconnect from the database, as it is a [checkpoint file](https://github.com/duckdb/duckdb/issues/301#issuecomment-1011335087). It is alctually removed when closing the connection, and not created when connecting to the database in `read_only` mode.
 
-Subsequent only connections take a fraction of a second.
+Subsequent connections only take a fraction of a second.
 
 
 ```python
@@ -300,7 +298,7 @@ df
 
 
 
-We could also create a table from a dataframe, if not in `read_only` mode or query the dataframe in SQL:
+We could also create a table from a dataframe, if not in `read_only` mode, or query the dataframe in SQL:
 
 
 ```python
@@ -403,7 +401,7 @@ Then we can create SQL cells:
 
 
 
-What if we want a SQL cell to return a Pandas dataframe? We can assign the result of query to a dataframe using the use `<<` operator. 
+What if we want a SQL cell to return a Pandas dataframe? We can assign the result of query to a dataframe using the `<<` operator. 
 
 
 ```python
@@ -442,10 +440,7 @@ df
       <th>release_id</th>
       <th>artist_id</th>
       <th>artist_name</th>
-      <th>extra</th>
-      <th>anv</th>
-      <th>position</th>
-      <th>join_string</th>
+      <th>...</th>
       <th>role</th>
       <th>tracks</th>
     </tr>
@@ -456,10 +451,7 @@ df
       <td>1</td>
       <td>1</td>
       <td>The Persuader</td>
-      <td>0</td>
-      <td>None</td>
-      <td>1</td>
-      <td>None</td>
+      <td>...</td>
       <td>None</td>
       <td>None</td>
     </tr>
@@ -468,10 +460,7 @@ df
       <td>1</td>
       <td>507025</td>
       <td>George Cutmaster General</td>
-      <td>1</td>
-      <td>G Phrupmastergeneral</td>
-      <td>1</td>
-      <td>None</td>
+      <td>...</td>
       <td>Lacquer Cut By</td>
       <td>None</td>
     </tr>
@@ -480,10 +469,7 @@ df
       <td>1</td>
       <td>239</td>
       <td>Jesper Dahlbäck</td>
-      <td>1</td>
-      <td>None</td>
-      <td>2</td>
-      <td>None</td>
+      <td>...</td>
       <td>Written-By [All Tracks By]</td>
       <td>None</td>
     </tr>
