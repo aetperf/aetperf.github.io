@@ -2,8 +2,8 @@
 title: Trying DuckDB with Discogs data
 layout: post
 comments: true
-authors: [François Pacull, Romain Ferraton]
-tags: [Python, DuckDB, PostgreSQL, SQL, Pandas, Arrow]
+authors: François Pacull, Romain Ferraton
+tags: Python, DuckDB, PostgreSQL, SQL, Pandas, Arrow
 ---
 
 
