@@ -68,12 +68,10 @@ Let's start with the Python imports.
 import glob
 import os
 import urllib
-import warnings
 from time import perf_counter
 
 import duckdb
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 from sqlalchemy import create_engine
