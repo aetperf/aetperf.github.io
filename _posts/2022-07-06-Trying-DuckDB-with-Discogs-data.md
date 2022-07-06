@@ -960,7 +960,7 @@ df = pd.DataFrame(
     data={"DuckDB": [elapsed_time_s_1], "PostGreSQL": [elapsed_time_s_2]},
     index=[""],
 )
-ax = df.plot.bar(figsize=(8, 8))
+ax = df.plot.bar(figsize=(6, 6))
 _ = ax.set(title="Query execution time", xlabel="DB", ylabel="Elapsed time (s)")
 ```
 
