@@ -359,7 +359,7 @@ We can also create some SQL cells directly using the DuckDB Python client. First
 %sql duckdb:///{db_path}
 ```
 
-Then we can create SQL cells:
+Then we can create SQL cells starting with the `%sql` magic command:
 
 
 ```python
@@ -736,7 +736,7 @@ There are many many more useful features available with DuckDB and we refer to t
 
 ## A More complex query
 
-Now we are going to create a little more complex query. We want to compute the number of releases per year and per music genre. So we only need to use 2 distinct tables: `release` and `release_genre`. One of the issues is that the `year_released` column from the contains a string entered by the Discogs contributors, that may vary in its form, but usually looks like `yyyy-mm-dd`. In order to get the year released, we are going to take the first 4 characters from the `year_released` field and assume it's a numeric year. 
+Now we are going to create a little more complex query. We want to compute the number of releases per year and per music genre. So we only need to use 2 distinct tables: `release` and `release_genre`. One of the issues is that the `year_released` column from the contains a string entered by the Discogs contributors, that may vary in its form, but usually looks like `yyyy-mm-dd`. In order to get the release year, we are going to take the first 4 characters from the `year_released` field and assume it's a numeric year. 
 
 
 ```python
@@ -852,7 +852,7 @@ PostgreSQL client and server are installed on the same computer as DuckDB.
 
 ```python
 PG_USERNAME = "discogs_user"
-PG_PASSWORD = "discogs_pwd"
+PG_PASSWORD = "****"
 PG_SERVER = "localhost"
 PG_PORT = 5432
 PG_DATABASE = "discogsdb"
@@ -1023,7 +1023,7 @@ df1.tail(3)
       <th></th>
       <th></th>
       <th></th>
-      <th>...</th>
+      <th></th>
       <th></th>
       <th></th>
     </tr>
