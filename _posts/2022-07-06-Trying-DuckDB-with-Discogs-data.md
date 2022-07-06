@@ -508,10 +508,7 @@ df
       <th>release_id</th>
       <th>artist_id</th>
       <th>artist_name</th>
-      <th>extra</th>
-      <th>anv</th>
-      <th>position</th>
-      <th>join_string</th>
+      <th>...</th>
       <th>role</th>
       <th>tracks</th>
     </tr>
@@ -522,10 +519,7 @@ df
       <td>1</td>
       <td>1</td>
       <td>The Persuader</td>
-      <td>0</td>
-      <td>None</td>
-      <td>1</td>
-      <td>None</td>
+      <td>...</td>
       <td>None</td>
       <td>None</td>
     </tr>
@@ -1020,11 +1014,7 @@ df1.tail(3)
       <th>Electronic</th>
       <th>Rock</th>
       <th>Pop</th>
-      <th>Funk / Soul</th>
-      <th>Folk, World, &amp; Country</th>
-      <th>Hip Hop</th>
-      <th>Jazz</th>
-      <th>Classical</th>
+      <th>...</th>
       <th>Latin</th>
       <th>Reggae</th>
     </tr>
@@ -1033,11 +1023,7 @@ df1.tail(3)
       <th></th>
       <th></th>
       <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
+      <th>...</th>
       <th></th>
       <th></th>
     </tr>
@@ -1048,11 +1034,7 @@ df1.tail(3)
       <td>156421</td>
       <td>124208</td>
       <td>41438</td>
-      <td>11663</td>
-      <td>21238</td>
-      <td>25110</td>
-      <td>16245</td>
-      <td>9531</td>
+      <td>...</td>
       <td>4106</td>
       <td>4321</td>
     </tr>
@@ -1061,11 +1043,7 @@ df1.tail(3)
       <td>152393</td>
       <td>118760</td>
       <td>39830</td>
-      <td>11209</td>
-      <td>20116</td>
-      <td>24608</td>
-      <td>15267</td>
-      <td>8441</td>
+      <td>...</td>
       <td>4039</td>
       <td>4189</td>
     </tr>
@@ -1074,11 +1052,7 @@ df1.tail(3)
       <td>162166</td>
       <td>115612</td>
       <td>37814</td>
-      <td>10551</td>
-      <td>18998</td>
-      <td>26041</td>
-      <td>15038</td>
-      <td>6768</td>
+      <td>...</td>
       <td>3280</td>
       <td>3813</td>
     </tr>
