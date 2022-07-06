@@ -71,7 +71,6 @@ import urllib
 from time import perf_counter
 
 import duckdb
-import matplotlib.pyplot as plt
 import pandas as pd
 import pyarrow.parquet as pq
 from sqlalchemy import create_engine
@@ -96,7 +95,7 @@ We also import some Jupyter extensions to create some SQL cells later:
 %config SqlMagic.displaycon = False
 ```
 
-## Import
+## Data Loading
 
 ### CSV files
 
