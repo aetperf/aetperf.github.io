@@ -1081,7 +1081,7 @@ _ = ax.set(
 </p>
 
 
-Kind of sad to see Jazz and Reggae so low.
+Kind of sad to see Jazz so low.
 
 ### Close the DuckDB connection
 
