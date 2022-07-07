@@ -1085,7 +1085,6 @@ Kind of sad to see Jazz so low.
 
 ### Close the DuckDB connection
 
-
 ```python
 %%time
 conn.close()
