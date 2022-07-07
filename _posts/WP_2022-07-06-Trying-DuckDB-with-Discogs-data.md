@@ -1,4 +1,3 @@
-# Trying DuckDB with Discogs data
 
 <p align="center">
   <img width="400" src="https://github.com/duckdb/duckdb/blob/master/logo/DuckDB_Logo.png?raw=true" alt="DuckDB_Logo">

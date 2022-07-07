@@ -1,6 +1,4 @@
 
-# Reading a SQL table by chunks with Pandas
-
 In this short Python notebook, we want to load a table from a relational database and write it into a CSV file. In order to that, we temporarily store the data into a Pandas dataframe. Pandas is used to load the data with `read_sql()` and later to write the CSV file with `to_csv()`. However, we have two constraints here:
 
 - we do not want to load the full table in memory. Indeed, Pandas is usually allocating a lot more memory than the table data size. That may be a problem if the table is rather large. 
