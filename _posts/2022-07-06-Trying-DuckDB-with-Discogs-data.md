@@ -97,7 +97,7 @@ We also import some Jupyter extensions to create some SQL cells later:
 
 ## Data Loading
 
-In order to batch import the data into DuckDB, we need some CSV or Parquet files. Here we chose 6 CSV files, each one corresponding to a table from the Discogs database:
+In order to batch import the data into DuckDB, we need some CSV or Parquet files. Here we 6 CSV files, corresponding to the `SELECTED_TABLE_NAMES` from the Discogs database:
 
 
 ```python
@@ -975,7 +975,7 @@ To conclude this post, let's plot the result of the previous query with Pandas/M
 
 ### Evolution of the 10 more popular genres ever
 
-The first job is to convert the year to `int` and filter out entries such as `197`, `197?`, `70's`... Then we pivot the table in order to have each style in a column. We select years between 1920 and 2020 (data might be missing for the recent releases). 
+The first job is to convert the year to `int` and filter out entries such as `197`, `197?`, `70's`... Then we pivot the table in order to have each genre in a distinct column. We select years between 1940 and 2020 (data might be missing for the recent releases, in 2021 and 2022). 
 
 
 ```python
@@ -1081,7 +1081,7 @@ _ = ax.set(
 </p>
 
 
-Kind of sad to see Hip Hop, Jazz and Reggae so low.
+Kind of sad to see Jazz and Reggae so low.
 
 ### Close the DuckDB connection
 
