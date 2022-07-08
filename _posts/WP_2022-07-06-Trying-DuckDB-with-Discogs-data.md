@@ -13,7 +13,7 @@ It is a relational DBMS that supports SQL. OLAP stands for *Online analytical pr
 
 
 
-DuckDB is released under a MIT License. How do you install DuckDB with the Python API? Well it is as simple as:
+DuckDB is released under a MIT License. How can you install DuckDB with the Python API? Well it is as simple as:
 
 ```bash
 pip install duckdb
