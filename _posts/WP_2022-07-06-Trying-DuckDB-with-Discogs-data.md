@@ -13,7 +13,7 @@ It is a relational DBMS that supports SQL. OLAP stands for *Online analytical pr
 
 
 
-DuckDB is released under a MIT License. How do you install DuckDB with the Pyhton API? Well it is as simple as:
+DuckDB is released under a MIT License. How do you install DuckDB with the Python API? Well it is as simple as:
 
 ```bash
 pip install duckdb
@@ -29,7 +29,7 @@ Voilà!
 
 > Discogs is a website and crowdsourced database of information about audio recordings, including commercial releases, promotional releases, and bootleg or off-label releases.
 
-Monthly dumps of Discogs data (Release, Artist, Label, and Master Release data) can be downloaded from their [website](http://data.discogs.com/?prefix=data/2022/), as compressed XML files. We used the nifty tool [discogs-xml2db](https://github.com/philipmat/discogs-xml2db) to convert the XML files into CSV files, that we are going to load into DuckDB. We also used it to load the same data into PostgreSQL in order to later compare the execution time measures of a query.
+Monthly dumps of Discogs data (Release, Artist, Label, and Master Release data) can be downloaded from their [website](http://data.discogs.com/?prefix=data/2022/), as compressed XML files. We used the nifty tool [discogs-xml2db](https://github.com/philipmat/discogs-xml2db) to convert the XML files into CSV files, that we are going to load into DuckDB. We also used it to load the same data into PostgreSQL in order to later measure and compare the execution time of a query.
 
 In the following notebook, we are going to create a database with the following selection of tables (over 25+ available tables):
 
@@ -71,7 +71,7 @@ Package versions:
     Pandas          : 1.4.3
 
 
-We also import some Jupyter extensions to create some SQL cells later:
+We also import some Jupyter extensions, so that we can create some SQL cells later:
 
 
 ```python
@@ -83,7 +83,7 @@ We also import some Jupyter extensions to create some SQL cells later:
 
 ## Data Loading
 
-In order to batch import the data into DuckDB, we need some CSV or Parquet files. Here we 6 CSV files, corresponding to the `SELECTED_TABLE_NAMES` from the Discogs database:
+In order to batch import the data into DuckDB, we need some CSV or Parquet files. Here we have 6 CSV files, corresponding to the tables `SELECTED_TABLE_NAMES` from the Discogs database:
 
 
 ```python
@@ -132,7 +132,7 @@ If the database file does not already exists, it is created. The data is then lo
 Two files are actually created by DuckDB:
 - DiscogsDB : 6.5GB
 - DiscogsDB.wal : 319 MB
-The `.wal` file is not necessary when we disconnect from the database, as it is a [checkpoint file](https://github.com/duckdb/duckdb/issues/301#issuecomment-1011335087). It is alctually removed when closing the connection, and not created when connecting to the database in `read_only` mode.
+The `.wal` file a [checkpoint file](https://github.com/duckdb/duckdb/issues/301#issuecomment-1011335087). It is actually removed when closing the connection, and not created when connecting to the database in `read_only` mode.
 
 Subsequent connections only take a fraction of a second.
 
@@ -150,7 +150,7 @@ db_exists
 
 
 
-From the [documentation](https://duckdb.org/docs/api/python#startup--shutdown):
+In the present case, the database has already been created, so we just connect to it in read-only mode. From the [documentation](https://duckdb.org/docs/api/python#startup--shutdown):
 
 > If the database file does not exist, it will be created (the file extension may be `.db`, `.duckdb`, or anything else). The special value `:memory:` (the default) can be used to create an in-memory database. Note that for an in-memory database no data is persisted to disk (i.e. all data is lost when you exit the Python process). If you would like to connect to an existing database in read-only mode, you can set the `read_only` flag to `True`. Read-only mode is required if multiple Python processes want to access the same database file at the same time.
 
@@ -844,7 +844,7 @@ To conclude this post, let's plot the result of the previous query with Pandas/M
 
 ### Evolution of the 10 more popular genres ever
 
-The first job is to convert the year to `int` and filter out entries such as `197`, `197?`, `70's`... Then we pivot the table in order to have each genre in a distinct column. We select years between 1940 and 2020 (data might be missing for the recent releases, in 2021 and 2022). 
+The first job is to filter out ambiguous entries such as `197`, `197?`, `70's` and convert the `year` variable to `int` ...  Then we pivot the table in order to have each genre in a distinct column. We select years between 1940 and 2020 (data might be missing for the recent releases, in 2021 and 2022, because it has not been entered entered into the DB yet). 
 
 
 ```python
