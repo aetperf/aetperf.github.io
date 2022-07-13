@@ -1,17 +1,3 @@
----
-title: Trying DuckDB with Discogs data
-layout: post
-comments: true
-author: François Pacull & Romain Ferraton
-tags: 
-- Python
-- DuckDB
-- PostgreSQL
-- SQL
-- Pandas
-- Arrow
----
-
 
 <p align="center">
   <img width="400" src="https://github.com/duckdb/duckdb/blob/master/logo/DuckDB_Logo.png?raw=true" alt="DuckDB_Logo">
@@ -227,19 +213,6 @@ df
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -370,19 +343,6 @@ Then we can create SQL cells starting with the `%sql` magic command:
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -420,19 +380,6 @@ df
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -488,19 +435,6 @@ df
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -551,19 +485,6 @@ csv_file_path = "./artist.csv"
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -598,19 +519,6 @@ parquet_file_path = "./artist.parquet"
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -657,19 +565,6 @@ The Parquet file can also be queried directly:
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -774,19 +669,6 @@ df1.head()
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -883,19 +765,6 @@ df2.head()
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -966,7 +835,7 @@ _ = ax.set(title="Query execution time", xlabel="DB", ylabel="Elapsed time (s)")
 
 
 <p align="center">
-  <img width="500" src="/img/2022-07-06_01/output_61_0.png" alt="Query execution time">
+  <img width="500" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-06_01/output_61_0.png" alt="Query execution time">
 </p>
 
 So the same query on the same computer is executed about 10 times faster with DuckDB than with PostgreSQL (both DB with default settings). 
@@ -975,7 +844,7 @@ To conclude this post, let's plot the result of the previous query with Pandas/M
 
 ### Evolution of the 10 more popular genres ever
 
-The first job is to filter out ambiguous entries such as `197`, `197?`, `70's` and convert the `year` variable to `int` ... Then we pivot the table in order to have each genre in a distinct column. We select years between 1940 and 2020 (data might be missing for the recent releases, in 2021 and 2022, because it has not been entered into the DB yet). 
+The first job is to filter out ambiguous entries such as `197`, `197?`, `70's` and convert the `year` variable to `int` ...  Then we pivot the table in order to have each genre in a distinct column. We select years between 1940 and 2020 (data might be missing for the recent releases, in 2021 and 2022, because it has not been entered entered into the DB yet). 
 
 
 ```python
@@ -997,19 +866,6 @@ df1.tail(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -1077,7 +933,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="800" src="/img/2022-07-06_01/output_64_0.png" alt="Number of annual releases by genre">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-06_01/output_64_0.png" alt="Number of annual releases by genre">
 </p>
 
 
@@ -1092,26 +948,3 @@ conn.close()
 
     CPU times: user 26.3 ms, sys: 4.55 ms, total: 30.8 ms
     Wall time: 29.1 ms
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
