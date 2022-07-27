@@ -973,7 +973,7 @@ So the same query on the same computer is executed about 10 times faster with Du
 
 To conclude this post, let's plot the result of the previous query with Pandas/Matplotlib.
 
-### Evolution of the 10 more popular genres ever
+### Evolution of the 10 most popular genres ever
 
 The first job is to filter out ambiguous entries such as `197`, `197?`, `70's` and convert the `year` variable to `int` ... Then we pivot the table in order to have each genre in a distinct column. We select years between 1940 and 2020 (data might be missing for the recent releases, in 2021 and 2022, because it has not been entered into the DB yet). 
 
