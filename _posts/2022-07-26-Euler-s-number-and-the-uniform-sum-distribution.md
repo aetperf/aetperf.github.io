@@ -115,11 +115,11 @@ The *Irwin-Hall distribution* is the continuous probability distribution of the 
 
 $$X_n = \sum_{k=1}^n U_k$$
 
-It is also called the *uniform sum distribution*. $X_n$ has a continuous distribution with support $[0, n]$ for $n \in \mathbb{N}^*$.
+It is also called the *uniform sum distribution*. $X_n$ has a continuous distribution with support $[0, n]$ for $n \in \mathbb{N}^+$.
 
 ### Cumulative ditribution function of Irwin-Wall distribution
 
-For $x \in \mathbb{R}_+$ and $n \in \mathbb{N}^*$, the Cumulative Distribution Function (CDF) of $X_n$ is the following one:
+For $x > 0$ and $n \in \mathbb{N}^+$, the Cumulative Distribution Function (CDF) of $X_n$ is the following one:
 
 $$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k {{n}\choose{k}} (x-k)^n $$
 
@@ -275,7 +275,7 @@ Now that we went over the CDF of the Irwin-Wall distribution, we can proceed to 
 
 ## Mathematical derivation of $m(x)$
 
-For $n \in \mathbb{N}^*$, we have:
+For $n \in \mathbb{N}^+$, we have:
 
 $$
 \begin{align*} 
@@ -302,9 +302,7 @@ P \left[ N(x) = n \right] &= F_{X_{n-1}}(x) - F_{X_n}(x) \\
 $$
 
 Also, we can observe that $P \left[ N(x) = n \right] = 0$ if $ n < \lceil x \rceil$. This is because: 
-$\forall n \in \mathbb{N}^*, \; \sum_{k=1}^n U_k \leq n \; \Rightarrow \; N(x) \geq \lceil x \rceil$
-
-
+$\forall n \in \mathbb{N}^+, \; \sum_{k=1}^n U_k \leq n \; \Rightarrow \; N(x) \geq \lceil x \rceil$
 
 We can know derive a formulae for $m(x)$:
 
