@@ -290,3 +290,16 @@ P \left[ N(x) = n \right] &= P \left[ (X_{n-1} \leq x) \; \& \; (X_n > x) \right
 &= P\left[ X_{n-1} \leq x \right] -  P\left[ X_n \leq x) \right]
 \end{align*}
 $$
+
+A derivation for $x=1$ can be also found in the blog post [[4]](https://www.rdatagen.net/post/a-fun-example-to-explore-probability/) by Keith Goldfeld.
+
+Because we know the CDF for $X_n$, and thus for $X_{n-1}$, we can write:
+
+$$
+\begin{align*} 
+P \left[ N(x) = n \right] &= F_{X_{n-1}}(x) - F_{X_n}(x) \\
+&= \frac{1}{(n-1)!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k {n-1}\choose{k} (x-k)^{n-1} \\
+&- \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k {n}\choose{k} (x-k)^{n} \\
+&= \frac{1}{(n-1)!} \sum_{k=0}^{\lfloor x \rfloor} \frac{(-1)^k (x-k)^{n-1}}{n} {n}\choose{k} (n-x)
+\end{align*}
+$$
