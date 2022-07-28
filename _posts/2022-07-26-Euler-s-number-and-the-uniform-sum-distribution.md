@@ -97,7 +97,10 @@ CMAP = "plasma"  # color map
 
 ## Mathematical formulation
 
-First of all, we consider some independent and identically distributed (i.i.d) random variables $ \left\\{ U_k \right\\}_{k \geq 1}$, each having standard uniform distribution  $\mathbf{U}(0,1)$. For $x > 0$, we define $N(x)$ as the following: 
+$\{k \geq 1\}$
+
+First of all, we consider some independent and identically distributed (i.i.d) random variables $ \left\\{ U_k \right\\}$, each having standard uniform distribution  $\mathbf{U}(0,1)$. For $x > 0$, we define $N(x)$ as the following: 
+
 $$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \\; s.t. \\; \sum_{k=1}^n U_k > x \right\\}$$
 
 We are actually interested in the expected value of $N$:
@@ -112,7 +115,7 @@ First of all, let's look at the distribution of $\sum_{k=1}^n U_k > x$, which is
 
 ## The Irwin-Hall distribution
 
-The *Irwin-Hall distribution* is the continuous probability distribution of the sum of $n$ i.i.d random variables, each having standard uniform distribution  $\mathbf{U}(0,1)$:
+The *Irwin-Hall distribution* is the continuous probability distribution of the sum of $n$ i.i.d random variables, each having standard uniform distribution $\mathbf{U}(0,1)$:
 
 $$X_n = \sum_{k=1}^n U_k$$
 
