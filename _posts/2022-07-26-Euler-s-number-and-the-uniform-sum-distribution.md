@@ -491,3 +491,172 @@ _ = ax.legend()
 <p align="center">
   <img width="800" src="/img/2022-07-28_01/output_33_0.png" alt="left part of m(x)">
 </p>
+
+
+
+## Computation of $m(x)$ with a Numba experiment
+
+To finish this post, let's come back to the first piece of code where we performed a random experiment to approximate $m(1)$. But this time we are going to do it more efficiently by:
+- use [Numba](https://numba.pydata.org/) to make the code faster
+- use a parallel loop
+- use a different random seed in each chunk of computed values
+
+Note that it is OK to use `np.random.rand()` in some multi-threaded Numba code, as we can read in their [documentation](https://numba.pydata.org/numba-doc/dev/reference/numpysupported.html#random):
+
+> Since version 0.28.0, the generator is thread-safe and fork-safe. Each thread and each process will produce independent streams of random numbers.
+
+We are using Numba version 0.55.2.
+
+
+```python
+@njit(parallel=True)
+def compute_m_with_numba(
+    n: int = 1_000, x: float = 1.0, rs_init: int = 124, chunk_size: int = 100_000
+):
+    """Empirical evaluation of m(x) with Numba.
+
+    Args:
+        n (float): number of evaluations.
+        x (float): input value of m.
+        rs_init (int): initial random seed.
+        chunk_size (int): number of evaluations perfomed with same random seed.
+
+    Returns:
+        float: the computed value for m(x).
+    """
+    # random seed
+    rs = rs_init
+
+    # number of chunks
+    num_chunks = n // chunk_size + 1
+    if n % chunk_size == 0:
+        num_chunks -= 1
+
+    n_min_tot = 0
+    count_tot = 0
+    r = n
+    while r > 0:
+        np.random.seed(rs)
+
+        if r < chunk_size:
+            n_loc = r
+        else:
+            n_loc = chunk_size
+
+        for i in prange(n_loc):
+            s = 0.0  # sum
+            count = 0  # number of added uniform random variables
+            while s <= x:
+                s += np.random.rand()
+                count += 1
+            n_min_tot += count
+        count_tot += n_loc
+
+        r -= n_loc
+        rs += 1  # change the random seed
+
+    return n_min_tot / count_tot
+
+
+n = 1_000
+m_1_exper = compute_m_with_numba(n, x=1.0)
+print(f"m(1) = {m_1_exper} approximated with {n} experiments (e={np.e})")
+```
+
+    m(1) = 2.77 approximated with 1000 experiments (e=2.718281828459045)
+
+
+Let's perform a billion random experiments.
+
+
+```python
+%%time
+n = 1_000_000_000
+m_1_exper = compute_m_with_numba(n, x=1.0)
+print(f"m(1) = {m_1_exper} approximated with {n} experiments (e={np.e})")
+```
+
+    m(1) = 2.71828312 approximated with 1000000000 experiments (e=2.718281828459045)
+    CPU times: user 1min 6s, sys: 18.3 ms, total: 1min 7s
+    Wall time: 8.61 s
+
+
+This takes about 7 to 8s on my 8 core CPU. 
+
+Now how does the absolute error evolve with the number of experiments?
+
+
+```python
+%%time
+start = 1
+end = 10
+ns = [int(n) for n in np.logspace(start, end, num=end - start + 1)]
+errors = []
+for n in ns:
+    errors.append(compute_m_with_numba(n) - np.e)
+errors_df = pd.DataFrame(data={"n": ns, "error": errors})
+errors_df["error_abs"] = errors_df["error"].abs()
+```
+
+    CPU times: user 15min 49s, sys: 837 ms, total: 15min 49s
+    Wall time: 2min 9s
+
+
+
+```python
+ax = errors_df.plot(
+    x="n",
+    y="error_abs",
+    loglog=True,
+    grid=True,
+    figsize=FS,
+    legend=False,
+    style="o-",
+    ms=15,
+    alpha=0.6,
+)
+_ = ax.set(
+    title="Absolute error vs number of evaluations",
+    xlabel="n",
+    ylabel="Absolute value of error",
+)
+```
+
+
+<p align="center">
+  <img width="800" src="/img/2022-07-28_01/output_40_0.png" alt="Absolute error vs number of evaluations">
+</p>
+
+
+
+## References
+
+[1] https://twitter.com/fermatslibrary/status/1388491536640487428?s=20  
+[2] Reichert, S. e is everywhere. Nat. Phys. 15, 982 (2019). https://doi.org/10.1038/s41567-019-0655-9  
+[3] Random Services https://www.randomservices.org/random/special/IrwinHall.html  
+[4] Keith Goldfeld - [Using the uniform sum distribution to introduce probability](https://www.rdatagen.net/post/a-fun-example-to-explore-probability/)  
+[5] Wolfram MathWorld - [Uniform Sum Distribution](https://mathworld.wolfram.com/UniformSumDistribution.html)  
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
