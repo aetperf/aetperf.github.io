@@ -119,6 +119,10 @@ $$n \in \mathbb{N}^* \; s.t. \; \sum_\{k=1\}^n U_k > x$$
 
 $$n \in \mathbb{N}^* \; s.t. \; \sum_\{k=1\}^n U_k > x$$
 
+$$n \in \mathbb{N}^* \; s.t. \; \sum\_\{k=1\}^n U_k > x$$
+
+$$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \; s.t. \; \sum\_\{k=1\}^n U_k > x \right\\}$$
+
 We are actually interested in the expected value of $N$:
 
 $$m(x) \equiv E \left[ N(x) \right]$$
