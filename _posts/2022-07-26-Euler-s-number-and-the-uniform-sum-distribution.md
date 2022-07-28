@@ -18,13 +18,13 @@ Last year I stumbled upon this tweet from *[@fermatslibrary](https://twitter.com
   <img width="300" src="/img/2022-07-28_01/fermatslibrarys_tweet.png" alt="tweet">
 </p>
 
-I find it a little bit intriguing for Euler's number $e$ to appear here! But actually, it is not uncommon to encounter $e$ in probability theory, as explained by Stefanie Reichert in the short article *e is everywhere* [2].
+I find it a little bit intriguing for Euler's number $e$ to appear here! But actually, it is not uncommon to encounter $e$ in probability theory, as explained by Stefanie Reichert in the short article *e is everywhere* [[2]](https://doi.org/10.1038/s41567-019-0655-9).
 
-Let's derive mathematically the above statement and perform random experiments in Python and [Numba](https://numba.pydata.org/) to speed up the computations.
+Let's derive mathematically the above statement and perform random experiments in Python (and [Numba](https://numba.pydata.org/), to speed up the computations).
 
 ## A First Python experiment
 
-We start with a very simple experiment to evaluate the average number of random numbers required to go over 1 when summing them:
+We start with a very simple experiment to evaluate the average number of random numbers between 0 and 1 required to go over 1 when summing them:
 
 
 ```python
@@ -121,10 +121,9 @@ For $x > 0$ and $n \in \mathbb{N}^* $, the Cumulative Distribution Function (CDF
 
 $$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k  { {n}\choose{k} } (x-k)^n $$
 
-See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a complete derivation of this formulae. The CDF corresponds to the probability that the variable, $X_n$ in our case, takes on a value less than or equal to $x$:
+See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a complete derivation of this formulae (not trivial). The CDF corresponds to the probability that the variable, $X_n$ in our case, takes on a value less than or equal to $x$:
 
 $$P \left[ X_n \leq x \right] = F_{X_n}(x)$$
-
 
 
 Let's write a function `cdf_th` to compute this CDF:
@@ -177,11 +176,11 @@ _ = ax.set_xlim(-1, 11)
     
 
 
-But we can also try to approach the analytical CDF with some observations, adding scalar drawn from the uniform distribution in the interval [0, 1).
+But we can also try to approach this analytical CDF with some observations, adding scalar drawn from the uniform distribution in the interval [0, 1).
 
 ### The Empirical CDF
 
-This part is inspired by a great blog post [[4]](https://www.rdatagen.net/post/a-fun-example-to-explore-probability/) by Keith Goldfeld, with some R code. We are going to use `np.random.rand()` to build an empirical CDF. 
+This part is inspired by a great blog post [[4]](https://www.rdatagen.net/post/a-fun-example-to-explore-probability/) by Keith Goldfeld, with some R code. We are going to use [`np.random.rand()`](https://numpy.org/doc/stable/reference/random/generated/numpy.random.rand.html) to build an empirical CDF. 
 
 
 ```python
@@ -333,11 +332,11 @@ $$ m(1) = e $$
   <img width="300" src="https://i.kym-cdn.com/photos/images/newsfeed/000/011/296/success_baby.jpg" alt="success">
 </p>
 
-With a little bit longer derivation, (this is why we are not going to display it here) we can show that: 
+With a little bit longer derivation (this is why we are not going to display it here), we can show that: 
 
 $$ m(2) = e^2 -e $$
 
-Wolfram MathWorld's web page about the *Uniform Sum Distribution* [[5]](https://mathworld.wolfram.com/UniformSumDistribution.html), also lists the next integer values for $x$:
+Wolfram MathWorld's web page about the *Uniform Sum Distribution* [[5]](https://mathworld.wolfram.com/UniformSumDistribution.html), also lists the values of $m(x)$ for the next integer values of $x$:
 
 $$
 \begin{align*}
@@ -375,7 +374,7 @@ def analytical_m(x, n_max=150):
     return m
 ```
 
-Comparing the approximated analytical values of $m(x)$ with the exact values from Wolfram MathWorld [[5]](https://mathworld.wolfram.com/UniformSumDistribution.html), we get:
+Comparing the approximated analytical values of $m(x)$ with the exact values, we get:
 
 
 ```python
@@ -441,7 +440,7 @@ _ = ax.legend()
     
 
 
-It kind of looks like it becomes a straight line for larger values of $x$. Also, it is also easy to show what's the limit of $m(x)$ when $x$ goes to 0:
+It kind of looks like it becomes a straight line for larger values of $x$. Also, it is easy to show what's the limit of $m(x)$ when $x$ goes to 0:
 
 $$
 \begin{align*}
@@ -492,9 +491,9 @@ _ = ax.legend()
 ## Computation of $m(x)$ with a Numba experiment
 
 To finish this post, let's come back to the first piece of code where we performed a random experiment to approximate $m(1)$. But this time we are going to do it more efficiently by:
-- use [Numba](https://numba.pydata.org/) to make the code faster
-- use a parallel loop
-- use a different random seed in each chunk of computed values
+- using [Numba](https://numba.pydata.org/) to make the code faster
+- using a parallel loop
+- using a different random seed in each chunk of computed values (although I am not very sure it improves the result)
 
 Note that it is OK to use `np.random.rand()` in some multi-threaded Numba code, as we can read in their [documentation](https://numba.pydata.org/numba-doc/dev/reference/numpysupported.html#random):
 
@@ -561,7 +560,7 @@ print(f"m(1) = {m_1_exper} approximated with {n} experiments (e={np.e})")
     m(1) = 2.77 approximated with 1000 experiments (e=2.718281828459045)
 
 
-Let's perform a billion random experiments.
+Let's perform a billion random evaluations.
 
 
 ```python
@@ -576,9 +575,9 @@ print(f"m(1) = {m_1_exper} approximated with {n} experiments (e={np.e})")
     Wall time: 8.61 s
 
 
-This takes about 7 to 8s on my 8 core CPU. 
+This takes about 8s on my 8 core CPU. 
 
-Now how does the absolute error evolve with the number of experiments?
+Now how does the absolute error evolve with the number of evaluations?
 
 
 ```python
