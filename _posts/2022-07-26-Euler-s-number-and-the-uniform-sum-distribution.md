@@ -330,7 +330,9 @@ m(1) &= \sum_{n=2}^{\infty} n (n-1) \sum_{k=0}^1 \frac{(-1)^k (1-k)^{n-1}}{k! (n
 $$
 
 
-So we finally got our result: $$m(1)=e$$
+So we finally got our result: 
+
+$$ m(1) = e $$
 
 <p align="center">
   <img width="300" src="https://i.kym-cdn.com/photos/images/newsfeed/000/011/296/success_baby.jpg" alt="success">
