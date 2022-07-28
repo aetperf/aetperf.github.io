@@ -338,7 +338,9 @@ $$ m(1) = e $$
   <img width="300" src="https://i.kym-cdn.com/photos/images/newsfeed/000/011/296/success_baby.jpg" alt="success">
 </p>
 
-With a little bit longer derivation, (this is why we are not going to display it here) we can show that: $$m(2) = e^2 -e$$
+With a little bit longer derivation, (this is why we are not going to display it here) we can show that: 
+
+$$ m(2) = e^2 -e $$
 
 Wolfram MathWorld's web page about the *Uniform Sum Distribution* [[5]](https://mathworld.wolfram.com/UniformSumDistribution.html), also lists the next integer values for $x$:
 
