@@ -328,3 +328,75 @@ m(1) &= \sum_{n=2}^{\infty} n (n-1) \sum_{k=0}^1 \frac{(-1)^k (1-k)^{n-1}}{k! (n
 &= \sum_{n=2}^{\infty} \frac{1}{(n-2)!} = \sum_{n=0}^{\infty} \frac{1}{n!} = e
 \end{align*}
 $$
+
+
+So we finally got our result: $$m(1)=e$$
+
+<p align="center">
+  <img width="300" src="https://i.kym-cdn.com/photos/images/newsfeed/000/011/296/success_baby.jpg" alt="success">
+</p>
+
+With a little bit longer derivation, (this is why we are not going to display it here) we can show that: $$m(2) = e^2 -e$$
+
+Wolfram MathWorld's web page about the *Uniform Sum Distribution* [[5]](https://mathworld.wolfram.com/UniformSumDistribution.html), also lists the next integer values for $x$:
+
+$$
+\begin{align*}
+m(3) &= \frac{1}{2} \left( 2 e^3 -4 e^2 + e\right) \\
+m(4) &= \frac{1}{6} \left( 6 e^4 -18 e^3 + 12 e^2 - e\right) \\
+m(5) &= \frac{1}{24} \left( 24 e^5 - 96 e^4 + 108 e^3 - 32 e^2 + e\right) \\
+\end{align*}
+$$
+
+We can write a function that approaches the $m(x)$ formulae. This is an *approximation* because we try to compute an infinite sum with a finite loop.
+
+
+```python
+def analytical_m(x, n_max=150):
+    """Approximation of the analytical formulae for m(x).
+
+    Args:
+        x (float): input value of m.
+        n_max (int): end of loop.
+
+    Returns:
+        float: the computed value for m(x).
+    """
+    x = float(x)
+    m = 0.0
+    for n in range(int(np.ceil(x)), n_max):
+        s = 0.0
+        for k in range(int(np.ceil(x))):
+            s += (
+                np.power(-1, k)
+                * np.power(x - k, n - 1)
+                / (np.math.factorial(k) * np.math.factorial(n - k))
+            )
+        m += n * (n - x) * s
+    return m
+```
+
+Comparing the approximated analytical values of $m(x)$ with the exact values from Wolfram MathWorld [[5]](https://mathworld.wolfram.com/UniformSumDistribution.html), we get:
+
+
+```python
+m = {}
+m[1] = np.e
+m[2] = np.exp(2) - np.e
+m[3] = 0.5 * (2 * np.exp(3) - 4 * np.exp(2) + np.e)
+m[4] = (6 * np.exp(4) - 18 * np.exp(3) + 12 * np.exp(2) - np.e) / 6.0
+m[5] = (
+    24 * np.exp(5) - 96 * np.exp(4) + 108 * np.exp(3) - 32 * np.exp(2) + np.e
+) / 24.0
+
+for x in range(1, 6):
+    print(
+        f"x={x}, m({x}) = {m[x]:12.10f}, approximated m({x}) = {analytical_m(x):12.10f}"
+    )
+```
+
+    x=1, m(1) = 2.7182818285, approximated m(1) = 2.7182818285
+    x=2, m(2) = 4.6707742705, approximated m(2) = 4.6707742705
+    x=3, m(3) = 6.6665656396, approximated m(3) = 6.6665656396
+    x=4, m(4) = 8.6666044900, approximated m(4) = 8.6666044900
+    x=5, m(5) = 10.6666620686, approximated m(5) = 10.6666620686
