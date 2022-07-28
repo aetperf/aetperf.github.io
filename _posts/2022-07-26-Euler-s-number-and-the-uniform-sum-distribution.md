@@ -98,11 +98,7 @@ CMAP = "plasma"  # color map
 ## Mathematical formulation
 
 
-test
+$ \left\\{ U_k \right\\}\_\{ k \geq 1\}$
 
-$ \left\\{ U_k \right\\}$
 
-$ \left\\{ U_k \right\\}_\{ k \geq 1\}$
-
-$ \left\\{ U_k \right\\}_\\{k \geq 1\\}$
 
