@@ -15,7 +15,7 @@ tags:
 Last year I stumbled upon this tweet from *[@fermatslibrary](https://twitter.com/fermatslibrary)* [[1]](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20): 
 
 <p align="center">
-  <img width="300" src="fermatslibrarys_tweet.png" alt="tweet">
+  <img width="300" src="/img/2022-07-28_01/fermatslibrarys_tweet.png" alt="tweet">
 </p>
 
 I find it a little bit intriguing for Euler's number $e$ to appear here! But actually, it is not uncommon to encounter $e$ in probability theory. As explained by Stefanie Reichert in the article *e is everywhere* [2]:
