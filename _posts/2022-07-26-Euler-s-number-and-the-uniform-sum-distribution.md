@@ -124,17 +124,9 @@ It is also called the *uniform sum distribution*. $X_n$ has a continuous distrib
 
 For $x > 0$ and $n \in \mathbb{N}^* $, the Cumulative Distribution Function (CDF) of $X_n$ is the following one:
 
-$$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k \\{ {n}\choose{k} \\} (x-k)^n $$
+$$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k  { {n}\choose{k} } (x-k)^n $$
 
-$$F_{X_n}(x)= \frac{1}{n!} $$
 
-$$\sum_{k=0}^{\lfloor x \rfloor} (-1)^k $$
-
-$$\\{ {n}\choose{k} \\}$$
-
-$$\{ {n}\choose{k} \}$$
-
-$${ {n}\choose{k} }$$
 
 See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a complete derivation of this formulae. The CDF corresponds to the probability that the variable, $X_n$ in our case, takes on a value less than or equal to $x$:
 
