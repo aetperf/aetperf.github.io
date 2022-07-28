@@ -18,12 +18,9 @@ Last year I stumbled upon this tweet from *[@fermatslibrary](https://twitter.com
   <img width="300" src="/img/2022-07-28_01/fermatslibrarys_tweet.png" alt="tweet">
 </p>
 
-I find it a little bit intriguing for Euler's number $e$ to appear here! But actually, it is not uncommon to encounter $e$ in probability theory. As explained by Stefanie Reichert in the article *e is everywhere* [2]:
+I find it a little bit intriguing for Euler's number $e$ to appear here! But actually, it is not uncommon to encounter $e$ in probability theory, as explained by Stefanie Reichert in the short article *e is everywhere* [2].
 
-> Imagine you are in Monte Carlo enjoying a few games of roulette, which is a Bernoulli trial process. If you place a bet on a single number, your chances are 1/37 to win that game. For 37 games, the probability that you will lose every single time is — maybe surprisingly — close to 1/e. Or, pretend you are at the theatre, where you — along with everybody else — leave your coat in the cloak room, which has one hook per guest, and receive a number. However, your coat is placed on a random hook. The probability that none of the coats are on the correct hook for a large number of guests approaches, again, 1/e. The number of practical examples is endless.
-
-
-Let's derive mathematically the above statement from *Fermat's Library* and perform random experiments in Python and [Numba](https://numba.pydata.org/) to speed up the computations.
+Let's derive mathematically the above statement and perform random experiments in Python and [Numba](https://numba.pydata.org/) to speed up the computations.
 
 ## A First Python experiment
 
@@ -106,9 +103,7 @@ We are actually interested in the expected value of $N$:
 $$m(x) \equiv E \left[ N(x) \right]$$
 
 
-The above statement in *Fermat's Library*'s [tweet](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20) can be expressed like this: 
-
-> $m(1)$ is equal to $e$.
+The above statement in *Fermat's Library*'s [tweet](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20) can be expressed like this: *$m(1)$ is equal to $e$.*
 
 First of all, let's look at the distribution of $\sum_{k=1}^n U_k > x$, which is referred to as the *Irwin-Hall distribution*.
 
