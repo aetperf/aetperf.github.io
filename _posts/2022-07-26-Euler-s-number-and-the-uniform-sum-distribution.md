@@ -404,3 +404,90 @@ for x in range(1, 6):
     x=3, m(3) = 6.6665656396, approximated m(3) = 6.6665656396
     x=4, m(4) = 8.6666044900, approximated m(4) = 8.6666044900
     x=5, m(5) = 10.6666620686, approximated m(5) = 10.6666620686
+
+Quite close! Now that that we are rather confident about the accuracy of the approximation of $m(x)$, we may evaluate and plot it on a discretized segment:
+
+
+```python
+x_max = 6
+x = np.linspace(0.001, x_max, 500)
+m_th_df = pd.DataFrame(data={"x": x})
+y = list(map(analytical_m, x))
+m_th_df["m(x)"] = y
+```
+
+
+```python
+ax = m_th_df.plot(
+    x="x", y="m(x)", figsize=FS, grid=True, cmap=CMAP, legend=True, label="Approximated"
+)
+_ = ax.set(title="m(x)", xlabel="x", ylabel="y")
+_ = ax.set_xlim(0, x_max)
+points = [(1, m[1]), (2, m[2]), (3, m[3]), (4, m[4]), (5, m[5])]
+label = "Exact value"
+for point in points:
+    _ = plt.plot(
+        point[0],
+        point[1],
+        marker="o",
+        alpha=0.5,
+        markersize=20,
+        markerfacecolor="y",
+        label=label,
+    )
+    label = None
+_ = ax.legend()
+```
+
+
+<p align="center">
+  <img width="800" src="/img/2022-07-28_01/output_31_0.png" alt="m(x)">
+</p>
+    
+
+
+It kind of looks like it becomes a straight line for larger values of $x$. Also, it is also easy to show what's the limit of $m(x)$ when $x$ goes to 0:
+
+$$
+\begin{align*}
+\lim_{x \to 0⁺} m(x) &= \lim_{x \to 0⁺} \sum_{n=1}^{\infty}  \frac{(n-x) x^{n-1}}{(n-1)!} \\
+ &= \lim_{x \to 0⁺} e^x \\
+ &= 1
+\end{align*}
+$$
+
+It makes sense since a single random uniform number is almost sure to be strictly larger than zero. Zooming toward the left part of the $m(x)$, its shape is easier to see.  
+
+
+```python
+x_max = 1.25
+ax = m_th_df.loc[m_th_df.x < x_max].plot(
+    x="x", y="m(x)", figsize=FS, grid=True, cmap=CMAP, legend=True, label="Approximated"
+)
+_ = ax.set(title="m(x)", xlabel="x", ylabel="y")
+_ = ax.set_xlim(-0.1, x_max)
+_ = plt.plot(
+    0,
+    1,
+    marker="o",
+    alpha=0.5,
+    markersize=20,
+    markerfacecolor="y",
+    label="Exact value",
+)
+_ = plt.plot(
+    points[0][0],
+    points[0][1],
+    marker="o",
+    alpha=0.5,
+    markersize=20,
+    markerfacecolor="y",
+    label=None,
+)
+_ = ax.legend()
+```
+
+
+<p align="center">
+  <img width="800" src="/img/2022-07-28_01/output_33_0.png" alt="left part of m(x)">
+</p>
