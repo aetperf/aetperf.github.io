@@ -278,3 +278,15 @@ Now that we went over the CDF of the Irwin-Wall distribution, we can proceed to 
 
 ## Mathematical derivation of $m(x)$
 
+For $n \in \mathbb{N}^* $, we have:
+
+$$
+\begin{align*} 
+P \left[ N(x) = n \right] &= P \left[ (X_{n-1} \leq x) \; \& \; (X_n > x) \right] \\
+&= P\left[ (X_n > x) \; | \; (X_{n-1} \leq x) \right] P\left[ X_{n-1} \leq x \right] \\
+&= \left( 1 - P\left[ (X_n \leq x) \; | \; (X_{n-1} \leq x) \right] \right) P\left[ X_{n-1} \leq x \right] \\
+&= \left( 1 - \frac{P\left[ (X_{n-1} \leq x) \; \& \; (X_n \leq x) \right]}{P\left[ X_{n-1} \leq x \right]} \right) P\left[ X_{n-1} \leq x \right] \\
+&= \left( 1 - \frac{P\left[ X_n \leq x \right]}{P\left[ X_{n-1} \leq x \right]} \right) P\left[ X_{n-1} \leq x \right] \\
+&= P\left[ X_{n-1} \leq x \right] -  P\left[ X_n \leq x) \right]
+\end{align*}
+$$
