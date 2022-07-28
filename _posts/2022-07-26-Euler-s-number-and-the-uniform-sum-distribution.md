@@ -27,7 +27,7 @@ Let's derive mathematically the above statement from *Fermat's Library* and perf
 
 ## A First Python experiment
 
-We start with a very simple experiment to evaluate the average number of random numbers required to reach 1 when summing them:
+We start with a very simple experiment to evaluate the average number of random numbers required to go over 1 when summing them:
 
 
 ```python
@@ -98,7 +98,7 @@ CMAP = "plasma"  # color map
 ## Mathematical formulation
 
 First of all, we consider some independent and identically distributed (i.i.d) random variables $ \left\\{ U_k \right\\}_{k \geq 1}$, each having standard uniform distribution  $\mathbf{U}(0,1)$. For $x > 0$, we define $N(x)$ as the following: 
-$$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k > x \right\\}$$
+$$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \\; s.t. \\; \sum_{k=1}^n U_k > x \right\\}$$
 
 We are actually interested in the expected value of $N$:
 $$m(x) \equiv E\left\\[ N(x) \right\\]$$
