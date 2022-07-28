@@ -99,23 +99,23 @@ CMAP = "plasma"  # color map
 
 First of all, we consider some independent and identically distributed (i.i.d) random variables $ \left\\{ U_k \right\\}\_\{ k \geq 1\}$, each having standard uniform distribution  $\mathbf{U}(0,1)$. For $x > 0$, we define $N(x)$ as the following: 
 
-
-$$N(x) \equiv \min \left\\{ n  \right\\}$$
-
-$$N(x) \equiv \min \left\{ n  \right\}$$
-
-$$N(x) \equiv \min \left{ n  \right}$$
-
-$$N(x) \equiv \left\\{ n  \right\\}$$
-
-$$N(x) \min \left\\{ n  \right\\}$$
-
-$$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k > x \right\\}$$
-
-$$n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k > x$$
-
 $$N(x) \equiv \min \left\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k > x \right\}$$
 
 We are actually interested in the expected value of $N$:
 
 $$m(x) \equiv E \left[ N(x) \right]$$
+
+
+The above statement in *Fermat's Library*'s [tweet](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20) can be expressed like this: 
+
+> $m(1)$ is equal to $e$.
+
+First of all, let's look at the distribution of $\sum_{k=1}^n U_k > x$, which is referred to as the *Irwin-Hall distribution*.
+
+## The Irwin-Hall distribution
+
+The *Irwin-Hall distribution* is the continuous probability distribution of the sum of $n$ i.i.d random variables, each having standard uniform distribution $\mathbf{U}(0,1)$:
+
+$$X_n = \sum_{k=1}^n U_k$$
+
+It is also called the *uniform sum distribution*. $X_n$ has a continuous distribution with support $[0, n]$ for $n \in \mathbb{N}^* $.
