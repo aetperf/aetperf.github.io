@@ -131,3 +131,150 @@ See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a co
 $$P \left[ X_n \leq x \right] = F_{X_n}(x)$$
 
 
+
+Let's write a function `cdf_th` to compute this CDF:
+
+
+```python
+def cdf_th(x, n=2):
+    """Analytical cumulative distribution of the Irwin-Wall distribution.
+
+    Args:
+        x (float): input of the cumulative distribution function.
+        n (int): number of uniform random variables in the summation.
+
+    Returns:
+        float: The function value at x.
+    """
+    if x <= 0.0:
+        return 0.0
+    elif x >= n:
+        return 1.0
+    else:
+        x_floor = int(np.floor(x))
+        cdf = 0
+        for k in range(x_floor + 1):
+            cdf += np.power(-1.0, k) * comb(n, k) * np.power(x - k, n)
+        cdf /= factorial(n)
+        return cdf
+```
+
+We can evaluate and plot this CDF for various values of $n$:
+
+
+```python
+x = np.linspace(-1, 11, 1000)
+cdf_th_df = pd.DataFrame(data={"x": x})
+for n in range(1, 11):
+    y = list(map(partial(cdf_th, n=n), x))
+    cdf_th_df[str(n)] = y
+
+ax = cdf_th_df.plot(x="x", figsize=FS, grid=True, cmap=CMAP)
+_ = ax.legend(title="n")
+_ = ax.set(title="CDF of $X_n$", xlabel="x", ylabel="y")
+_ = ax.set_xlim(-1, 11)
+```
+
+
+<p align="center">
+  <img width="800" src="/img/2022-07-28_01/output_10_0.png" alt="CDF of $X_n$$">
+</p>
+    
+
+
+But we can also try to approach the analytical CDF with some observations, adding scalar drawn from the uniform distribution in the interval [0, 1).
+
+### The Empirical CDF
+
+This part is inspired by a great blog post [[4]](https://www.rdatagen.net/post/a-fun-example-to-explore-probability/) by Keith Goldfeld, with some R code. We are going to use `np.random.rand()` to build an empirical CDF. 
+
+
+```python
+def cdf_emp(n=5, s=100_000, rs=124):
+    """Empirical cumulative distribution of the Irwin-Wall distribution.
+
+    Args:
+        n (int): number of uniform random variables in the summation.
+        s (int): number of samples used to evaluate the distribution.
+        rs (int): random seed.
+
+    Returns:
+        (float, float): the x and y data points of the approached CDF.
+    """
+    arr = np.empty(s, dtype=np.float64)
+    np.random.seed(rs)
+    for i in prange(s):
+        c = 0.0
+        for k in range(n):
+            c += np.random.rand()
+        arr[i] = c
+    x = np.sort(arr)
+    y = np.arange(s) / np.float64(s)
+    return x, y
+```
+
+
+```python
+%%time
+x, y = cdf_emp(n=10, rs=RS)
+```
+
+    CPU times: user 461 ms, sys: 3.7 ms, total: 465 ms
+    Wall time: 463 ms
+
+
+
+```python
+cmap = matplotlib.cm.get_cmap(CMAP)
+ax = cdf_th_df.plot(
+    x="x", y="10", figsize=FS, alpha=0.6, label="Theoretical", c=cmap(0)
+)
+_ = ax.scatter(x, y, label="Empirical", alpha=0.6, s=50, color=cmap(0.8))
+_ = ax.legend()
+_ = ax.set(title="Theoretical and empirical CDF of $X_{10}$", xlabel="x", ylabel="y")
+```
+
+
+<p align="center">
+  <img width="800" src="/img/2022-07-28_01/output_14_0.png" alt="Theoretical and empirical CDF of $X_{10}$">
+</p>
+    
+
+Actually we can do that for several values of $n$, as we did precedently with the analytical CDF:
+
+
+```python
+cdf_emp_df = pd.DataFrame()
+for n in range(1, 11):
+    x, y = cdf_emp(n=n)
+    cdf_emp_df["x_" + str(n)] = x
+    cdf_emp_df["y_" + str(n)] = y
+```
+
+
+```python
+ax = cdf_emp_df.plot(x="x_1", y="y_1", figsize=FS, label="1", c=cmap(0))
+for n in range(2, 11):
+    ax = cdf_emp_df.plot(
+        x="x_" + str(n), y="y_" + str(n), ax=ax, label=str(n), c=cmap((n - 1) / 9)
+    )
+_ = ax.legend(title="n")
+_ = ax.set(
+    title="Empirical CDF of $X_n$",
+    xlabel="x",
+    ylabel="y",
+)
+_ = ax.set_xlim(-1, 11)
+```
+
+
+<p align="center">
+  <img width="800" src="/img/2022-07-28_01/output_17_0.png" alt="Empirical CDF of $X_n$">
+</p>
+    
+
+
+Now that we went over the CDF of the Irwin-Wall distribution, we can proceed to derive a formulae for $m(x)$.
+
+## Mathematical derivation of $m(x)$
+
