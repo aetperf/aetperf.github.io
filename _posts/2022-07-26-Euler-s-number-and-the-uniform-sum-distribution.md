@@ -303,3 +303,17 @@ P \left[ N(x) = n \right] &= F_{X_{n-1}}(x) - F_{X_n}(x) \\
 &= \frac{1}{(n-1)!} \sum_{k=0}^{\lfloor x \rfloor} \frac{(-1)^k (x-k)^{n-1}}{n} {n}\choose{k} (n-x)
 \end{align*}
 $$
+
+Also, we can observe that $P \left[ N(x) = n \right] = 0$ if $ n < \lceil x \rceil$. This is because: 
+$\forall n \in \mathbb{N}^* , \; \sum_{k=1}^n U_k \leq n \; \Rightarrow \; N(x) \geq \lceil x \rceil$
+
+We can know derive a formulae for $m(x)$:
+
+$$
+\begin{align*}
+m(x) &=  E\left[ N(x) \right] \\
+&= \sum_{n=0}^{\infty} n P \left[ N(x) = n \right] \\
+&= \sum_{n=\lceil x \rceil}^{\infty} \frac{n}{(n-1)!} \sum_{k=0}^{\lfloor x \rfloor} \frac{(-1)^k (x-k)^{n-1}}{n} {n}\choose{k} (n-x) \\
+&= \sum_{n=\lceil x \rceil}^{\infty} n (n-x) \sum_{k=0}^{\lfloor x \rfloor} \frac{(-1)^k (x-k)^{n-1}}{k! (n-k)!} 
+\end{align*}
+$$
