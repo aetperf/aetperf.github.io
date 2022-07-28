@@ -126,8 +126,8 @@ For $x > 0$ and $n \in \mathbb{N}^* $, the Cumulative Distribution Function (CDF
 
 $$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k  { {n}\choose{k} } (x-k)^n $$
 
-
-
 See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a complete derivation of this formulae. The CDF corresponds to the probability that the variable, $X_n$ in our case, takes on a value less than or equal to $x$:
 
-<!-- $$P\left[ X_n \leq x \right] = F_{X_n}(x)$$ -->
+$$P \left[ X_n \leq x \right] = F_{X_n}(x)$$
+
+
