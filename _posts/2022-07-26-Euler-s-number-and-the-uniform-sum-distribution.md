@@ -101,7 +101,7 @@ First of all, we consider some independent and identically distributed (i.i.d) r
 $$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \\; s.t. \\; \sum_{k=1}^n U_k > x \right\\}$$
 
 We are actually interested in the expected value of $N$:
-$$m(x) \equiv E\left\\[ N(x) \right\\]$$
+$$m(x) \equiv E \left\[ N(x) \right\]$$
 
 The above statement in *Fermat's Library*'s [tweet](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20) can be expressed like this: 
 
