@@ -450,7 +450,7 @@ $$
 \end{align*}
 $$
 
-It makes sense since a single random uniform number is almost sure to be strictly larger than zero. Zooming toward the left part of the $m(x)$, its shape is easier to see.  
+It makes sense since a single random number is almost sure to be strictly larger than zero. Zooming toward the left part of $m(x)$, its shape is easier to see.  
 
 
 ```python
@@ -626,7 +626,7 @@ _ = ax.set(
 ## References
 
 [1] https://twitter.com/fermatslibrary/status/1388491536640487428?s=20  
-[2] Reichert, S. e is everywhere. Nat. Phys. 15, 982 (2019). [https://doi.org/10.1038/s41567-019-0655-9](https://doi.org/10.1038/s41567-019-0655-9)
+[2] Reichert, S. e is everywhere. Nat. Phys. 15, 982 (2019). [https://doi.org/10.1038/s41567-019-0655-9](https://doi.org/10.1038/s41567-019-0655-9)  
 [3] Random Services https://www.randomservices.org/random/special/IrwinHall.html  
 [4] Keith Goldfeld - [Using the uniform sum distribution to introduce probability](https://www.rdatagen.net/post/a-fun-example-to-explore-probability/)  
 [5] Wolfram MathWorld - [Uniform Sum Distribution](https://mathworld.wolfram.com/UniformSumDistribution.html)  
