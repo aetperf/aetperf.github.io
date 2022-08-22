@@ -87,7 +87,7 @@ First of all, we consider some independent and identically distributed [i.i.d] r
 
 $$N(x) \equiv \min    $$
 
-$$\left\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k \gt x \right\}$$
+$$\left\\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k \gt x \right\\}$$
 
 We are actually interested in the expected value of $N$:
 
