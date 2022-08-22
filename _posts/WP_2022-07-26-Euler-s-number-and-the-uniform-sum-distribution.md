@@ -265,7 +265,7 @@ For $n \in \mathbb{N}^* $, we have:
 
 $$
 \begin{align*} 
-P \left[ N(x) = n \right] &= P \left[ (X_{n-1} \leq x) \;  \; (X_n \gt x) \right]
+P \left[ N(x) = n \right] &= P \left[ (X_{n-1} \leq x) \; \\& \; (X_n \gt x) \right]
 \end{align*}
 $$
 
