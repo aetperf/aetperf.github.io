@@ -85,7 +85,7 @@ CMAP = "plasma"  # color map
 
 First of all, we consider some independent and identically distributed [i.i.d] random variables $ \left\\{ U_k \right\\}\_\{ k \geq 1\}$, each having standard uniform distribution  $\mathbf{U}(0,1)$. For $x \gt 0$, we define $N(x)$ as the following: 
 
-$$N(x) \equiv \min \left\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k \gt x \right\}$$
+$$N(x) \equiv \min \left{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k \gt x \right}$$
 
 We are actually interested in the expected value of $N$:
 
