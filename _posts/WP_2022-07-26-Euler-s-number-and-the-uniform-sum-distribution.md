@@ -85,9 +85,7 @@ CMAP = "plasma"  # color map
 
 First of all, we consider some independent and identically distributed [i.i.d] random variables $ \left\\{ U_k \right\\}\_\{ k \geq 1\}$, each having standard uniform distribution  $\mathbf{U}(0,1)$. For $x \gt 0$, we define $N(x)$ as the following: 
 
-$$N(x) \equiv \min    $$
-
-$$\left\\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k \gt x \right\\}$$
+$$N(x) \equiv \min \left\\{ n \in \mathbb{N}^* \; s.t. \; \sum_{k=1}^n U_k \gt x \right\\}$$
 
 We are actually interested in the expected value of $N$:
 
@@ -96,7 +94,7 @@ $$m(x) \equiv E \left[ N(x) \right]$$
 
 The above statement in *Fermat's Library*'s [tweet](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20) can be expressed like this: *$m(1)$ is equal to $e$.*
 
-First of all, let's look at the distribution of $\sum_{k=1}^n U_k > x$, which is referred to as the *Irwin-Hall distribution*.
+First of all, let's look at the distribution of $\sum_{k=1}^n U_k \gt x$, which is referred to as the *Irwin-Hall distribution*.
 
 ## The Irwin-Hall distribution
 
