@@ -106,7 +106,7 @@ It is also called the *uniform sum distribution*. $X_n$ has a continuous distrib
 
 ### Cumulative ditribution function of Irwin-Wall distribution
 
-For $x > 0$ and $n \in \mathbb{N}^* $, the Cumulative Distribution Function [CDF] of $X_n$ is the following one:
+For $x \gt 0$ and $n \in \mathbb{N}^* $, the Cumulative Distribution Function [CDF] of $X_n$ is the following one:
 
 $$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k  { {n}\choose{k} } (x-k)^n $$
 
@@ -262,6 +262,17 @@ Now that we went over the CDF of the Irwin-Wall distribution, we can proceed to 
 ## Mathematical derivation of $m(x)$
 
 For $n \in \mathbb{N}^* $, we have:
+
+$$
+\begin{align*} 
+P \left[ N(x) = n \right] &= P \left[ (X_{n-1} \leq x) \; \& \; (X_n > x) \right] \\
+<!-- &= P\left[ (X_n > x) \; | \; (X_{n-1} \leq x) \right] P\left[ X_{n-1} \leq x \right] \\
+&= \left( 1 - P\left[ (X_n \leq x) \; | \; (X_{n-1} \leq x) \right] \right) P\left[ X_{n-1} \leq x \right] \\
+&= \left( 1 - \frac{P\left[ (X_{n-1} \leq x) \; \& \; (X_n \leq x) \right]}{P\left[ X_{n-1} \leq x \right]} \right) P\left[ X_{n-1} \leq x \right] \\
+&= \left( 1 - \frac{P\left[ X_n \leq x \right]}{P\left[ X_{n-1} \leq x \right]} \right) P\left[ X_{n-1} \leq x \right] \\
+&= P\left[ X_{n-1} \leq x \right] -  P\left[ X_n \leq x) \right] -->
+\end{align*}
+$$
 
 $$
 \begin{align*} 
