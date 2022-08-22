@@ -1,3 +1,6 @@
+
+# Loading data from PostgreSQL to Pandas with ConnectorX
+
 [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) is a library, written in Rust, that enables fast and memory-efficient data loading from various databases to different dataframes. We refer to this interesting [paper](https://wooya.me/files/ConnectorX.pdf), in which the authors provide a detailed analysis of the `pandas.read_sql` function: 
 
 Wang, Xiaoying, et al. *ConnectorX: Accelerating Data Loading From Databases to Dataframes.* 2021
