@@ -289,7 +289,7 @@ $$
 
 Also, we can observe that $P \left[ N(x) = n \right] = 0$ if $ n < \lceil x \rceil$. This is because: 
 
-$$\forall n \in \mathbb{N}^* , \; \sum_{k=1}^n U_k \leq n \; \Rightarrow \; N(x) \geq \lceil x \rceil$$
+$$\forall n \in \mathbb{N}^* , \; \sum_{k=1}^n U_k \leq n \\; \Rightarrow \\; N(x) \geq \lceil x \rceil$$
 
 We can know derive a formulae for $m(x)$:
 
