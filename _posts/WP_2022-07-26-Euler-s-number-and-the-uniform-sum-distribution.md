@@ -162,7 +162,6 @@ _ = ax.set_xlim(-1, 11)
 <p align="center">
   <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_10_0.png" alt="CDF of X_n">
 </p>
-    
 
 
 But we can also try to approach this analytical CDF with some observations, adding scalar drawn from the uniform distribution in the interval [0, 1).
