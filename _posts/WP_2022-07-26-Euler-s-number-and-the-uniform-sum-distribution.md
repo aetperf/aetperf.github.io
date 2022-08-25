@@ -160,7 +160,7 @@ _ = ax.set_xlim(-1, 11)
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_10_0.png" alt="CDF of $X_n $">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_10_0.png" alt="CDF of X_n">
 </p>
     
 
@@ -219,7 +219,7 @@ _ = ax.set(title="Theoretical and empirical CDF of $X_{10}$", xlabel="x", ylabel
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_14_0.png" alt="Theoretical and empirical CDF of $X_{10}$">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_14_0.png" alt="Theoretical and empirical CDF of X_{10}">
 </p>
     
 
@@ -252,7 +252,7 @@ _ = ax.set_xlim(-1, 11)
 
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_17_0.png" alt="Empirical CDF of $X_n$">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-07-28_01/output_17_0.png" alt="Empirical CDF of X_n">
 </p>
     
 
