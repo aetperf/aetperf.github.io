@@ -1046,7 +1046,7 @@ load_and_plot("CTR", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 </p>
 
 
-We note that it is had to distinguish anything in the last plots because the networks get larger but with a fixed size plot and edge width.
+We note that it is hard to distinguish anything in the last plots because of the networks get size, with a fixed size plot and edge width. Also I couldn't plot the largest one, USA, for some memory reasons.
 
 The networks are now ready to use by some Shortest Path algorithms, which will be the subject of some future posts.
 
