@@ -13,7 +13,7 @@ tags:
 - DuckDB
 ---
 
-This goal of this Python notebook is to download and prepare a suite of benchmark networks for some shortest path algorithms on simple directed graphs with non-negative weights. We are specially interested in road networks. The files are available on the Universita Di Roma website. It was created for the 9th [DIMACS](http://dimacs.rutgers.edu/) implementation challenge : [*Implementation Challenge about Shortest Paths*](http://www.diag.uniroma1.it/challenge9/). This challenge dates back to 2006, but the files are still there. Here is the web page : http://www.diag.uniroma1.it//challenge9/download.shtml
+This goal of this Python notebook is to download and prepare a suite of benchmark networks for some shortest path algorithms. We would like to experiment with some simple directed graphs with non-negative weights. We are specially interested in road networks. The files are available on the Universita Di Roma website. It was created for the 9th [DIMACS](http://dimacs.rutgers.edu/) implementation challenge : [*Implementation Challenge about Shortest Paths*](http://www.diag.uniroma1.it/challenge9/). This challenge dates back to 2006, but the files are still there. Here is the web page : http://www.diag.uniroma1.it//challenge9/download.shtml
 
 The networks corresponds to different parts of the USA road network, with various region sizes. Here are the different network names, from smaller to larger:
 - NY :  New York
@@ -38,12 +38,12 @@ The networks are available as compressed text files. So here are the very simple
 
 1. create a folder structure
 2. download the compressed network files
-3. uncompress them with `gzip`
-4. Create a function to load the edges into a `Pandas` dataframe 
-5. Create a function to load the node coordinates into a `Pandas` dataframe
+3. uncompress them with *gzip*
+4. Create a function to load the edges into a *Pandas* dataframe 
+5. Create a function to load the node coordinates into a *Pandas* dataframe
 6. Save the networks into *parquet* files
-7. Query the *parquet* files with `DuckDB`
-8.  Plot some of the networks with `Datashader`
+7. Query the *parquet* files with *DuckDB*
+8.  Plot some of the networks with *Datashader*
 
 ## Imports
 
@@ -118,19 +118,19 @@ for name in names:
 !tree -d {data_dir_path}
 ```
 
-    [01;34m/home/francois/Data/Disk_1/DIMACS_road_networks[00m
-    ├── [01;34mBAY[00m
-    ├── [01;34mCAL[00m
-    ├── [01;34mCOL[00m
-    ├── [01;34mCTR[00m
-    ├── [01;34mE[00m
-    ├── [01;34mFLA[00m
-    ├── [01;34mLKS[00m
-    ├── [01;34mNE[00m
-    ├── [01;34mNW[00m
-    ├── [01;34mNY[00m
-    ├── [01;34mUSA[00m
-    └── [01;34mW[00m
+    /home/francois/Data/Disk_1/DIMACS_road_networks
+    ├── BAY
+    ├── CAL
+    ├── COL
+    ├── CTR
+    ├── E
+    ├── FLA
+    ├── LKS
+    ├── NE
+    ├── NW
+    ├── NY
+    ├── USA
+    └── W
     
     12 directories
 
@@ -582,41 +582,41 @@ We now have all the *parquet* files ready for use on the disk!
 !tree -P '*.parquet' {data_dir_path}
 ```
 
-    [01;34m/home/francois/Data/Disk_1/DIMACS_road_networks[00m
-    ├── [01;34mBAY[00m
-    │   ├── USA-road-d.BAY.co.parquet
-    │   └── USA-road-t.BAY.gr.parquet
-    ├── [01;34mCAL[00m
-    │   ├── USA-road-d.CAL.co.parquet
-    │   └── USA-road-t.CAL.gr.parquet
-    ├── [01;34mCOL[00m
-    │   ├── USA-road-d.COL.co.parquet
-    │   └── USA-road-t.COL.gr.parquet
-    ├── [01;34mCTR[00m
-    │   ├── USA-road-d.CTR.co.parquet
-    │   └── USA-road-t.CTR.gr.parquet
-    ├── [01;34mE[00m
-    │   ├── USA-road-d.E.co.parquet
-    │   └── USA-road-t.E.gr.parquet
-    ├── [01;34mFLA[00m
-    │   ├── USA-road-d.FLA.co.parquet
-    │   └── USA-road-t.FLA.gr.parquet
-    ├── [01;34mLKS[00m
-    │   ├── USA-road-d.LKS.co.parquet
-    │   └── USA-road-t.LKS.gr.parquet
-    ├── [01;34mNE[00m
-    │   ├── USA-road-d.NE.co.parquet
-    │   └── USA-road-t.NE.gr.parquet
-    ├── [01;34mNW[00m
-    │   ├── USA-road-d.NW.co.parquet
-    │   └── USA-road-t.NW.gr.parquet
-    ├── [01;34mNY[00m
-    │   ├── USA-road-d.NY.co.parquet
-    │   └── USA-road-t.NY.gr.parquet
-    ├── [01;34mUSA[00m
-    │   ├── USA-road-d.USA.co.parquet
-    │   └── USA-road-t.USA.gr.parquet
-    └── [01;34mW[00m
+    /home/francois/Data/Disk_1/DIMACS_road_networks
+    ├── BAY
+    │   ├── USA-road-d.BAY.co.parquet
+    │   └── USA-road-t.BAY.gr.parquet
+    ├── CAL
+    │   ├── USA-road-d.CAL.co.parquet
+    │   └── USA-road-t.CAL.gr.parquet
+    ├── COL
+    │   ├── USA-road-d.COL.co.parquet
+    │   └── USA-road-t.COL.gr.parquet
+    ├── CTR
+    │   ├── USA-road-d.CTR.co.parquet
+    │   └── USA-road-t.CTR.gr.parquet
+    ├── E
+    │   ├── USA-road-d.E.co.parquet
+    │   └── USA-road-t.E.gr.parquet
+    ├── FLA
+    │   ├── USA-road-d.FLA.co.parquet
+    │   └── USA-road-t.FLA.gr.parquet
+    ├── LKS
+    │   ├── USA-road-d.LKS.co.parquet
+    │   └── USA-road-t.LKS.gr.parquet
+    ├── NE
+    │   ├── USA-road-d.NE.co.parquet
+    │   └── USA-road-t.NE.gr.parquet
+    ├── NW
+    │   ├── USA-road-d.NW.co.parquet
+    │   └── USA-road-t.NW.gr.parquet
+    ├── NY
+    │   ├── USA-road-d.NY.co.parquet
+    │   └── USA-road-t.NY.gr.parquet
+    ├── USA
+    │   ├── USA-road-d.USA.co.parquet
+    │   └── USA-road-t.USA.gr.parquet
+    └── W
         ├── USA-road-d.W.co.parquet
         └── USA-road-t.W.gr.parquet
     
