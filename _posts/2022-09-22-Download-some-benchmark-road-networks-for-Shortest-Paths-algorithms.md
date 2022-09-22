@@ -892,7 +892,7 @@ load_and_plot("NY", parquet_coord_file_paths, parquet_tt_file_paths, network_inf
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_43_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_43_1.png" alt="NY">
 </p>
 
 
@@ -906,7 +906,7 @@ load_and_plot("BAY", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_44_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_44_1.png" alt="BAY">
 </p>
 
 ```python
@@ -919,7 +919,7 @@ load_and_plot("COL", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_45_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_45_1.png" alt="COL">
 </p>
 
 
@@ -934,7 +934,7 @@ load_and_plot("FLA", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_46_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_46_1.png" alt="FLA">
 </p>
 
 
@@ -950,7 +950,7 @@ load_and_plot("NW", parquet_coord_file_paths, parquet_tt_file_paths, network_inf
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_47_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_47_1.png" alt="NW">
 </p>
 
 
@@ -965,7 +965,7 @@ load_and_plot("NE", parquet_coord_file_paths, parquet_tt_file_paths, network_inf
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_48_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_48_1.png" alt="NE">
 </p>
 
 
@@ -980,7 +980,7 @@ load_and_plot("CAL", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_49_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_49_1.png" alt="CAL">
 </p>
 
 
@@ -995,7 +995,7 @@ load_and_plot("LKS", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_50_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_50_1.png" alt="LKS">
 </p>
 
 
@@ -1011,7 +1011,7 @@ load_and_plot("E", parquet_coord_file_paths, parquet_tt_file_paths, network_info
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_51_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_51_1.png" alt="E">
 </p>
 
 
@@ -1027,7 +1027,7 @@ load_and_plot("W", parquet_coord_file_paths, parquet_tt_file_paths, network_info
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_52_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_52_1.png" alt="W">
 </p>
 
 
@@ -1042,7 +1042,7 @@ load_and_plot("CTR", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 
 
 <p align="center">
-  <img width="800" src="/img/2022-09-22_01/output_53_1" alt="tweet">
+  <img width="800" src="/img/2022-09-22_01/output_53_1.png" alt="CTR">
 </p>
 
 
