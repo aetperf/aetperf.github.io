@@ -180,7 +180,7 @@ for name in names:
         wget.download(coordinates_url, coordinates_file_path)
 ```
 
-## Uncompress the network files with `gzip`
+## Uncompress the network files with *gzip*
 
 We first create a small function that is looking for a zipped file. If found, the zipped file is uncompressed and removed.
 
@@ -215,7 +215,7 @@ for name in names:
     coordinates_file_paths[name] = file_path
 ```
 
-## Create a function to load the edges into a `Pandas` dataframe 
+## Create a function to load the edges into a *Pandas* dataframe 
 
 Let's have a look at one of the edge file: 
 
@@ -623,7 +623,7 @@ We now have all the *parquet* files ready for use on the disk!
     12 directories, 24 files
 
 
-## Query the `.parquet` files with `DuckDB`
+## Query the *parquet* files with *DuckDB*
 
 Although we could have done it earlier when we had the dataframes in our hands, we are now going to perform some basic analysis of the networks. This allows to clearly separate the different steps.
 
@@ -810,7 +810,7 @@ network_info_df
 
 We can observe that all the vertices are actually used in the graph. The mean degree does not vary too much, although it it a little larger in the NY area, which is densely populated.
 
-## Plot some networks with Datashader
+## Plot some networks with *Datashader*
 
 Finally, we are going to plot some of these networks using [Datashader](https://datashader.org/). 
 
