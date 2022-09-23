@@ -13,9 +13,11 @@ tags:
 - DuckDB
 ---
 
-This goal of this Python notebook is to download and prepare a suite of benchmark networks for some shortest path algorithms. We would like to experiment with some simple directed graphs with non-negative weights. We are specially interested in road networks. The files are available on the Universita Di Roma website. It was created for the 9th [DIMACS](http://dimacs.rutgers.edu/) implementation challenge : [*Implementation Challenge about Shortest Paths*](http://www.diag.uniroma1.it/challenge9/). This challenge dates back to 2006, but the files are still there. Here is the web page : http://www.diag.uniroma1.it//challenge9/download.shtml
+The goal of this Python notebook is to download and prepare a suite of benchmark networks for some shortest path algorithms. We would like to experiment with some simple directed graphs with non-negative weights. We are specially interested in road networks. 
 
-The networks corresponds to different parts of the USA road network, with various region sizes. Here are the different network names, from smaller to larger:
+The files are available on the Universita Di Roma website. It was created for the 9th [DIMACS](http://dimacs.rutgers.edu/) implementation challenge : [*Implementation Challenge about Shortest Paths*](http://www.diag.uniroma1.it/challenge9/). This challenge dates back to 2006, but the files are still there. Here is the download web page : [http://www.diag.uniroma1.it//challenge9/download.shtml](http://www.diag.uniroma1.it//challenge9/download.shtml)
+
+The networks correspond to different parts of the USA road network, with various region sizes. Here are the different network names, from smaller to larger:
 - NY :  New York
 - BAY : Bay area
 - COL : Colorado
@@ -145,8 +147,8 @@ Three types of files are available from the DIMACS challenge web site:
 However, we are only going to download the coordinates and travel time graph files in the present notebook. We only require one type of edge weight in order run shortest path algorithms. So between `weight=distance` or `weight=travel_time`, we chose the latter. 
 
 The file URL has a neat pattern.
-- travel time graph : http://www.diag.uniroma1.it//challenge9/data/USA-road-t/USA-road-t.XXX.gr.gz  
-- coordinates : http://www.diag.uniroma1.it//challenge9/data/USA-road-d/USA-road-d.XXX.co.gz  
+- travel time graph : `http://www.diag.uniroma1.it//challenge9/data/USA-road-t/USA-road-t.XXX.gr.gz`  
+- coordinates : `http://www.diag.uniroma1.it//challenge9/data/USA-road-d/USA-road-d.XXX.co.gz`  
 
 where `XXX` is the network name. So we download each of these files with `wget` and save them in the respective network folder.
 
@@ -236,13 +238,17 @@ Let's have a look at one of the edge file:
     a 3 4 395
 
 
-So we need to skip the header lines, starting either with `c` or `p`. Then, on each edge line, we have the letter `a`, the *source* node index, the *target* node index and edge travel time. The edge weight has an int type here and we do not know the time unit. We assume that it corresponds to hundreds of seconds. This also does not matter regarding the comparison of shortest path implementations.
+So we need to skip the header lines, starting either with `c` or `p`. Then, on each edge line, we have the letter `a`, the *source* node index, the *target* node index and edge travel time. The edge weight has an `int` type here and we do not know the time unit. We assume that it corresponds to hundreds of seconds. This also does not matter regarding the comparison of shortest path implementations.
 
 So once the file is loaded with `pandas.read_csv`, we perform a few transformation steps:
-- set the weight column to `float` type, and convert the weight from hundreds (??) of seconds to seconds
+- set the weight column to `float` type, and convert the weight from hundreds of seconds to seconds
 - remove parallel edges by keeping a single edge with the *min* weight
-- remove loops
+- remove loops, if there is any
 - shift the source and target indices by -1 in order to be 0-based
+
+<p align="center">
+  <img width="400" src="https://media.makeameme.org/created/array-index-start.jpg" alt="0 based index">
+</p>
 
 The point of removing parallel arcs, is to get a simple directed graphs, that we can represent with an adjacency matrix in a sparse format. Loops could be described in an adjacency matrix but they would be completely useless regarding shortest paths, the edge weights being non-negative.
 
