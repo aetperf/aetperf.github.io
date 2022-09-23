@@ -247,7 +247,7 @@ So once the file is loaded with `pandas.read_csv`, we perform a few transformati
 - shift the source and target indices by -1 in order to be 0-based
 
 <p align="center">
-  <img width="400" src="https://media.makeameme.org/created/array-index-start.jpg" alt="0 based index">
+  <img width="300" src="https://media.makeameme.org/created/array-index-start.jpg" alt="0 based index">
 </p>
 
 The point of removing parallel arcs, is to get a simple directed graphs, that we can represent with an adjacency matrix in a sparse format. Loops could be described in an adjacency matrix but they would be completely useless regarding shortest paths, the edge weights being non-negative.
@@ -555,7 +555,7 @@ nodes_df.head(3)
 
 ## Save the networks into *parquet* files
 
-Now we call both functions, `read_travel_time_graph` and `read_coords`, for all the networks and write the corresponding dataframes as *parquet* files.
+Now we call both functions, `read_travel_time_graph` and `read_coords`, for all the networks and write the corresponding dataframes as [*parquet*](https://parquet.apache.org/) files.
 
 
 ```python
@@ -631,9 +631,9 @@ We now have all the *parquet* files ready for use on the disk!
 
 ## Query the *parquet* files with *DuckDB*
 
-Although we could have done it earlier when we had the dataframes in our hands, we are now going to perform some basic analysis of the networks. This allows to clearly separate the different steps.
+Although we could have done it earlier when we had the dataframes in our hands, we are now going to perform some basic analysis of the networks. The motivation is to clearly separate the different steps.
 
-We want to count the number of edges and vertices in each network, from the *parquet* files, without loading all the data into memory. We are going to compute these network features using some SQL, with [DuckDB](https://duckdb.org/).
+We want to count the number of edges and vertices in each network, from the *parquet* files, without loading all the data into memory, and rather in an efficient way. We are going to compute these network features using some SQL, with [DuckDB](https://duckdb.org/).
 
 
 ```python
