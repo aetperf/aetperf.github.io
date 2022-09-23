@@ -34,7 +34,7 @@ The networks correspond to different parts of the USA road network, with various
 There is an interesting warning on the download page :
 > Known issues: the data has numerous errors, in particular gaps in major highways and bridges. This may result in routes that are very different from real-life ones. One should take this into consideration when experimenting with the data.
 
-Anyway, this does not really matter to us because the plan is to implement a shortest path algorithm in Python/Cython and to compare various implementations, but not to find realistic routes.
+This does not really matter to us because the plan is to implement a shortest path algorithm in Python/Cython and to compare various implementations, but not to find realistic routes.
 
 The networks are available as compressed text files. So here are the very simple steps followed in this notebook:
 
@@ -238,17 +238,13 @@ Let's have a look at one of the edge file:
     a 3 4 395
 
 
-So we need to skip the header lines, starting either with `c` or `p`. Then, on each edge line, we have the letter `a`, the *source* node index, the *target* node index and edge travel time. The edge weight has an `int` type here and we do not know the time unit. We assume that it corresponds to hundreds of seconds. This also does not matter regarding the comparison of shortest path implementations.
+So we need to skip the header lines, starting either with `c` or `p`. Then, on each edge line, we have the letter `a`, the *source* node index, the *target* node index and edge travel time. The edge weight has an `int` type here and we do not know the time unit. We assume that it corresponds to hundreds of seconds. This also does not matter regarding the comparison of various shortest path implementations.
 
 So once the file is loaded with `pandas.read_csv`, we perform a few transformation steps:
 - set the weight column to `float` type, and convert the weight from hundreds of seconds to seconds
 - remove parallel edges by keeping a single edge with the *min* weight
 - remove loops, if there is any
 - shift the source and target indices by -1 in order to be 0-based
-
-<p align="center">
-  <img width="300" src="https://media.makeameme.org/created/array-index-start.jpg" alt="0 based index">
-</p>
 
 The point of removing parallel arcs, is to get a simple directed graphs, that we can represent with an adjacency matrix in a sparse format. Loops could be described in an adjacency matrix but they would be completely useless regarding shortest paths, the edge weights being non-negative.
 
