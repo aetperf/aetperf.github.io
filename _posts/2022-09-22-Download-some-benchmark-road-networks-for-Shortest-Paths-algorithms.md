@@ -375,7 +375,7 @@ The node coordinate files are similar to the edge files:
     v 3 -73519366 41048796
 
 
-We also need to skip the header lines, starting either with `c` or `p`. Then, on each edge line, we have the letter `v`, the node index, the longitude and latitude. From what I understand, the coordinates are expressed in WGS 84, but as `int` type, in millionth of degree. So we divide the int longitude and latitude numbers by a million to obtain the degree coordinates.
+We also need to skip the header lines, starting either with `c` or `p`. Then, on each edge line, we have the letter `v`, the node index, the longitude and latitude. From what I understand, the coordinates are expressed in WGS 84, but as `int` type, in millionth of degrees. So we divide the `int` longitude and latitude numbers by a million to obtain the coordinates in degrees.
 
 
 ```python
@@ -493,7 +493,7 @@ nodes_df.head(3)
 
 
 
-We added an argument `epsg` with a target CRS. This is, for the case where we would like to use a different CRS than [EPSG:4326](https://epsg.io/4326). [GeoPandas](https://geopandas.org/en/stable/) is used transform the data in that case.
+We added an argument `epsg` with a target CRS. This is, for the case where we would like to use a different CRS than [EPSG:4326](https://epsg.io/4326). [GeoPandas](https://geopandas.org/en/stable/) is used to transform the data in that case.
 
 
 ```python
