@@ -45,7 +45,7 @@ The networks are available as compressed text files. So here are the very simple
 5. Create a function to load the node coordinates into a *Pandas* dataframe
 6. Save the networks into *parquet* files
 7. Query the *parquet* files with *DuckDB*
-8.  Plot some of the networks with *Datashader*
+8. Plot the networks with *Datashader*
 
 ## Imports
 
@@ -816,11 +816,11 @@ network_info_df
 
 We can observe that all the vertices are actually used in the graph. The mean degree does not vary too much, although it it a little larger in the NY area, which is densely populated.
 
-## Plot some networks with *Datashader*
+## Plot the networks with *Datashader*
 
 Finally, we are going to plot some of these networks using [Datashader](https://datashader.org/). 
 
-But before that, we also want to display a rough approximation of the network width and height. Because we have the coordinates expressed in WGS84, let's write a small function to compute an approximate distance in meters between two points, given their lat/lon coordinates. This is a straight implementation of [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula). 
+But before that, we also want to print a rough approximation of the network width and height. Because we have the coordinates expressed in WGS84, let's write a small function to compute an approximate distance in meters between two points, given their lat/lon coordinates. This is a straight implementation of [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula). 
 
 
 ```python
@@ -836,13 +836,13 @@ def haversine_distance(lon_1, lat_1, lon_2, lat_2):
     )
     c = 2.0 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
 
-    R = 6.371e6  # earth radius
+    R = 6.371e6  # approximate earth radius
     d_m = R * c
 
     return d_m
 ```
 
-Now the following `load_and_plot` function is actually loading the vertex and edge *parquet* files, then both are used in Datashader's `connect_edges` function. The Datashader part is strongly inspired from its documentation about [networks](https://datashader.org/user_guide/Networks.html).
+Now the following `load_and_plot` function is actually loading the vertex and edge dataframes from the respective *parquet* files. Then both are used in Datashader's `connect_edges` function. The Datashader part is strongly inspired from its documentation about [networks](https://datashader.org/user_guide/Networks.html).
 
 
 ```python
@@ -1052,9 +1052,9 @@ load_and_plot("CTR", parquet_coord_file_paths, parquet_tt_file_paths, network_in
 </p>
 
 
-We note that it is hard to distinguish anything in the last plots because of the networks get size, with a fixed size plot and edge width. Also I couldn't plot the largest one, USA, for some memory reasons.
+We note that it is hard to distinguish anything in the last plot because of the network large size, with a fixed size plot and a fixed edge width. Also I couldn't plot the largest one, USA, for some memory reasons.
 
-The networks are now ready to use by some Shortest Path algorithms, which will be the subject of some future posts.
+The networks are now ready to be use by some Shortest Path algorithms, which will be the subject of some future posts.
 
 
 {% if page.comments %}
