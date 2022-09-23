@@ -69,7 +69,7 @@ DATA_DIR_ROOT_PATH = "/home/francois/Data/Disk_1/"  # root data dir
 
 Package versions:
 
-    Python version       : 3.10.6
+    Python    : 3.10.6
     datashader: 0.14.2
     duckdb    : 0.5.0
     geopandas : 0.11.1
