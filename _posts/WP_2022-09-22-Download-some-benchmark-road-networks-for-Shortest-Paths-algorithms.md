@@ -242,7 +242,7 @@ def read_travel_time_graph(file_path):
 
     # read the header
     with open(file_path) as f:
-        lines = f.readlines(readlines)
+        lines = f.readlines(10_000)
     header_size = 0
     for line in lines:
         header_size += 1
@@ -354,7 +354,7 @@ def read_coords(file_path, epsg=4326):
 
     # read the header
     with open(file_path) as f:
-        lines = f.readlines()
+        lines = f.readlines(10_000)
     header_size = 0
     for line in lines:
         header_size += 1
