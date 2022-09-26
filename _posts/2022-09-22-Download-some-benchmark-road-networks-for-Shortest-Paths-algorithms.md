@@ -282,7 +282,7 @@ def read_travel_time_graph(file_path):
     df.weight *= 0.01  # convert to seconds
     assert df.weight.min() >= 0.0  # make sure travel times are non-negative
     df = (
-        df.groupby(["source", "target"]).min().reset_index()
+        df.groupby(["source", "target"], sort=False).min().reset_index()
     )  # remove parallel edges and keep the one with shortest weight
     df = df[df["source"] != df["target"]]  # remove loops
     df[["source", "target"]] -= 1  # switch to 0-based indices
