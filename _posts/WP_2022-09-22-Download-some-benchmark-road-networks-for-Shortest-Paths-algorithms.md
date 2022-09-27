@@ -1,6 +1,8 @@
 
 # Download some benchmark road networks for Shortest Paths algorithms
 
+**Updated** September 26, 2022 bugfix
+
 The goal of this Python notebook is to download and prepare a suite of benchmark networks for some shortest path algorithms. We would like to experiment with some simple directed graphs with non-negative weights. We are specially interested in road networks. 
 
 The files are available on the Universita Di Roma website. It was created for the 9th [DIMACS](http://dimacs.rutgers.edu/) implementation challenge : [*Implementation Challenge about Shortest Paths*](http://www.diag.uniroma1.it/challenge9/). This challenge dates back to 2006, but the files are still there. Here is the download web page : [http://www.diag.uniroma1.it//challenge9/download.shtml](http://www.diag.uniroma1.it//challenge9/download.shtml)
