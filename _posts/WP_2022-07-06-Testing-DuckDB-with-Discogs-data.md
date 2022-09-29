@@ -150,7 +150,7 @@ db_exists
 
 
 
-In the present case, the database has already been created, so we just connect to it in read-only mode. From the [documentation](https://duckdb.org/docs/api/python#startup--shutdown):
+In the present case, the database has already been created, so we just connect to it in read-only mode. From the [documentation](https://duckdb.org/docs/api/python/overview#startup--shutdown):
 
 > If the database file does not exist, it will be created (the file extension may be `.db`, `.duckdb`, or anything else). The special value `:memory:` (the default) can be used to create an in-memory database. Note that for an in-memory database no data is persisted to disk (i.e. all data is lost when you exit the Python process). If you would like to connect to an existing database in read-only mode, you can set the `read_only` flag to `True`. Read-only mode is required if multiple Python processes want to access the same database file at the same time.
 
