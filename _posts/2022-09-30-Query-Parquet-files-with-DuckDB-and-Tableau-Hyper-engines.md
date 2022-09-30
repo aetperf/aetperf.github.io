@@ -1,5 +1,5 @@
 ---
-title: Query Parquet files with DuckDB and Tableau Hyper engines
+title: Query Parquet files with DuckDB and Tableau Hyper engines (WIP)
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton
@@ -30,12 +30,14 @@ The *Parquet* files are very specific since they all corresponds to road network
 4. count of vertices with 1 incoming and 1 outgoing egde
 5. vertex count per degree value
 
+For each query, we are going to measure the elapsed time with each engine. We **did not** measure the memory consumption, although that would also be interesting.
+
 **Notes**:
 - both engines usually make use of their own optimized file format, e.g. `.hyper` files for *Tableau hyper*. However, they both support direct querying of *CSV* or *Parquet* files.
 - We are going to use *DuckDB* and *Tableau Hyper* with the default configuration.
-- For each query we check the result is the same between DuckDB and Hyper.
 - Most of the SQL queries could probably be optimized, however we believe that they are efficient enough for the comparison purpose of this short post.
 - In all the elapsed time bar charts, lower is better.
+
 
 ## Imports
 
@@ -999,7 +1001,7 @@ query_5 = """
 
 ### DuckDB
 
-
+This query is using a lot of memory with DuckDB. I actually got a memoery allocation error for the largest network file `osm-eur`.
 
 ```python
 res_duckdb = {}
