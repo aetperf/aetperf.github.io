@@ -1063,6 +1063,10 @@ res_hyper_df = res_hyper_df.sort_index(axis=1)
 res_hyper_df = res_hyper_df.fillna(0).astype(int)
 ```
 
+### Validation
+
+We did not check the results for this query for the `osm-eur` graph, since the execution did not complete with DuckDB on my laptop. It was checked far all the other networks though.
+
 ### Elapsed time
 
 
