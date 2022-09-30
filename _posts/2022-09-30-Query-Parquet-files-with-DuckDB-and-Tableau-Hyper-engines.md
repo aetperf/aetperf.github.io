@@ -96,7 +96,6 @@ for name in names_osmr:
         f"/home/francois/Data/Disk_1/OSMR/{name}/{name}.gr.parquet"
     )
     stats[name] = {}
-    # stats[name]["name"] = name
     stats[name]["parquet_file_size_MB"] = (
         os.path.getsize(parquet_graph_file_path) * 1.0e-6
     )
