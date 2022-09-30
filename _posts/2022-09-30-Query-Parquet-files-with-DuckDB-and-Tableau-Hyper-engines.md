@@ -1,4 +1,3 @@
-
 ---
 title: Query Parquet files with DuckDB and Tableau Hyper engines
 layout: post
@@ -13,6 +12,7 @@ tags:
 - Tableau Hyper
 - SQL
 ---
+
 
 In this notebook, we are going to query some [*Parquet*](https://parquet.apache.org/) files with the following SQL engines:
 - [*DuckDB*](https://duckdb.org/) : an in-process SQL OLAP database management system. We are going to use its [Python Client API](https://duckdb.org/docs/api/python/reference/) ( MIT license ).
