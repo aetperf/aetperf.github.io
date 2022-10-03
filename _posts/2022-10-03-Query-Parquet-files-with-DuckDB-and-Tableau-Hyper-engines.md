@@ -242,7 +242,7 @@ for name in names:
 
     # query
     start = perf_counter()
-    query = query_1.replace("graph_edges", f"parquet_scan('{parquet_graph_file_path}')")
+    query = query_1.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
     
     duplicates = connection.query(query).fetchone()[0]
     elapsed_time_s = perf_counter() - start
@@ -332,7 +332,7 @@ for name in names:
 
     # query
     start = perf_counter()
-    query = query_2.replace("graph_edges", f"parquet_scan('{parquet_graph_file_path}')")
+    query = query_2.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
     res = connection.query(query).fetchall()[0]
     elapsed_time_s = perf_counter() - start
 
@@ -551,7 +551,7 @@ for name in names:
 
     # query
     start = perf_counter()
-    query = query_3.replace("graph_edges", f"parquet_scan('{parquet_graph_file_path}')")
+    query = query_3.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
     connected_vertices = connection.query(query).fetchone()[0]
     elapsed_time_s = perf_counter() - start
 
@@ -794,7 +794,7 @@ for name in names:
 
     # query
     start = perf_counter()
-    query = query_4.replace("graph_edges", f"parquet_scan('{parquet_graph_file_path}')")
+    query = query_4.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
     inout_vertices = connection.query(query).fetchone()[0]
     elapsed_time_s = perf_counter() - start
 
@@ -1034,7 +1034,7 @@ for name in names[:-1]:
 
     # query
     start = perf_counter()
-    query = query_5.replace("graph_edges", f"parquet_scan('{parquet_graph_file_path}')")
+    query = query_5.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
     res = connection.query(query).fetchall()
     elapsed_time_s = perf_counter() - start
 
