@@ -28,7 +28,7 @@ Tableau Hyper engine has the ability to read *Parquet* files using the [`externa
 > External data can be read directly in a SQL query using the set returning function external. In this case, no Hyper table is involved, so such a query can even be used if no database is attached to the current session. 
 
 
-The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are also very specific, in a sense that they are related to the graph domain. Here are the things that we are going to compute: 
+The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are also very specific, in a sense that they are related to the graph theory domain. Here are the things that we are going to compute: 
 1. occurence of parallel edges
 2. vertex and edge counts
 3. count of connected vertices
@@ -1022,7 +1022,7 @@ query_5 = """
 
 ### DuckDB
 
-This query is using a lot of memory with DuckDB. We actually got a memory allocation error for the largest network file: `osm-eur`. Setting a `temp_directory` and a `memory_limit` did not really help. This might be specific to this DuckDB version on Linux.
+This query is using a lot of memory with DuckDB. We actually got a memory allocation error for the largest network file: `osm-eur`. Setting a `temp_directory` and a `memory_limit` did not really help. This might be specific to this specific DuckDB/Python API version on Linux.
 
 
 ```python
@@ -1088,7 +1088,7 @@ res_hyper_df = res_hyper_df.fillna(0).astype(int)
 
 ### Validation
 
-We did not check the results for this query for the `osm-eur` graph, since the execution did not complete with DuckDB on my laptop. It was checked far all the other networks though.
+We did not check the results for this query for the `osm-eur` graph, since the execution did not complete with DuckDB (It was checked far all the other networks though).
 
 ### Elapsed time
 
