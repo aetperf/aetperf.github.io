@@ -22,7 +22,7 @@ Both of these tools are optimized for Online analytical processing (OLAP). We do
 
 > DuckDB will read the Parquet files in a streaming fashion, which means you can perform queries on large Parquet files that do not fit in your main memory.  
 
-Tableau Hyper engine has can read *Parquet* files using the [*external*](
+Tableau Hyper engine has the ability to read *Parquet* files using the [`external`](
  https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-data-in-sql.html) keyword.
 
 > External data can be read directly in a SQL query using the set returning function external. In this case, no Hyper table is involved, so such a query can even be used if no database is attached to the current session. 
