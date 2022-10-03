@@ -33,7 +33,7 @@ The *Parquet* files correspond to a very specific use case, since they all descr
 1. occurence of parallel edges
 2. vertex and edge counts
 3. count of connected vertices
-4. count of vertices with 1 incoming and 1 outgoing egde
+4. count of vertices with one incoming and one outgoing egde
 5. vertex count per degree value
 
 For each query and SQL engine, we are going to measure the elapsed time. In this post, we **did not** measure the memory consumption.
@@ -752,7 +752,7 @@ stats_df[["vertex_count", "connected_vertices", "mean_degree"]]
 
 
 
-## Forth query : count of vertices with 1 incoming and 1 outgoing egde
+## Forth query : count of vertices with one incoming and one outgoing egde
 
 Count of degree 2 nodes with *in-degree=out-degree=1*.
 
