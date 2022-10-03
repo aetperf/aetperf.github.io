@@ -15,14 +15,21 @@ tags:
 
 
 In this notebook, we are going to query some [*Parquet*](https://parquet.apache.org/) files with the following SQL engines:
-- [*DuckDB*](https://duckdb.org/) : an in-process SQL OLAP database management system. We are going to use its [Python Client API](https://duckdb.org/docs/api/python/reference/) ( MIT license ).
+- [*DuckDB*](https://duckdb.org/) : an in-process SQL OLAP database management system. We are going to use its [Python Client API](https://duckdb.org/docs/api/python/reference/) (MIT license).
 - [*Tableau Hyper*](https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/index.html) : an in-memory data engine. We are going to interact with this engine using the [tableauhyperapi](https://help.tableau.com/current/api/hyper_api/en-us/index.html) Python package (Proprietary License).
 
 Both of these tools are optimized for Online analytical processing (OLAP). We do not want to modify the data but launch queries that require processing a large amount of data. DuckDB and Tableau Hyper make use of some vectorized engine and some amount of parallel processing, well suited for the columnar storage format of *Parquet* files. This is very well described in [this](https://duckdb.org/2021/06/25/querying-parquet.html) post from the DuckDB team. Here is a quote from this blog post:
 
 > DuckDB will read the Parquet files in a streaming fashion, which means you can perform queries on large Parquet files that do not fit in your main memory.  
 
-The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are also very specific, in a sense that they are strongly graph oriented. Here are the things that we are going to compute: 
+Tableau Hyper engine has can read *Parquet* files using the [*external*](
+ https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-data-in-sql.html) keyword.
+
+> External data can be read directly in a SQL query using the set returning function external. In this case, no Hyper table is involved, so such a query can even be used if no database is attached to the current session. 
+
+https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-formats.html#EXTERNAL-FORMAT-PARQUET
+
+The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are also very specific, in a sense that they are related to the graph domain. Here are the things that we are going to compute: 
 1. occurence of parallel edges
 2. vertex and edge counts
 3. count of connected vertices
@@ -32,6 +39,7 @@ The *Parquet* files correspond to a very specific use case, since they all descr
 For each query and SQL engine, we are going to measure the elapsed time. In this post, we **did not** measure the memory consumption.
 
 **Notes**:
+- The *Parquet* files are not compressed.
 - both engines usually make use of their own optimized file format, e.g. `.hyper` files for *Tableau hyper*. However, they both support direct querying of *CSV* or *Parquet* files.
 - We are going to use *DuckDB* and *Tableau Hyper* with the **default configuration**.
 - Most of the SQL queries could probably be optimized, however we believe that they are efficient enough for the comparison purpose of this short post.
@@ -58,8 +66,8 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from tableauhyperapi import Connection, HyperProcess, Telemetry
 
-pd.set_option("display.precision", 2)
-TELEMETRY = Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU
+pd.set_option("display.precision", 2)  # Pandas float number display
+TELEMETRY = Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU  # not sending telemetry data to Tableau
 FS = (12, 6)  # figure size
 ALPHA = 0.8  # figure transparency
 ```
