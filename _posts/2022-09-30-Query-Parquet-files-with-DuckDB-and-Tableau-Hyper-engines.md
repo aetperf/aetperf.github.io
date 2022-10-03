@@ -1,5 +1,5 @@
 ---
-title: Query Parquet files with DuckDB and Tableau Hyper engines (WIP)
+title: Query Parquet files with DuckDB and Tableau Hyper engines
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton
@@ -1008,7 +1008,8 @@ query_5 = """
 
 ### DuckDB
 
-This query is using a lot of memory with DuckDB. I actually got a memory allocation error for the largest network file `osm-eur`.
+This query is using a lot of memory with DuckDB. We actually got a memory allocation error for the largest network file: `osm-eur`. Setting a `temp_directory` and a `memory_limit` did not really help. This might be specific to this DuckDB version on Linux.
+
 
 ```python
 res_duckdb = {}
