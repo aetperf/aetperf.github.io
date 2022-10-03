@@ -18,23 +18,23 @@ In this notebook, we are going to query some [*Parquet*](https://parquet.apache.
 - [*DuckDB*](https://duckdb.org/) : an in-process SQL OLAP database management system. We are going to use its [Python Client API](https://duckdb.org/docs/api/python/reference/) ( MIT license ).
 - [*Tableau Hyper*](https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/index.html) : an in-memory data engine. We are going to interact with this engine using the [tableauhyperapi](https://help.tableau.com/current/api/hyper_api/en-us/index.html) Python package (Proprietary License).
 
-Both of these tools are optimized for Online analytical processing (OLAP). We do not want to modify the data but launch queries that require to process a large amount of data. DuckDB and Tableau Hyper make use of some vectorized engine and some amount of parallel processing, well suited for the columnar storage format of *Parquet* files. This is very well described in [this](https://duckdb.org/2021/06/25/querying-parquet.html) post from the DuckDB team. Here is a quote from this blog post:
+Both of these tools are optimized for Online analytical processing (OLAP). We do not want to modify the data but launch queries that require processing a large amount of data. DuckDB and Tableau Hyper make use of some vectorized engine and some amount of parallel processing, well suited for the columnar storage format of *Parquet* files. This is very well described in [this](https://duckdb.org/2021/06/25/querying-parquet.html) post from the DuckDB team. Here is a quote from this blog post:
 
 > DuckDB will read the Parquet files in a streaming fashion, which means you can perform queries on large Parquet files that do not fit in your main memory.  
 > DuckDB is able to automatically detect which columns and rows are required for any given query. This allows users to analyze much larger and more complex Parquet files without needing to perform manual optimizations or investing in more hardware.
 
-The *Parquet* files are very specific since they all corresponds to road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. This means that the queries are going to be very specific also, since graph oriented: 
-1. parallel edges
+The *Parquet* files are very specific since they all corresponds to road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are very specific, in a sense that they are strongly graph oriented. Here are the things that we are going to compute: 
+1. occurence of parallel edges
 2. vertex and edge counts
 3. count of connected vertices
 4. count of vertices with 1 incoming and 1 outgoing egde
 5. vertex count per degree value
 
-For each query, we are going to measure the elapsed time with each engine. We **did not** measure the memory consumption, although that would also be interesting.
+For each query and SQL engine, we are going to measure the elapsed time. In this post, we **did not** measure the memory consumption.
 
 **Notes**:
 - both engines usually make use of their own optimized file format, e.g. `.hyper` files for *Tableau hyper*. However, they both support direct querying of *CSV* or *Parquet* files.
-- We are going to use *DuckDB* and *Tableau Hyper* with the default configuration.
+- We are going to use *DuckDB* and *Tableau Hyper* with the **default configuration**.
 - Most of the SQL queries could probably be optimized, however we believe that they are efficient enough for the comparison purpose of this short post.
 - In all the elapsed time bar charts, lower is better.
 
@@ -70,6 +70,14 @@ package versions:
     duckdb         : 0.5.1
     tableauhyperapi: 0.0.15530
     pandas         : 1.4.4
+
+System information:
+
+    OS             : Linux
+    Architecture   : 64bit
+    CPU            : Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+    CPU cores      : 8
+    RAM            : 32GB
 
 
 ## Apache Parquet files
