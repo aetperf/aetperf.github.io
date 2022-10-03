@@ -21,9 +21,8 @@ In this notebook, we are going to query some [*Parquet*](https://parquet.apache.
 Both of these tools are optimized for Online analytical processing (OLAP). We do not want to modify the data but launch queries that require processing a large amount of data. DuckDB and Tableau Hyper make use of some vectorized engine and some amount of parallel processing, well suited for the columnar storage format of *Parquet* files. This is very well described in [this](https://duckdb.org/2021/06/25/querying-parquet.html) post from the DuckDB team. Here is a quote from this blog post:
 
 > DuckDB will read the Parquet files in a streaming fashion, which means you can perform queries on large Parquet files that do not fit in your main memory.  
-> DuckDB is able to automatically detect which columns and rows are required for any given query. This allows users to analyze much larger and more complex Parquet files without needing to perform manual optimizations or investing in more hardware.
 
-The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are very specific, in a sense that they are strongly graph oriented. Here are the things that we are going to compute: 
+The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are also very specific, in a sense that they are strongly graph oriented. Here are the things that we are going to compute: 
 1. occurence of parallel edges
 2. vertex and edge counts
 3. count of connected vertices
@@ -48,6 +47,8 @@ $ pip install duckdb
 $ pip install tableauhyperapi  
 ```
 
+Here are the imports:
+
 ```python
 import os
 from time import perf_counter
@@ -58,18 +59,17 @@ from pandas.testing import assert_frame_equal
 from tableauhyperapi import Connection, HyperProcess, Telemetry
 
 pd.set_option("display.precision", 2)
-
 TELEMETRY = Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU
 FS = (12, 6)  # figure size
 ALPHA = 0.8  # figure transparency
 ```
 
-package versions:
+Package versions:
 
-    Python         : 3.9.13
+    Python         : 3.10.6
     duckdb         : 0.5.1
     tableauhyperapi: 0.0.15530
-    pandas         : 1.4.4
+    pandas         : 1.5.0
 
 System information:
 
@@ -1008,7 +1008,7 @@ query_5 = """
 
 ### DuckDB
 
-This query is using a lot of memory with DuckDB. I actually got a memoery allocation error for the largest network file `osm-eur`.
+This query is using a lot of memory with DuckDB. I actually got a memory allocation error for the largest network file `osm-eur`.
 
 ```python
 res_duckdb = {}
