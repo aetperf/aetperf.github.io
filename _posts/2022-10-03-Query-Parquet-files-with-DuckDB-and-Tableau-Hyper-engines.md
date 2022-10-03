@@ -394,7 +394,6 @@ assert_frame_equal(res_duckdb_df, res_hyper_df)
 ```python
 stats_df = pd.DataFrame.from_dict(stats, orient="index")
 stats_df = stats_df.loc[[c for c in ordered_names if c in stats_df.index.values]]
-# stats_df.sort_values(by='query_2_Hyper', ascending=True, inplace=True)
 cols = [c for c in stats_df.columns if c.startswith("query_2")]
 query_2_df = stats_df[cols]
 ax = query_2_df.plot.bar(figsize=FS, grid=True, logy=True, rot=60, alpha=ALPHA)
@@ -618,6 +617,14 @@ _ = ax.set(title="Query_3", xlabel="Network", ylabel="Elapsed time (s) - Log sca
 <p align="center">
   <img width="800" src="/img/2022-10-03_01/output_44_0.png" alt="query_3">
 </p>
+
+We observe that the elapsed time measures for the largest network differ a lot between DuckDB and Tableau Hyper:
+
+
+| Engine  | Elapsed time (s)  |
+|---|---:|
+| DuckDB | 37.02  |
+| Tableau Hyper | 436.52 |
 
 
 ### Results
