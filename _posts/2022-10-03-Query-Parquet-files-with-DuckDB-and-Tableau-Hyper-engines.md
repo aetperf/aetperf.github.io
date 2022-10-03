@@ -23,11 +23,10 @@ Both of these tools are optimized for Online analytical processing (OLAP). We do
 > DuckDB will read the Parquet files in a streaming fashion, which means you can perform queries on large Parquet files that do not fit in your main memory.  
 
 Tableau Hyper engine has the ability to read *Parquet* files using the [`external`](
- https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-data-in-sql.html) keyword.
+ https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-formats.html#EXTERNAL-FORMAT-PARQUET) keyword.
 
 > External data can be read directly in a SQL query using the set returning function external. In this case, no Hyper table is involved, so such a query can even be used if no database is attached to the current session. 
 
-https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/external-formats.html#EXTERNAL-FORMAT-PARQUET
 
 The *Parquet* files correspond to a very specific use case, since they all describe some road networks from the US or Europe. The US road networks were imported in a previous post: [Download some benchmark road networks for Shortest Paths algorithms](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). The Europe networks were downloaded from [this](https://i11www.iti.kit.edu/resources/roadgraphs.php) web page and converted to *Parquet* files. We are only going to use the edge table, not the node coordinates one. The SQL queries in this notebook are also very specific, in a sense that they are related to the graph domain. Here are the things that we are going to compute: 
 1. occurence of parallel edges
