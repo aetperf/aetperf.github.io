@@ -310,7 +310,7 @@ _ = ax.set(title="Query_1", xlabel="Network", ylabel="Elapsed time (s) - Log sca
 ```
 
 <p align="center">
-  <img width="800" src="/img/2022-10-03_01/output_19_0.png" alt="query_1">
+  <img width="800" src="/img/2022-10-04_01/output_19_0.png" alt="query_1">
 </p>
 
 
@@ -410,7 +410,7 @@ _ = ax.set(title="Query_2", xlabel="Network", ylabel="Elapsed time (s) - Log sca
 
     
 <p align="center">
-  <img width="800" src="/img/2022-10-03_01/output_31_0.png" alt="query_2">
+  <img width="800" src="/img/2022-10-04_01/output_31_0.png" alt="query_2">
 </p>
 
     
@@ -625,7 +625,7 @@ _ = ax.set(title="Query_3", xlabel="Network", ylabel="Elapsed time (s) - Log sca
 
 
 <p align="center">
-  <img width="800" src="/img/2022-10-03_01/output_44_0.png" alt="query_3">
+  <img width="800" src="/img/2022-10-04_01/output_44_0.png" alt="query_3">
 </p>
 
 We observe that the elapsed time measures for the largest network differ a lot between DuckDB and Tableau Hyper:
@@ -869,7 +869,7 @@ _ = ax.set(title="Query_4", xlabel="Network", ylabel="Elapsed time (s) - Log sca
 
 
 <p align="center">
-  <img width="800" src="/img/2022-10-03_01/output_57_0.png" alt="query_4">
+  <img width="800" src="/img/2022-10-04_01/output_57_0.png" alt="query_4">
 </p>
 
 ### Results
@@ -1126,7 +1126,7 @@ _ = ax.set(title="Query_5", xlabel="Network", ylabel="Elapsed time (s) - Log sca
 
     
 <p align="center">
-  <img width="800" src="/img/2022-10-03_01/output_71_0.png" alt="query_5">
+  <img width="800" src="/img/2022-10-04_01/output_71_0.png" alt="query_5">
 </p>
 
 ### Results
