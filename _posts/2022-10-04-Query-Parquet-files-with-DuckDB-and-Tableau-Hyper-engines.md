@@ -1564,7 +1564,9 @@ styler
 
 ## Conclusion
 
-*Apache Parquet* is a column-oriented data file format designed for efficient data storage and retrieval. It is widespread in the data analysis ecosystem. Querying them directly with an efficient SQL engine is really convenient. Both engines: DuckDB and Tableau Hyper are amazing tools, allowing to efficiently query *Parquet* files, among other capabilities. We only scratched the surface of this feature with this post, with a very specific use case. We observed similar timings for most of the queries. However, we did not measure memory usage. Note that for in-memory databases, it is important to write SQL queries that are a little bit optimized regarding memory. Also, when dealing with large *Parquet* files, it is advised to specify a temp directory to the engine, so that it can write some temporary data there (`temp_directory` setting with DuckDB).
+*Apache Parquet* is a column-oriented data file format designed for efficient data storage and retrieval. It is widespread in the data analysis ecosystem. Querying them directly with an efficient SQL engine is really convenient. Both engines: DuckDB and Tableau Hyper are amazing tools, allowing to efficiently query *Parquet* files, among other capabilities. We only scratched the surface of this feature with this post, with a very specific use case. We observed similar timings for most of the queries. 
+
+We did not measure memory usage. However, note that with both engines it is important to write SQL queries that are a little bit optimized regarding memory consumption, when dealing with large datasets and "large" queries. Also, it is advised to specify a temp directory to the engine, so that it can write some temporary data there (`temp_directory` setting with DuckDB).
 
 
 {% if page.comments %}
