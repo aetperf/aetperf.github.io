@@ -235,16 +235,19 @@ We expect this query to return 0 for each graph.
 
 ```python
 res_duckdb = {}
-connection = duckdb.connect()
+
 for name in names:
     parquet_graph_file_path = parquet_graph_file_paths[name]
+
+    connection = duckdb.connect()
 
     # query
     start = perf_counter()
     query = query_1.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
-    
     duplicates = connection.query(query).fetchone()[0]
     elapsed_time_s = perf_counter() - start
+
+    connection.close()
 
     res_duckdb[name] = {}
     res_duckdb[name]["duplicates"] = duplicates
@@ -263,9 +266,11 @@ res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```python
 res_hyper = {}
 with HyperProcess(telemetry=TELEMETRY) as hyper:
-    with Connection(endpoint=hyper.endpoint) as connection:
-        for name in names:
-            parquet_graph_file_path = parquet_graph_file_paths[name]
+    for name in names:
+
+        parquet_graph_file_path = parquet_graph_file_paths[name]
+
+        with Connection(endpoint=hyper.endpoint) as connection:
 
             # query
             start = perf_counter()
@@ -276,12 +281,12 @@ with HyperProcess(telemetry=TELEMETRY) as hyper:
             duplicates = connection.execute_scalar_query(query)
             elapsed_time_s = perf_counter() - start
 
-            res_hyper[name] = {}
-            res_hyper[name]["duplicates"] = duplicates
+        res_hyper[name] = {}
+        res_hyper[name]["duplicates"] = duplicates
 
-            assert duplicates == 0
+        assert duplicates == 0
 
-            stats[name]["query_1_Hyper"] = elapsed_time_s
+        stats[name]["query_1_Hyper"] = elapsed_time_s
 res_hyper_df = pd.DataFrame.from_dict(res_hyper, orient="index")
 ```
 
@@ -325,15 +330,18 @@ query_2 = "SELECT COUNT(*), MAX(source), MAX(target) FROM graph_edges"
 
 ```python
 res_duckdb = {}
-connection = duckdb.connect()
 for name in names:
     parquet_graph_file_path = parquet_graph_file_paths[name]
+
+    connection = duckdb.connect()
 
     # query
     start = perf_counter()
     query = query_2.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
     res = connection.query(query).fetchall()[0]
     elapsed_time_s = perf_counter() - start
+
+    connection.close()
 
     edge_count = res[0]
     vertex_count = max(res[1:3]) + 1
@@ -345,7 +353,6 @@ for name in names:
     res_duckdb[name] = {}
     res_duckdb[name]["vertex_count"] = vertex_count
     res_duckdb[name]["edge_count"] = edge_count
-connection.close()
 res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```
 
@@ -355,9 +362,10 @@ res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```python
 res_hyper = {}
 with HyperProcess(telemetry=TELEMETRY) as hyper:
-    with Connection(endpoint=hyper.endpoint) as connection:
-        for name in names:
-            parquet_graph_file_path = parquet_graph_file_paths[name]
+    for name in names:
+        parquet_graph_file_path = parquet_graph_file_paths[name]
+
+        with Connection(endpoint=hyper.endpoint) as connection:
 
             # query
             start = perf_counter()
@@ -368,14 +376,14 @@ with HyperProcess(telemetry=TELEMETRY) as hyper:
             res = connection.execute_list_query(query)[0]
             elapsed_time_s = perf_counter() - start
 
-            edge_count = res[0]
-            vertex_count = max(res[1:3]) + 1
+        edge_count = res[0]
+        vertex_count = max(res[1:3]) + 1
 
-            stats[name]["query_2_Hyper"] = elapsed_time_s
+        stats[name]["query_2_Hyper"] = elapsed_time_s
 
-            res_hyper[name] = {}
-            res_hyper[name]["vertex_count"] = vertex_count
-            res_hyper[name]["edge_count"] = edge_count
+        res_hyper[name] = {}
+        res_hyper[name]["vertex_count"] = vertex_count
+        res_hyper[name]["edge_count"] = edge_count
 res_hyper_df = pd.DataFrame.from_dict(res_hyper, orient="index")
 ```
 
@@ -544,9 +552,10 @@ FROM (
 
 ```python
 res_duckdb = {}
-connection = duckdb.connect()
 for name in names:
     parquet_graph_file_path = parquet_graph_file_paths[name]
+
+    connection = duckdb.connect()
 
     # query
     start = perf_counter()
@@ -554,13 +563,14 @@ for name in names:
     connected_vertices = connection.query(query).fetchone()[0]
     elapsed_time_s = perf_counter() - start
 
+    connection.close()
+
     stats[name]["connected_vertices"] = connected_vertices
     stats[name]["mean_degree"] = stats[name]["edge_count"] / connected_vertices
     stats[name]["query_3_DuckDB"] = elapsed_time_s
 
     res_duckdb[name] = {}
     res_duckdb[name]["connected_vertices"] = connected_vertices
-connection.close()
 res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```
 
@@ -571,9 +581,10 @@ res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```python
 res_hyper = {}
 with HyperProcess(telemetry=TELEMETRY) as hyper:
-    with Connection(endpoint=hyper.endpoint) as connection:
-        for name in names:
-            parquet_graph_file_path = parquet_graph_file_paths[name]
+    for name in names:
+        parquet_graph_file_path = parquet_graph_file_paths[name]
+
+        with Connection(endpoint=hyper.endpoint) as connection:
 
             # query
             start = perf_counter()
@@ -584,10 +595,10 @@ with HyperProcess(telemetry=TELEMETRY) as hyper:
             connected_vertices = connection.execute_scalar_query(query)
             elapsed_time_s = perf_counter() - start
 
-            stats[name]["query_3_Hyper"] = elapsed_time_s
+        stats[name]["query_3_Hyper"] = elapsed_time_s
 
-            res_hyper[name] = {}
-            res_hyper[name]["connected_vertices"] = connected_vertices
+        res_hyper[name] = {}
+        res_hyper[name]["connected_vertices"] = connected_vertices
 res_hyper_df = pd.DataFrame.from_dict(res_hyper, orient="index")
 ```
 
@@ -622,8 +633,8 @@ We observe that the elapsed time measures for the largest network differ a lot b
 
 | Engine  | Elapsed time (s)  |
 |---|---:|
-| DuckDB | 37.02  |
-| Tableau Hyper | 436.52 |
+| DuckDB | 38.71  |
+| Tableau Hyper | 357.47 |
 
 
 ### Results
@@ -787,9 +798,10 @@ query_4 = """
 
 ```python
 res_duckdb = {}
-connection = duckdb.connect()
 for name in names:
     parquet_graph_file_path = parquet_graph_file_paths[name]
+
+    connection = duckdb.connect()
 
     # query
     start = perf_counter()
@@ -797,12 +809,13 @@ for name in names:
     inout_vertices = connection.query(query).fetchone()[0]
     elapsed_time_s = perf_counter() - start
 
+    connection.close()
+
     stats[name]["inout_vertices"] = inout_vertices
     stats[name]["query_4_DuckDB"] = elapsed_time_s
 
     res_duckdb[name] = {}
     res_duckdb[name]["inout_vertices"] = inout_vertices
-connection.close()
 res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```
 
@@ -812,9 +825,10 @@ res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 ```python
 res_hyper = {}
 with HyperProcess(telemetry=TELEMETRY) as hyper:
-    with Connection(endpoint=hyper.endpoint) as connection:
-        for name in names:
-            parquet_graph_file_path = parquet_graph_file_paths[name]
+    for name in names:
+        parquet_graph_file_path = parquet_graph_file_paths[name]
+
+        with Connection(endpoint=hyper.endpoint) as connection:
 
             # query
             start = perf_counter()
@@ -825,10 +839,10 @@ with HyperProcess(telemetry=TELEMETRY) as hyper:
             inout_vertices = connection.execute_scalar_query(query)
             elapsed_time_s = perf_counter() - start
 
-            stats[name]["query_4_Hyper"] = elapsed_time_s
+        stats[name]["query_4_Hyper"] = elapsed_time_s
 
-            res_hyper[name] = {}
-            res_hyper[name]["inout_vertices"] = inout_vertices
+        res_hyper[name] = {}
+        res_hyper[name]["inout_vertices"] = inout_vertices
 res_hyper_df = pd.DataFrame.from_dict(res_hyper, orient="index")
 ```
 
@@ -840,7 +854,7 @@ res_hyper_df = pd.DataFrame.from_dict(res_hyper, orient="index")
 assert_frame_equal(res_duckdb_df, res_hyper_df)
 ```
 
-## Elapsed time
+### Elapsed time
 
 
 ```python
@@ -993,58 +1007,56 @@ stats_df[["inout_vertices", "vertex_count", "ratio"]]
 
 ```python
 query_5 = """
-    WITH TSOURCECOUNT AS (
-        SELECT source AS gnode, COUNT(*) rcount
-        FROM graph_edges
-        GROUP BY source),
-    TTARGETCOUNT AS (
-        SELECT target AS gnode, COUNT(*) rcount
-        FROM graph_edges
-        GROUP BY target),
-    TUNION AS (
-        SELECT * 
-        FROM TSOURCECOUNT
+    CREATE TEMP TABLE t_edges AS 
+        SELECT source, target 
+        FROM graph_edges;
+    CREATE TEMP TABLE t_nodes AS
+        SELECT source AS node 
+        FROM t_edges     
             UNION ALL
-        SELECT * 
-        FROM TTARGETCOUNT
-    ),
-    TSUMCOUNT AS
-    (
-        SELECT gnode, SUM(rcount) rcount
-        FROM TUNION
-        GROUP BY gnode
-    )
-    SELECT rcount, COUNT(*)
-    FROM TSUMCOUNT
-    GROUP BY rcount
-    ORDER BY 1 ASC;"""
+        SELECT target AS node 
+        FROM t_edges;
+    CREATE TEMP TABLE t_deg AS
+        SELECT COUNT(*) AS deg
+        FROM t_nodes
+        GROUP BY node;
+    SELECT deg, COUNT(*) AS n_occ 
+    FROM t_deg
+    GROUP BY deg
+    ORDER BY deg ASC;"""
 ```
 
 ### DuckDB
 
-This query is using a lot of memory with DuckDB. We actually got a memory allocation error for the largest network file: `osm-eur`. Setting a `temp_directory` and a `memory_limit` did not really help. This might be specific to this specific DuckDB/Python API version on Linux.
-
-
 ```python
 res_duckdb = {}
-connection = duckdb.connect()
-for name in names[:-1]:
+for name in names:
     parquet_graph_file_path = parquet_graph_file_paths[name]
 
+    connection = duckdb.connect()
+    
     # query
     start = perf_counter()
     query = query_5.replace("graph_edges", f"read_parquet('{parquet_graph_file_path}')")
-    res = connection.query(query).fetchall()
+
+    queries = query.removesuffix(";").split(";")
+    for sq in queries[:-1]:
+        connection.execute(sq)
+    sq = queries[-1]
+    res = connection.query(sq).fetchall()
+
     elapsed_time_s = perf_counter() - start
 
     stats[name]["query_5_DuckDB"] = elapsed_time_s
+
+    connection.close()
 
     res_duckdb[name] = {}
     for item in res:
         degree = item[0]
         vertex_count = item[1]
         res_duckdb[name]["degree_" + str(degree).zfill(3)] = vertex_count
-connection.close()
+
 res_duckdb_df = pd.DataFrame.from_dict(res_duckdb, orient="index")
 res_duckdb_df = res_duckdb_df.sort_index(axis=1)
 res_duckdb_df = res_duckdb_df.fillna(0).astype(int)
@@ -1057,8 +1069,9 @@ res_duckdb_df = res_duckdb_df.fillna(0).astype(int)
 ```python
 res_hyper = {}
 with HyperProcess(telemetry=TELEMETRY) as hyper:
-    with Connection(endpoint=hyper.endpoint) as connection:
-        for name in names:
+    for name in names:
+        with Connection(endpoint=hyper.endpoint) as connection:
+
             parquet_graph_file_path = parquet_graph_file_paths[name]
 
             # query
@@ -1067,20 +1080,26 @@ with HyperProcess(telemetry=TELEMETRY) as hyper:
                 "graph_edges",
                 f"external('{parquet_graph_file_path}', FORMAT => 'parquet')",
             )
-            res = connection.execute_list_query(query)
+
+            queries = query.removesuffix(";").split(";")
+            for sq in queries[:-1]:
+                connection.execute_command(sq)
+            sq = queries[-1]
+            res = connection.execute_list_query(sq)
+
             elapsed_time_s = perf_counter() - start
 
-            for item in res:
-                degree = item[0]
-                vertex_count = item[1]
-                stats[name]["degree_" + str(degree).zfill(3)] = vertex_count
-            stats[name]["query_5_Hyper"] = elapsed_time_s
+        for item in res:
+            degree = item[0]
+            vertex_count = item[1]
+            stats[name]["degree_" + str(degree).zfill(3)] = vertex_count
+        stats[name]["query_5_Hyper"] = elapsed_time_s
 
-            res_hyper[name] = {}
-            for item in res:
-                degree = item[0]
-                vertex_count = item[1]
-                res_hyper[name]["degree_" + str(degree).zfill(3)] = vertex_count
+        res_hyper[name] = {}
+        for item in res:
+            degree = item[0]
+            vertex_count = item[1]
+            res_hyper[name]["degree_" + str(degree).zfill(3)] = vertex_count
 res_hyper_df = pd.DataFrame.from_dict(res_hyper, orient="index")
 res_hyper_df = res_hyper_df.sort_index(axis=1)
 res_hyper_df = res_hyper_df.fillna(0).astype(int)
@@ -1088,7 +1107,9 @@ res_hyper_df = res_hyper_df.fillna(0).astype(int)
 
 ### Validation
 
-We did not check the results for this query for the `osm-eur` graph, since the execution did not complete with DuckDB (It was checked far all the other networks though).
+```python
+assert_frame_equal(res_duckdb_df, res_hyper_df)
+```
 
 ### Elapsed time
 
