@@ -14,7 +14,7 @@ tags:
 ---
 
 <p align="center">
-  <img width="400" src="/img/2022-10-04_01/parquet_logo.jpg" alt="query_1">
+  <img width="300" src="/img/2022-10-04_01/parquet_logo.jpg" alt="query_1">
 </p>
 
 
