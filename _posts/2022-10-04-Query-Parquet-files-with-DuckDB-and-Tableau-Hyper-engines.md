@@ -33,8 +33,7 @@ The *Parquet* files correspond to a very specific use case, since they all descr
 2. vertex and edge counts
 3. count of connected vertices
 4. count of vertices with one incoming and one outgoing egde
-5. vertex count per degree value
-
+5. degree distribution
 For each query and SQL engine, we are going to measure the elapsed time. In this post, we **did not** measure the memory consumption.
 
 **Notes**:
@@ -1002,7 +1001,7 @@ stats_df[["inout_vertices", "vertex_count", "ratio"]]
 </div>
 
 
-## Fifth query : vertex count per degree value
+## Fifth query : degree distribution
 
 
 ```python
