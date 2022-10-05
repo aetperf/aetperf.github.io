@@ -13,6 +13,10 @@ tags:
 - SQL
 ---
 
+<p align="center">
+  <img width="600" src="/img/2022-10-04_01/parquet_logo.jpg" alt="query_1">
+</p>
+
 
 In this notebook, we are going to query some [*Parquet*](https://parquet.apache.org/) files with the following SQL engines:
 - [*DuckDB*](https://duckdb.org/) : an in-process SQL OLAP database management system. We are going to use its [Python Client API](https://duckdb.org/docs/api/python/reference/) (MIT license).
