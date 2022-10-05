@@ -771,7 +771,7 @@ stats_df[["vertex_count", "connected_vertices", "mean_degree"]]
 
 ## Forth query : count of vertices with one incoming and one outgoing egde
 
-Count of degree 2 nodes with *in-degree=out-degree=1*.
+Count of degree 2 nodes with *in-degree=out-degree=1*. In the following, we refer to these vertices as *in-out vertices*.
 
 
 ```python
