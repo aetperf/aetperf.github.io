@@ -21,7 +21,7 @@ The *Parquet* files correspond to a very specific use case, since they all descr
 2. vertex and edge counts
 3. count of connected vertices
 4. count of vertices with one incoming and one outgoing egde
-5. degree distribution
+5. degree distribution  
 
 For each query and SQL engine, we are going to measure the elapsed time. In this post, we **did not** measure the memory consumption.
 
