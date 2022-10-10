@@ -120,7 +120,7 @@ For $x > 0$ and $n \in \mathbb{N}^* $, the Cumulative Distribution Function (CDF
 
 $$F_{X_n}(x)= \frac{1}{n!} \sum_{k=0}^{\lfloor x \rfloor} (-1)^k  { {n}\choose{k} } (x-k)^n $$
 
-See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a complete derivation of this formulae (not trivial). The CDF corresponds to the probability that the variable, $X_n$ in our case, takes on a value less than or equal to $x$:
+See [[3]](https://www.randomservices.org/random/special/IrwinHall.html) for a complete derivation of this formula (not trivial). The CDF corresponds to the probability that the variable, $X_n$ in our case, takes on a value less than or equal to $x$:
 
 $$P \left[ X_n \leq x \right] = F_{X_n}(x)$$
 
@@ -267,7 +267,7 @@ _ = ax.set_xlim(-1, 11)
     
 
 
-Now that we went over the CDF of the Irwin-Wall distribution, we can proceed to derive a formulae for $m(x)$.
+Now that we went over the CDF of the Irwin-Wall distribution, we can proceed to derive a formula for $m(x)$.
 
 ## Mathematical derivation of $m(x)$
 
@@ -301,7 +301,7 @@ Also, we can observe that $P \left[ N(x) = n \right] = 0$ if $ n < \lceil x \rce
 
 $$\forall n \in \mathbb{N}^* , \; \sum_{k=1}^n U_k \leq n \; \Rightarrow \; N(x) \geq \lceil x \rceil$$
 
-We can know derive a formulae for $m(x)$:
+We can know derive a formula for $m(x)$:
 
 $$
 \begin{align*}
@@ -345,12 +345,12 @@ m(5) &= \frac{1}{24} \left( 24 e^5 - 96 e^4 + 108 e^3 - 32 e^2 + e\right) \\
 \end{align*}
 $$
 
-We can write a function that approaches the $m(x)$ formulae. This is an *approximation* because we try to compute an infinite sum with a finite loop.
+We can write a function that approaches the $m(x)$ formula. This is an *approximation* because we try to compute an infinite sum with a finite loop.
 
 
 ```python
 def analytical_m(x, n_max=150):
-    """Approximation of the analytical formulae for m(x).
+    """Approximation of the analytical formula for m(x).
 
     Args:
         x (float): input value of m.
