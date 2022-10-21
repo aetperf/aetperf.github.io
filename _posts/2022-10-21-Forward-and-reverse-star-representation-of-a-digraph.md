@@ -764,7 +764,7 @@ for tail_vert_idx in range(vertex_count):
 
 Everything seems to be OK. 
 
-In another post we will see how to implement the forward and reverse stars efficiently in Cython.
+In another post, we will see how to implement the forward and reverse stars efficiently in Cython and compare this data structure with another one.
 
 ## References
 
