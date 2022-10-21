@@ -33,7 +33,7 @@ The tail vertices of the **incoming edges** of vertex $v_j$:
 
 $$E_j^- = \left\{ i \in V \; s.t. \; (i,j)\in E\right\}$$
 
-In the small example above, the incoming edges of vertex 3 are : (1, 3) and (4, 3). The outgoing edges are : (3, 2) and (3, 4).
+In the small example above, the incoming edges of vertex 3 are : (1, 3) and (4, 3). Its outgoing edges are : (3, 2) and (3, 4).
 
 ## Imports
 
@@ -123,7 +123,7 @@ print(f"vertex count : {vertex_count},  edge count : {edge_count}")
     vertex count : 6,  edge count : 10
 
 
-Note that this network only has only a single attribute per edge, `weight`, which has a `float64` type. The node indices are of `uint32` type, which is allowing us to deal with more than 4 billion nodes:
+Note that this network only has only a single attribute per edge, `weight`, which is of `float64` type. The node indices are of `uint32` type, which is allowing us to deal with more than 4 billion nodes:
 
 
 ```python
@@ -190,7 +190,7 @@ _ = nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, label_pos=0.45)
 
 We can represent the graph as a **Node-Node Adjacency Matrix** with a sparse format. 
 
-Let's start by describing the Node-Node Adjacency Matrix. If the graph does not have any parallel edge, it can be expressed as a `vertex_count` x `vertex_count` matrix, where rows correspond to tail nodes and columns to head nodes. The (i, j)-th entry equals 1 if $(i, j) \in E$, and 0 otherwise.
+Let's start by describing the Node-Node Adjacency Matrix. If the graph does not have any parallel edge, it can be expressed as a (`vertex_count` x `vertex_count`) matrix, where rows correspond to tail nodes and columns to head nodes. The (i, j)-th entry equals 1 if $(i, j) \in E$, and 0 otherwise.
 
 
 ```python
@@ -362,7 +362,7 @@ csr_data
 
 
 
-Here is a schema inspired from *Sheffi* [1] to understand the general idea regarding the weighted graph in CSR format. The edge attributes (`to_node` and `weight`) are stored in arrays of size `edge_count`. For a given vertex `from_node`, the outgoing edges can be found from rank `indptr[from_node]` to `indptr[from_node+1]-1` (included), if the latter is larger or equal to the former. If `indptr[from_node] == indptr[from_node+1]`, the is no outgoing edge.
+Here is a schema inspired from *Sheffi* [1] to understand the general idea regarding the weighted graph in CSR format. The edge attributes (`to_node` and `weight`) are stored in arrays of size `edge_count`. For a given vertex `from_node`, the outgoing edges can be found from rank `indptr[from_node]` to `indptr[from_node+1]-1` (included), if the latter is larger or equal to the former. If `indptr[from_node] == indptr[from_node+1]`, there is no outgoing edge.
 
 <p align="center">
   <img width="400" src="/img/2022-10-21_01/CSR.png" alt="CSR schema">
@@ -385,7 +385,7 @@ print(
     edge weights: [6. 3. 2.]
 
 
-What if we want to loop over all the vertices and get the associated outgoing edges:
+It is also easy to loop over all the vertices and get the associated outgoing edges:
 
 
 ```python
@@ -547,7 +547,7 @@ for head_vert_idx in range(vertex_count):
 
 ## Forward star and reverse star
 
-So what do we call forward and reverse star exactly? Well this a generalization of the CSR and CSC format, with a pointer vector `indptr` of size `(vertex_count + 1, 1)` and an edge array of size `(edge_count, n_att)`, where `n_att` is the number of edge attributes that we need to store. Note that we can store the head and tail indices in this array as edge attributes. In the case of forward star, `indptr` is pointing toward the outgoing edges, and in the case of the reverse star, toward the incoming edges. Here is a figure with a small example of a forward star, and where the pointer vector is named `point`:
+So what do we call forward and reverse star exactly? Well this a generalization of the CSR and CSC format, with a pointer vector `indptr` of size `(vertex_count + 1, 1)` and an edge array of size `(edge_count, n_att)`, where `n_att` is the number of edge attributes that we need to store. Note that we can store the head and tail indices in this array as edge attributes. In the case of forward star, `indptr` is pointing toward the outgoing edges, and in the case of the reverse star, toward the incoming edges. Here is a figure with a small example of a forward star (where the pointer vector is named `point`):
 
 <p align="center">
   <img width="800" src="/img/2022-10-21_01/forward_star_example.jpg" alt="forward_star_example">
@@ -557,7 +557,7 @@ So what do we call forward and reverse star exactly? Well this a generalization 
 
 Because we are not dealing anymore with sparse matrices but directly with edges in triplet form, we can now handle parallel edges. Indeed, a 2D matrix can only have a single entry for a given row and column, but when the edge information is "unpivoted" in a triplet form, we can actually deal with duplicated entries with respect to head and tail nodes, and as many attributes as we want.
 
-Let's implement a function that converts an edge dataframe into a forward star object. The edge attributes are all assumed to be of `float64` type. We would like to also store the head vertex indices in the edge array, but in NumPy, it is kind of complicated to handles 2D arrays with mixed column types (`uint32` and `float64`). So here, we basically have an array of edge attributes with integer type (`indices`), and another one with the ones of `float` type. A C implementation could make use of some `struct`.
+Let's implement a function that converts an edge dataframe into a forward star object. The edge attributes are all assumed to be of `float64` type. We would also like to store the head vertex indices in the edge array, but in NumPy, it is kind of complicated to handles 2D arrays with mixed column types (`uint32` and `float64`). So here, we basically have an array of edge attributes with integer type (`indices`), and another one with the ones of `float` type. A C implementation could make use of some `struct`.
 
 ### Edges dataframe to forward star
 
