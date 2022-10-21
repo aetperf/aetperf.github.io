@@ -271,7 +271,7 @@ type(sp_coo)
 
 
 
-Now we are going to used another very common sparse format, called *Compressed Sparse Row (CSR)* or *Compressed Row Storage (CRS)*. This storage it directly related to the forward star representation of a graph. 
+Now we are going to use another very common sparse format, called *Compressed Sparse Row (CSR)* or *Compressed Row Storage (CRS)*. This storage it directly related to the forward star representation of a graph. 
 
 ## CSR format
 
@@ -362,7 +362,7 @@ csr_data
 
 
 
-Here is a schema inspired from Sheffi [1] to understand the general idea regarding the weighted graph in CSR format. The edge attributes (`to_node` and `weight`) are stored in arrays of size `edge_count`. For a given vertex `from_node`, the outgoing edges can be found from rank `indptr[from_node]` to `indptr[from_node+1]-1` (included), if the latter is larger or equal to the former. If `indptr[from_node] == indptr[from_node+1]`, the is no outgoing edge.
+Here is a schema inspired from *Sheffi* [1] to understand the general idea regarding the weighted graph in CSR format. The edge attributes (`to_node` and `weight`) are stored in arrays of size `edge_count`. For a given vertex `from_node`, the outgoing edges can be found from rank `indptr[from_node]` to `indptr[from_node+1]-1` (included), if the latter is larger or equal to the former. If `indptr[from_node] == indptr[from_node+1]`, the is no outgoing edge.
 
 <p align="center">
   <img width="400" src="/img/2022-10-21_01/CSR.png" alt="CSR schema">
