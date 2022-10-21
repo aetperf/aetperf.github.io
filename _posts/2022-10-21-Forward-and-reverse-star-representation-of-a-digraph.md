@@ -737,12 +737,10 @@ edges_df.head(4)
 ```python
 vertex_count = edges_df[["from_node", "to_node"]].max().max() + 1
 edge_count = len(edges_df)
-print(f"vertex count : {vertex_count:10d},\n  edge count : {edge_count:10d}")
+print(f"vertex count : {vertex_count},  edge count : {edge_count}")
 ```
 
-    vertex count :          4,
-      edge count :          4
-
+    vertex count : 4,  edge count : 4
 
 
 ```python
