@@ -10,7 +10,7 @@ tags:
 - Pandas
 ---
 
-In this Python notebook, we are going to focus on a graph representation of directed graphs : the forward star representation (and its opposite, the reverse star). The motivation here is to access a network topology and associated data efficiently, without using a large amount of memory space. In many shortest path algorithms, one needs to quickly access the outgoing or incoming edges of the graph vertices, as well as the associated edge attributes, in some kind of graph searching process. This is why the data structure used to represent the graph is very important regarding the efficiency of graph algorithms. Note that we only consider static graphs here, where the topology does not change.
+In this Python notebook, we are going to focus on a graph representation of directed graphs : the forward star representation (and its opposite, the reverse star). The motivation here is to access a network topology and associated data efficiently, without using a large amount of memory space. In many shortest path algorithms, one needs to quickly access the outgoing or incoming edges of the graph vertices, as well as the associated edge attributes. This is why the data structure used to represent the graph is very important regarding the efficiency of graph algorithms. Note that we only consider static graphs here, where the topology does not change.
 
 ## Definitions
 
@@ -18,7 +18,7 @@ From [wikipedia](https://en.wikipedia.org/wiki/Directed_graph):
 > a **directed graph** (or digraph) is a graph that is made up of a set of vertices connected by directed edges, often called arcs.
 
 <p align="center">
-<img width="200" alt="Directed graph no background" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Directed_graph_no_background.svg/128px-Directed_graph_no_background.svg.png">
+<img width="150" alt="Directed graph no background" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Directed_graph_no_background.svg/128px-Directed_graph_no_background.svg.png">
 </p>
 
 *Credit:* <a href="https://commons.wikimedia.org/wiki/File:Directed_graph_no_background.svg">Wikimedia Commons</a>
