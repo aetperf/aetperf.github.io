@@ -7,7 +7,7 @@ In this Python notebook, we are going to focus on a graph representation of dire
 ## Definitions
 
 From [wikipedia](https://en.wikipedia.org/wiki/Directed_graph):
-> a **directed graph** (or digraph) is a graph that is made up of a set of vertices connected by directed edges, often called arcs.
+> a **directed graph**, or digraph, is a graph that is made up of a set of vertices connected by directed edges, often called arcs.
 
 <p align="center">
 <img width="150" alt="Directed graph no background" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Directed_graph_no_background.svg/128px-Directed_graph_no_background.svg.png">
@@ -19,7 +19,7 @@ Here we indifferently use the terms *edge*, *arc* or *link*. Same thing with *no
 
 Let's denote the directed graph $\mathcal{G} = \left( V, E \right) $, where $V$ and $E$ are the graph vertices and edges. The head vertices of the **outgoing edges** of vertex $v_i$:
 
-$$E_i^+ = \left\{ j \in V \; s.t. \; (i,j)\in E\right\}$$
+$$E_i^+ = \left\\{ j \in V \; s.t. \; (i,j)\in E\right\\}$$
 
 The tail vertices of the **incoming edges** of vertex $v_j$:
 
