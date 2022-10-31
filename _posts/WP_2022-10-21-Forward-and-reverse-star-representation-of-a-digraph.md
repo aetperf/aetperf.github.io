@@ -19,11 +19,11 @@ Here we indifferently use the terms *edge*, *arc* or *link*. Same thing with *no
 
 Let's denote the directed graph $\mathcal{G} = \left( V, E \right) $, where $V$ and $E$ are the graph vertices and edges. The head vertices of the **outgoing edges** of vertex $v_i$:
 
-$$E_i^+ = \left\\{ j \in V \; s.t. \; (i,j)\in E\right\\}$$
+$$E_i^+ = \left\\{ j \in V \\; s.t. \\; (i,j)\in E\right\\}$$
 
 The tail vertices of the **incoming edges** of vertex $v_j$:
 
-$$E_j^- = \left\{ i \in V \; s.t. \; (i,j)\in E\right\}$$
+$$E_j^- = \left\\{ i \in V \\; s.t. \\; (i,j)\in E\right\\}$$
 
 In the small example above, the incoming edges of vertex 3 are : (1, 3) and (4, 3). Its outgoing edges are : (3, 2) and (3, 4).
 
