@@ -490,7 +490,7 @@ assert np.allclose(fs_data_L, sp_csr_L.data)
 
 #### Cython loop over the forward star
 
-We are going to use the random node sequence created early to go over all the nodes of the graph, and get the outgoing edge information, head vertex index and edge weight, for each node.
+We are going to use the random node sequence created earlier to go over all the nodes of the graph, and get the outgoing edge information, head vertex index and edge weight, for each node.
 
 
 ```python
