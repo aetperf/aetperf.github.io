@@ -30,7 +30,7 @@ We refer to the [Cython documentation](https://cython.readthedocs.io/en/latest/)
 
 In this note book, we are going to implement three different graph representations in Cython:
 
-- Forward and revers stars with NumPy 1D arrays
+- Forward and reverse stars with NumPy 1D arrays
 - Forward star with a NumPy structured array
 - Addjacency list with pointers and C structs
 
@@ -873,7 +873,7 @@ for tail_vert_idx in range(vertex_count_S):
 
 ## Adjacency Lists
 
-Finally, we are going to use another data representation: the adjacency list. For each node, we store a list of outgoing edges with head node vertices and edge weights. These lists have a variable size depending on the number of outgoing edges. An adjacency list is usually implemented with a doubly linked list, which requires a lot of memory. However, here we are going to implement it with pointers and structs.
+Finally, we are going to use another data representation: the adjacency list. For each node, we store a list of outgoing edges with head node vertices and edge weights. These lists have a variable size depending on the number of outgoing edges. An adjacency list is usually implemented with a doubly linked list, which requires a lot of memory. Here we are going to implement it with pointers and structs.
 
 The issue is that this data structure cannot persist in the Python level, it can only live within the Cython level. This is why we wrote a global function `loop_AL` to perfomer the adjacency initialization, the loop over each node's outgoing edges, and the memory release.
 
