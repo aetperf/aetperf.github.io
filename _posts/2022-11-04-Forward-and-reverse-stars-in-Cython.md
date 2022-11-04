@@ -332,6 +332,7 @@ Here are a few remarks about this piece of code:
 - a few [compiler directives](https://cython.readthedocs.io/en/stable/src/userguide/source_files_and_compilation.html#compiler-directives) are invoked to speed up the code: `language_level`, `boundscheck`, `wraparound`, `embedsignature`, `initializedcheck`  
 - [typed memoryviews](https://cython.readthedocs.io/en/stable/src/userguide/memoryviews.html?highlight=typed%20memory%20views) are used to directly access NumPy arrays:
 > Typed memoryviews allow efficient access to memory buffers, such as those underlying NumPy array  
+
 This is why NumPy arrays are created before calling the `coo_tocsr` function  
 - input NumPy arrays of the `coo_tocsr` function are declared as contiguous with the `[::1]` notation  
 - the GIL is released with `nogil` for the `coo_tocsr` function  
