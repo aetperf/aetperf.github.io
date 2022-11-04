@@ -259,7 +259,7 @@ This code is adapted from the `scipy.sparse` source code `coo_tocsr` that can be
  
 $$O(|E| + |V|) $$
 
-where $|E|$ is the edge count, and $|V|$ the vertex count. A similar approach is described in [1].
+where $|E| $ is the edge count, and $|V| $ the vertex count. A similar approach is described in [1].
  
 In the following the `cpdef` function can be accessed from the Python level, while the `cdef` can only be seen in the Cython level.
 
