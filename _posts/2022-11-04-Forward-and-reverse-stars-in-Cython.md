@@ -1004,7 +1004,7 @@ Forward and reverse star appear to be the most efficient approach in case where:
 
 As stated in [1]:
 
-> Compressed sparse row is typically the best format for sparse graphs, provided that new edges aren’t added and relatively few edges are deleted. CSR is compact, avoiding the memory waste of adjacency lists and <vector>s, and its memory footprint can be calculated directly from V and E. CSR is furthermore contiguous in memory, eliminating the time overhead of pointer chasing. It’s easy to persist CSR in memory-mapped files, and CSR is convenient once you become accustomed to it. The two-pass construction approach implemented above is asymptotically faster than sorting an edge list.
+> Compressed sparse row is typically the best format for sparse graphs, provided that new edges aren’t added and relatively few edges are deleted. CSR is compact, avoiding the memory waste of adjacency lists and vectors, and its memory footprint can be calculated directly from V and E. CSR is furthermore contiguous in memory, eliminating the time overhead of pointer chasing. It’s easy to persist CSR in memory-mapped files, and CSR is convenient once you become accustomed to it. The two-pass construction approach implemented above is asymptotically faster than sorting an edge list.
 
 ## References
 
