@@ -738,7 +738,7 @@ loop_over_reverse_star(
 
 ## Forward star with a structured array
 
-We now focus on the forward star Cython code. What if instead of having two distinct arrays of size $|E|$: `fs_indices` of type `np.uint32` and `fs_data` of `type np.float`, we use a single array with size $(|E|, 2)$ and heterogeneous column types? This can be done using NumPy [structured arrays](https://numpy.org/doc/stable/user/basics.rec.html). However, the tricky part is to access this structured array from Cython with a heterogoneaous dtype memoryview. Fortunately, there is a simple example in the [Cython documentation](https://cython.readthedocs.io/en/latest/src/userguide/memoryviews.html#syntax) that we used in the following.
+We now focus on the forward star Cython code. What if instead of having two distinct arrays of size $\|E\|$: `fs_indices` of type `np.uint32` and `fs_data` of `type np.float`, we use a single array with size $(\|E\|, 2)$ and heterogeneous column types? This can be done using NumPy [structured arrays](https://numpy.org/doc/stable/user/basics.rec.html). However, the tricky part is to access this structured array from Cython with a heterogoneaous dtype memoryview. Fortunately, there is a simple example in the [Cython documentation](https://cython.readthedocs.io/en/latest/src/userguide/memoryviews.html#syntax) that we used in the following.
 
 
 ```cython
