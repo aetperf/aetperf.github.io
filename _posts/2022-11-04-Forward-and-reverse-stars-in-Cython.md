@@ -455,18 +455,6 @@ loop_over_forward_star(
     (3,3) : 3.0
 
 
-
-```python
-sp_coo_S = coo_array(
-    (
-        edges_df_S["weight"].values,
-        (edges_df_S["source"].values, edges_df_S["target"].values),
-    ),
-    dtype=np.float64,
-    shape=(vertex_count_S, vertex_count_S),
-)
-```
-
 ### Larger network
 
 Now we run the `create_forward_star` function on the larger network:
