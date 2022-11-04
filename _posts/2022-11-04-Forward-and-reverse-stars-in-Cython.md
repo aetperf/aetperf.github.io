@@ -35,7 +35,7 @@ In this note book, we are going to implement three different graph representatio
 - Addjacency list with pointers and C structs
 
 <p align="center">
-  <img width="800" src="/img/2022-11-01_01/graph_representations.jpg" alt="graph_representations">
+  <img width="800" src="/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations">
 </p>
 
 ## Imports
