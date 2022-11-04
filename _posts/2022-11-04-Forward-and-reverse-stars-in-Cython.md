@@ -57,7 +57,7 @@ We start by creating a very small network for testing purpose.
 
 ## Create a small network
 
-This is actually similar to a network used in the [previous post](https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html). Note that this graph has some parallel edges, a loop and an isolated vertex. 
+This is a network already used in the [previous post](https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html). Note that this graph has some parallel edges, a loop and an isolated vertex. 
 
 <p align="center">
   <img width="300" src="/img/2022-10-21_01/small_graph.jpg" alt="query_1">
@@ -207,7 +207,7 @@ edges_df_L.dtypes
 
 
 
-Also, later we are going to walk randomly though each node of the network and use the forward/reverse stars to access all outgoing or incoming edges. So let's create a random vector with a random perlmutation of all the node indices:
+Also, later we are going to walk randomly though each node of this USA network and use the forward/reverse stars to access all outgoing or incoming edges. So let's create a random vector with a random perlmutation of all the node indices:
 
 
 ```python
@@ -255,13 +255,13 @@ This code is adapted from the `scipy.sparse` source code `coo_tocsr` that can be
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  ```
  
- So this algorithm saves us from sorting the source node indices. Also, it handles duplicated entries, which might be a little bit confusing because the Python methods `tocsr` and `tocsc` do not. This means that duplicate entries are probably removed, by adding them together, downstream from this function in SciPy. Finally, the algorithm complexity is given. In our case, that would be: 
+ So this algorithm saves us from sorting the source node indices. Also, it handles duplicated entries, which might be a little bit confusing because the `scipy.sparse.coo_array` methods `tocsr` and `tocsc` do not. This means that duplicate entries are probably removed, by adding them together, downstream from this function in SciPy. Finally, the algorithm complexity is given. In our case, that would be: 
  
 $$O(|E| + |V|) $$
 
 where $|E|$ is the edge count, and $|V|$ the vertex count. A similar approach is described in [1].
  
- In the following the `cpdef` function can be accessed from the Python level, while the `cdef` can only be seen in the Cython level.
+In the following the `cpdef` function can be accessed from the Python level, while the `cdef` can only be seen in the Cython level.
 
 
 ```cython
