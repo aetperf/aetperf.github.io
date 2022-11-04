@@ -27,6 +27,17 @@ In the following, we implement the forward/reverse stars in Cython. What is Cyth
 
 We refer to the [Cython documentation](https://cython.readthedocs.io/en/latest/) for an in-depth presentation of the language.
 
+
+In this note book, we are going to implement three different graph representations in Cython:
+
+- Forward and revers stars with NumPy 1D arrays
+- Forward star with a NumPy structured array
+- Addjacency list with pointers and C structs
+
+<p align="center">
+  <img width="800" src="/img/2022-11-01_01/graph_representations.jpg" alt="graph_representations">
+</p>
+
 ## Imports
 
 
