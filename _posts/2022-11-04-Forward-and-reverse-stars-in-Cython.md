@@ -15,7 +15,7 @@ tags:
 This notebook is the following of a previous one, where we looked at the forward and reverse star representations of a sparse directed graph in pure Python:  
 [Forward and reverse star representation of a digraph](https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html).
 
-The motivation is to access the outgoing or incoming edges of graph nodes, as well as the associated edge attributes, in an efficient manner. The type of networks that we are interested in are road networks, which usually have a rather low mean degree. The use case that we have in mind are shortest path algorithms. In the present case, we only deal with a single edge attribute: a real weight. 
+The motivation is to access the outgoing or incoming edges of graph nodes, as well as the associated edge attributes, in an efficient manner. The type of networks that we are interested in are road networks, which usually have a rather low mean degree. The use case that we have in mind are shortest path algorithms. In the present case, we only deal with a single edge attribute: a weight with float type. 
 However we could use more, such as for some shortest hyperpath algorithms: 
 - link travel time
 - maximum link delay
