@@ -879,7 +879,7 @@ The issue is that this data structure cannot persist in the Python level, it can
 
 The memory allocation step for adjacency list approach is rather slow, as compare to the forward/reverse star data structure. As described in [3], the adjacency vector and the forward/reverse star representations have similar efficiency when used in graph algorithms, but the setup time and used memory is larger for the adjacency list approach.
 
-Note that we use the CRS representation of the graph as input to create the adjacency lists.
+Note that we use the CSR representation of the graph as input to create the adjacency lists.
 
 ```cython
 %%cython --compile-args=-Ofast
