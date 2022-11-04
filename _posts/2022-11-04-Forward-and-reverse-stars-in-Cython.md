@@ -266,7 +266,7 @@ This code is adapted from the `scipy.sparse` source code `coo_tocsr` that can be
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  ```
  
- So this algorithm saves us from sorting the source node indices. Also, it handles duplicated entries, which might be a little bit confusing because the `scipy.sparse.coo_array` methods `tocsr` and `tocsc` do not. This means that duplicate entries are probably removed, by adding them together, downstream from this function in SciPy. Finally, the algorithm complexity is given. In our case, that would be: 
+ So this algorithm saves us from sorting the source node indices, which is rather expensive. Also, it handles duplicated entries, which might be a little bit confusing because the `scipy.sparse.coo_array` methods `tocsr` and `tocsc` do not. This means that duplicate entries are probably removed, by adding them together, downstream from this function in SciPy. Finally, the algorithm complexity is given. In our case, that would be: 
  
 $$O(|E| + |V|) $$
 
