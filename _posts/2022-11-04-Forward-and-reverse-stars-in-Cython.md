@@ -16,12 +16,12 @@ This notebook is the following of a previous one, where we looked at the forward
 [Forward and reverse star representation of a digraph](https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html).
 
 The motivation is to access the outgoing or incoming edges of graph nodes, as well as the associated edge attributes, in an efficient manner. The type of networks that we are interested in are road networks, which usually have a rather low mean degree. The use case that we have in mind are shortest path algorithms. In the present case, we only deal with a single edge attribute: a weight with float type. 
-However we could use more, such as for some shortest hyperpath algorithms: 
+However we could use more attributes, such as in some shortest hyperpath algorithms: 
 - link travel time
 - maximum link delay
 - probability that the link is used in the hyperpath
 
-What is Cython? Here is the description from the [Cython](https://cython.org/) web site:
+In the following, we implement the forward/reverse stars in Cython. What is Cython? Here is the description from the [Cython](https://cython.org/) web site:
 
 > Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language (based on Pyrex). It makes writing C extensions for Python as easy as Python itself.
 
