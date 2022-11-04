@@ -32,7 +32,7 @@ In this note book, we are going to implement three different graph representatio
 
 - Forward and reverse stars with NumPy 1D arrays
 - Forward star with a NumPy structured array
-- Addjacency list with pointers and C structs
+- Adjacency list with pointers and C structs
 
 <p align="center">
   <img width="800" src="/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations">
