@@ -21,7 +21,7 @@ However we could use more attributes, such as in some shortest hyperpath algorit
 - maximum link delay
 - probability that the link is used in the hyperpath
 
-In the following, we implement the forward/reverse stars in Cython. What is Cython? Here is the description from the [Cython](https://cython.org/) web site:
+In the following, we implement some code in Cython. What is Cython? Here is the description from the [Cython](https://cython.org/) web site:
 
 > Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language (based on Pyrex). It makes writing C extensions for Python as easy as Python itself.
 
