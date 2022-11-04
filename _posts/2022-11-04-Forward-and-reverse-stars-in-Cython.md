@@ -43,23 +43,15 @@ from scipy.sparse import coo_array
 RS = 124  # random seed
 ```
 
+Package versions:
 
-```python
-%load_ext watermark
-%watermark -v -p cython,jupyterlab,numpy,pandas,scipy
-```
-
-    Python implementation: CPython
     Python version       : 3.10.6
-    IPython version      : 8.6.0
+    cython               : 0.29.32
+    jupyterlab           : 3.5.0
+    numpy                : 1.23.4
+    pandas               : 1.5.1
+    scipy                : 1.9.3
     
-    cython    : 0.29.32
-    jupyterlab: 3.5.0
-    numpy     : 1.23.4
-    pandas    : 1.5.1
-    scipy     : 1.9.3
-    
-
 
 We start by creating a very small network for testing purpose.
 
