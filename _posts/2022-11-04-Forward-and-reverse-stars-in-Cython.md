@@ -998,7 +998,7 @@ loop_AL(node_randseq_L, fs_indptr_L, fs_indices_L, fs_data_L, vertex_count_L)
 
 ## Conclusion
 
-Forward and reverse star seems to be the most efficient approach in case where: 
+Forward and reverse star appear to be the most efficient approach in case where: 
 - we do not want to edit the network topology
 - the networks are relatively small, as compared to some social networks for example, and sparse
 
