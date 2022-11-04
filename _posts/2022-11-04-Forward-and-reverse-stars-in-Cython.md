@@ -574,7 +574,7 @@ cpdef create_reverse_star(edges_df, vertex_count, edge_count):
     return rs_indptr, rs_indices, rs_data
 ```
 
-And here a function that loops over a list of node indices and got though each node's incoming edges:
+And here is a function that loops over a list of node indices and go though each node's incoming edges:
 
 
 ```cython
