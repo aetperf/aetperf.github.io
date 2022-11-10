@@ -44,7 +44,6 @@ In this note book, we are going to implement three different graph representatio
 ```python
 import os
 
-import cython
 import numpy as np
 import pandas as pd
 from scipy.sparse import coo_array
