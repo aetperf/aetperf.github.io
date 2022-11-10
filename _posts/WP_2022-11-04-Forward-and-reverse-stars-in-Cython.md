@@ -13,7 +13,7 @@ However we could use more attributes, such as in some shortest hyperpath algorit
 
 In the following, we implement some code in Cython. What is Cython? Here is the description from the [Cython](https://cython.org/) web site:
 
-> Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language (based on Pyrex). It makes writing C extensions for Python as easy as Python itself.
+> Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language, based on Pyrex. It makes writing C extensions for Python as easy as Python itself.
 
 We refer to the [Cython documentation](https://cython.readthedocs.io/en/latest/) for an in-depth presentation of the language.
 
