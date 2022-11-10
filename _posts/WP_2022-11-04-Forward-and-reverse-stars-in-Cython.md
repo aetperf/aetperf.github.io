@@ -25,7 +25,7 @@ In this note book, we are going to implement three different graph representatio
 - Adjacency list with pointers and C structs
 
 <p align="center">
-  <img width="800" src="/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations">
 </p>
 
 ## Imports
@@ -60,7 +60,7 @@ We start by creating a very small network for testing purpose.
 This is a network already used in the [previous post](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-star-representation-of-a-digraph/). Note that this graph has some parallel edges, a loop and an isolated vertex. 
 
 <p align="center">
-  <img width="300" src="/img/2022-10-21_01/small_graph.jpg" alt="query_1">
+  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-10-21_01/small_graph.jpg" alt="query_1">
 </p>
 
 We store the network as an edge dataframe called `edges_df_S`:
