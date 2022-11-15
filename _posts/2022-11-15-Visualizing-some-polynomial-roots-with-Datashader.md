@@ -26,7 +26,7 @@ If we think of the general polynomial:
 
 $$P(x) = \sum_{i=0}^m  a_i \; x^{m-i}$$
 
-we have in the present case, $m=10$ and $a_i \in \left\\{-1 , 1 \right\\}, \;  \forall i \geq 0$. We are going to keep this set of possible values for the polynomial coefficients, but increase the polynomial degree $m$ a little bit. 
+we have in the above tweet, $m=10$ and $a_i \in \left\\{-1 , 1 \right\\}, \;  \forall i \geq 0$. We are going to keep this set of possible values for the polynomial coefficients, but increase the polynomial degree $m$ a little bit. 
 
 The roots of $P(x)$ are going to be computed with [NumPy](https://numpy.org/) and [Cython](https://cython.org/) (we could have done it with [Numba](https://numba.pydata.org/) as well). Then we are going to visualize the point density in the complex plane with [datashader](https://datashader.org/), which is the appropriate tool in Python for such a visualization I think.
 
