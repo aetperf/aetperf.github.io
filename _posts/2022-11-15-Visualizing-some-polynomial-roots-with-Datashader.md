@@ -144,7 +144,7 @@ cpdef loop_over_polys(poly_coefs_all):
     return roots_all
 ```
 
-This computation could be done in parallel:  we could assign some chunks of polynomials to each process. However, this is sequential in the present short post. The computation takes 43 minutes on my laptop.
+This computation could be done in parallel:  we could assign some chunks of polynomials to each process. However, this is sequential in the present short post. Because the roots are computed with NumPy on the Python level, we cannot release the GIL and use a `prange` loop from Cython. The computation takes around 43 minutes on my laptop.
 
 
 ```python
