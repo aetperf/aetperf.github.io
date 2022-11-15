@@ -71,7 +71,7 @@ print(f"we have {n} distinct polynomials of degree {m}")
     we have 16777216 distinct polynomials of degree 23
 
 
-In NumPy, the polynomials $P(x) = a_0 \; x^m + a_1 \; x^{m-1} + ... + a_{m-1} \; x + a_m$ are only defined by the coefficients in that order:  
+In NumPy, the polynomials $P(x) = a_0 \; x^m + a_1 \; x^{m-1} + ... + a_{m-1} \; x + a_m$ are only defined by the coefficients, in this order:  
 
 $$\left[a_0 \; a_1 \; ... \; a_{m-1} \; a_m\right]$$
 
@@ -168,7 +168,7 @@ roots_all.shape
 
 
 
-We transform the 2D array into a 1D complex array:
+We transform the 2D array into a 1D array:
 
 
 ```python
