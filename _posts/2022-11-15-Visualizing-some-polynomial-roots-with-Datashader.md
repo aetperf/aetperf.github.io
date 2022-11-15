@@ -1,4 +1,3 @@
-
 ---
 title: Visualizing some polynomial roots with Datashader
 layout: post
@@ -21,13 +20,13 @@ Last week-end I found this interesting [tweet](https://twitter.com/souplovr23/st
   <img width="600" src="/img/2022-11-15_01/tweet.jpg" alt="tweet">
 </p>
 
-The above figure shows all the complex roots from the various polynomials of degree 10 with coefficients in the set $\left\{ -1, 1 \right\}$. It made me think of [Bohemian matrix](https://en.wikipedia.org/wiki/Bohemian_matrices) eigenvalues, and I guess it is related (through the polynomial's *companion matrix*). 
+The above figure shows all the complex roots from the various polynomials of degree 10 with coefficients in the set $\left\\{ -1, 1 \right\\}$. It made me think of [Bohemian matrix](https://en.wikipedia.org/wiki/Bohemian_matrices) eigenvalues, and I guess it is related (through the polynomial's *companion matrix*). 
 
 If we think of the general polynomial:
 
 $$P(x) = \sum_{i=0}^m  a_i \; x^{m-i}$$
 
-we have in the present case, $m=10$ and $a_i \in \left\{-1 , 1 \right\}, \;  \forall i \geq 0$. We are going to keep this set of possible values for the polynomial coefficients, but increase the polynomial degree $m$ a little bit. 
+we have in the present case, $m=10$ and $a_i \in \left\\{-1 , 1 \right\\}, \;  \forall i \geq 0$. We are going to keep this set of possible values for the polynomial coefficients, but increase the polynomial degree $m$ a little bit. 
 
 The roots of $P(x)$ are going to be computed with [NumPy](https://numpy.org/) and [Cython](https://cython.org/) (we could have done it with [Numba](https://numba.pydata.org/) as well). Then we are going to visualize the point density in the complex plane with [datashader](https://datashader.org/), which is the appropriate tool in Python for such a visualization I think.
 
@@ -44,39 +43,20 @@ from datashader import tf
 %load_ext cython
 ```
 
-    The cython extension is already loaded. To reload it, use:
-      %reload_ext cython
+Package versions:
 
-
-
-```python
-%load_ext watermark
-%watermark -v -m -p colorcet,cython,datashader,numpy,pandas
-```
-
-    Python implementation: CPython
     Python version       : 3.10.6
-    IPython version      : 8.6.0
-    
-    colorcet  : 3.0.1
-    cython    : 0.29.32
-    datashader: 0.14.2
-    numpy     : 1.23.4
-    pandas    : 1.5.1
-    
-    Compiler    : GCC 10.4.0
-    OS          : Linux
-    Release     : 5.4.0-131-generic
-    Machine     : x86_64
-    Processor   : x86_64
-    CPU cores   : 8
-    Architecture: 64bit
-    
+    colorcet             : 3.0.1
+    cython               : 0.29.32
+    datashader           : 0.14.2
+    numpy                : 1.23.4
+    pandas               : 1.5.1
+    OS                   : Linux
 
 
 ## Cartesian product of all coefficient values
 
-We first evaluate the number of distinct polynomials with coefficients in the given set. This corresponds to a Cartesian product of the provided set $\left\{-1 , 1 \right\}$ with itself $m+1$ times:
+We first evaluate the number of distinct polynomials with coefficients in the given set. This corresponds to a Cartesian product of the provided set $\left\\{-1 , 1 \right\\}$ with itself $m+1$ times:
 
 
 ```python
@@ -247,3 +227,26 @@ img
   <img width="800" src="/img/2022-11-15_01/output_20_0.png" alt="datashader">
 </p>
 
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
