@@ -1,19 +1,9 @@
----
-title: Forward and reverse stars in Cython
-layout: post
-comments: true
-author: François Pacull
-tags: 
-- Python
-- Graph
-- Cython
-- Network
-- Pandas
-- NumPy
----
+
+# Forward and reverse stars in Cython
+
 
 This notebook is the following of a previous one, where we looked at the forward and reverse star representations of a sparse directed graph in pure Python:  
-[Forward and reverse star representation of a digraph](https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html).
+[Forward and reverse star representation of a digraph](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-star-representation-of-a-digraph/).
 
 The motivation is to access the outgoing or incoming edges of graph nodes, as well as the associated edge attributes, in an efficient manner. The type of networks that we are interested in are road networks, which usually have a rather low mean degree. The use case that we have in mind are shortest path algorithms. In the present case, we only deal with a single edge attribute: a weight with float type. 
 However we could use more attributes, such as in some shortest hyperpath algorithms: 
@@ -23,7 +13,7 @@ However we could use more attributes, such as in some shortest hyperpath algorit
 
 In the following, we implement some code in Cython. What is Cython? Here is the description from the [Cython](https://cython.org/) web site:
 
-> Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language (based on Pyrex). It makes writing C extensions for Python as easy as Python itself.
+> Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language, based on Pyrex. It makes writing C extensions for Python as easy as Python itself.
 
 We refer to the [Cython documentation](https://cython.readthedocs.io/en/latest/) for an in-depth presentation of the language.
 
@@ -35,7 +25,7 @@ In this note book, we are going to implement three different graph representatio
 - Adjacency list with pointers and C structs
 
 <p align="center">
-  <img width="800" src="/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations">
 </p>
 
 ## Imports
@@ -67,10 +57,10 @@ We start by creating a very small network for testing purpose.
 
 ## Create a small network
 
-This is a network already used in the [previous post](https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html). Note that this graph has some parallel edges, a loop and an isolated vertex. 
+This is a network already used in the [previous post](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-star-representation-of-a-digraph/). Note that this graph has some parallel edges, a loop and an isolated vertex. 
 
 <p align="center">
-  <img width="300" src="/img/2022-10-21_01/small_graph.jpg" alt="query_1">
+  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-10-21_01/small_graph.jpg" alt="query_1">
 </p>
 
 We store the network as an edge dataframe called `edges_df_S`:
@@ -102,19 +92,6 @@ edges_df_S.head(4)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -174,7 +151,7 @@ edges_df_S.dtypes
 
 ## Load a larger network
 
-We are going to load the USA road network, with 57708624 edges, from the 9th DIMACS implementation challenge. We saved it into an Apache Parquet file in a [previous post](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). We load this Parquet file into a Pandas dataframe named `edges_df_L`.
+We are going to load the USA road network, with 57708624 edges, from the 9th DIMACS implementation challenge. We saved it into an Apache Parquet file in a [previous post](https://www.architecture-performance.fr/ap_blog/download-some-benchmark-road-networks-for-shortest-paths-algorithms/). We load this Parquet file into a Pandas dataframe named `edges_df_L`.
 
 An important feature of this network is that duplicated edges have been removed. This is why we can compare the CSR or CSC sparse formats implemented later in Cython with the one produced by `SciPy.sparse.coo_array` methods: `.tocsr` and `.tocsc`. Since the SciPy module has been designed for matrices and not graphs, it handles duplicate entries by summing them. Parallel edges correspond to multiple matrix entries at the same row-column location when considering the node-node adjacency matrix. So duplicated edges would be "merged into a single one" by these methods, with a larger edge weight, which is not what we want here.
 
@@ -1010,27 +987,3 @@ As stated in [1]:
 [1] Terence Kelly, *Programming Workbench: Compressed Sparse Row Format for Representing Graphs*. Usenix Mag. 45(4) [2020]. [pdf](https://www.usenix.org/system/files/login/articles/login_winter20_16_kelly.pdf)   
 [2] Jake VanderPlas, *Python data science handbook : essential tools for working with data*. Sebastopol, CA: O'Reilly Media Inc. [2016] ISBN: 978-1491912058 [online](https://jakevdp.github.io/PythonDataScienceHandbook/)  
 [3] Mahammad Valiyev, *Graph Storage : How good is CSR really?* [2017] [pdf](https://db.in.tum.de/teaching/ws1718/seminarHauptspeicherdbs/paper/valiyev.pdf)
-
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
