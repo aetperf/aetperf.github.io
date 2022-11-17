@@ -59,9 +59,9 @@ print(f"we have {n} distinct polynomials of degree {m}")
     we have 16777216 distinct polynomials of degree 23
 
 
-With `np.roots`, the polynomials $P(x) = a_0 \; x^m + a_1 \; x^{m-1} + ... + a_{m-1} \; x + a_m$ are only defined by the coefficients, in this order:  
+With `np.roots`, the polynomials $P(x) = a_0 \\; x^m + a_1 \\; x^{m-1} + ... + a_{m-1} \\; x + a_m$ are only defined by the coefficients, in this order:  
 
-$$\left[a_0 \; a_1 \; ... \; a_{m-1} \; a_m\right]$$
+$$\left[a_0 \\; a_1 \\; ... \\; a_{m-1} \\; a_m\right]$$
 
 Let's generate the coefficient values: 
 
