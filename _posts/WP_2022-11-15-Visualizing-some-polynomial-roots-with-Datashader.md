@@ -212,5 +212,5 @@ img
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-15_01/output_20_0.png" alt="datashader">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-15_01/output_20_0.png" alt="datashader">
 </p>
