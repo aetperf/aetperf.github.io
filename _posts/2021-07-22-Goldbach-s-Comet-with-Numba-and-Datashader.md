@@ -716,7 +716,7 @@ g_df = g_df[g_df.E > 2]  # The function g(E) is defined for all even integers E>
 
 ```python
 cmap = palette["dimgray"]
-bg_col = "black"
+bg_col = "white"
 height = 800
 width = int(np.round(1.6 * height))
 ```
