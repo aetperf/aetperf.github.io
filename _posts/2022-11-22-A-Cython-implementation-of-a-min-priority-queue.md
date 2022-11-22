@@ -56,7 +56,7 @@ We are going to deal with two arrays:
 - an array of structs for the elements
 - an array of indices for the binary tree
 
-The shortest path algorithm deals with a set of $n$ elements, e.g. $n=|V|$ where $V$ are the graph vertices. We store these elements in a first array: 
+The shortest path algorithm deals with a set of $n$ elements, e.g. $n=\|V\|$ where $V$ are the graph vertices. We store these elements in a first array: 
 
 <p align="center">
   <img width="800" src="/img/2022-11-22_01/element_array_02.jpg" alt="element_array">
