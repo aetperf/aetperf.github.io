@@ -399,7 +399,11 @@ cdef inline void _decrease_key_from_node_index(
             i = j
         else:
             break
-            
+
+
+# Simple example
+# ==============
+
 cpdef test_01():
 
     cdef PriorityQueue pqueue
@@ -411,7 +415,7 @@ cpdef test_01():
     insert(&pqueue, 3, 4.0)
     insert(&pqueue, 2, 1.0)
 
-    assert pqueue.size == <ssize_t>4
+    assert pqueue.size == 4
     A_ref = [2, 0, 3, 1]
     n_ref = [1, 3, 0, 2]
     key_ref = [2.0, 3.0, 1.0, 4.0]
@@ -443,6 +447,9 @@ cpdef test_01():
 ```python
 test_01()
 ```
+
+Everything seems to work fine. In a future post, we will use this priority queue in a shortest path algorithm, and try to measure its efficiency.
+
 
 ## References
 
