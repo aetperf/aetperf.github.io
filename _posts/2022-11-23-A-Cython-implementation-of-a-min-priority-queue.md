@@ -1,5 +1,5 @@
 ---
-title: A Cython implementation of a min priority queue
+title: A Cython implementation of a priority queue
 layout: post
 comments: true
 author: François Pacull
@@ -12,7 +12,7 @@ tags:
 - Path algorithms
 ---
 
-In this post, we describe a basic Cython implementation of a *min priority queue*. 
+In this post, we describe a basic Cython implementation of a *priority queue*. 
 
 A priority queue is an important data structure in computer science with many applications. In the present post, our motivation is to write a priority queue for classic shortest path algorithms, such as Dijkstra's Single Source Shortest Path (SSSP). We target rather sparse graphs, such as transportation networks.
 
@@ -25,7 +25,7 @@ As described by Chen in [1]:
 > A *priority queue* is a collection of elements each with a numerical *priority*, also known as its *key*. Priority queues support *insert*, *extract-min* operations. An insert operation adds one element and its key into the priority queue. A call to extract-min deletes the element with the lowest key from the queue, and returns the element with its key.   
 Optionally, a priority queue may support *delete* and *decrease-key* operation. The decrease-key operation takes as its parameters an element reference, and a new key. The result is that if the element is present in the priority queue, its current key is replaced with the new key. To implement delete and decrease-key operations efficiently, a priority queue must be able to access specific elements in constant time. Usually this is done by keeping a table of element pointers.
 
-In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which implies some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the min priority queue, but we need this operation for other algorithms than SSSP. 
+In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which implies some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the priority queue, but we need this operation for other algorithms than SSSP. 
 
 To summarize, we are going to build a data structure for maintaining a set $S$ of elements, each with an associated value called a key, and supporting the following operations:
 - *INSERT($S$, $x$, $k$)* inserts the element $x$ with key $k$ into the set $S$
@@ -80,7 +80,7 @@ The length of the tree array could be smaller than the element array because the
 
 ### Mutual references
 
-The path algorithm is only dealing with the elements, which are stored in the element array, and call the min priority queue operations: insert, extract-min and decrease-key. The order of the elements in the element array is never changed, while items in the binary tree are permuted, in order to meet the min-heap property: a value of a given node `i` is not smaller than the value of its parent node `parent(i)`. 
+The path algorithm is only dealing with the elements, which are stored in the element array, and call the priority queue operations: insert, extract-min and decrease-key. The order of the elements in the element array is never changed, while items in the binary tree are permuted, in order to meet the min-heap property: a value of a given node `i` is not smaller than the value of its parent node `parent(i)`. 
 
 So we need some kind of mutual references, in order to associate an element in the heap to a tree node, and vice-versa. Since we have an array storing the elements, we are going to use indices to refer to the associated tree nodes. As Robert Sedgewick explains in [5]:
 
