@@ -25,7 +25,7 @@ As described by Chen in [1]:
 > A *priority queue* is a collection of elements each with a numerical *priority*, also known as its *key*. Priority queues support *insert*, *extract-min* operations. An insert operation adds one element and its key into the priority queue. A call to extract-min deletes the element with the lowest key from the queue, and returns the element with its key.   
 Optionally, a priority queue may support *delete* and *decrease-key* operation. The decrease-key operation takes as its parameters an element reference, and a new key. The result is that if the element is present in the priority queue, its current key is replaced with the new key. To implement delete and decrease-key operations efficiently, a priority queue must be able to access specific elements in constant time. Usually this is done by keeping a table of element pointers.
 
-In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which implies some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the min-priority queue, however we need this operation for other algorithms than SSSP. 
+In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which implies some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the min-priority queue, but we need this operation for other algorithms than SSSP. 
 
 To summarize, we are going to build a data structure for maintaining a set $S$ of elements, each with an associated value called a key, and supporting the following operations:
 - *INSERT($S$, $x$, $k$)* inserts the element $x$ with key $k$ into the set $S$
@@ -92,7 +92,7 @@ So there is a `node_idx` attribute in `Elements`, referring to some binary tree 
   <img width="1000" src="/img/2022-11-22_01/mutual_refs_01.jpg" alt="mutual_refs">
 </p>
 
-So we have the two following invariants:
+We have the following invariants:
 
 `Elements[A[i]].node_idx = i`  
 
