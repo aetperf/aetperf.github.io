@@ -41,7 +41,7 @@ To summarize, we are going to build a data structure for maintaining a set $S$ o
 
 The above notations are take from Cormen et al. [2]. 
 
-## The underlying heap
+## The Underlying heap
 
 There are many possible implementations of this data structure. It is possible to base a priority queue on a linked list. However, when the network is rather sparse, using a priority queue based on a *heap* is more efficient. Several heap types can be used for a priority queue, for example Binary, Binomial or Fibonacci heaps. The Fibonacci heap has a better theoretical time complexity than the binary heap, but it is not so clear in practice : constant factors may differ a lot from one heap type to another. As explained by Delling et al. in [3]:
 
