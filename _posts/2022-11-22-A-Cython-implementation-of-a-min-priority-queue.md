@@ -44,7 +44,7 @@ It is also possible to exploit the property that the sequence of values returned
 
 > in this case several data structures can implement the various priority-queue operations more efficiently than a binary heap or a Fibonacci heap.
 
-In our implementation, we are going to keep the code as simple as possible and use the most rudimentary heap type: a binary heap, that does not take advantage of this monotone property. And we already used such a data structure, for the purpose of sorting, in previous posts:
+In our implementation, we are going to keep the code as simple as possible and use the most rudimentary heap type: a binary heap, that does not take advantage of this monotone property. Note that we already used such a data structure, for the purpose of sorting, in previous posts:
 - [Heapsort with Numba and Cython](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba-and-Cython.html)
 - [More Heapsort in Cython](https://aetperf.github.io/2022/04/26/More-Heapsort-in-Cython.html)  
 
