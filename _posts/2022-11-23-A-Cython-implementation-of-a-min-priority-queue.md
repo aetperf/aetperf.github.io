@@ -12,6 +12,11 @@ tags:
 - Path algorithms
 ---
 
+<p align="center">
+  <img width="400" src="/img/2022-11-23_01/abstract_data_structure.jpg" alt="abstract_data_structure">
+</p>
+
+
 In this post, we describe a basic Cython implementation of a *priority queue*. 
 
 A priority queue is an important data structure in computer science with many applications. In the present post, our motivation is to write a priority queue for classic shortest path algorithms, such as Dijkstra's Single Source Shortest Path (SSSP). We target rather sparse graphs, such as transportation networks.
