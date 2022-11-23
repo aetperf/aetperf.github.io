@@ -15,7 +15,7 @@ tags:
 <p align="center">
   <img width="400" src="/img/2022-11-23_01/abstract_data_structure.jpg" alt="abstract_data_structure">
 </p>
-<center>**Credit:** F. Pacull, Musée de l'illusion, Lyon</center>
+<center><b>Credit:</b> <i>F. Pacull, Musée de l'illusion, Lyon</i></center>
 
 In this post, we describe a basic Cython implementation of a *priority queue*. 
 
