@@ -113,7 +113,7 @@ Path algorithms only deal with elements, not tree nodes, which belong to some ki
 - `NOT_IN_HEAP`
 - `IN_HEAP`
 
-Elements are initialized as `NOT_IN_HEAP`, with an inf key value and a `node_idx` equal to the heap length. The tree array is initialize with a `element_idx` also equal to the number of elements, which happens to be the heap length in our implementation.
+Elements are initialized as `NOT_IN_HEAP`, with an inf key value and a `node_idx` equal to the heap length. The tree array is initialized with a `element_idx` also equal to the number of elements, which happens to be the heap length in our implementation.
 
 <p align="center">
   <img width="1000" src="/img/2022-11-22_01/mutual_refs_02.jpg" alt="mutual_refs">
@@ -140,12 +140,12 @@ Package versions:
 ## Cython code
 
 Remarks:  
-- The `key` data type is defined as `float64`.  
+- The `key` data type is defined as `float64`
 - We define an "infinity" as the maximum value that that can be store in the `key` data type. This is used to initialize the key value.
 - We use an enumeration for the element state to associate the state name with an integer and make it easier to read  
-- Indices are defined as `ssize_t` type
-- GIL is released in in all fucntions
-- This priority queue code can only be called from some Cython code.
+- Indices are defined as `ssize_t`
+- The GIL is released in all the functions
+- This priority queue code can only be called from some Cython code
 - We wrote a very small toy test at the end, that can be called from a Python cell
 
 ```cython
