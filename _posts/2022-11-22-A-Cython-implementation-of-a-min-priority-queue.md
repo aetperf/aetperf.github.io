@@ -12,20 +12,20 @@ tags:
 - Path algorithms
 ---
 
-In this post, we will describe a basic Cython implementation of a *min-priority queue*. 
+In this post, we describe a basic Cython implementation of a *min-priority queue*. 
 
-A priority queue is an important data structure in computer science with many applications. In the present post, our motivation is to write a priority queue for classic shortest path algorithms, such as Dijkstra's Single Source Shortest Path (SSSP). We target rather sparse graphs, such as road networks. We also assume them to be static.
+A priority queue is an important data structure in computer science with many applications. In the present post, our motivation is to write a priority queue for classic shortest path algorithms, such as Dijkstra's Single Source Shortest Path (SSSP). We target rather sparse graphs, such as transportation networks.
 
 ## The Priority queue operations
 
-For that kind of algorithms, we have a fixed set of elements, usually either the vertices or the edges, each associated with a *key* real number. This key value may represent a travel time from an origin, for example. The purpose of the priority queue is to be able to extract the element from the queue with minimum priority key. Also, we need to be able to insert some elements with a given key into the queue, and to decrease the key of an element from the queue. This happens for example in SSSP when a shorter path to a vertex is found.
+For that kind of algorithms, we have a fixed set of elements, usually either the graph vertices or edges, each associated with a *key* real number. This key value may represent a travel time from an origin, for example. The purpose of the priority queue is to be able to extract the element from the queue with minimum priority key. Also, we need to be able to insert some elements with a given key into the queue, and to decrease the key of an element from the queue. This happens for example in SSSP when a shorter path to a vertex is found.
 
 As described by Chen in [1]:
 
 > A *priority queue* is a collection of elements each with a numerical *priority*, also known as its *key*. Priority queues support *insert*, *extract-min* operations. An insert operation adds one element and its key into the priority queue. A call to extract-min deletes the element with the lowest key from the queue, and returns the element with its key.   
 Optionally, a priority queue may support *delete* and *decrease-key* operation. The decrease-key operation takes as its parameters an element reference, and a new key. The result is that if the element is present in the priority queue, its current key is replaced with the new key. To implement delete and decrease-key operations efficiently, a priority queue must be able to access specific elements in constant time. Usually this is done by keeping a table of element pointers.
 
-In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which represents some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the min-priority queue, however we need this operation for other path algorithms. 
+In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which implies some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the min-priority queue, however we need this operation for other algorithms than SSSP. 
 
 To summarize, we are going to build a data structure for maintaining a set $S$ of elements, each with an associated value called a key, and supporting the following operations:
 - *INSERT($S$, $x$, $k$)* inserts the element $x$ with key $k$ into the set $S$
