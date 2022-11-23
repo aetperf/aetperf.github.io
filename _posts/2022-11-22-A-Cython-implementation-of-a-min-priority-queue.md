@@ -36,7 +36,7 @@ The above notations are take from Cormen et al [2].
 
 ## The underlying heap
 
-There are many possible implementations of this data structure. It is possible to base a priority queue on a linked list. However, when the network is rather sparse, using a priority queue based on a *heap* is more efficient. Several heap types can be used for a priority queue, for example Binomial or Fibonacci heaps. The Fibonacci heap has a better theoretical time complexity than the binary heap. However, it is not so clear in practice and constant factors may differ a lot from heap type to another. As explained by Delling et al in [3]:
+There are many possible implementations of this data structure. It is possible to base a priority queue on a linked list. However, when the network is rather sparse, using a priority queue based on a *heap* is more efficient. Several heap types can be used for a priority queue, for example Binary, Binomial or Fibonacci heaps. The Fibonacci heap has a better theoretical time complexity than the binary heap, but it is not so clear in practice : constant factors may differ a lot from one heap type to another. As explained by Delling et al in [3]:
 
 > However, in practice the impact of priority queues on performance for large road networks is rather limited since cache faults for accessing the graph are usually the main bottleneck. In addition, our experiments indicate that the impact of priority queue implementations diminishes with advanced speedup techniques that dramatically reduce the queue sizes.
 
