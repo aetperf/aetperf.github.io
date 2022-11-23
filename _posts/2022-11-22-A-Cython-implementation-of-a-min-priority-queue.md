@@ -32,11 +32,11 @@ To summarize, we are going to build a data structure for maintaining a set $S$ o
 - *EXTRACT-MIN($S$)* removes and returns the element of $S$ with the smallest key.
 - *DECREASE-KEY($S$, $x$, $k$)* decreases the value of element $x$’s key to the new value $k$, which is assumed to be at most as large as $x$’s current key value.  
 
-The above notations are take from Cormen et al [2]. 
+The above notations are take from Cormen et al. [2]. 
 
 ## The underlying heap
 
-There are many possible implementations of this data structure. It is possible to base a priority queue on a linked list. However, when the network is rather sparse, using a priority queue based on a *heap* is more efficient. Several heap types can be used for a priority queue, for example Binary, Binomial or Fibonacci heaps. The Fibonacci heap has a better theoretical time complexity than the binary heap, but it is not so clear in practice : constant factors may differ a lot from one heap type to another. As explained by Delling et al in [3]:
+There are many possible implementations of this data structure. It is possible to base a priority queue on a linked list. However, when the network is rather sparse, using a priority queue based on a *heap* is more efficient. Several heap types can be used for a priority queue, for example Binary, Binomial or Fibonacci heaps. The Fibonacci heap has a better theoretical time complexity than the binary heap, but it is not so clear in practice : constant factors may differ a lot from one heap type to another. As explained by Delling et al. in [3]:
 
 > However, in practice the impact of priority queues on performance for large road networks is rather limited since cache faults for accessing the graph are usually the main bottleneck. In addition, our experiments indicate that the impact of priority queue implementations diminishes with advanced speedup techniques that dramatically reduce the queue sizes.
 
@@ -52,7 +52,11 @@ We refer to the [first](https://aetperf.github.io/2022/04/14/Heapsort-with-Numba
 
 ## The Data containers
 
-We are going to deal with two arrays:
+We base our implementation on an *implicit* approach, as described by Larkin et al. [4]:
+
+> The tree can be stored explicitly using heap-allocated nodes and pointers, or it can be encoded implicitly as a level-order traversal in an array. We refer to these variations as explicit and implicit heaps respectively. The implicit heap carries a small caveat, such that in order to support DecreaseKey efficiently, we must rely on a level of indirection: encoding the tree’s structure as an array of node pointers and storing the current index of a node’s pointer in the node itself [...].
+
+So we are going to deal with two arrays:
 - an array of structs for the elements
 - an array of indices for the binary tree
 
@@ -78,7 +82,7 @@ The length of the tree array could be smaller than the element array because the
 
 The path algorithm is only dealing with the elements, which are stored in the element array, and call the min-priority queue operations: insert, extract-min and decrease-key. The order of the elements in the element array is never changed, while items in the binary tree are permuted, in order to meet the min-heap property: a value of a given node `i` is not smaller than the value of its parent node `parent(i)`. 
 
-So we need some kind of mutual references, in order to associate an element in the heap to a tree node, and vice-versa. As Robert Sedgewick explains in [4]:
+So we need some kind of mutual references, in order to associate an element in the heap to a tree node, and vice-versa. As Robert Sedgewick explains in [5]:
 
 > Suppose that the records to be processed in a priority queue are in an existing array. In this case, it makes sense to have the priority-queue routines refer to items through the array index. Moreover, we can use the array index as a handle to implement all the priority-queue operations.
 
@@ -443,9 +447,10 @@ test_01()
 ## References
 
 [1] Chen, M., *Measuring and Improving the Performance of Cache-efficient Priority Queues in Dijkstra’s Algorithm*, 2007.   
-[2] Cormen et al, *Introduction to Algorithms*, MIT Press and McGraw-Hill, coll. « third », 2009.  
-[3] Delling et al, *Engineering Route Planning Algorithms*. In: Lerner, J., Wagner, D., Zweig, K.A. (eds) Algorithmics of Large and Complex Networks. Lecture Notes in Computer Science, vol 5515. Springer, Berlin, Heidelberg, 2009. https://doi.org/10.1007/978-3-642-02094-0_7  
-[4] Robert Sedgewick. *Algorithms in C (3rd. ed.)*. Addison-Wesley Longman Publishing Co., Inc., USA, 2002.   
+[2] Cormen et al., *Introduction to Algorithms*, MIT Press and McGraw-Hill, coll. « third », 2009.  
+[3] Delling et al., *Engineering Route Planning Algorithms*. In: Lerner, J., Wagner, D., Zweig, K.A. (eds) Algorithmics of Large and Complex Networks. Lecture Notes in Computer Science, vol 5515. Springer, Berlin, Heidelberg, 2009. https://doi.org/10.1007/978-3-642-02094-0_7  
+[4] Larkin et al., *A back-to-basics empirical study of priority queues*. In Proceedings of the 16th Workshop on Algorithm Engineering and Experiments (ALENEX), pages 61–72, 2014.  
+[5] Robert Sedgewick. *Algorithms in C (3rd. ed.)*. Addison-Wesley Longman Publishing Co., Inc., USA, 2002.   
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
