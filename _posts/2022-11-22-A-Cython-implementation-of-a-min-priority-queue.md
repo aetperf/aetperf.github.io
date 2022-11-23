@@ -178,7 +178,7 @@ cdef struct PriorityQueue:
     ssize_t* A         # array storing the binary tree
     Element* Elements  # array storing the elements
 
-cdef void init_heap(
+cdef void init_pqueue(
     PriorityQueue* pqueue,
     ssize_t length) nogil:
     """Initialize the priority queue.
@@ -373,7 +373,7 @@ cdef inline void _decrease_key_from_node_index(
     PriorityQueue* pqueue,
     ssize_t node_idx, 
     DTYPE_t key_new) nogil:
-    """Decrease the key of an element in the heap, given its tree index.
+    """Decrease the key of an element in the priority queue, given its tree index.
 
     input
     =====
@@ -404,7 +404,7 @@ cpdef test_01():
 
     cdef PriorityQueue pqueue
 
-    init_heap(&pqueue, 4)
+    init_pqueue(&pqueue, 4)
 
     insert(&pqueue, 1, 3.0)
     insert(&pqueue, 0, 2.0)
