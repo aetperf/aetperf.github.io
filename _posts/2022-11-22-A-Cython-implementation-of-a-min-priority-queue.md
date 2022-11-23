@@ -72,7 +72,7 @@ In a second array, we store an array-based binary tree:
   <img width="800" src="/img/2022-11-22_01/tree_array_03.jpg" alt="tree_array">
 </p>
 
-In the following, we call `A` the binary tree array and `Elements` the element array. `A` is an implicit data structure. Given a node index `i`, the parent node index can be easily found as `(i - 1) // 2`. The left child has index `2 * i + 1` and the right child `2 * (i + 1)`. The root is located at index 0. 
+In the following, we denote by `A` the binary tree array and `Elements` the element array. `A` is an implicit data structure. Given a node index `i`, the parent node index can be easily found as `(i - 1) // 2`. The left child has index `2 * i + 1` and the right child `2 * (i + 1)`. The root is located at index 0. 
 
 ### Heap length
 
@@ -82,11 +82,11 @@ The length of the tree array could be smaller than the element array because the
 
 The path algorithm is only dealing with the elements, which are stored in the element array, and call the min-priority queue operations: insert, extract-min and decrease-key. The order of the elements in the element array is never changed, while items in the binary tree are permuted, in order to meet the min-heap property: a value of a given node `i` is not smaller than the value of its parent node `parent(i)`. 
 
-So we need some kind of mutual references, in order to associate an element in the heap to a tree node, and vice-versa. As Robert Sedgewick explains in [5]:
+So we need some kind of mutual references, in order to associate an element in the heap to a tree node, and vice-versa. Since we have an array storing the elements, we are going to use indices to refer to the associated tree nodes. As Robert Sedgewick explains in [5]:
 
 > Suppose that the records to be processed in a priority queue are in an existing array. In this case, it makes sense to have the priority-queue routines refer to items through the array index. Moreover, we can use the array index as a handle to implement all the priority-queue operations.
 
-Since we have an array storing the elements, we are going to use indices to refer to the associated tree nodes. So there is a `node_idx` attribute in `Elements`, referring to some binary tree node. Conversely, we are also going to store the `element_idx` in `A`. The `key` value is stored in the `Element` array. 
+So there is a `node_idx` attribute in `Elements`, referring to some binary tree node. Conversely, we are also going to store the `element_idx` in `A`. The `key` value is stored in the `Element` array. 
 
 <p align="center">
   <img width="1000" src="/img/2022-11-22_01/mutual_refs_01.jpg" alt="mutual_refs">
