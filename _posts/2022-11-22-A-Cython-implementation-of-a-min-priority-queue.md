@@ -108,7 +108,7 @@ And the min-heap property can be stated as follows:
 
 One last thing is required: the element state. Since the heap size vary, elements may be or not in the heap. All the elements from the heap can be found in the `size` first elements of the tree array `A`: the `A[0]` to `A[size-1]` tree nodes correspond to elements in the heap, while the `A[size]` to `A[n]` tree nodes are not in the heap.
 
-Path algorithms only deal with elements, not tree nodes, which belong to some kind of internal mechanism. There is a possibility that path algorithms, on the higher level, try to insert into the heap an element that was already popped from it. This is useless, since a shortest path may already have been found for this element. So we need some kind of state flag to know if an element has already been scanned or not. We also use this state flag to check if an element is in the heap or not, which is more convenient than checking if the associated node index is smaller than the heap size. So we have 3 distinct states:
+Path algorithms only deal with elements, not tree nodes, which belong to some kind of internal mechanism. There is a possibility that path algorithms, on the higher level, try to insert into the heap an element that was already popped from it. This is useless, since a shortest path may already exist for this element. So we need some kind of state flag to know if an element has already been scanned or not. We also use this state flag to check if an element is in the heap or not, which is more convenient than checking if the associated node index is smaller than the heap size. So we have 3 distinct states:
 - `SCANNED`
 - `NOT_IN_HEAP`
 - `IN_HEAP`
