@@ -1,5 +1,5 @@
 ---
-title: A Cython implementation of a min-priority queue WIP
+title: A Cython implementation of a min-priority queue
 layout: post
 comments: true
 author: François Pacull
@@ -63,13 +63,13 @@ So we are going to deal with two arrays:
 The shortest path algorithm deals with a set of $n$ elements, e.g. $n=\|V\|$ where $V$ are the graph vertices. We store these elements in a first array: 
 
 <p align="center">
-  <img width="800" src="/img/2022-11-22_01/element_array_02.jpg" alt="element_array">
+  <img width="800" src="/img/2022-11-23_01/element_array_02.jpg" alt="element_array">
 </p>
 
 In a second array, we store an array-based binary tree:
 
 <p align="center">
-  <img width="800" src="/img/2022-11-22_01/tree_array_03.jpg" alt="tree_array">
+  <img width="800" src="/img/2022-11-23_01/tree_array_03.jpg" alt="tree_array">
 </p>
 
 In the following, we denote by `A` the binary tree array and `Elements` the element array. `A` is an implicit data structure. Given a node index `i`, the parent node index can be easily found as `(i - 1) // 2`. The left child has index `2 * i + 1` and the right child `2 * (i + 1)`. The root is located at index 0. 
@@ -89,7 +89,7 @@ So we need some kind of mutual references, in order to associate an element in t
 So there is a `node_idx` attribute in `Elements`, referring to some binary tree node. Conversely, we are also going to store the `element_idx` in `A`. The `key` value is stored in the `Element` array. 
 
 <p align="center">
-  <img width="1000" src="/img/2022-11-22_01/mutual_refs_01.jpg" alt="mutual_refs">
+  <img width="1000" src="/img/2022-11-23_01/mutual_refs_01.jpg" alt="mutual_refs">
 </p>
 
 We have the following invariants:
@@ -116,7 +116,7 @@ Path algorithms only deal with elements, not tree nodes, which belong to some ki
 Elements are initialized as `NOT_IN_HEAP`, with an inf key value and a `node_idx` equal to the heap length. The tree array is initialized with a `element_idx` also equal to the number of elements, which happens to be the heap length in our implementation.
 
 <p align="center">
-  <img width="1000" src="/img/2022-11-22_01/mutual_refs_02.jpg" alt="mutual_refs">
+  <img width="1000" src="/img/2022-11-23_01/mutual_refs_02.jpg" alt="mutual_refs">
 </p>
 
 
