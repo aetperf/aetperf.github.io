@@ -15,7 +15,7 @@ tags:
 <p align="center">
   <img width="400" src="/img/2022-11-23_01/abstract_data_structure.jpg" alt="abstract_data_structure">
 </p>
-<center><b>Credit:</b> <i>Musée de l'illusion, Lyon (picture by myself)</i></center>
+<center><b>Credit:</b> <i>Musée de l'illusion, Lyon (picture taken by myself)</i></center>
 
 \
 \
