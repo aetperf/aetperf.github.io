@@ -12,16 +12,11 @@ tags:
 - Path algorithms
 ---
 
-<figure>
-    <p align="center">
-    <img width="300" src="hr/img/2022-11-23_01/abstract_data_structure.jpg" alt="penrose" />
-    </center>
-    <figcaption>
-        <p align="center">
-        <b>Credit:</b> <i>Musée de l'illusion, Lyon [picture taken by myself]</i>
-        </center>
-    </figcaption>
-</figure>
+<p align="center">
+  <img width="400" src="/img/2022-11-23_01/abstract_data_structure.jpg" alt="abstract_data_structure">
+</p>
+<center><b>Credit:</b> <i>Musée de l'illusion, Lyon (picture taken by myself)</i></center>
+
 \
 \
 In this post, we describe a basic Cython implementation of a *priority queue*. 
