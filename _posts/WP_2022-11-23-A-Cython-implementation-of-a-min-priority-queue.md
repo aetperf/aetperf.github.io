@@ -30,9 +30,9 @@ Optionally, a priority queue may support *delete* and *decrease-key* operation. 
 In the present case, we are going to implement the decrease-key operation, not the delete one. So we are going to need a table of "element pointers", which implies some kind of heavy mechanism. However, we are only going to deal with indices and not direct memory location addresses. This will be described in a following section. Note that it is possible to implement the SSSP algorithm without the decrease-key operation in the priority queue, but we need this operation for other algorithms than SSSP. 
 
 To summarize, we are going to build a data structure for maintaining a set $S$ of elements, each with an associated value called a key, and supporting the following operations:
-- *INSERT($S$, $x$, $k$)* inserts the element $x$ with key $k$ into the set $S$
-- *EXTRACT-MIN($S$)* removes and returns the element of $S$ with the smallest key.
-- *DECREASE-KEY($S$, $x$, $k$)* decreases the value of element $x$’s key to the new value $k$, which is assumed to be at most as large as $x$’s current key value.  
+- INSERT(S, x, k) inserts the element x with key k into the set S
+- EXTRACT-MIN(S) removes and returns the element of S with the smallest key.
+- DECREASE-KEY(S, x, k) decreases the value of element x’s key to the new value k, which is assumed to be at most as large as x’s current key value.  
 
 The above notations are take from Cormen et al. [2]. 
 
