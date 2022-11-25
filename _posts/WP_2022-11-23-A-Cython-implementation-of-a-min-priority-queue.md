@@ -5,8 +5,12 @@
 <figure>
     <p align="center">
     <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-23_01/abstract_data_structure.jpg" alt="penrose" />
-    <figcaption><b>Credit:</b> <i>Musée de l'illusion, Lyon [picture taken by myself]</i></figcaption>
     </center>
+    <figcaption>
+        <p align="center">
+        <b>Credit:</b> <i>Musée de l'illusion, Lyon [picture taken by myself]</i>
+        </center>
+    </figcaption>
 </figure>
 
 
