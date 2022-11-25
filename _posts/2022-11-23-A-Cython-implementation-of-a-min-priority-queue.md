@@ -167,7 +167,7 @@ from libc.stdlib cimport free, malloc
 
 # data type for the key value
 ctypedef cnp.float64_t DTYPE_t
-cdef DTYPE_t DTYPE_INF = <DTYPE_t>np.finfo(dtype=np.float64 ).max
+cdef DTYPE_t DTYPE_INF = <DTYPE_t>np.finfo(dtype=np.float64).max
 
 cdef enum ElementState:
    SCANNED     = 1     # popped from the heap
