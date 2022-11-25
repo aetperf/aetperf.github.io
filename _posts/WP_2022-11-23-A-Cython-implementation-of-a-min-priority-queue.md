@@ -31,7 +31,7 @@ In the present case, we are going to implement the decrease-key operation, not t
 
 To summarize, we are going to build a data structure for maintaining a set $S$ of elements, each with an associated value called a key, and supporting the following operations:
 - INSERT($S$, $x$, $k$) inserts the element $x$ with key $k$ into the set $S$
-- EXTRACT-MIN($S $) removes and returns the element of $S$ with the smallest key.
+- EXTRACT-MIN( $S$ ) removes and returns the element of $S$ with the smallest key.
 - DECREASE-KEY($S$, $x$, $k$) decreases the value of element $x$’s key to the new value $k$, which is assumed to be at most as large as $x$’s current key value.  
 
 The above notations are take from Cormen et al. [2]. 
