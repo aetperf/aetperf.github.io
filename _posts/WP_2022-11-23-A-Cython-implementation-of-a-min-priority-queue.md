@@ -1,6 +1,11 @@
 
 # A Cython implementation of a priority queue
 
+<figure>
+    <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-23_01/abstract_data_structure.jpg" alt="penrose" />
+    <figcaption><b>Credit:</b> <i>Musée de l'illusion, Lyon (picture taken by myself)</i></figcaption>
+</figure>
+
 \
 In this post, we describe a basic Cython implementation of a *priority queue*. 
 
