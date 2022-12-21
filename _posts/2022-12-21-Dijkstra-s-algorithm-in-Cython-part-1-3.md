@@ -242,7 +242,7 @@ Let's compare the two approaches on the USA network, 57708624 edges and 23947347
 
 We can see that the second strategy is far more efficient. This may be due to to the fact that the heap size remains smaller in the second approach, and that the `decrease_key` operation is expensive as compared to the `insert` one.
 
-In the following posts, we will study various priority queue optimizations and versions, and compare the resulting implementation with some shortest path libraries available in Python.
+In the following posts, we will study various priority queue versions, and compare the resulting implementation with some shortest path libraries available in Python.
 
 ## References
 
