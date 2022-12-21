@@ -233,13 +233,13 @@ assert np.allclose(
 
 ## Execution timings
 
-Let's compare the two approaches on the USA network, 57708624 edges and 23947347 vertices. These algoritms have two distinct phases: *setup* and *run*. During the setup phase, the graph data structured are prepared for the algorithm to run. This setup phase only needs to be run once for any number of calls to the `path_length` functions. In the following, we only measure the execution time of the `run` phase.
+Let's compare the two approaches on the USA network, 57708624 edges and 23947347 vertices. These algoritms have two distinct phases: *setup* and *run*. During the setup phase, the graph data structured are prepared for the algorithm to run. This setup phase only needs to be run once for any number of calls to the `path_length` functions. In the following, we only measure the execution time of the `run` phase. We use the best time over 3 runs.
 
 <p align="center">
   <img width="400" src="/img/2022-12-21_01/heap_init_strategy.jpg" alt="heap init strategy">
 </p>
 
-We can see that the second strategy is far more efficient. This may be due to to the fact that the heap size remains smaller in the second approach, and that the `decrease_key` operation is expensive as compared to the `insert` one.
+We can see that the second strategy is far more efficient. This may be due to the fact that the heap size remains smaller in the second approach, and that the `decrease_key` operation is expensive as compared to the `insert` one.
 
 In the following posts, we will study various priority queue versions, and compare the resulting implementation with some shortest path libraries available in Python.
 
