@@ -234,7 +234,7 @@ assert np.allclose(
 
 ## Execution timings
 
-Let's compare the two approaches on the USA network, 57708624 edges and 23947347 vertices.
+Let's compare the two approaches on the USA network, 57708624 edges and 23947347 vertices. These algoritms have two distinct phases: *setup* and *run*. During the setup phase, the graph data structured are prepared for the algorithm to run. This setup phase only needs to be run once for any number of calls to the `path_length` functions. In the following, we only measure the execution time of the `run` phase.
 
 <p align="center">
   <img width="400" src="/img/2022-12-21_01/heap_init_strategy.jpg" alt="heap init strategy">
