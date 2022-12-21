@@ -111,6 +111,7 @@ The Cython code for the priority queue (`pq_bin_heap_basic`) and the forward sta
 
 ```Python
 %%cython
+# cython: language_level=3
 
 import numpy as np
 cimport numpy as cnp
