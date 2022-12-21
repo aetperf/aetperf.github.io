@@ -20,8 +20,8 @@ In this post, we are going to present an implementation of Dijkstra's algorithm 
   <img width="150" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Edsger_Wybe_Dijkstra.jpg/800px-Edsger_Wybe_Dijkstra.jpg" alt="Dijkstra">
 </p>
 <center><b>Credit:</b> <i>Wikimedia Commons (CC BY-SA 3.0)</i></center>
-\
 
+\
 From a *directed* graph $\mathcal{G}=(V, E)$ with **non-negative** edge weights $w$, we want to compute the shortest weighted path from a source vertex to all graph vertices. This is why we refer to this algorithm as *Single Source Shortest Path* (SSSP). A path is a sequence of edges which joins a sequence of vertices. The cost or weight of a path is the sum of the weights of its constituent edges. 
 
 There are many variants and evolutions of this algorithm but we focus here on this classical *one-to-all* version. In the present implementation, we are not going to store the shortest paths, but only the cost associated with the shortest path at each vertex. However, Dijkstra's algorithm can be built using an array of *predecessors*: for each vertex $v$, we would store the previous vertex index in the shortest path from the source vertex $s$ to $v$. Then, it is easy to trace backward the shortest path from any destination vertex to the origin $s$.
@@ -30,7 +30,7 @@ The use cases here are road networks, with rather sparse networks. We are going 
 ](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html).
 
 <p align="center">
-  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-09-22_01/output_43_1.png" alt="Dijkstra">
+  <img width="300" src="/img/2022-09-22_01/output_43_1.png" alt="Dijkstra">
 </p>
 <center><i>New York road network from the DIMACS implementation challenge</i></center>
 
