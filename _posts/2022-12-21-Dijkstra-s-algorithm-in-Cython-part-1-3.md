@@ -16,16 +16,11 @@ tags:
 
 In this post, we are going to present an implementation of Dijkstra's algorithm in [Cython](https://cython.readthedocs.io/en/stable/index.html). Dijkstra's algorithm is a *shortest path* algorithm. It was conceived by Edsger W. Dijkstra in 1956, and published in 1959 [1]. 
 
-<figure>
-    <p align="center">
-    <img width="150" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Edsger_Wybe_Dijkstra.jpg/800px-Edsger_Wybe_Dijkstra.jpg" alt="Dijkstra" />
-    </center>
-    <figcaption>
-        <p align="center">
-        <b>Credit:</b> <i>Wikimedia Commons (CC BY-SA 3.0)</i>
-        </center>
-    </figcaption>
-</figure>
+<p align="center">
+  <img width="150" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Edsger_Wybe_Dijkstra.jpg/800px-Edsger_Wybe_Dijkstra.jpg" alt="Dijkstra">
+</p>
+<center><b>Credit:</b> <i>Wikimedia Commons (CC BY-SA 3.0)</i></center>
+\
 
 From a *directed* graph $\mathcal{G}=(V, E)$ with **non-negative** edge weights $w$, we want to compute the shortest weighted path from a source vertex to all graph vertices. This is why we refer to this algorithm as *Single Source Shortest Path* (SSSP). A path is a sequence of edges which joins a sequence of vertices. The cost or weight of a path is the sum of the weights of its constituent edges. 
 
@@ -34,17 +29,10 @@ There are many variants and evolutions of this algorithm but we focus here on th
 The use cases here are road networks, with rather sparse networks. We are going to run the SSSP algorithm on the DIMACS road networks that we downloaded in a previous post: [Download some benchmark road networks for Shortest Paths algorithms
 ](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html).
 
-<figure>
-    <p align="center">
-    <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-09-22_01/output_43_1.png?raw=true" alt="Dijkstra" />
-    </center>
-    <figcaption>
-        <p align="center">
-        <i>New York road network from the DIMACS implementation challenge</i>
-        </center>
-    </figcaption>
-</figure>
-
+<p align="center">
+  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-09-22_01/output_43_1.png" alt="Dijkstra">
+</p>
+<center><i>New York road network from the DIMACS implementation challenge</i></center>
 
 Also, we are going to use the min-prioriy queue, based on a binary heap, presented in another post: [A Cython implementation of a priority queue](https://aetperf.github.io/2022/11/23/A-Cython-implementation-of-a-min-priority-queue.html). The heap elements correspond to graph vertices, with the *key* value being the travel time from the source. 
 
@@ -196,16 +184,10 @@ Because we do not want the post to be loaded with too many lines of code, we do 
 
 The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices (added to and removed from the heap) at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figure have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue.
 
-<figure>
-    <p align="center">
-    <img width="300" src="/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra" />
-    </center>
-    <figcaption>
-        <p align="center">
-        <i>Animation of Dijkstra's algorithm applied to the New York road network</i>
-        </center>
-    </figcaption>
-</figure>
+<p align="center">
+  <img width="300" src="/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
+</p>
+<center><i>Animation of Dijkstra's algorithm applied to the New York road network</i></center>
 
 This New York network has 3730100 edges and 264346 vertices. It is interesting to observe that in this second approach, the heap size remains relatively small compared to the number of vertices.
 
