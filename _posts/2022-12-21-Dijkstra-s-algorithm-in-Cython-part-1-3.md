@@ -109,7 +109,8 @@ The forward star representation is allowing an efficient access to the outgoing 
 
 The Cython code for the priority queue (`pq_bin_heap_basic`) and the forward star representation have been placed into Cython modules. The code is taken straightly from the indicated posts. The following implementation corresponds to the second approach, in which only the source vertex is inserted in the queue at the beginning.
 
-```Cython
+```Python
+%%cython
 
 import numpy as np
 cimport numpy as cnp
