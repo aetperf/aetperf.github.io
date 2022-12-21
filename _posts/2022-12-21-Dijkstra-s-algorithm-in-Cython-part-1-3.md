@@ -90,9 +90,9 @@ This time, only the source vertex $s$ is initially added to the queue:
 
 ### General idea
 
-Without going into the details, the idea of this algorithm is quite simple: at each iteration, we consider the vertex $u$ with minimum key value of the Queue, as a "candidate" to be added to the set $S$. This would means that the shortest path $p$, from $s$ to $u$, has been found. 
+Without going into the details, the idea of this algorithm is quite simple: at each iteration, we consider the vertex $u$ with minimum key value of the queue, as a "candidate" to be added to the set $S$. This would means that a shortest path $p$, from $s$ to $u$, has been found. 
 
-But how can we be sure that there is not another distinct path $p'$ with a shorter cost? The source vertex $s$ is the first one to be added to $S$ at the first step of the loop. We know that the key value $s.key=0$ will not be updated ever. At the current iteration, the paths $p$ and $p'$ must go from $s$ inside of $S$ to the candidate vertex $u$, outside of $S$. At some point, both paths use an outgoing edge from a vertex inside of $S$ to a vertex outside of $S$. But all the head vertices of the edges leaving $S$ have previously been added to the queue in the algorithm. Because $u$ has a minimal key in the queue, this implies that the path $p'$ has a cost at least equal to, but not smaller than, the cost of $p$. 
+But how can we be sure that there is not another distinct path $p'$ with a shorter cost? The source vertex $s$ is the first one to be added to $S$ at the first step of the loop. We know that the key value $s.key=0$ will not be updated ever. At the current iteration, the paths $p$ and $p'$ must go from $s$ inside of $S$ to the candidate vertex $u$, outside of $S$. At some point, both paths use an outgoing edge from a vertex inside of $S$ to a vertex outside of $S$. But all the head vertices of the edges leaving $S$ have previously been added to the queue in the algorithm. Because $u$ has a minimal key value in the queue, it implies that the path $p'$ has a cost at least equal to, but not smaller than, the cost of $p$. 
 
 In the following we use a `enum` for each vertex $v$ *state*, i.e., to describe if $v$ is in $S$, in $Q$, or neither:
 - `SCANNED`: $v \in S$
