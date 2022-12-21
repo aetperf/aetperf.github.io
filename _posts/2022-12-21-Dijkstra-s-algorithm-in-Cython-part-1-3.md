@@ -94,7 +94,7 @@ Without going into the details, the idea of this algorithm is quite simple: at e
 
 But how can we be sure that there is not another distinct path $p'$ with a shorter cost? The source vertex $s$ is the first one to be added to $S$ at the first step of the loop. We know that the key value $s.key=0$ will not be updated ever. At the current iteration, the paths $p$ and $p'$ must go from $s$ inside of $S$ to the candidate vertex $u$, outside of $S$. At some point, both paths use an outgoing edge from a vertex inside of $S$ to a vertex outside of $S$. But all the head vertices of the edges leaving $S$ have previously been added to the queue in the algorithm. Because $u$ has a minimal key value in the queue, it implies that the path $p'$ has a cost at least equal to, but not smaller than, the cost of $p$. 
 
-In the following we use a `enum` for each vertex $v$ *state*, i.e., to describe if $v$ is in $S$, in $Q$, or neither:
+In the following, we use an `enum` *state* for each vertex $v$, i.e., to describe if $v$ is in $S$, in $Q$, or neither:
 - `SCANNED`: $v \in S$
 - `IN_HEAP`: $v \in Q$
 - `NOT_IN_HEAP`: $v \notin S$ and $v \notin Q$
@@ -109,7 +109,7 @@ The forward star representation is allowing an efficient access to the outgoing 
 
 The Cython code for the priority queue (`pq_bin_heap_basic`) and the forward star representation have been placed into Cython modules. The code is taken straightly from the indicated posts. The following implementation corresponds to the second approach, in which only the source vertex is inserted in the queue at the beginning.
 
-```Python
+```Cython
 
 import numpy as np
 cimport numpy as cnp
@@ -183,13 +183,15 @@ Because we do not want the post to be loaded with too many lines of code, we do 
 
 ### A Visualization of the algorithm
 
-The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices (added to and removed from the heap) at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figure have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue.
+The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices (added to and removed from the heap) at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figures have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue.
 
 <p align="center">
   <img width="300" src="/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
 </p>
 <center><i>Animation of Dijkstra's algorithm applied to the New York road network</i></center>
 
+\
+\
 This New York network has 3730100 edges and 264346 vertices. It is interesting to observe that in this second approach, the heap size remains relatively small compared to the number of vertices.
 
 <p align="center">
