@@ -14,7 +14,7 @@ tags:
 - Path algorithms
 ---
 
-This post is the second part of a three-part serie. In the [first part](https://aetperf.github.io/2022/12/21/Dijkstra-s-algorithm-in-Cython-part-1-3.html), we looked at the Cython implementation of Dijkstra's algorithm. In the current post, we are going to compare different priority queue implementations, using Dijkstra's algorithm on some road networks.
+This post is the second part of a three-part series. In the [first part](https://aetperf.github.io/2022/12/21/Dijkstra-s-algorithm-in-Cython-part-1-3.html), we looked at the Cython implementation of Dijkstra's algorithm. In the current post, we are going to compare different priority queue implementations, using Dijkstra's algorithm on some road networks.
 
 We apply the shortest path algorithm to the DIMACS road networks that we downloaded in a previous post: [Download some benchmark road networks for Shortest Paths algorithms
 ](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html).
@@ -54,7 +54,7 @@ For a node with index `i`, the parent is found at index `(i - 1) // d`. The chil
 
 ## The `_min_heapify` optimization
 
-Let's start by showing the code of the `_min_heapify` function in the `bin_basic` prioriy queue:
+Let's start by showing the code of the `_min_heapify` function in the `bin_basic` priority queue:
 
 ```cython
 cdef inline void _min_heapify(
@@ -133,7 +133,7 @@ Package versions:
     cython               : 0.29.32
     numpy                : 1.23.5
 
-Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.80GHz, running Linux. Similarly to the first part of the post serie, we checked the result against SciPy, only measured the execution time of the `run` phase (not the `setup` phase), and use the best time over 3 runs. We used the 3 largest DIMACS networks in order to get some significant elapsed time. Here are the features of these 3 networks:
+Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.80GHz, running Linux. Similarly to the first part of the post series, we checked the result against SciPy, only measured the execution time of the `run` phase (not the `setup` phase), and use the best time over 3 runs. We used the 3 largest DIMACS networks in order to get some significant elapsed time. Here are the features of these 3 networks:
 
 | Network | vertex count | edge count |
 |---------|--------------|------------|
@@ -147,10 +147,10 @@ Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.8
 
 We see that the optimization of the `_min_heapify` only brings small benefits. Improvements due to the *3*-ary or *4*-ary heaps as compared to the binary heap is also of small magnitude, but still significant. Finally, we observe a clear advantage of the *d*-ary heaps over the Fibonacci one for this kind of networks. This might be due to a different underlying data structure?
 
-Other improvements that we did not check in this post serie could be:
+Other improvements that we did not check in this post series could be:
 - 0-based indexing in the heap tree for *d*-arry heaps
 - a [monotone priority queue](https://en.wikipedia.org/wiki/Monotone_priority_queue)
-- priority queues without the `decrease_key` operation
+- "lighter" priority queues without the `decrease_key` operation
 
 
 {% if page.comments %}
