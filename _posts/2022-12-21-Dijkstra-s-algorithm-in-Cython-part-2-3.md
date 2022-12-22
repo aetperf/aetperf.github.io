@@ -136,7 +136,7 @@ Package versions:
 Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.80GHz, running Linux. Similarly to the first part of the post series, we checked the result against SciPy, only measured the execution time of the `run` phase (not the `setup` phase), and use the best time over 3 runs. We used the 3 largest DIMACS networks in order to get some significant elapsed time. Here are the features of these 3 networks:
 
 | Network | vertex count | edge count |
-|---------|--------------|------------|
+|---------|-------------:|-----------:|
 | W | 6262104 | 15119284 |
 | CTR | 14081816 | 33866826 |
 | USA | 23947347 | 57708624 |
