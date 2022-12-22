@@ -187,7 +187,7 @@ The following animated gif has been made in two steps. Some `printf` statements 
 <p align="center">
   <img width="300" src="/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
 </p>
-<center><i>Animation of Dijkstra's algorithm applied to the New York road network</i></center>
+<center><i>Animation of Dijkstra's algorithm (second approach) applied to the New York road network</i></center>
 
 \
 \
