@@ -182,7 +182,7 @@ Because we do not want the post to be loaded with too many lines of code, we do 
 
 ### A Visualization of the algorithm
 
-The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices (added to and removed from the heap) at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figures have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue.
+The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices (added to and removed from the heap) at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figures have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue. We can observe the front propagation process of the algorithm.
 
 <p align="center">
   <img width="300" src="/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
