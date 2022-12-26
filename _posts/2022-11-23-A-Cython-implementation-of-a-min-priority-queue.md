@@ -170,9 +170,9 @@ ctypedef cnp.float64_t DTYPE_t
 cdef DTYPE_t DTYPE_INF = <DTYPE_t>np.finfo(dtype=np.float64).max
 
 cdef enum ElementState:
-   SCANNED     = 1     # popped from the heap
-   NOT_IN_HEAP = 2     # never been in the heap
-   IN_HEAP     = 3     # in the heap
+   SCANNED      # popped from the heap
+   NOT_IN_HEAP  # never been in the heap
+   IN_HEAP      # in the heap
 
 cdef struct Element:
     ElementState state # element state wrt the heap
