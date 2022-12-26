@@ -61,11 +61,11 @@ The algorithm can be decomposed in the following steps:
     - insert the source vertex $s$ into $Q$ with a 0 key value: $s.key=0$  
   
 - loop:   
-    - while $Q$ is not empty  
+    - **while** $Q$ is not empty  
         - extract the element $u$ from $Q$ with min priority
         - add $u$ to $S$
-        - for each outgoing edge $(u, v) \in E$:  
-            - if $v \notin S$ and $v.key > u.key + w(u,v)$:  
+        - **for** each outgoing edge $(u, v) \in E$:  
+            - **if** $v \notin S$ and $v.key > u.key + w(u,v)$:  
                 - decrease key of $v$ with key value v_key $u.key + w(u,v)$
 
 ### Second approach: initialize the priority queue with only the source
@@ -77,15 +77,15 @@ This time, only the source vertex $s$ is initially added to the queue:
     - insert the source vertex $s$ into $Q$ with a 0 key value: $s.key=0$  
   
 - loop:   
-    - while $Q$ is not empty  
+    - **while** $Q$ is not empty  
         - extract the element $u$ from $Q$ with min priority
         - add $u$ to $S$
-        - for each outgoing edge $(u, v) \in E$:  
-            - if $v \notin S$:
-                - if $v \notin Q$:
+        - **for** each outgoing edge $(u, v) \in E$:  
+            - **if** $v \notin S$:
+                - **if** $v \notin Q$:
                     - insert $v$ into $Q$ with key value: $u.key + w(u,v)$
-                - else:
-                    - if $v.key > u.key + w(u,v)$:
+                - **else**:
+                    - **if** $v.key > u.key + w(u,v)$:
                         - decrease key of $v$ with key value v_key $u.key + w(u,v)$
 
 ### General idea
