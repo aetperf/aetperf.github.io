@@ -225,10 +225,12 @@ Similarly to the previous part of the post series, we only measure the execution
 
 ## Conclusion
 
-Cython is a really great tool, it makes writing efficient C extensions for Python as easy as Python itself. We implemented Dijksta's algorithm from scratch in Python using NumPy arrays and Cython. This implementation is also based on 2 important data structures:
+We implemented Dijksta's algorithm from scratch in Python using NumPy arrays and Cython. Cython is a really great tool, it makes writing efficient C extensions for Python as easy as Python itself. 
+
+This implementation is also based on 2 important data structures:
 - the forward star representation of the graph
 - the priority queue based on an implicit *d*-ary heap
-This combination leads to interesting results on road networks, actually faster than the great packages that we tried in this post.
+This combination leads to interesting results on road networks, actually faster than the great packages that we tried in this post on the DIMACS road networks.
 
 There is still room for improvement. For example, we could try using a priority queue that does not support the *decrease-key* operation [1], or a [monotone priority queue](https://en.wikipedia.org/wiki/Monotone_priority_queue).
 
