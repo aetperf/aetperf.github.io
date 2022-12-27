@@ -69,7 +69,7 @@ Here are the versions of the packages used to run Dijkstra's algorithm.
 
 At first, we need to load the network, as a Pandas dataframe in COO format, and as NumPy arrays in CSR format (forward star representation):
 
-```Python
+```python
 import pandas as pd
 from scipy.sparse import coo_array
 
@@ -94,7 +94,7 @@ Now we show small examples of calls to each of the external shortest path librar
 
 [Documentation](https://igraph.readthedocs.io/en/0.10.2/index.html)
 
-```Python
+```python
 from igraph import Graph
 
 # setup
@@ -113,7 +113,7 @@ dist_matrix = np.asarray(distances[0])
 
 [Documentation](https://scikit-network.readthedocs.io/en/latest/)
 
-```Python
+```python
 from sknetwork.path import get_distances
 
 # run
@@ -132,7 +132,7 @@ dist_matrix = get_distances(
 
 [Documentation](https://docs.scipy.org/doc/scipy/)
 
-```Python
+```python
 from scipy.sparse.csgraph import dijkstra
 
 # run
@@ -149,7 +149,7 @@ dist_matrix = dijkstra(
 
 [Documentation](https://graph-tool.skewed.de/static/doc/index.html)
 
-```Python
+```python
 import graph_tool as gt
 
 # setup
@@ -177,7 +177,7 @@ dist_matrix = dist.a
 
 [Documentation](https://networkit.github.io/dev-docs/index.html)
 
-```Python
+```python
 import networkit as nk
 
 # setup
@@ -211,15 +211,15 @@ Similarly to the previous part of the post series, we only measure the execution
 ### Results
 
 <p align="center">
-  <img width="600" src="/img/2022-12-27_01/output_16_0.png" alt="all networks 01">
+  <img width="800" src="/img/2022-12-27_01/output_16_0.png" alt="all networks 01">
 </p>
 
 <p align="center">
-  <img width="600" src="/img/2022-12-27_01/output_10_0.png" alt="all networks 02">
+  <img width="800" src="/img/2022-12-27_01/output_10_0.png" alt="all networks 02">
 </p>
 
 <p align="center">
-  <img width="600" src="/img/2022-12-27_01/output_13_0.png" alt="USA network">
+  <img width="800" src="/img/2022-12-27_01/output_13_0.png" alt="USA network">
 </p>
 
 
