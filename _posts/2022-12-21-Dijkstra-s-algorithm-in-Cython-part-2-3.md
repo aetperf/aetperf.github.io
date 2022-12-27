@@ -145,12 +145,7 @@ Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.8
   <img width="600" src="/img/2022-12-21_02/heap_comparison.jpg" alt="heap comparison">
 </p>
 
-We see that the optimization of the `_min_heapify` only brings small benefits. Improvements due to the *3*-ary or *4*-ary heaps as compared to the binary heap is also of small magnitude, but still significant. Finally, we observe a clear advantage of the *d*-ary heaps over the Fibonacci one for this kind of networks. This might be due to a different underlying data structure?
-
-Other improvements that we did not check in this post series could be:
-- 0-based indexing in the heap tree for *d*-arry heaps
-- a [monotone priority queue](https://en.wikipedia.org/wiki/Monotone_priority_queue)
-- "lighter" priority queues without the `decrease_key` operation
+We see that the optimization of the `_min_heapify` only brings small benefits. Improvements due to the *3*-ary or *4*-ary heaps as compared to the binary heap is also of small magnitude, but still significant. Finally, we observe a clear advantage of the *d*-ary heaps over the Fibonacci one for this kind of networks, which might be due to a different underlying data structure.
 
 
 {% if page.comments %}
