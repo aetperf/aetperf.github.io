@@ -1,5 +1,5 @@
 ---
-title: Dijkstra's algorithm in Cython, part 3/3 WIP
+title: Dijkstra's algorithm in Cython, part 3/3
 layout: post
 comments: true
 author: François Pacull
@@ -225,7 +225,7 @@ Similarly to the previous part of the post series, we only measure the execution
 
 ## Conclusion
 
-We implemented Dijksta's algorithm from scratch in Python using NumPy arrays and Cython. Cython is a really great tool, it makes writing efficient C extensions for Python as easy as Python itself. 
+We implemented Dijksta's algorithm from scratch in Python using NumPy arrays and Cython. Cython is a really great tool, which makes writing efficient C extensions for Python as easy as Python itself. 
 
 This implementation is also based on 2 important data structures:
 - the forward star representation of the graph

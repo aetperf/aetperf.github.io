@@ -1,5 +1,5 @@
 ---
-title: Dijkstra's algorithm in Cython, part 1/3 WIP
+title: Dijkstra's algorithm in Cython, part 1/3
 layout: post
 comments: true
 author: François Pacull
