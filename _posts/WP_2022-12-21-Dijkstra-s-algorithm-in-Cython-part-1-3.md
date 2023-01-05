@@ -4,10 +4,16 @@
 
 In this post, we are going to present an implementation of Dijkstra's algorithm in [Cython](https://cython.readthedocs.io/en/stable/index.html). Dijkstra's algorithm is a *shortest path* algorithm. It was conceived by Edsger W. Dijkstra in 1956, and published in 1959 [1]. 
 
-<p align="center">
-  <img width="150" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Edsger_Wybe_Dijkstra.jpg/800px-Edsger_Wybe_Dijkstra.jpg" alt="Dijkstra">
-</p>
-<center><b>Credit:</b> <i>Wikimedia Commons (CC BY-SA 3.0)</i></center>
+<figure>
+    <p align="center">
+    <img width="150" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Edsger_Wybe_Dijkstra.jpg/800px-Edsger_Wybe_Dijkstra.jpg" alt="Dijkstra">
+    </center>
+    <figcaption>
+        <p align="center">
+        <b>Credit:</b> <i>Wikimedia Commons (CC BY-SA 3.0)</i>
+        </center>
+    </figcaption>
+</figure>
 
 \
 \
@@ -18,10 +24,17 @@ There are many variants and evolutions of this algorithm but we focus here on th
 The use cases here are road networks, with rather sparse networks. We are going to run the SSSP algorithm on the DIMACS road networks that we downloaded in a previous post: [Download some benchmark road networks for Shortest Paths algorithms
 ](https://www.architecture-performance.fr/ap_blog/download-some-benchmark-road-networks-for-shortest-paths-algorithms/).
 
-<p align="center">
-  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-12-21_01/output_43_1.png" alt="New York network">
-</p>
-<center><i>New York road network from the DIMACS implementation challenge</i></center>
+<figure>
+    <p align="center">
+    <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-12-21_01/output_43_1.png" alt="New York network">
+    </center>
+    <figcaption>
+        <p align="center">
+        <i>New York road network from the DIMACS implementation challenge</i>
+        </center>
+    </figcaption>
+</figure>
+
 
 Also, we are going to use the min-prioriy queue, based on a binary heap, presented in another post: [A Cython implementation of a priority queue](https://www.architecture-performance.fr/ap_blog/a-cython-implementation-of-a-priority-queue/). The heap elements correspond to graph vertices, with the *key* value being the travel time from the source. 
 
@@ -52,8 +65,8 @@ The algorithm can be decomposed in the following steps:
     - **while** $Q$ is not empty  
         - extract the element $u$ from $Q$ with min priority
         - add $u$ to $S$
-        - **for** each outgoing edge $(u, v) \in E$:  
-            - **if** $v \notin S$ and $v.key > u.key + w(u,v)$:  
+        - **for** each outgoing edge $(u, v) \in E $:  
+            - **if** $v \notin S$ and $v.key > u.key + w(u,v) $:  
                 - decrease key of $v$ with key value v_key $u.key + w(u,v)$
 
 ### Second approach: initialize the priority queue with only the source
@@ -73,7 +86,7 @@ This time, only the source vertex $s$ is initially added to the queue:
                 - **if** $v \notin Q$:
                     - insert $v$ into $Q$ with key value: $u.key + w(u,v)$
                 - **else**:
-                    - **if** $v.key > u.key + w(u,v)$:
+                    - **if** $v.key > u.key + w(u,v) $:
                         - decrease key of $v$ with key value v_key $u.key + w(u,v)$
 
 ### General idea
