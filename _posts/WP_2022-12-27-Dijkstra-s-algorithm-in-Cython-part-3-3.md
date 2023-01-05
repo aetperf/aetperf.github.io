@@ -54,7 +54,7 @@ Here are the versions of the packages used to run Dijkstra's algorithm.
 
 ### Load the networks
 
-At first, we need to load the network, as a Pandas dataframe in COO format, and as NumPy arrays in CSR format (forward star representation):
+At first, we need to load the network, as a Pandas dataframe in COO format, and as NumPy arrays in CSR format [forward star representation]:
 
 ```python
 import pandas as pd
@@ -186,7 +186,7 @@ dist_matrix = np.where(dist_matrix >= 1.79769313e308, np.inf, dist_matrix)
 
 ### In-house implementation
 
-The Cython code for the priority queue based on a *4*-ary heap has been placed into a Cython module. This implementation was described in the [part 2/3](https://www.architecture-performance.fr/ap_blog/dijkstras-algorithm-in-cython-part-2-3/) post. It is also based on a forward star representation of the graph, as described in the post: [https://aetperf.github.io/2022/11/04/Forward-and-reverse-stars-in-Cython.html](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-stars-in-cython/).
+The Cython code for the priority queue based on a *4*-ary heap has been placed into a Cython module. This implementation was described in the [part 2/3](https://www.architecture-performance.fr/ap_blog/dijkstras-algorithm-in-cython-part-2-3/) post. It is also based on a forward star representation of the graph, as described in the post: [https://www.architecture-performance.fr/ap_blog/forward-and-reverse-stars-in-cython/](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-stars-in-cython/).
 
 ## Running time
 
