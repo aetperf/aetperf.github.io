@@ -17,7 +17,7 @@ In this post, we are going to present an implementation of Dijkstra's algorithm 
 
 \
 \
-From a *directed* graph $\mathcal{G}=(V, E)$ with **non-negative** edge weights $w$, we want to compute the shortest weighted path from a source vertex to all graph vertices. This is why we refer to this algorithm as *Single Source Shortest Path* (SSSP). A path is a sequence of edges which joins a sequence of vertices. The cost or weight of a path is the sum of the weights of its constituent edges. 
+From a *directed* graph $\mathcal{G}=(V, E)$ with **non-negative** edge weights $w$, we want to compute the shortest weighted path from a source vertex to all graph vertices. This is why we refer to this algorithm as *Single Source Shortest Path* [SSSP]. A path is a sequence of edges which joins a sequence of vertices. The cost or weight of a path is the sum of the weights of its constituent edges. 
 
 There are many variants and evolutions of this algorithm but we focus here on this classical *one-to-all* version. In the present implementation, we are not going to store the shortest paths, but only the cost associated with the shortest path at each vertex. However, Dijkstra's algorithm can be built using an array of *predecessors*: for each vertex $v$, we would store the previous vertex index in the shortest path from the source vertex $s$ to $v$. Then, it is easy to trace backward the shortest path from any destination vertex to the origin $s$.
 
@@ -66,7 +66,7 @@ The algorithm can be decomposed in the following steps:
         - extract the element $u$ from $Q$ with min priority
         - add $u$ to $S$
         - **for** each outgoing edge $(u, v) \in E $:  
-            - **if** $v \notin S$ and $v.key > u.key + w(u,v) $:  
+            - **if** $v \notin S$ and $v.key \gt u.key + w(u,v) $:  
                 - decrease key of $v$ with key value v_key $u.key + w(u,v)$
 
 ### Second approach: initialize the priority queue with only the source
@@ -86,7 +86,7 @@ This time, only the source vertex $s$ is initially added to the queue:
                 - **if** $v \notin Q$:
                     - insert $v$ into $Q$ with key value: $u.key + w(u,v)$
                 - **else**:
-                    - **if** $v.key > u.key + w(u,v) $:
+                    - **if** $v.key \gt u.key + w(u,v) $:
                         - decrease key of $v$ with key value v_key $u.key + w(u,v)$
 
 ### General idea
@@ -185,10 +185,16 @@ Because we do not want the post to be loaded with too many lines of code, we do 
 
 The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices [added to and removed from the heap] at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figures have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue. We can observe the front propagation process of the algorithm.
 
-<p align="center">
-  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
-</p>
-<center><i>Animation of Dijkstra's algorithm (second approach) applied to the New York road network</i></center>
+<figure>
+    <p align="center">
+    <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
+    </center>
+    <figcaption>
+        <p align="center">
+        <i>Animation of Dijkstra's algorithm [second approach] applied to the New York road network</i>
+        </center>
+    </figcaption>
+</figure>
 
 \
 \
@@ -198,7 +204,7 @@ This New York network has 3730100 edges and 264346 vertices. It is interesting t
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-12-21_01/heap_size_NY.jpg" alt="heap size NY">
 </p>
 
-The heap size figure and the animated gif corresponds to the same run (New York network), with source node index `idx_from = 1000`.
+The heap size figure and the animated gif corresponds to the same run [New York network], with source node index `idx_from = 1000`.
 
 ### Validation and infinite travel time
 
