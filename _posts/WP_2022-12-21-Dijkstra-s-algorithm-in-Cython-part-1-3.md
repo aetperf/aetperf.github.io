@@ -15,8 +15,7 @@ In this post, we are going to present an implementation of Dijkstra's algorithm 
     </figcaption>
 </figure>
 
-\
-\
+
 From a *directed* graph $\mathcal{G}=(V, E)$ with **non-negative** edge weights $w$, we want to compute the shortest weighted path from a source vertex to all graph vertices. This is why we refer to this algorithm as *Single Source Shortest Path* [SSSP]. A path is a sequence of edges which joins a sequence of vertices. The cost or weight of a path is the sum of the weights of its constituent edges. 
 
 There are many variants and evolutions of this algorithm but we focus here on this classical *one-to-all* version. In the present implementation, we are not going to store the shortest paths, but only the cost associated with the shortest path at each vertex. However, Dijkstra's algorithm can be built using an array of *predecessors*: for each vertex $v$, we would store the previous vertex index in the shortest path from the source vertex $s$ to $v$. Then, it is easy to trace backward the shortest path from any destination vertex to the origin $s$.
@@ -196,8 +195,7 @@ The following animated gif has been made in two steps. Some `printf` statements 
     </figcaption>
 </figure>
 
-\
-\
+
 This New York network has 3730100 edges and 264346 vertices. It is interesting to observe that in this second approach, the heap size remains relatively small compared to the number of vertices.
 
 <p align="center">
