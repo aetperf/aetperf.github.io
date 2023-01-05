@@ -103,7 +103,7 @@ In the following, we use an `enum` *state* for each vertex $v$, i.e., to describ
 ## Cython implementation
 
 The Cython implementation makes use of two important components presented in previous posts:
-- the Cython priority queue : [A Cython implementation of a priority queue](https://www.architecture-performance.fr/ap_blog/a-cython-implementation-of-a-priority-queue/
+- the Cython priority queue : [A Cython implementation of a priority queue](https://www.architecture-performance.fr/ap_blog/a-cython-implementation-of-a-priority-queue/)
 - the forward star representation of the graph, in NumPy arrays: [Forward and reverse stars in Cython](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-stars-in-cython/)
 
 The forward star representation is allowing an efficient access to the outgoing edges from a given node. We would use the reverse star to access the incoming edges, in the case of a Single Target Shortest Path algorithm, to compute the shortest paths from any node in the graph to a target node.
@@ -179,11 +179,11 @@ cpdef cnp.ndarray path_length_from_bin_basic(
     return path_lengths
 ```
 
-Because we do not want the post to be loaded with too many lines of code, we do not show here the Python code to load the graphs into dataframes, convert them into the forward star representation (`csr_indices`, `csr_indptr` and `csr_data`). For the same reason, we do now show the implementation of the first approach neither (initialize the priority queue with all nodes).
+Because we do not want the post to be loaded with too many lines of code, we do not show here the Python code to load the graphs into dataframes, convert them into the forward star representation (`csr_indices`, `csr_indptr` and `csr_data`). For the same reason, we do now show the implementation of the first approach neither [initialize the priority queue with all nodes].
 
 ### A Visualization of the algorithm
 
-The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices (added to and removed from the heap) at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figures have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue. We can observe the front propagation process of the algorithm.
+The following animated gif has been made in two steps. Some `printf` statements have been added to the above code to print the vertex indices [added to and removed from the heap] at each step of the iteration. Then using this "trace" text file and the vertex coordinates, some figures have been generated every 1000 steps. Vertices in the heap are colored in red while those that have been scanned are in blue. We can observe the front propagation process of the algorithm.
 
 <p align="center">
   <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-12-21_01/NY_movie_01_small.gif" alt="Dijkstra">
