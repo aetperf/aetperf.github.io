@@ -5,8 +5,8 @@
 *Running time of Dijkstra's algorithm on DIMACS networks with various implementations in Python*.
 
 This post is the last part of a three-part series:
-- [first part](https://aetperf.github.io/2022/12/21/Dijkstra-s-algorithm-in-Cython-part-1-3.html)
-- [second part](https://aetperf.github.io/2022/12/21/Dijkstra-s-algorithm-in-Cython-part-2-3.html)
+- [first part](https://www.architecture-performance.fr/ap_blog/dijkstras-algorithm-in-cython-part-1-3/)
+- [second part](https://www.architecture-performance.fr/ap_blog/dijkstras-algorithm-in-cython-part-2-3/)
 
 In the present post, we compare the *in-house* implementation of Dijkstra's algorithm described in the previous posts with other implementations available in Python. Here are the shortest path libraries that we used:
 - *iGraph*: Python interface of igraph, a fast and open source C library to manipulate and analyze graphs
@@ -16,7 +16,7 @@ In the present post, we compare the *in-house* implementation of Dijkstra's algo
 - *NetworKit*: NetworKit is a growing open-source toolkit for large-scale network analysis
 
 We apply the shortest path routines to the DIMACS road networks, downloaded in a previous post: [Download some benchmark road networks for Shortest Paths algorithms
-](https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html). Here is a summary of the DIMACS networks features:
+](https://www.architecture-performance.fr/ap_blog/download-some-benchmark-road-networks-for-shortest-paths-algorithms/). Here is a summary of the DIMACS networks features:
 
 | name | vertex count | edge count | mean degree |
 |------|-------------:|-----------:|------------:|
@@ -186,7 +186,7 @@ dist_matrix = np.where(dist_matrix >= 1.79769313e308, np.inf, dist_matrix)
 
 ### In-house implementation
 
-The Cython code for the priority queue based on a *4*-ary heap has been placed into a Cython module. This implementation was described in the [part 2/3](https://aetperf.github.io/2022/12/21/Dijkstra-s-algorithm-in-Cython-part-2-3.html) post. It is also based on a forward star representation of the graph, as described in the post: [https://aetperf.github.io/2022/11/04/Forward-and-reverse-stars-in-Cython.html](https://aetperf.github.io/2022/11/04/Forward-and-reverse-stars-in-Cython.html).
+The Cython code for the priority queue based on a *4*-ary heap has been placed into a Cython module. This implementation was described in the [part 2/3](https://www.architecture-performance.fr/ap_blog/dijkstras-algorithm-in-cython-part-2-3/) post. It is also based on a forward star representation of the graph, as described in the post: [https://aetperf.github.io/2022/11/04/Forward-and-reverse-stars-in-Cython.html](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-stars-in-cython/).
 
 ## Running time
 
