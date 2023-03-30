@@ -16,7 +16,7 @@ tags:
 
 
 <p align="center">
-  <img width="300" src="./parquet_logo.jpg" alt="parquet">
+  <img width="300" src="/img/2023-03-30_01/parquet_logo.jpg" alt="parquet">
 </p>
 
 In this blog post, we focus on directly querying Parquet files using three different SQL engines (Python API): 
