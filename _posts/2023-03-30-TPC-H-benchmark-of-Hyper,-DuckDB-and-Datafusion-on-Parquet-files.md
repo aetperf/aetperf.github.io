@@ -1,0 +1,273 @@
+---
+title: TPC-H benchmark of Hyper, DuckDB and Datafusion on Parquet files
+layout: post
+comments: true
+author: François Pacull & Romain Ferraton
+tags: 
+- TPC-H 
+- benchmark
+- SQL
+- Parquet
+- DuckDB
+- Hyper
+- Datafusion
+- Python
+---
+
+
+<p align="center">
+  <img width="300" src="./parquet_logo.jpg" alt="parquet">
+</p>
+
+In this blog post, we focus on directly querying Parquet files using three different SQL engines (Python API): 
+- [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
+- [DuckDB](https://duckdb.org/) / MIT License
+- [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/) / Apache License 2.0
+
+The [TPC-H](https://www.tpc.org/tpch/) benchmark is a widely-used measure of such systems' performance, consisting of a set of queries that have broad industry-wide relevance. We executed the TPC-H benchmark on a laptop and present our findings on the performance and capabilities of each engine on Parquet files. 
+
+## TPC-H SF100
+
+The TPC-H data used in this benchmark is generated using the DuckDB [TPC-H extension](https://duckdb.org/docs/extensions/overview.html#all-available-extensions) and saved into Parquet files with default compression "snappy" and row group size 122880. The benchmark comprises 8 tables, with a scale factor of 100 used for data generation. Each table is stored in a separate Parquet file.
+
+Here's a brief overview of each table:
+
+| Table name  | Row count  | Parquet file size |
+|---|--:|--:|
+| region | 5 | 1.0 kB |
+| nation | 25 | 2.2 kB |
+| supplier | 1 000 000 | 80.4 MB |
+| customer | 15 000 000 | 1.3 GB |
+| part | 20 000 000 | 695.4 MB |
+| partsupp | 80 000 000 | 4.5 GB |
+| orders | 150 000 000 | 6.8 GB |
+| lineitem | 600 037 902 | 27.1 GB |
+
+The `lineitem` table is the largest, with over 600 million rows and a file size of 27.1 GB.
+
+## TPC-H queries
+
+There are 22 queries. Here is the first one, for example:
+
+```sql
+SELECT
+    --Query01
+    l_returnflag,
+    l_linestatus,
+    SUM(l_quantity) AS sum_qty,
+    SUM(l_extendedprice) AS sum_base_price,
+    SUM(l_extendedprice * (1 - l_discount)) AS sum_disc_price,
+    SUM(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,
+    AVG(l_quantity) AS avg_qty,
+    AVG(l_extendedprice) AS avg_price,
+    AVG(l_discount) AS avg_disc,
+    COUNT(*) AS count_order
+FROM
+    lineitem
+WHERE
+    l_shipdate <= CAST('1998-09-02' AS date)
+GROUP BY
+    l_returnflag,
+    l_linestatus
+ORDER BY
+    l_returnflag,
+    l_linestatus;
+```
+
+The queries used in this post can be found [here](https://raw.githubusercontent.com/aetperf/tpch/main/queries/duckdb/queries_native.sql). Note that we have a specific parameter `1e-6` in query 11 : 
+
+```sql
+SELECT
+    --Query11
+    ps_partkey,
+    SUM(ps_supplycost * ps_availqty) AS value
+FROM
+    partsupp,
+    supplier,
+    nation
+WHERE
+    ps_suppkey = s_suppkey
+    AND s_nationkey = n_nationkey
+    AND n_name = 'GERMANY'
+GROUP BY
+    ps_partkey
+HAVING
+    SUM(ps_supplycost * ps_availqty) > (
+        SELECT
+            SUM(ps_supplycost * ps_availqty) * 0.000001
+        FROM
+            partsupp,
+            supplier,
+            nation
+        WHERE
+            ps_suppkey = s_suppkey
+            AND s_nationkey = n_nationkey
+            AND n_name = 'GERMANY'
+    )
+ORDER BY
+    value DESC;
+```
+
+Also, we used another version with double quotes for the Hyper engine. For example, here is the first query:
+
+```sql
+SELECT
+    --query01
+    "l_returnflag",
+    "l_linestatus",
+    sum("l_quantity") as sum_qty,
+    sum("l_extendedprice") as sum_base_price,
+    sum("l_extendedprice" * (1 - "l_discount")) as sum_disc_price,
+    sum("l_extendedprice" * (1 - "l_discount") * (1 + "l_tax")) as sum_charge,
+    avg("l_quantity") as avg_qty,
+    avg("l_extendedprice") as avg_price,
+    avg("l_discount") as avg_disc,
+    count(*) as count_order
+from
+    "lineitem"
+where
+    "l_shipdate" <= cast('1998-09-02' as date)
+group by
+    "l_returnflag",
+    "l_linestatus"
+order by
+    "l_returnflag",
+    "l_linestatus";
+```
+Also, for each engine and query, we checked the number of rows returned.
+
+## System information
+
+The queries are executed on a laptop with the following features:
+
+CPU : 12th Gen Intel© Core™ i9-12900H (10 cores)  
+RAM : 32 GB  
+OS : Linux mint 21.1 (based on Ubuntu 22.04)   
+Data disk : Samsung SSD 980 PRO 1TB 
+
+Package versions:
+```
+Python          : 3.11.0 | packaged by conda-forge  
+DuckDB          : 0.7.2-dev982  
+TableauHyperAPI : 0.0.16638  
+Datafusion      : 20.0.0  
+```
+
+### Parquet files attachment and specific parameters
+
+The attachment process is chosen in a way that the data is not scanned, being almost instantaneous.
+
+#### Hyper
+
+We used a specific parameter for the Hyper engine, following a discussion with the Tableau Hyper team on [Slack](tableau-datadev.slack.com):
+
+```python
+with HyperProcess(
+    telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU,
+    parameters=dict({("external_table_sample_size_factor", "0.005")}),
+) as hyper:
+```
+
+Without this setting, query 9 would crash with an out-of-memory error. The Parquet files are attached as temporary external tables, e.g.:
+
+```sql
+CREATE TEMPORARY EXTERNAL TABLE region FOR './region.parquet'
+```
+
+#### DuckDB
+
+The default configuration is used. The Parquet files are attached as views:
+
+```sql
+CREATE VIEW region AS SELECT * FROM read_parquet('./region.parquet')
+```
+Query 21 is crashing with a *cannot allocate memory* error. 
+
+#### DataFusion
+
+We tried a few parameters such as `enable_page_index`, `pushdown_filters`, `reorder_filters` but without success... Queries 7, 17, 18 and 21 are crashing.
+
+The Parquet files are attached using the Python API:
+
+```python
+ctx = datafusion.SessionContext()
+ctx.register_parquet('region', './region.parquet')
+```
+
+## Results
+
+Only the Hyper engine succeed in running all the queries, in a total elapsed time of **63.90 s**, with the connection setup, loop on files etc... Note that this time can be significantly improved by using the respective native storage format of the DuckDB (`.duckdb` files) or Hyper (`.hyper` files) engines.
+
+Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient than DuckDB, specifically on queries 4, 7, 9, 17 and 18. 
+
+|   query |  Hyper |  DuckDB | Datafusion |
+|--------:|-------:|--------:|-----------:|
+|       1 | 3.626  |   3.793 |     81.668 |
+|       2 | 1.006  |   0.849 |     13.944 |
+|       3 | 2.619  |   2.854 |     39.433 |
+|       4 | 1.896  |   5.010 |     30.512 |
+|       5 | 3.521  |   3.131 |     51.143 |
+|       6 | 1.221  |   2.162 |     19.821 |
+|       7 | 2.660  |   6.300 |        |
+|       8 | 2.151  |   3.021 |     49.717 |
+|       9 | 6.085  |  10.374 |     65.606 |
+|      10 | 2.820  |   3.825 |     41.010 |
+|      11 | 0.360  |   0.416 |     14.066 |
+|      12 | 1.991  |   2.773 |     38.985 |
+|      13 | 7.303  |   4.588 |     56.703 |
+|      14 | 1.402  |   1.936 |     18.684 |
+|      15 | 1.634  |   4.254 |     27.640 |
+|      16 | 0.882  |   0.848 |      6.699 |
+|      17 | 1.728  |  12.502 |         |
+|      18 | 5.917  |  15.003 |         |
+|      19 | 3.250  |   4.018 |     42.300 |
+|      20 | 1.124  |   4.919 |     80.375 |
+|      21 | 4.430  |      |         |
+|      22 | 0.995  |   1.938 |     11.485 |
+|     sum | 58.631 | 94.523  | 689.797 |
+
+We display the sum of the querying time, ignoring the failing queries.
+
+### All three engines
+
+<p align="center">
+  <img width="800" src="/img/2023-03-30_01/figure_01.png" alt="all_engines">
+</p>
+
+### DuckDB vs Hyper
+
+<p align="center">
+  <img width="800" src="/img/2023-03-30_01/figure_02.png" alt="duckdb_vs_hyper">
+</p>
+
+## Conclusion
+
+In this blog post, we conducted the TPC-H benchmark using three different SQL engines (Python API): Tableau Hyper, DuckDB, and Apache Arrow DataFusion, for querying Parquet files. The benchmark comprised 22 queries executed on 8 tables, with a scale factor of 100 used for data generation.
+
+With the default settings, it seems that Datafusion may not be the most suitable option for the specific use case mentioned due to its slow performance and tendency to crash. On the other hand, the Hyper engine was found to be faster than the DuckDB engine. But ultimately, the choice of database engine depends on a variety of factors such as the license, the size and complexity of the dataset, the nature of the queries, the available hardware resources... 
+
+Overall, the benchmark demonstrated the potential of these SQL engines for handling a significant amount of data stored in Parquet files.
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
