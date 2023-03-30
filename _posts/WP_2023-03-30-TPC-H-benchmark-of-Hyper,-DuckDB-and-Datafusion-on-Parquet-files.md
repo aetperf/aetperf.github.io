@@ -1,22 +1,8 @@
----
-title: TPC-H benchmark of Hyper, DuckDB and Datafusion on Parquet files
-layout: post
-comments: true
-author: François Pacull & Romain Ferraton
-tags: 
-- TPC-H 
-- benchmark
-- SQL
-- Parquet
-- DuckDB
-- Hyper
-- Datafusion
-- Python
----
 
+# TPC-H benchmark of Hyper, DuckDB and Datafusion on Parquet files
 
 <p align="center">
-  <img width="300" src="/img/2023-03-30_01/parquet_logo.jpg" alt="parquet">
+  <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/parquet_logo.jpg" alt="parquet">
 </p>
 
 In this blog post, we focus on directly querying Parquet files using three different SQL engines, and more specifically their Python API: 
@@ -141,7 +127,7 @@ The queries are executed on a laptop with the following features:
 
 CPU : 12th Gen Intel© Core™ i9-12900H, 10 cores  
 RAM : 32 GB  
-OS : Linux mint 21.1, based on Ubuntu 22.04  
+OS : Linux mint 21.1, based on Ubuntu 22.04   
 Data disk : Samsung SSD 980 PRO 1TB 
 
 Package versions:
@@ -230,13 +216,13 @@ At the bottom of this table, we display the sum of the querying time, ignoring t
 ### All three engines
 
 <p align="center">
-  <img width="800" src="/img/2023-03-30_01/figure_01.png" alt="all_engines">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/figure_01.png" alt="all_engines">
 </p>
 
 ### DuckDB vs Hyper
 
 <p align="center">
-  <img width="800" src="/img/2023-03-30_01/figure_02.png" alt="duckdb_vs_hyper">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/figure_02.png" alt="duckdb_vs_hyper">
 </p>
 
 ## Conclusion
@@ -246,27 +232,3 @@ In this blog post, we conducted the TPC-H benchmark using three different SQL en
 With the default settings, it seems that Datafusion may not be the most suitable option for the specific use case mentioned due to its slow performance and tendency to crash. On the other hand, the Hyper engine was found to be faster than the DuckDB engine. But ultimately, the choice of database engine depends on a variety of factors such as the license, the size and complexity of the dataset, the nature of the queries, the available hardware resources... 
 
 Overall, the benchmark demonstrated the potential of these SQL engines for handling a significant amount of data stored in Parquet files.
-
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
