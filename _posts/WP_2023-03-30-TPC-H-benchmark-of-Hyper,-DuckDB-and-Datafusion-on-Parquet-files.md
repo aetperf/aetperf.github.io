@@ -60,7 +60,7 @@ ORDER BY
     l_linestatus;
 ```
 
-Note that we have a specific parameter `1e-6` in query 11 : 
+We used a specific parameter `1e-6` in query 11 : 
 
 ```sql
 SELECT
@@ -94,7 +94,7 @@ ORDER BY
     value DESC;
 ```
 
-Also, we used another version with double quotes around table names for the Hyper engine. For example, here is the first query:
+Also, we used another version with double quotes around table names for the Hyper engine. For example, here is the first query for the Hyper engine:
 
 ```sql
 SELECT
