@@ -47,7 +47,7 @@ The `lineitem` table is the largest, with over 600 million rows and a file size 
 
 ## TPC-H queries
 
-There are 22 queries. They are specified in the TPC-H benchmark, but may vary a little bit depending on each implemnetation. The queries used in this post can be found [here](https://raw.githubusercontent.com/aetperf/tpch/main/queries/duckdb/queries_native.sql). Here is the first one, for example:
+There are 22 queries, specified in the TPC-H documentation; they may vary a little bit depending on each implemnetation. The queries used in this post can be found [here](https://raw.githubusercontent.com/aetperf/tpch/main/queries/duckdb/queries_native.sql) on Github. Here is the first one, for example:
 
 ```sql
 SELECT
@@ -72,40 +72,6 @@ GROUP BY
 ORDER BY
     l_returnflag,
     l_linestatus;
-```
-
-We used a specific parameter `1e-6` in query 11 : 
-
-```sql
-SELECT
-    --Query11
-    ps_partkey,
-    SUM(ps_supplycost * ps_availqty) AS value
-FROM
-    partsupp,
-    supplier,
-    nation
-WHERE
-    ps_suppkey = s_suppkey
-    AND s_nationkey = n_nationkey
-    AND n_name = 'GERMANY'
-GROUP BY
-    ps_partkey
-HAVING
-    SUM(ps_supplycost * ps_availqty) > (
-        SELECT
-            SUM(ps_supplycost * ps_availqty) * 0.000001
-        FROM
-            partsupp,
-            supplier,
-            nation
-        WHERE
-            ps_suppkey = s_suppkey
-            AND s_nationkey = n_nationkey
-            AND n_name = 'GERMANY'
-    )
-ORDER BY
-    value DESC;
 ```
 
 Also, we used another version with double quotes around table names for the Hyper engine. For example, here is the first query for the Hyper engine:
