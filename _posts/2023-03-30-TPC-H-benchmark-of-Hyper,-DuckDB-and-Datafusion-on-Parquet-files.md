@@ -47,7 +47,7 @@ The `lineitem` table is the largest, with over 600 million rows and a file size 
 
 ## TPC-H queries
 
-There are 22 queries. Here is the first one, for example:
+There are 22 queries. They are specified in the TPC-H benchmark, but may vary a little bit depending on each implemnetation. The queries used in this post can be found [here](https://raw.githubusercontent.com/aetperf/tpch/main/queries/duckdb/queries_native.sql). Here is the first one, for example:
 
 ```sql
 SELECT
@@ -74,7 +74,7 @@ ORDER BY
     l_linestatus;
 ```
 
-The queries used in this post can be found [here](https://raw.githubusercontent.com/aetperf/tpch/main/queries/duckdb/queries_native.sql). Note that we have a specific parameter `1e-6` in query 11 : 
+Note that we have a specific parameter `1e-6` in query 11 : 
 
 ```sql
 SELECT
@@ -108,7 +108,7 @@ ORDER BY
     value DESC;
 ```
 
-Also, we used another version with double quotes for the Hyper engine. For example, here is the first query:
+Also, we used another version with double quotes around table names for the Hyper engine. For example, here is the first query:
 
 ```sql
 SELECT
@@ -134,7 +134,8 @@ order by
     "l_returnflag",
     "l_linestatus";
 ```
-Also, for each engine and query, we checked the number of rows returned.
+
+Note that we checked the number of rows returned by each query for each engine.
 
 ## System information
 
@@ -198,7 +199,7 @@ ctx.register_parquet('region', './region.parquet')
 
 Only the Hyper engine succeed in running all the queries, in a total elapsed time of **63.90 s**, with the connection setup, loop on files etc... Note that this time can be significantly improved by using the respective native storage format of the DuckDB (`.duckdb` files) or Hyper (`.hyper` files) engines.
 
-Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient than DuckDB, specifically on queries 4, 7, 9, 17 and 18. 
+Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient than DuckDB, specifically on queries 4, 7, 17 and 18. 
 
 |   query |  Hyper |  DuckDB | Datafusion |
 |--------:|-------:|--------:|-----------:|
@@ -226,7 +227,7 @@ Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient
 |      22 | 0.995  |   1.938 |     11.485 |
 |     sum | 58.631 | 94.523  | 689.797 |
 
-We display the sum of the querying time, ignoring the failing queries.
+At the bottom of this table, we display the sum of the querying time, ignoring the failing queries.
 
 ### All three engines
 
