@@ -216,13 +216,13 @@ At the bottom of this table, we display the sum of the querying time, ignoring t
 ### All three engines
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/figure_01.png" alt="all_engines">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/figure_01.png" alt="all_engines">
 </p>
 
 ### DuckDB vs Hyper
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/figure_02.png" alt="duckdb_vs_hyper">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-03-30_01/figure_02.png" alt="duckdb_vs_hyper">
 </p>
 
 ## Conclusion
