@@ -163,7 +163,7 @@ ctx.register_parquet('region', './region.parquet')
 
 Only the Hyper engine succeed in running all the queries, in a total elapsed time of **63.90 s**, with the connection setup, loop on files etc... Note that this time can be significantly improved by using the respective native storage format of the DuckDB or Hyper engines.
 
-Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient than DuckDB, specifically on queries 4, 7, 17 and 18. 
+Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient than DuckDB, specifically on some queries. 
 
 |   query |  Hyper |  DuckDB | Datafusion |
 |--------:|-------:|--------:|-----------:|
