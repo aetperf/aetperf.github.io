@@ -136,7 +136,7 @@ Query 21 is crashing with a *cannot allocate memory* error.
 
 #### DataFusion
 
-We tried a few parameters such as `enable_page_index`, `pushdown_filters`, `reorder_filters` but without success... Queries 7, 17, 18 and 21 are crashing.
+We tried a few parameters such as `enable_page_index`, `pushdown_filters`, `reorder_filters` but without success... The default configuration seems to be limited and we did not figure out how to adjust the settings. Queries 7, 17, 18 and 21 are crashing.
 
 The Parquet files are attached using the Python API:
 
