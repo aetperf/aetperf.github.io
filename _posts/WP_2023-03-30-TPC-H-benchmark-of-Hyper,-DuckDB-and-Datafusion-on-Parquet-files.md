@@ -177,6 +177,7 @@ result.close()
 ```
 
 - Datafusion
+
 ```python
 # start timer
 result = ctx.sql(query)
