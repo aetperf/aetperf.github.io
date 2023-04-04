@@ -70,11 +70,11 @@ The Parquet files are attached to DuckDB as views:
 CREATE VIEW region AS SELECT * FROM read_parquet('path-to/table.parquet')
 ```
 
-### Native file format
+### Native file formats
 
-For the native file format, the database file is given as an argument to the connection constructor.
+For the native file formats, the database files are given as an argument to the connection constructor.
 
-- Hyper
+- Tableau Hyper API
 
 ```python
 hyper = HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
@@ -85,10 +85,10 @@ conn = Connection(
 )
 ````
 
-- DuckDB
+- DuckDB Python API
 
 ```python
-con = duckdb.connect(database='path-to/data.duckdb'):
+conn = duckdb.connect(database='path-to/data.duckdb')
 ```
 
 ## Query execution time

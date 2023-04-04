@@ -67,11 +67,17 @@ TableauHyperAPI : 0.0.16638
 
 ### Parquet files
 
-The Parquet attachment process is chosen in a way that the data is not scanned, being almost instantaneous. The Parquet files are attached to the Hyper process as temporary external tables:
+The Parquet attachment process is chosen in a way that the data is not scanned, being almost instantaneous. 
+
+- Hyper
+
+The Parquet files are attached to the Hyper process as temporary external tables:
 
 ```sql
 CREATE TEMPORARY EXTERNAL TABLE region FOR 'path-to/table.parquet'
 ```
+
+- DuckDB
 
 The Parquet files are attached to DuckDB as views:
 
@@ -79,9 +85,9 @@ The Parquet files are attached to DuckDB as views:
 CREATE VIEW region AS SELECT * FROM read_parquet('path-to/table.parquet')
 ```
 
-### Native file format
+### Native file formats
 
-For the native file format, the database file is given as an argument to the connection constructor.
+For the native file formats, the database files are given as an argument to the connection constructor.
 
 - Hyper
 
@@ -97,7 +103,7 @@ conn = Connection(
 - DuckDB
 
 ```python
-con = duckdb.connect(database='path-to/data.duckdb'):
+conn = duckdb.connect(database='path-to/data.duckdb')
 ```
 
 ## Query execution time
