@@ -121,7 +121,7 @@ We executed the entire TPC-H benchmark, consisting of 22 queries, on both operat
 | Hyper - parquet  |   5.896 |    10.625 |
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/total_et.png" alt="total_et">
+  <img width="600" src="/img/2023-04-04_01/total_et.png" alt="total_et">
 </p>
 
 ## Conlusion
