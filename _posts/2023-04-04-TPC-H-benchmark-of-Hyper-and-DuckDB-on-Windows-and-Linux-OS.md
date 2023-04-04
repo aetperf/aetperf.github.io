@@ -85,25 +85,25 @@ In the following sections, we report the elapsed time for each of the 22 TPC-H q
 
 We did not include fetch time in the elapsed time. We only measure the query execution time. The data is fetched in a second step in order to check the number of returned rows.
 
-- DuckDB engine on the duckdb file
+### DuckDB engine on the duckdb file
 
 <p align="center">
   <img width="1200" src="/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
 </p>
 
-- DuckDB engine on the Parquet files
+### DuckDB engine on the Parquet files
 
 <p align="center">
   <img width="1200" src="/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
 </p>
 
-- Hyper engine on the hyper file
+### Hyper engine on the hyper file
 
 <p align="center">
   <img width="1200" src="/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
 </p>
 
-- Hyper engine on the Parquet files
+### Hyper engine on the Parquet files
 
 <p align="center">
   <img width="1200" src="/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
