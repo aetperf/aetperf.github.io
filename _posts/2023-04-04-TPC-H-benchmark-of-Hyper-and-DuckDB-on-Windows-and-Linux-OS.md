@@ -89,7 +89,7 @@ CREATE VIEW region AS SELECT * FROM read_parquet('path-to/table.parquet')
 
 For the native file formats, the database files are given as an argument to the connection constructor.
 
-- Hyper
+- Tableau Hyper API
 
 ```python
 hyper = HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
@@ -100,7 +100,7 @@ conn = Connection(
 )
 ````
 
-- DuckDB
+- DuckDB Python API
 
 ```python
 conn = duckdb.connect(database='path-to/data.duckdb')

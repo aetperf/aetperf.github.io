@@ -123,7 +123,7 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 
 ## Total TPC-H run
 
-We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time E.T.] in seconds, is shown in the table below:
+We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time [E.T.] in seconds, is shown in the table below:
 
 | Engine - file type |  Linux E.T. (s)|   Windows E.T. (s)|
 |:-----------------|--------:|----------:|
