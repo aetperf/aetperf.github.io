@@ -111,11 +111,9 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 
 ## Total TPC-H run
 
-We also ran the whole TPC-H suite, with 22 queries, and measured the total elapsed time, on the two OS. We also recorded the best elapsed time out of three runs.
+We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time (E.T.), in seconds, is shown in the table below:
 
-Here is the resulting total elapsed time in seconds :
-
-| Engine - file type |   Linux (s)|   Windows (s)|
+| Engine - file type |  Linux E.T. (s)|   Windows E.T. (s)|
 |:-----------------|--------:|----------:|
 | DuckDB - duckdb  |   7.688 |    11.923 |
 | DuckDB - parquet |   9.096 |    14.784 |
