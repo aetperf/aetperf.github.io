@@ -1,26 +1,11 @@
----
-title: TPC-H benchmark of Hyper and DuckDB on Windows and Linux OS
-layout: post
-comments: true
-author: François Pacull & Romain Ferraton
-tags: 
-- TPC-H 
-- benchmark
-- SQL
-- Parquet
-- DuckDB
-- Hyper
-- Python
-- Windows
-- Linux
----
+# TPC-H benchmark of Hyper and DuckDB on Windows and Linux OS
 
 
 In this blog post, we explore the use of two SQL engines, and specifically their Python API, for querying files. The engines in focus are :
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
 - [DuckDB](https://duckdb.org/) / MIT License
 
-They both support SQL queries and prioritize the efficiency of analytical SQL queries. To evaluate their performance, we conducted the widely-used TPC-H benchmark on a laptop with a **dual-boot Linux/Windows setup**. We ran the same queries on the same hardware, applied to the same files, with the same libraries on both operating systems, namely Windows 11 home and Linux Mint 21.1 (based on Ubuntu 22.04 Jammy Jellyfish). Our findings include a comparison of the performance of each engine on Parquet and native files, allowing us to measure the performance gap between the two platforms. 
+They both support SQL queries and prioritize the efficiency of analytical SQL queries. To evaluate their performance, we conducted the widely-used TPC-H benchmark on a laptop with a **dual-boot Linux/Windows setup**. We ran the same queries on the same hardware, applied to the same files, with the same libraries on both operating systems, namely Windows 11 home and Linux Mint 21.1 - based on Ubuntu 22.04 Jammy Jellyfish. Our findings include a comparison of the performance of each engine on Parquet and native files, allowing us to measure the performance gap between the two platforms. 
 
 The chosen scale factor of 10 corresponds to a dataset of modest/medium size. Let us describe data files.
 
@@ -52,7 +37,7 @@ The `lineitem` table is the largest, with about 60 million rows. The `.duckdb` d
 
 The queries are executed on a laptop with the following features:
 
-CPU : 12th Gen Intel© Core™ i9-12900H (10 cores)  
+CPU : 12th Gen Intel© Core™ i9-12900H - 10 cores
 RAM : 32 GB 
 Data disk : Samsung SSD 980 PRO 1TB 
 
@@ -67,11 +52,17 @@ TableauHyperAPI : 0.0.16638
 
 ### Parquet files
 
-The Parquet attachment process is chosen in a way that the data is not scanned, being almost instantaneous. The Parquet files are attached to the Hyper process as temporary external tables:
+The Parquet attachment process is chosen in a way that the data is not scanned, being almost instantaneous. 
+
+- Hyper
+
+The Parquet files are attached to the Hyper process as temporary external tables:
 
 ```sql
 CREATE TEMPORARY EXTERNAL TABLE region FOR 'path-to/table.parquet'
 ```
+
+- DuckDB
 
 The Parquet files are attached to DuckDB as views:
 
@@ -109,30 +100,30 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 ### DuckDB engine on the duckdb file
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
 </p>
 
 ### DuckDB engine on the Parquet files
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
 </p>
 
 ### Hyper engine on the hyper file
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
 </p>
 
 ### Hyper engine on the Parquet files
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
 </p>
 
 ## Total TPC-H run
 
-We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time (E.T.) in seconds, is shown in the table below:
+We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time E.T.] in seconds, is shown in the table below:
 
 | Engine - file type |  Linux E.T. (s)|   Windows E.T. (s)|
 |:-----------------|--------:|----------:|
@@ -142,33 +133,9 @@ We executed the entire TPC-H benchmark, consisting of 22 queries, on both operat
 | Hyper - parquet  |   5.896 |    10.625 |
 
 <p align="center">
-  <img width="600" src="/img/2023-04-04_01/total_et.png" alt="total_et">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/total_et.png" alt="total_et">
 </p>
 
 ## Conlusion
 
 Our results showed that both engines were more efficient on native file formats compared to Parquet files, with Hyper outperforming DuckDB on this specific TPC-H benchmark. Additionally, we observed that the total elapsed time on Windows was on average 40-80% longer than on Linux.
-
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
