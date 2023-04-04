@@ -7,18 +7,16 @@ In this blog post, we explore the use of two SQL engines, and specifically their
 
 They both support SQL queries and prioritize the efficiency of analytical SQL queries. To evaluate their performance, we conducted the widely-used TPC-H benchmark on a laptop with a **dual-boot Linux/Windows setup**. We ran the same queries on the same hardware, applied to the same files, with the same libraries on both operating systems, namely Windows 11 home and Linux Mint 21.1 - based on Ubuntu 22.04 Jammy Jellyfish. Our findings include a comparison of the performance of each engine on Parquet and native files, allowing us to measure the performance gap between the two platforms. 
 
-The chosen scale factor of 10 corresponds to a dataset of modest/medium size. Let us describe data files.
+The chosen scale factor of 10 corresponds to a dataset of modest/medium size. Let us list the different data files.
 
 ## TPC-H SF10
 
 The TPC-H data used in this benchmark is generated using the DuckDB [TPC-H extension](https://duckdb.org/docs/extensions/overview.html#all-available-extensions) and saved into : 
 - Parquet files with default compression "snappy" and row group size 122880
-- hyper database file
-- duckdb database file
+- an hyper database file
+- a duckdb database file
 
-The benchmark comprises 8 tables, with a rather scale factor of 10 used for data generation. Each table is stored in a separate Parquet file.
-
-Here's a brief overview of each table:
+A scale factor of 10 is used for data generation. The benchmark comprises 8 tables. Each table is stored in a separate Parquet file. Here's a brief overview of each table:
 
 | Table name  | Row count  | Parquet file size |
 |---|--:|--:|
@@ -37,9 +35,9 @@ The `lineitem` table is the largest, with about 60 million rows. The `.duckdb` d
 
 The queries are executed on a laptop with the following features:
 
-CPU : 12th Gen Intel© Core™ i9-12900H - 10 cores
-RAM : 32 GB 
-Data disk : Samsung SSD 980 PRO 1TB 
+CPU : 12th Gen Intel© Core™ i9-12900H - 10 cores  
+RAM : 32 GB   
+Data disk : Samsung SSD 980 PRO 1TB   
 
 Package versions:
 ```
@@ -100,25 +98,25 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 ### DuckDB engine on the duckdb file
 
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
 </p>
 
 ### DuckDB engine on the Parquet files
 
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
 </p>
 
 ### Hyper engine on the hyper file
 
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
 </p>
 
 ### Hyper engine on the Parquet files
 
 <p align="center">
-  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
 </p>
 
 ## Total TPC-H run
