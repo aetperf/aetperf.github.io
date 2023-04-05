@@ -123,35 +123,12 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 
 We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time [E.T.] in seconds, is shown in the table below:
 
-<body>
-<table align="center">
-    <tr>
-        <td>Engine - file type</td>
-        <td>Linux E.T. (s)</td>
-        <td>Windows E.T. (s)</td>
-    </tr>
-    <tr>
-        <td>DuckDB - duckdb</td>
-        <td>7.688</td>
-        <td>11.923</td>
-    </tr>
-    <tr>
-        <td>DuckDB - parquet</td>
-        <td>9.096</td>
-        <td>14.784</td>
-    </tr>
-    <tr>
-        <td>Hyper - hyper</td>
-        <td>2.773</td>
-        <td>3.831</td>
-    </tr>
-    <tr>
-        <td>Hyper - parquet</td>
-        <td>5.896</td>
-        <td>10.625</td>
-    </tr>
-</table>
-</body>
+| Engine - file type |  Linux E.T. (s)|   Windows E.T. (s)|
+|:-----------------|--------:|----------:|
+| DuckDB - duckdb  |   7.688 |    11.923 |
+| DuckDB - parquet |   9.096 |    14.784 |
+| Hyper - hyper    |   2.773 |     3.831 |
+| Hyper - parquet  |   5.896 |    10.625 |
 
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/total_et.png" alt="total_et">

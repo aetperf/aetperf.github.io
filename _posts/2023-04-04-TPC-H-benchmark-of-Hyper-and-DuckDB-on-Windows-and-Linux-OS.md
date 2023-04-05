@@ -113,25 +113,25 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 ### DuckDB engine on the duckdb file
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
+  <img width="1000" src="/img/2023-04-04_01/duckdb_duckdb.png" alt="duckdb_duckdb">
 </p>
 
 ### DuckDB engine on the Parquet files
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
+  <img width="1000" src="/img/2023-04-04_01/duckdb_parquet.png" alt="duckdb_parquet">
 </p>
 
 ### Hyper engine on the hyper file
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
+  <img width="1000" src="/img/2023-04-04_01/hyper_hyper.png" alt="hyper_hyper">
 </p>
 
 ### Hyper engine on the Parquet files
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
+  <img width="1000" src="/img/2023-04-04_01/hyper_parquet.png" alt="hyper_parquet">
 </p>
 
 ## Total TPC-H run
