@@ -123,7 +123,11 @@ We did not include fetch time in the elapsed time. We only measure the query exe
 
 We executed the entire TPC-H benchmark, consisting of 22 queries, on both operating systems and recorded the best elapsed time out of three runs. The resulting total Elapsed Time [E.T.] in seconds, is shown in the table below:
 
-<p align="center">
+<body>
+    <div>
+        <h1 style="text-align:center;">Simple Table</h1>
+        <table style="margin-left:auto; margin-right:auto; text-align:center;"
+border="1">
 <table>
     <tr>
         <td>Engine - file type</td>
@@ -151,7 +155,8 @@ We executed the entire TPC-H benchmark, consisting of 22 queries, on both operat
         <td>10.625</td>
     </tr>
 </table>
-</p>
+    </div>
+</body>
 
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-04_01/total_et.png" alt="total_et">
