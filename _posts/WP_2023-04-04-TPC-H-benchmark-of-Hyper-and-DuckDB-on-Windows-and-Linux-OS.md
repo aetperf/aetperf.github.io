@@ -60,6 +60,10 @@ The Parquet files are attached to the Hyper process as temporary external tables
 CREATE TEMPORARY EXTERNAL TABLE region FOR 'path-to/table.parquet'
 ```
 
+Here is a description of this process from the [Hyper SQL reference](https://help.tableau.com/current/api/hyper_api/en-us/reference/sql/sql-createexternaltable.html):
+
+>> CREATE TEMPORARY EXTERNAL TABLE will create a new temporary external table, enabling to refer to external data from source_location in a SQL query as if it was stored in a Hyper table named table_name. However, no data will be stored in Hyper. Instead, Hyper will read from the external source whenever the external table is accessed in a query.
+
 - DuckDB
 
 The Parquet files are attached to DuckDB as views:
