@@ -1,6 +1,9 @@
 # TPC-H benchmark of Hyper and DuckDB on Windows and Linux OS
 
 
+**Update** April 12, 2023 - It seems that Windows 11's poor performance may be due to conflicting BIOS/OS settings when dual-booting. We are investigating... Additionally, I have corrected the version of Windows 11 in the post from Home to Professional.
+
+
 In this blog post, we explore the use of two SQL engines, and specifically their Python API, for querying files. The engines in focus are :
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
 - [DuckDB](https://duckdb.org/) / MIT License
