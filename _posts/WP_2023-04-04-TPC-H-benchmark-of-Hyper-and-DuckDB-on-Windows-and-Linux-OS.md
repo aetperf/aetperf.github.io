@@ -5,7 +5,7 @@ In this blog post, we explore the use of two SQL engines, and specifically their
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
 - [DuckDB](https://duckdb.org/) / MIT License
 
-They both support SQL queries and prioritize the efficiency of analytical SQL queries. To evaluate their performance, we conducted the widely-used TPC-H benchmark on a laptop with a **dual-boot Linux/Windows setup**. We ran the same queries on the same hardware, applied to the same files, with the same libraries on both operating systems, namely Windows 11 home and Linux Mint 21.1 - based on Ubuntu 22.04 Jammy Jellyfish. Our findings include a comparison of the performance of each engine on Parquet and native files, allowing us to measure the performance gap between the two platforms. 
+They both support SQL queries and prioritize the efficiency of analytical SQL queries. To evaluate their performance, we conducted the widely-used TPC-H benchmark on a laptop with a **dual-boot Linux/Windows setup**. We ran the same queries on the same hardware, applied to the same files, with the same libraries on both operating systems, namely Windows 11 pro and Linux Mint 21.1 - based on Ubuntu 22.04 Jammy Jellyfish. Our findings include a comparison of the performance of each engine on Parquet and native files, allowing us to measure the performance gap between the two platforms. 
 
 The chosen scale factor of 10 corresponds to a dataset of modest/medium size. Let us list the different data files.
 
