@@ -1,5 +1,4 @@
-
-# TPC-H benchmark of Hyper, DuckDB and Datafusion on Parquet files
+# TPC-H benchmark of Hyper, DuckDB and DataFusion on Parquet files
 
 
 **Update** Apr 14, 2023 - An issue has been opened on the DataFusion GitHub repository regarding its poor reported performance compared to DuckDB and Hyper: [#5942](https://github.com/apache/arrow-datafusion/issues/5942). While there may be multiple factors contributing to this unexpected behavior, I might have used the API in a sub-optimal way. I will continue to update the post with new findings.
