@@ -179,7 +179,7 @@ for _, item in enumerate(data):
 
 Overall, in this test, Datafusion is behind, while Hyper is a bit more efficient than DuckDB, specifically on some queries. 
 
-|   query |  Hyper |  DuckDB | Datafusion |
+|   query |  Hyper (s) |  DuckDB (s) | Datafusion (s) |
 |--------:|-------:|--------:|-----------:|
 |       1 | 3.626  |   3.793 |     81.668 |
 |       2 | 1.006  |   0.849 |     13.944 |
