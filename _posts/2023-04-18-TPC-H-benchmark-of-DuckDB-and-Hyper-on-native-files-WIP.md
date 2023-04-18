@@ -1,4 +1,20 @@
-# TPC-H benchmark of DuckDB and Hyper on native files WIP
+---
+title: TPC-H benchmark of DuckDB and Hyper on native files WIP
+layout: post
+comments: true
+author: François Pacull
+tags: 
+- TPC-H 
+- benchmark
+- SQL
+- Parquet
+- DuckDB
+- Hyper
+- Python
+- Windows
+- Linux
+---
+
 
 In this blog post, we explore the use of two SQL engines, and specifically their Python API, for querying files. The engines in focus are :
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
@@ -121,3 +137,26 @@ result.close()
 <p align="center">
   <img width="800" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
 </p>
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
