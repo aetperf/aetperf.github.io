@@ -28,8 +28,8 @@ The [TPC-H](https://www.tpc.org/tpch/) benchmark is a widely-used measure of suc
 - 100  
 
 All the measurements are performed on the same laptop with a Linux OS. While it is possible to query Parquet files with both engines, we use the native file formats in the following:
-- `.duchdb` for DuckDB
-- `.hyper` for Tableau Hyper
+- *.duckdb* for DuckDB
+- *.hyper* for Tableau Hyper
 It is usually more efficient to run the queries on the native file format, matching the engine internals, than on Parquet files.
 
 ## Package versions:
@@ -95,8 +95,8 @@ result.close()
   <thead>
     <tr style="text-align: right;">
       <th>engine</th>
-      <th>DuckDB</th>
-      <th>Hyper</th>
+      <th>DuckDB (s)</th>
+      <th>Hyper (s)</th>
     </tr>
     <tr>
       <th>scale_factor</th>
@@ -106,27 +106,27 @@ result.close()
   </thead>
   <tbody>
     <tr>
-      <th>SF 1 (s)</th>
+      <th>1</th>
       <td>0.908807</td>
       <td>0.353306</td>
     </tr>
     <tr>
-      <th>SF 3 (s)</th>
+      <th>3</th>
       <td>2.227890</td>
       <td>0.898468</td>
     </tr>
     <tr>
-      <th>SF 10 (s)</th>
+      <th>10</th>
       <td>5.974569</td>
       <td>2.461864</td>
     </tr>
     <tr>
-      <th>SF 30 (s)</th>
+      <th>30</th>
       <td>18.998208</td>
       <td>8.201111</td>
     </tr>
     <tr>
-      <th>SF 100 (s)</th>
+      <th>100</th>
       <td>NaN</td>
       <td>35.263464</td>
     </tr>
