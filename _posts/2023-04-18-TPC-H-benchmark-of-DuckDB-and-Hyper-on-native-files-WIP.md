@@ -134,7 +134,6 @@ result.close()
 </table>
 </div>
 
-```
 
 <p align="center">
   <img width="800" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
