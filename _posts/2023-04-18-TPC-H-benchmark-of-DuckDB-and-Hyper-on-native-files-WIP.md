@@ -20,6 +20,13 @@ In this blog post, we explore the use of two SQL engines, and specifically their
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
 - [DuckDB](https://duckdb.org/) / MIT License
 
+The [TPC-H](https://www.tpc.org/tpch/) benchmark is a widely-used measure of such systems' performance, consisting of a set of queries that have broad industry-wide relevance. The data can be created using pre-determined database sizes, referred to as *scale factors*. In the following with are going to use these scale factors: 
+- 1  
+- 3  
+- 10  
+- 30  
+- 100  
+
 All the measurements are performed on the same laptop with a Linux OS. While it is possible to query Parquet files with both engines, we use the native file formats in the following:
 - `.duchdb` for DuckDB
 - `.hyper` for Tableau Hyper
