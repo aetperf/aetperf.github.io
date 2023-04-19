@@ -72,7 +72,9 @@ The total row count corresponds to the sum of 8 table lengths:
 
 ### Query execution time
 
-Here are the time measurements. We only count the sum of the query execution time of the 22 queries. We do not take into account the data fetching time or the initial connection: 
+W report the combined elapsed time for the 22 TPC-H queries. To ensure accuracy and reduce the impact of fluctuations, we executed each query three times and recorded the best elapsed time out of the three runs. These 22 best elapsed times are then summed. 
+
+We did not include fetch time in the elapsed time. We only measure the query execution time. The data is fetched in a second step in order to check the number of returned rows.
 
 - DuckDB:
 
