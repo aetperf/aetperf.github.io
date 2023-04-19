@@ -32,6 +32,8 @@ All the measurements are performed on the same laptop with a Linux OS. While it 
 - *.hyper* for Tableau Hyper
 It is usually more efficient to run the queries on the native file format, matching the engine internals, than on Parquet files.
 
+Note that the DuckDB storage format is not always backward compatible, because is under development and not stabilized yet. It will be though when version 1 is introduced. So basically, a *.duckdb* file written with a given version must be read with the same version.
+
 ## Package versions:
 
     Python          : 3.11.3 | packaged by conda-forge | (main, Apr  6 2023, 08:57:19) [GCC 11.3.0]
@@ -48,8 +50,20 @@ The code is executed on a linux laptop with the following features:
     RAM : 32 GB  
     Data disk : Samsung SSD 980 PRO 1TB  
 
+## Native file size
+
+| Scale factor | *.duckdb* file size  | *.hyper* file size | Total row count |
+|----:|----------:|----------:|---:|
+|   1 |  436.0 MB |  436.5 MB |   |
+|   3 |  800.6 MB |    1.3 GB |   |
+|  10 |    2.7 GB |    4.5 GB |   |
+|  30 |    8.2 GB |   13.6 GB |   |
+| 100 |   27.7 GB |   46.3 GB |   |
+
 
 ## Results
+
+### Query execution time
 
 Here are the time measurements. We only count the sum of the query execution time of the 22 queries. We do not take into account the data fetching time or the initial connection: 
 
@@ -134,6 +148,7 @@ result.close()
 </table>
 </div>
 
+On the scale factor 100 data, query 21 is crashing when using DuckDB Engine with a *cannot allocate memory* error. 
 
 <p align="center">
   <img width="800" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
@@ -143,6 +158,9 @@ result.close()
 <p align="center">
   <img width="800" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
 </p>
+
+### Total running time
+
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
