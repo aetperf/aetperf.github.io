@@ -91,62 +91,13 @@ while result.next_row():
 result.close()
 ```
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>engine</th>
-      <th>DuckDB (s)</th>
-      <th>Hyper (s)</th>
-    </tr>
-    <tr>
-      <th>scale_factor</th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>1</th>
-      <td>0.908807</td>
-      <td>0.353306</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>2.227890</td>
-      <td>0.898468</td>
-    </tr>
-    <tr>
-      <th>10</th>
-      <td>5.974569</td>
-      <td>2.461864</td>
-    </tr>
-    <tr>
-      <th>30</th>
-      <td>18.998208</td>
-      <td>8.201111</td>
-    </tr>
-    <tr>
-      <th>100</th>
-      <td>NaN</td>
-      <td>35.263464</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+| Scale factor | DuckDB (s)  | Hyper (s) |
+|----:|----------:|----------:|
+|   1 |  0.91 |  0.35 |
+|   3 |  2.23 |  0.90 |
+|  10 |  5.97 |  2.46 |
+|  30 | 10.00 |  8.20 |
+| 100 |   NaN | 35.26 |
 
 On the scale factor 100 data, query 21 is crashing when using DuckDB Engine with a *cannot allocate memory* error. 
 
