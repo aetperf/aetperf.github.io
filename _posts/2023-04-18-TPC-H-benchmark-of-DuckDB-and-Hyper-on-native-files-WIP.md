@@ -53,12 +53,12 @@ The code is executed on a linux laptop with the following features:
 ## Native file size
 
 | Scale factor | *.duckdb* file size  | *.hyper* file size | Total row count |
-|----:|----------:|----------:|----------:|
-|   1 |  436.0 MB |  436.5 MB |   8661245 |
-|   3 |  800.6 MB |    1.3 GB |  25976639 |
-|  10 |    2.7 GB |    4.5 GB |  86586082 |
-|  30 |    8.2 GB |   13.6 GB | 259798402 |
-| 100 |   27.7 GB |   46.3 GB | 866037932 |
+|----:|----------:|----------:|------------:|
+|   1 |  436.0 MB |  436.5 MB |   8 661 245 |
+|   3 |  800.6 MB |    1.3 GB |  25 976 639 |
+|  10 |    2.7 GB |    4.5 GB |  86 586 082 |
+|  30 |    8.2 GB |   13.6 GB | 259 798 402 |
+| 100 |   27.7 GB |   46.3 GB | 866 037 932 |
 
 The total row count corresponds to the sum of 8 table lengths:
 - lineitem  
