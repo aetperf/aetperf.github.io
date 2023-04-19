@@ -108,7 +108,7 @@ result.close()
 |             30 |  18.99 |  8.02 |
 |            100 |    NaN | 34.63 |
 
-On the scale factor 100 data, query 21 is crashing when using DuckDB Engine with a *cannot allocate memory* error. 
+On the scale factor 100 data, query 21 is crashing when using DuckDB with a *cannot allocate memory* error, this is why there is a *NaN* value in the table. Note that the other 21 queries correspond to a total execution time of 64.92 s with DuckDB.
 
 <p align="center">
   <img width="800" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
