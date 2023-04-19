@@ -7,11 +7,9 @@ tags:
 - TPC-H 
 - benchmark
 - SQL
-- Parquet
 - DuckDB
 - Hyper
 - Python
-- Windows
 - Linux
 ---
 
@@ -100,13 +98,13 @@ while result.next_row():
 result.close()
 ```
 
-| Scale factor | DuckDB (s)  | Hyper (s) |
-|----:|----------:|----------:|
-|   1 |  0.91 |  0.35 |
-|   3 |  2.23 |  0.90 |
-|  10 |  5.97 |  2.46 |
-|  30 | 10.00 |  8.20 |
-| 100 |   NaN | 35.26 |
+| Scale factor| DuckDB (s)  | Hyper (s) |
+|---------------:|-------:|------:|
+|              1 |   0.75 |  0.29 |
+|              3 |   2.04 |  0.79 |
+|             10 |   5.95 |  2.46 |
+|             30 |  18.99 |  8.02 |
+|            100 |    NaN | 34.63 |
 
 On the scale factor 100 data, query 21 is crashing when using DuckDB Engine with a *cannot allocate memory* error. 
 
