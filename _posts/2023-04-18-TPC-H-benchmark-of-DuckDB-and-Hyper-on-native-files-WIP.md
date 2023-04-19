@@ -119,8 +119,6 @@ On the scale factor 100 data, query 21 is crashing when using DuckDB Engine with
   <img width="800" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
 </p>
 
-### Total running time
-
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
