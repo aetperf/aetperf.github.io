@@ -124,6 +124,93 @@ On the scale factor 100 data, query 21 is crashing when using DuckDB with a *can
 
 Fetching the add adds an overhead to the query execution time, which depends on the data amount and the container : Pandas, Polars etc... Basically this implies a data transfer, deserialisation and conversion to dataframe. For example, In the present case with DuckDB & Pandas, fetching the data adds about 7 to 8 percent to the execution time.
 
+## Query plan for TPC-H query 21 scale factor 100
+
+
+```python
+import duckdb
+
+duckdb_file_path = "/home/francois/Data/dbbenchdata/tpch_100/data.duckdb"
+```
+
+
+```python
+# query21
+query = """EXPLAIN
+SELECT
+    s_name,
+    COUNT(*) AS numwait
+FROM
+    supplier,
+    lineitem l1,
+    orders,
+    nation
+WHERE
+    s_suppkey = l1.l_suppkey
+    AND o_orderkey = l1.l_orderkey
+    AND o_orderstatus = 'F'
+    AND l1.l_receiptdate > l1.l_commitdate
+    AND EXISTS (
+        SELECT
+            *
+        FROM
+            lineitem l2
+        WHERE
+            l2.l_orderkey = l1.l_orderkey
+            AND l2.l_suppkey <> l1.l_suppkey
+    )
+    AND NOT EXISTS (
+        SELECT
+            *
+        FROM
+            lineitem l3
+        WHERE
+            l3.l_orderkey = l1.l_orderkey
+            AND l3.l_suppkey <> l1.l_suppkey
+            AND l3.l_receiptdate > l3.l_commitdate
+    )
+    AND s_nationkey = n_nationkey
+    AND n_name = 'SAUDI ARABIA'
+GROUP BY
+    s_name
+ORDER BY
+    numwait DESC,
+    s_name
+LIMIT
+    100;"""
+```
+
+
+```python
+conn = duckdb.connect(database=duckdb_file_path, read_only=True)
+conn.sql("SET explain_output='all';")
+df = conn.sql(query).df()
+```
+
+
+```python
+df["explain_key"]
+```
+
+
+
+
+    0     logical_plan
+    1      logical_opt
+    2    physical_plan
+    Name: explain_key, dtype: object
+
+
+
+
+```python
+print(df[df.explain_key == "logical_plan"].explain_value.values[0])
+```
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_1.png" alt="log-scale">
+</p>
+
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
