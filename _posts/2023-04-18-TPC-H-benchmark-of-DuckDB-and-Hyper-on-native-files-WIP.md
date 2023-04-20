@@ -185,21 +185,50 @@ LIMIT
 conn = duckdb.connect(database=duckdb_file_path, read_only=True)
 conn.sql("SET explain_output='all';")
 df = conn.sql(query).df()
+df.head(3)
 ```
 
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-```python
-df["explain_key"]
-```
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
 
-
-
-
-    0     logical_plan
-    1      logical_opt
-    2    physical_plan
-    Name: explain_key, dtype: object
-
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>explain_key</th>
+      <th>explain_value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>logical_plan</td>
+      <td>┌───────────────────────────┐                 ...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>logical_opt</td>
+      <td>┌───────────────────────────┐                 ...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>physical_plan</td>
+      <td>┌───────────────────────────┐                 ...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 
 
