@@ -101,12 +101,12 @@ result.close()
 ```
 
 | Scale factor| DuckDB (s)  | Hyper (s) |
-|---------------:|-------:|------:|
-|              1 |   0.75 |  0.29 |
-|              3 |   2.04 |  0.79 |
-|             10 |   5.95 |  2.46 |
-|             30 |  18.99 |  8.02 |
-|            100 |    NaN | 34.63 |
+|---------------:|-----------:|----------:|
+|              1 |   0.68 |  0.27 |
+|              3 |   1.83  |  0.69 |
+|             10 |   5.75  |  2.41  |
+|             30 |  18.41   |  7.65  |
+|            100 | NaN        | 33.82   |
 
 On the scale factor 100 data, query 21 is crashing when using DuckDB with a *cannot allocate memory* error, this is why there is a *NaN* value in the table. Note that the other 21 queries correspond to a total execution time of 64.92 s with DuckDB.
 
