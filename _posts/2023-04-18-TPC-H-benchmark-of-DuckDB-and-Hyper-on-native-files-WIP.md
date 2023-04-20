@@ -126,13 +126,17 @@ Fetching the add adds an overhead to the query execution time, which depends on 
 
 ## Query plan for TPC-H query 21 scale factor 100
 
+### Imports
 
 ```python
 import duckdb
+from tableauhyperapi import Connection, CreateMode, HyperProcess, Telemetry
 
 duckdb_file_path = "/home/francois/Data/dbbenchdata/tpch_100/data.duckdb"
+hyper_file_path = "/home/francois/Data/dbbenchdata/tpch_100/data.hyper"
 ```
 
+### DuckDB
 
 ```python
 # query21
@@ -260,6 +264,57 @@ print(df[df.explain_key == "physical_plan"].explain_value.values[0])
 ```python
 conn.close()
 ```
+
+### Hyper
+
+[Reference](https://github.com/tableau/query-graphs/blob/main/plan-dumper/dump-plans.py)
+
+```python
+hyper = HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
+conn = Connection(
+    endpoint=hyper.endpoint, database=hyper_file_path, create_mode=CreateMode.NONE
+)
+```
+
+```python
+_ = conn.execute_command("SET schema 'Export';")
+```
+
+```python
+explain = "EXPLAIN (VERBOSE, ANALYZE) "
+planRes = conn.execute_query(explain + query)
+targetPath = "./plan_analyze.json"
+plan = "\n".join(r[0] for r in planRes)
+with open(targetPath, "w") as f:
+    f.write(plan)
+```
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-18_01/hyper_plan_1.png" alt="hyper_plan_1">
+</p>
+
+
+```python
+explain = "EXPLAIN (VERBOSE, OPTIMIZERSTEPS) "
+planRes = conn.execute_query(explain + query)
+targetPath = "./plan_optimizersteps.json"
+plan = "\n".join(r[0] for r in planRes)
+with open(targetPath, "w") as f:
+    f.write(plan)
+```
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-18_01/hyper_plan_2.png" alt="hyper_plan_2">
+</p>
+
+
+```python
+conn.close()
+hyper.close()
+```
+
+We can visualize the plan interactively on this website: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/)
+
 
 
 
