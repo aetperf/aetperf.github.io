@@ -208,8 +208,30 @@ print(df[df.explain_key == "logical_plan"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_1.png" alt="log-scale">
+  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_1.png" alt="duckdb_plan_1">
 </p>
+
+
+```python
+print(df[df.explain_key == "logical_opt"].explain_value.values[0])
+```
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_2.png" alt="duckdb_plan_2">
+</p>
+
+```python
+print(df[df.explain_key == "physical_plan"].explain_value.values[0])
+```
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_3.png" alt="duckdb_plan_3">
+</p>
+
+```python
+conn.close()
+```
+
 
 
 {% if page.comments %}
