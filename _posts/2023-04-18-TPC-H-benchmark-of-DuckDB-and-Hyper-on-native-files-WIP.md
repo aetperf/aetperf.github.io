@@ -30,6 +30,8 @@ All the measurements are performed on the same laptop with a Linux OS. While it 
 - *.hyper* for Tableau Hyper
 It is usually more efficient to run the queries on the native file format, matching the engine internals, than on Parquet files.
 
+An important point is that both packages are used with default settings. We could probably imprive the presented timings with some configuration option tuning.
+
 Note that the DuckDB storage format is not always backward compatible, because is under development and not stabilized yet. It will be though when version 1 is introduced. So basically, a *.duckdb* file written with a given version must be read with the same version.
 
 ## Package versions:
@@ -118,6 +120,9 @@ On the scale factor 100 data, query 21 is crashing when using DuckDB with a *can
 <p align="center">
   <img width="800" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
 </p>
+
+
+Fetching the add adds an overhead to the query execution time, which depends on the data amount and the container : Pandas, Polars etc... Basically this implies a data transfer, deserialisation and conversion to dataframe. For example, In the present case with DuckDB & Pandas, fetching the data adds about 7 to 8 percent to the execution time.
 
 
 {% if page.comments %}
