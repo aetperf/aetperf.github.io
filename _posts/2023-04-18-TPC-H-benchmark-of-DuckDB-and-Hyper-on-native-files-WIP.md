@@ -113,12 +113,12 @@ result.close()
 On the scale factor 100 data, query 21 is crashing when using DuckDB with a *cannot allocate memory* error, this is why there is a *NaN* value in the table. Note that the other 21 queries correspond to a total execution time of 64.92 s with DuckDB.
 
 <p align="center">
-  <img width="800" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
+  <img width="600" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
 </p>
 
 
 <p align="center">
-  <img width="800" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
+  <img width="600" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
 </p>
 
 
@@ -293,6 +293,8 @@ with open(targetPath, "w") as f:
   <img width="1200" src="/img/2023-04-18_01/hyper_plan_1.png" alt="hyper_plan_1">
 </p>
 
+We can visualize the plan interactively on this website: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/)
+
 
 ```python
 explain = "EXPLAIN (VERBOSE, OPTIMIZERSTEPS) "
@@ -313,7 +315,6 @@ conn.close()
 hyper.close()
 ```
 
-We can visualize the plan interactively on this website: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/)
 
 
 
