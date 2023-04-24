@@ -47,7 +47,7 @@ The code is executed on a linux laptop with the following features:
 
 ## Native file size
 
-The TPC-H data used in this benchmark is generated using the DuckDB [TPC-H extension](https://duckdb.org/docs/extensions/overview.html#all-available-extensions) and saved into duckdb and Parquet files with DuckDB. The Parquet file is then converted into an hyper file with the Tableau Hyper engine. Here is an array presenting the different file sizes:
+The TPC-H data used in this benchmark is generated using the DuckDB [TPC-H extension](https://duckdb.org/docs/extensions/overview.html#all-available-extensions) and saved into duckdb and Parquet files with DuckDB. Each Parquet file is then converted into an hyper file with the Tableau Hyper engine. Here is an array presenting the different file sizes:
 
 | Scale factor | *.duckdb* file size  | *.hyper* file size | Total row count |
 |----:|----------:|----------:|------------:|
@@ -278,7 +278,15 @@ conn = Connection(
 _ = conn.execute_command("SET schema 'Export';")
 ```
 
-We can genereate two different plans can be generated, either with `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Let's generate both. We export them to json files and then used a nifty interactive query plan visualizer: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/).
+We can genereate different plans, either with `EXPLAIN`, `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Here is the documenation about the EXPLAIN SQl command: [here](https://tableau.github.io/hyper-db/docs/sql/command/explain/). Here is an excerpt from this documentation:
+
+> There are three types of plans which can be queried:
+    - The *optimized* plan. By default, if no other behavior is requested through an <option>, `EXPLAIN` will display the optimized plan.
+    - The *optimizer steps*. If the `OPTIMIZERSTEPS` option is present, Hyper will output the plan at multiple intermediate steps during query optimization, e.g., before and after join reordering.
+    - The *analyzed* plan. When invoked with the `ANALYZE` option, Hyper will actually execute the query, including all side effects (inserted/deleted tuples, etc.). Instead of the normal query results, you will however receive the query plan of the query, annotated with runtime statistics such as the number of tuples processed by each operator.
+
+Let's generate two detailed graphs: the analysed plan and teh optimizer steps. We export them as json files and then use a great interactive query plan visualizer developped by Tableau: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/).
+
 
 ```python
 explain = "EXPLAIN (VERBOSE, ANALYZE) "
