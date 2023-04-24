@@ -2,7 +2,7 @@
 title: TPC-H benchmark of DuckDB and Hyper on native files WIP
 layout: post
 comments: true
-author: François Pacull
+author: François Pacull & Romain Ferraton
 tags: 
 - TPC-H 
 - benchmark
@@ -11,6 +11,7 @@ tags:
 - Hyper
 - Python
 - Linux
+- query plans
 ---
 
 
@@ -23,7 +24,8 @@ To evaluate their performance, we use the [TPC-H](https://www.tpc.org/tpch/) ben
 
 All the measurements are performed on the same laptop with a Linux OS. While it is possible to query Parquet files with both engines, we use the native file formats in the following:
 - *.duckdb* for DuckDB
-- *.hyper* for Tableau Hyper
+- *.hyper* for Tableau Hyper  
+
 It is usually more efficient to run the queries on the native file format, matching the engine internals, than on Parquet files.
 
 Note that we employ default settings for both packages, and although the presented timings could be improved with configuration options tuning, we present the results without any modifications. It is also important to note that the DuckDB storage format is still under development and not yet stabilized, making it not always backward compatible.
