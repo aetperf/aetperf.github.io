@@ -14,32 +14,25 @@ tags:
 ---
 
 
-In this blog post, we explore the use of two SQL engines, and specifically their Python API, for querying files. The engines in focus are :
+In this blog post, we examine the performance of two popular SQL engines for querying large files: 
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
 - [DuckDB](https://duckdb.org/) / MIT License
+These engines have gained popularity due to their efficiency, ease of use, and Python APIs. 
 
-The [TPC-H](https://www.tpc.org/tpch/) benchmark is a widely-used measure of such systems' performance, consisting of a set of queries that have broad industry-wide relevance. The data can be created using pre-determined database sizes, referred to as *scale factors*. In the following with are going to use these scale factors: 
-- 1  
-- 3  
-- 10  
-- 30  
-- 100  
+To evaluate their performance, we use the [TPC-H](https://www.tpc.org/tpch/) benchmark, which is a widely-used measure of such systems' performance, consisting of a set of queries that have broad industry-wide relevance. The data can be created using pre-determined database sizes, referred to as *scale factors*. In the following with are going to use a rather wide range of scale factors :  1, 3, 10, 30, 100.
 
 All the measurements are performed on the same laptop with a Linux OS. While it is possible to query Parquet files with both engines, we use the native file formats in the following:
 - *.duckdb* for DuckDB
 - *.hyper* for Tableau Hyper
 It is usually more efficient to run the queries on the native file format, matching the engine internals, than on Parquet files.
 
-An important point is that both packages are used with default settings. We could probably imprive the presented timings with some configuration option tuning.
-
-Note that the DuckDB storage format is not always backward compatible, because is under development and not stabilized yet. It will be though when version 1 is introduced. So basically, a *.duckdb* file written with a given version must be read with the same version.
+Note that we employ default settings for both packages, and although the presented timings could be improved with configuration options tuning, we present the results without any modifications. It is also important to note that the DuckDB storage format is still under development and not yet stabilized, making it not always backward compatible.
 
 ## Package versions:
 
     Python          : 3.11.3 | packaged by conda-forge | (main, Apr  6 2023, 08:57:19) [GCC 11.3.0]
     DuckDB          : 0.7.2-dev2144
     TableauHyperAPI : 0.0.16868
-
 
 ## System information
 
@@ -52,6 +45,8 @@ The code is executed on a linux laptop with the following features:
 
 ## Native file size
 
+The TPC-H data used in this benchmark is generated using the DuckDB [TPC-H extension](https://duckdb.org/docs/extensions/overview.html#all-available-extensions) and saved into duckdb and Parquet files with DuckDB. The Parquet file is then converted into an hyper file with the Tableau Hyper engine. Here is an array presenting the different file sizes:
+
 | Scale factor | *.duckdb* file size  | *.hyper* file size | Total row count |
 |----:|----------:|----------:|------------:|
 |   1 |  436.0 MB |  436.5 MB |   8 661 245 |
@@ -60,23 +55,15 @@ The code is executed on a linux laptop with the following features:
 |  30 |    8.2 GB |   13.6 GB | 259 798 402 |
 | 100 |   27.7 GB |   46.3 GB | 866 037 932 |
 
-The total row count corresponds to the sum of 8 table lengths:
-- lineitem  
-- customer  
-- orders  
-- supplier  
-- region  
-- partsupp  
-- nation  
-- part  
+The total row count corresponds to the sum of 8 table lengths (*lineitem*, *lineitem*, *customer*, *orders*, *supplier*, *region*, *partsupp*, *nation*, *part*).
 
 ## Results
 
 ### Query execution time
 
-W report the combined elapsed time for the 22 TPC-H queries. To ensure accuracy and reduce the impact of fluctuations, we executed each query three times and recorded the best elapsed time out of the three runs. These 22 best elapsed times are then summed. 
+We report the combined elapsed time for the 22 TPC-H queries. To ensure accuracy and reduce the impact of fluctuations, we executed each query three times and recorded the best elapsed time out of the three runs. These 22 best elapsed times are then summed. 
 
-We did not include fetch time in the elapsed time. We only measure the query execution time. The data is fetched in a second step in order to check the number of returned rows.
+We did not include fetch time in the elapsed time. We only measure the query execution time. The data is fetched in a second step in order to check the number of rows returned.
 
 - DuckDB:
 
@@ -102,6 +89,8 @@ while result.next_row():
 result.close()
 ```
 
+Here are the updated SQL execution timings for both engines across different scale factors:
+
 | Scale factor| DuckDB (s)  | Hyper (s) |
 |---------------:|-----------:|----------:|
 |              1 |   0.68 |  0.27 |
@@ -110,7 +99,7 @@ result.close()
 |             30 |  18.41   |  7.65  |
 |            100 | NaN        | 33.82   |
 
-On the scale factor 100 data, query 21 is crashing when using DuckDB with a *cannot allocate memory* error, this is why there is a *NaN* value in the table. Note that the other 21 queries correspond to a total execution time of 64.92 s with DuckDB.
+During our analysis on scale factor 100 data, we encountered an error of "cannot allocate memory" when running query 21 using DuckDB. As a result, the corresponding table displays a value of NaN. It is worth noting that the other 21 queries executed successfully and completed in a total time of 64.92 s with DuckDB.
 
 <p align="center">
   <img width="600" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
@@ -121,10 +110,11 @@ On the scale factor 100 data, query 21 is crashing when using DuckDB with a *can
   <img width="600" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
 </p>
 
-
-Fetching the add adds an overhead to the query execution time, which depends on the data amount and the container : Pandas, Polars etc... Basically this implies a data transfer, deserialisation and conversion to dataframe. For example, In the present case with DuckDB & Pandas, fetching the data adds about 7 to 8 percent to the execution time.
+Fetching data can introduce additional overhead to query execution time, which is dependent on both the amount of data being transferred and the target container used (such as Pandas or Polars). For instance, in the current experiment with DuckDB and Pandas, fetching the data added approximately 7-8% to the overall execution time.
 
 ## Query plan for TPC-H query 21 scale factor 100
+
+Query execution plans provide a detailed view of how a database engine processes a given query. They describe the various steps involved in the query execution, such as data access, filtering, aggregation, and sorting. Understanding query plans can be critical for optimizing the performance of complex queries, as it allows identifying potential bottlenecks and areas for improvement. In this section, we examine the query execution plans for TPC-H query 21 on a scale factor of 100, as generated by the DuckDB and Tableau Hyper engines. 
 
 ### Imports
 
@@ -235,6 +225,12 @@ df.head(3)
 </div>
 
 
+When using the option `SET explain_output='all'`, DuckDB generates 3 different query plans:
+- `logical_plan`
+- `logical_opt`
+- `physical_plan`
+
+Let's visualize these plans:
 
 ```python
 print(df[df.explain_key == "logical_plan"].explain_value.values[0])
@@ -267,7 +263,7 @@ conn.close()
 
 ### Hyper
 
-[Reference](https://github.com/tableau/query-graphs/blob/main/plan-dumper/dump-plans.py)
+The following code is inspired from a Tableau Hyper example: [here](https://github.com/tableau/query-graphs/blob/main/plan-dumper/dump-plans.py). 
 
 ```python
 hyper = HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
@@ -279,6 +275,8 @@ conn = Connection(
 ```python
 _ = conn.execute_command("SET schema 'Export';")
 ```
+
+We can genereate two different plans can be generated, either with `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Let's generate both. We export them to json files and then used a nifty interactive query plan visualizer: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/).
 
 ```python
 explain = "EXPLAIN (VERBOSE, ANALYZE) "
@@ -293,8 +291,7 @@ with open(targetPath, "w") as f:
   <img width="1200" src="/img/2023-04-18_01/hyper_plan_1.png" alt="hyper_plan_1">
 </p>
 
-We can visualize the plan interactively on this website: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/)
-
+Note that the graph nodes can be expanded and give more information that on this screen capture.
 
 ```python
 explain = "EXPLAIN (VERBOSE, OPTIMIZERSTEPS) "
@@ -315,7 +312,7 @@ conn.close()
 hyper.close()
 ```
 
-
+These query plans could help us to gain insights into how each engine approaches the query and identify possible differences in performance.
 
 
 
