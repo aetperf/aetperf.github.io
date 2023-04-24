@@ -104,12 +104,12 @@ Here are the updated SQL execution timings for both engines across different sca
 During our analysis on scale factor 100 data, we encountered an error of "cannot allocate memory" when running query 21 using DuckDB. As a result, the corresponding table displays a value of NaN. It is worth noting that the other 21 queries executed successfully and completed in a total time of 64.92 s with DuckDB.
 
 <p align="center">
-  <img width="600" src="/img/2023-04-18_01/output_6_0.png" alt="linear_scale">
+  <img width="600" src="/img/2023-04-24_01/output_6_0.png" alt="linear_scale">
 </p>
 
 
 <p align="center">
-  <img width="600" src="/img/2023-04-18_01/output_7_0.png" alt="log-scale">
+  <img width="600" src="/img/2023-04-24_01/output_7_0.png" alt="log-scale">
 </p>
 
 Fetching data can introduce additional overhead to query execution time, which is dependent on both the amount of data being transferred and the target container used (such as Pandas or Polars). For instance, in the current experiment with DuckDB and Pandas, fetching the data added approximately 7-8% to the overall execution time.
@@ -239,7 +239,7 @@ print(df[df.explain_key == "logical_plan"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_1.png" alt="duckdb_plan_1">
+  <img width="1200" src="/img/2023-04-24_01/duckdb_plan_1.png" alt="duckdb_plan_1">
 </p>
 
 
@@ -248,7 +248,7 @@ print(df[df.explain_key == "logical_opt"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_2.png" alt="duckdb_plan_2">
+  <img width="1200" src="/img/2023-04-24_01/duckdb_plan_2.png" alt="duckdb_plan_2">
 </p>
 
 ```python
@@ -256,7 +256,7 @@ print(df[df.explain_key == "physical_plan"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-18_01/duckdb_plan_3.png" alt="duckdb_plan_3">
+  <img width="1200" src="/img/2023-04-24_01/duckdb_plan_3.png" alt="duckdb_plan_3">
 </p>
 
 ```python
@@ -298,7 +298,7 @@ with open(targetPath, "w") as f:
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-18_01/hyper_plan_1.png" alt="hyper_plan_1">
+  <img width="1200" src="/img/2023-04-24_01/hyper_plan_1.png" alt="hyper_plan_1">
 </p>
 
 Note that the graph nodes can be expanded and give more information than on this screen capture.
@@ -313,7 +313,7 @@ with open(targetPath, "w") as f:
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-18_01/hyper_plan_2.png" alt="hyper_plan_2">
+  <img width="1200" src="/img/2023-04-24_01/hyper_plan_2.png" alt="hyper_plan_2">
 </p>
 
 
