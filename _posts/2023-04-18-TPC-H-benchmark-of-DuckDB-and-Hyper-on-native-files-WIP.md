@@ -278,12 +278,12 @@ conn = Connection(
 _ = conn.execute_command("SET schema 'Export';")
 ```
 
-We can genereate different plans, either with `EXPLAIN`, `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Here is the documenation about the EXPLAIN SQl command: [here](https://tableau.github.io/hyper-db/docs/sql/command/explain/). Here is an excerpt from this documentation:
+We can genereate different plans, either with `EXPLAIN`, `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Here is an excerpt from the documenation about the EXPLAIN SQL command [here](https://tableau.github.io/hyper-db/docs/sql/command/explain/):
 
 > There are three types of plans which can be queried:
-    - The *optimized* plan. By default, if no other behavior is requested through an <option>, `EXPLAIN` will display the optimized plan.
-    - The *optimizer steps*. If the `OPTIMIZERSTEPS` option is present, Hyper will output the plan at multiple intermediate steps during query optimization, e.g., before and after join reordering.
-    - The *analyzed* plan. When invoked with the `ANALYZE` option, Hyper will actually execute the query, including all side effects (inserted/deleted tuples, etc.). Instead of the normal query results, you will however receive the query plan of the query, annotated with runtime statistics such as the number of tuples processed by each operator.
+> - The *optimized* plan. By default, if no other behavior is requested through an <option>, `EXPLAIN` will display the optimized plan.  
+> - The *optimizer steps*. If the `OPTIMIZERSTEPS` option is present, Hyper will output the plan at multiple intermediate steps during query optimization, e.g., before and after join reordering.  
+> - The *analyzed* plan. When invoked with the `ANALYZE` option, Hyper will actually execute the query, including all side effects (inserted/deleted tuples, etc.). Instead of the normal query results, you will however receive the query plan of the query, annotated with runtime statistics such as the number of tuples processed by each operator.  
 
 Let's generate two detailed graphs: the analysed plan and teh optimizer steps. We export them as json files and then use a great interactive query plan visualizer developped by Tableau: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/).
 
