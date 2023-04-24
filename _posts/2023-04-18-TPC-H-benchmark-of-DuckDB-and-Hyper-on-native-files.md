@@ -30,6 +30,8 @@ It is usually more efficient to run the queries on the native file format, match
 
 Note that we employ default settings for both packages, and although the presented timings could be improved with configuration options tuning, we present the results without any modifications. It is also important to note that the DuckDB storage format is still under development and not yet stabilized, making it not always backward compatible.
 
+Finally, we are going to see how to generate query execution plans with each engine in Python. 
+
 ## Package versions:
 
     Python          : 3.11.3 | packaged by conda-forge | (main, Apr  6 2023, 08:57:19) [GCC 11.3.0]
