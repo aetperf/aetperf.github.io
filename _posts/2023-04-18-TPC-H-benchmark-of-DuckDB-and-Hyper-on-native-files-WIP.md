@@ -1,5 +1,5 @@
 ---
-title: TPC-H benchmark of DuckDB and Hyper on native files WIP
+title: TPC-H benchmark of DuckDB and Hyper on native files
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton
