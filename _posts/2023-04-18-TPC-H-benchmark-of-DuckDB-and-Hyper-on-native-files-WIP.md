@@ -285,7 +285,7 @@ We can genereate different plans, either with `EXPLAIN`, `EXPLAIN (VERBOSE, ANAL
 > - The *optimizer steps*. If the `OPTIMIZERSTEPS` option is present, Hyper will output the plan at multiple intermediate steps during query optimization, e.g., before and after join reordering.  
 > - The *analyzed* plan. When invoked with the `ANALYZE` option, Hyper will actually execute the query, including all side effects (inserted/deleted tuples, etc.). Instead of the normal query results, you will however receive the query plan of the query, annotated with runtime statistics such as the number of tuples processed by each operator.  
 
-Let's generate two detailed graphs: the analysed plan and teh optimizer steps. We export them as json files and then use a great interactive query plan visualizer developped by Tableau: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/).
+Let's generate two detailed graphs: the analysed plan and the optimizer steps. We export them as json files and then use a great interactive query plan visualizer developed by Tableau: [https://tableau.github.io/query-graphs/](https://tableau.github.io/query-graphs/).
 
 
 ```python
