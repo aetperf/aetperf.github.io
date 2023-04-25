@@ -300,7 +300,7 @@ with open(targetPath, "w") as f:
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-24_01/hyper_plan_1.png" alt="hyper_plan_1">
+  <img width="600" src="/img/2023-04-24_01/hyper_plan_1.png" alt="hyper_plan_1">
 </p>
 
 Note that the graph nodes can be expanded and give more information than on this screen capture.
