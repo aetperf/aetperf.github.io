@@ -59,7 +59,7 @@ The TPC-H data used in this benchmark is generated using the DuckDB [TPC-H exten
 |  30 |    8.2 GB |   13.6 GB | 259 798 402 |
 | 100 |   27.7 GB |   46.3 GB | 866 037 932 |
 
-The total row count corresponds to the sum of 8 table lengths (*lineitem*, *lineitem*, *customer*, *orders*, *supplier*, *region*, *partsupp*, *nation*, *part*).
+The total row count corresponds to the sum of 8 table lengths (*lineitem*, *customer*, *orders*, *supplier*, *region*, *partsupp*, *nation*, *part*).
 
 ## Results
 
