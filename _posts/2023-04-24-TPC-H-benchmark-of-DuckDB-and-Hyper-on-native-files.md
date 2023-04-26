@@ -53,16 +53,15 @@ The TPC-H data used in this benchmark are generated using the DuckDB [TPC-H exte
 
 ```python
 with duckdb.connect(database=duckdb_file_path, read_only=False) as conn:
-    _ = conn.sql("INSTALL tpch")
-    _ = conn.sql("LOAD tpch")
-    _ = conn.sql("CALL dbgen(sf=10)")
+    conn.sql("INSTALL tpch")
+    conn.sql("LOAD tpch")
+    conn.sql("CALL dbgen(sf=10)")
     df = conn.sql("SELECT * FROM information_schema.tables").df()
     table_names = df.table_name.to_list()
     for tbl in table_names:
         parquet_file_path = parquet_dir.joinpath(tbl + ".parquet")
-        _ = conn.sql(
-            f"COPY (SELECT * FROM {tbl}) TO '{parquet_file_path}' (FORMAT PARQUET)"
-        )
+        query = f"COPY (SELECT * FROM {tbl}) TO '{parquet_file_path}' (FORMAT PARQUET)"
+        conn.sql(query)
 ```
 
 Each Parquet file is then converted into an hyper file with the Tableau Hyper engine. 
@@ -79,9 +78,10 @@ with HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hype
         for parquet_file_path in parquet_file_paths:
             file_name = os.path.basename(parquet_file_path)
             table_name = os.path.splitext(file_name)[0]
-            sql = f"""CREATE TABLE {table} AS 
+            table = TableName(hyper_schema, table_name)
+            query = f"""CREATE TABLE {table} AS 
             (SELECT * FROM external({parquet_file_path}))"""
-            conn.execute_command(sql)
+            conn.execute_command(query)
 ```
 
 Here is an array presenting the different file sizes:
