@@ -152,7 +152,7 @@ During our analysis on scale factor 100 data, we encountered an error of "cannot
 Now we also ran the TPC-H queries without query 21 on the data generated with scale factor 100: 
 
 <p align="center">
-  <img width="400" src="/img/2023-04-27_01/output_8_0.png" alt="without_query_21">
+  <img width="600" src="/img/2023-04-27_01/output_8_0.png" alt="without_query_21">
 </p>
 
 Fetching data can introduce additional overhead to query execution time, which is dependent on both the amount of data being transferred and the target container used (such as Pandas or Polars). For instance, in the current experiment with DuckDB and Pandas, fetching the data added approximately 7-8% to the overall execution time.
