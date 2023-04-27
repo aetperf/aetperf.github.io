@@ -18,6 +18,8 @@ tags:
 
 **Update** Apr 12, 2023 - It seems that Windows 11's poor performance may be due to conflicting BIOS/OS settings when dual-booting. We are investigating... Additionally, I have corrected the version of Windows 11 in the post from Home to Professional.
 
+**Update** Apr 27, 2023 - Upon further investigation, it appears that the low efficiency of Windows on my laptop may be caused by a combination of factors, including a recent Windows 11 update, the MSI motherboard, and potentially the dual-boot configuration (e.g. with a disabled UEFI secure boot). Despite trying to adjust settings in the BIOS, I was unable to improve the performance. While I have not yet decided to reinstall Windows due to time constraints, it seems to be the most viable solution to fix this issue. I may also consider downgrading to Windows 10. It's important to note that while the Linux timings in my previous benchmark are accurate, the Windows timings should not be taken as reliable due to the underlying issues. I will keep you updated on any progress and improvements once I have the time to reinstall Windows. Thank you for your understanding.
+
 
 In this blog post, we explore the use of two SQL engines, and specifically their Python API, for querying files. The engines in focus are :
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License
