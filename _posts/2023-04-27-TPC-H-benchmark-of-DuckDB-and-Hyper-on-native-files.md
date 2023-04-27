@@ -141,18 +141,18 @@ Here are the updated SQL execution timings for both engines across different sca
 During our analysis on scale factor 100 data, we encountered an error of "cannot allocate memory" when running query 21 using DuckDB. As a result, the corresponding table displays a value of NaN. 
 
 <p align="center">
-  <img width="600" src="/img/2023-04-24_01/output_6_0.png" alt="linear_scale">
+  <img width="600" src="/img/2023-04-27_01/output_6_0.png" alt="linear_scale">
 </p>
 
 
 <p align="center">
-  <img width="600" src="/img/2023-04-24_01/output_7_0.png" alt="log-scale">
+  <img width="600" src="/img/2023-04-27_01/output_7_0.png" alt="log-scale">
 </p>
 
 Now we also ran the TPC-H queries without query 21 on the data generated with scale factor 100: 
 
 <p align="center">
-  <img width="600" src="/img/2023-04-24_01/output_8_0.png" alt="without_query_21">
+  <img width="600" src="/img/2023-04-27_01/output_8_0.png" alt="without_query_21">
 </p>
 
 Fetching data can introduce additional overhead to query execution time, which is dependent on both the amount of data being transferred and the target container used (such as Pandas or Polars). For instance, in the current experiment with DuckDB and Pandas, fetching the data added approximately 7-8% to the overall execution time.
@@ -282,7 +282,7 @@ print(df[df.explain_key == "logical_plan"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-24_01/duckdb_plan_1.png" alt="duckdb_plan_1">
+  <img width="1200" src="/img/2023-04-27_01/duckdb_plan_1.png" alt="duckdb_plan_1">
 </p>
 
 
@@ -291,7 +291,7 @@ print(df[df.explain_key == "logical_opt"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-24_01/duckdb_plan_2.png" alt="duckdb_plan_2">
+  <img width="1200" src="/img/2023-04-27_01/duckdb_plan_2.png" alt="duckdb_plan_2">
 </p>
 
 ```python
@@ -299,7 +299,7 @@ print(df[df.explain_key == "physical_plan"].explain_value.values[0])
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-24_01/duckdb_plan_3.png" alt="duckdb_plan_3">
+  <img width="1200" src="/img/2023-04-27_01/duckdb_plan_3.png" alt="duckdb_plan_3">
 </p>
 
 ```python
@@ -341,7 +341,7 @@ with open(targetPath, "w") as f:
 ```
 
 <p align="center">
-  <img width="600" src="/img/2023-04-24_01/hyper_plan_1.png" alt="hyper_plan_1">
+  <img width="600" src="/img/2023-04-27_01/hyper_plan_1.png" alt="hyper_plan_1">
 </p>
 
 Note that the graph nodes can be expanded and give more information than on this screen capture.
@@ -356,7 +356,7 @@ with open(targetPath, "w") as f:
 ```
 
 <p align="center">
-  <img width="1200" src="/img/2023-04-24_01/hyper_plan_2.png" alt="hyper_plan_2">
+  <img width="1200" src="/img/2023-04-27_01/hyper_plan_2.png" alt="hyper_plan_2">
 </p>
 
 
