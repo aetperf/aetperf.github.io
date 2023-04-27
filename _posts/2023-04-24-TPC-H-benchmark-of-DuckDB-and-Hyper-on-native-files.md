@@ -138,7 +138,7 @@ Here are the updated SQL execution timings for both engines across different sca
 |             30 |  18.41   |  7.65  |
 |            100 | NaN        | 33.82   |
 
-During our analysis on scale factor 100 data, we encountered an error of "cannot allocate memory" when running query 21 using DuckDB. As a result, the corresponding table displays a value of NaN. It is worth noting that the other 21 queries executed successfully and completed in a total time of 64.92 s with DuckDB.
+During our analysis on scale factor 100 data, we encountered an error of "cannot allocate memory" when running query 21 using DuckDB. As a result, the corresponding table displays a value of NaN. 
 
 <p align="center">
   <img width="600" src="/img/2023-04-24_01/output_6_0.png" alt="linear_scale">
@@ -147,6 +147,12 @@ During our analysis on scale factor 100 data, we encountered an error of "cannot
 
 <p align="center">
   <img width="600" src="/img/2023-04-24_01/output_7_0.png" alt="log-scale">
+</p>
+
+Now we also ran the TPC-H queries without query 21 on the data generated with scale factor 100: 
+
+<p align="center">
+  <img width="600" src="/img/2023-04-24_01/output_8_0.png" alt="without_query_21">
 </p>
 
 Fetching data can introduce additional overhead to query execution time, which is dependent on both the amount of data being transferred and the target container used (such as Pandas or Polars). For instance, in the current experiment with DuckDB and Pandas, fetching the data added approximately 7-8% to the overall execution time.
