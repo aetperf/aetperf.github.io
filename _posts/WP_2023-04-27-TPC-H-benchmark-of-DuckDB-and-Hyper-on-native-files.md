@@ -294,7 +294,7 @@ conn = Connection(
 _ = conn.execute_command("SET schema 'Export';")
 ```
 
-We can genereate different plans, either with `EXPLAIN`, `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Here is an excerpt from the documenation about the EXPLAIN SQL command [here](https://tableau.github.io/hyper-db/docs/sql/command/explain/):
+We can generate different plans, either with `EXPLAIN`, `EXPLAIN (VERBOSE, ANALYZE)` or with `EXPLAIN (VERBOSE, OPTIMIZERSTEPS) `. Here is an excerpt from the documenation about the EXPLAIN SQL command [here](https://tableau.github.io/hyper-db/docs/sql/command/explain/):
 
 > There are three types of plans which can be queried:
 > - The *optimized* plan. By default, if no other behavior is requested through an <option>, `EXPLAIN` will display the optimized plan.  
