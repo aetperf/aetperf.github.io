@@ -130,11 +130,6 @@ During our analysis on scale factor 100 data, we encountered an error of "cannot
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-27_01/output_6_0.png" alt="linear_scale">
 </p>
 
-
-<p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-27_01/output_7_0.png" alt="log-scale">
-</p>
-
 Now we also ran the TPC-H queries without query 21 on the data generated with scale factor 100: 
 
 <p align="center">
