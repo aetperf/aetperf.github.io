@@ -314,7 +314,7 @@ with open(targetPath, "w") as f:
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-27_01/hyper_plan_1.png" alt="hyper_plan_1">
+  <img width="500" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-04-27_01/hyper_plan_1.png" alt="hyper_plan_1">
 </p>
 
 Note that the graph nodes can be expanded and give more information than on this screen capture.
