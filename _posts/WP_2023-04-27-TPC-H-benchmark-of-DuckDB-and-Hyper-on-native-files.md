@@ -73,12 +73,12 @@ with HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hype
 Here is an array presenting the different file sizes:
 
 | Scale factor | *.duckdb* file size  | *.hyper* file size | Total *.parquet* files size | Total row count |
-|----:|----------:|----------:|------:|------------:|
-|   1 |  436.0 MB |  436.5 MB | 379MB |   8 661 245 |
-|   3 |  800.6 MB |    1.3 GB | 1.2GB |  25 976 639 |
-|  10 |    2.7 GB |    4.5 GB | 3.8GB |  86 586 082 |
-|  30 |    8.2 GB |   13.6 GB |  12GB | 259 798 402 |
-| 100 |   27.7 GB |   46.3 GB |  38GB | 866 037 932 |
+|----:|----------:|----------:|-------:|------------:|
+|   1 |  436.0 MB |  436.5 MB | 379 MB |   8 661 245 |
+|   3 |  800.6 MB |    1.3 GB | 1.2 GB |  25 976 639 |
+|  10 |    2.7 GB |    4.5 GB | 3.8 GB |  86 586 082 |
+|  30 |    8.2 GB |   13.6 GB |  12 GB | 259 798 402 |
+| 100 |   27.7 GB |   46.3 GB |  38 GB | 866 037 932 |
 
 The total row count corresponds to the sum of 8 table lengths (*lineitem*, *customer*, *orders*, *supplier*, *region*, *partsupp*, *nation*, *part*).
 
