@@ -8,5 +8,6 @@ if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNo
   ga('create', '{{ site.google_analytics }}', 'auto');
   ga('send', 'pageview');
 }
+gtag('test', '{{ site.analytics.google.measurement_id }}');
 </script>
   
