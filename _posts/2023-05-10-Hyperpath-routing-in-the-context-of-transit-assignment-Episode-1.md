@@ -1,5 +1,5 @@
 ---
-title: Hyperpath routing in the context of transit assignment, Episode 1
+title: Hyperpath routing in the context of transit assignment
 layout: post
 comments: true
 author: François Pacull
