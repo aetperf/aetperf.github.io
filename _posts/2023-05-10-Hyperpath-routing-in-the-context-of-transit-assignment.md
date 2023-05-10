@@ -73,7 +73,7 @@ The constant $\alpha$ allows us to adjust the edge frequency as follows:
 $$f_a = \left\{
 \begin{array}{ll}
 1 / \left( \alpha \; d_a \right) & \text{if $\alpha > 0$} \\ 
-\infty & \text{if \alpha = 0} \\
+\infty & \text{if $\alpha = 0$} \\
 \end{array} 
 \right.$$
 
