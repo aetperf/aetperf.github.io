@@ -15,7 +15,7 @@ How do transit passengers choose their routes in a complex network of lines and 
 
 One of the basic concepts in transit assignment models is hyperpath routing. Hyperpath routing is a way of representing the set of optimal routes that a passenger can take from an origin to a destination, based on some criterion such as travel time or generalized cost. A hyperpath is a collection of links that form a subgraph of the transit network. Each link in the hyperpath also has a probability of being used by the passenger, which reflects the attractiveness and uncertainty of the route choice. The shortest hyperpath is optimal regarding the combination of paths weighted by the probability of being used.
 
-Hyperpath routing can be applied to different types of transit assignment models, but in this following posts we will focus on frequency-based models. Frequency-based models assume that passengers do not have reliable information about the service schedules and arrival times, and they choose their routes based on the expected travel time or cost. This type of model is suitable for large-scale transit systems with rather frequent services.
+Hyperpath routing can be applied to different types of transit assignment models, but in this following posts we will focus on frequency-based models. Frequency-based models assume that passengers do not have reliable information about the service schedules and arrival times, and they choose their routes based on the expected travel time or cost. This type of model is suitable for transit systems with rather frequent services.
 
 To illustrate how hyperpath routing works in frequency-based models, we will use a classic algorithm by Spiess & Florian [1], which has been implemented as an experimental feature in the  [aequilibrae](http://www.aequilibrae.com/python/latest/) package. Aequilibrae is a comprehensive Python package for transportation modeling that offers various functionalities and features.
 
@@ -483,7 +483,7 @@ plot_networkx(n=10, alpha=100.0)
 
 [2] Ma, Jiangshan & Fukuda, Daisuke & Schmöcker, Jan-Dirk. *Faster hyperpath generating algorithms for vehicle navigation*, Transportmetrica, Volume 149, 2012, Pages 1-24. 10.1080/18128602.2012.719165. 
 
-[3] Bell, Michael G.H. , *Hyperstar: A multi-path Astar algorithm for risk averse vehicle navigation*, Transportation Research Part B: Methodological, Volume 43, Issue 1, 2009, Pages 97-107, ISSN 0191-2615,
+[3] Bell, Michael G.H., *Hyperstar: A multi-path Astar algorithm for risk averse vehicle navigation*, Transportation Research Part B: Methodological, Volume 43, Issue 1, 2009, Pages 97-107, ISSN 0191-2615,
 https://doi.org/10.1016/j.trb.2008.05.010.
 
 
