@@ -42,8 +42,6 @@ FS = (6, 6)  # figure size
 
 System information and package versions:
 
-```
-
     OS : Linux mint 21.1, based on Ubuntu 22.04
     Python : 3.10.8 | packaged by conda-forge | (main, Nov 22 2022, 08:26:04) [GCC 10.4.0]
     matplotlib : 3.6.3
@@ -52,7 +50,7 @@ System information and package versions:
     pandas : 1.5.3
     numba : 0.56.4
     aequilibrae : dev version based on 0.9.0
-```
+
 
 ## Bell's network
 
@@ -74,7 +72,7 @@ The constant $\alpha$ allows us to adjust the edge frequency as follows:
 
 $$f_a = \frac{1}{\alpha \; d_a}$$
 
-A smaller $\alpha$ value implies higher edge frequencies, and vice versa. Next, we will create the network as a pandas dataframe.
+if $\alpha > 0$, and $f_a \infty$ if $\alpha=0$. A smaller $\alpha$ value implies higher edge frequencies, and vice versa. Next, we will create the network as a pandas dataframe.
 
 ### Vertices
 
@@ -245,7 +243,7 @@ edges.head(3)
 
 ### Plot the network
 
-We use the NetworkX package to plot the network. The bottom left vertex is the origin and the top right vertex is the destination for the hyperpath computation.
+We use the [NetworkX](https://networkx.org/) package to plot the network. The bottom left vertex is the origin ('o') and the top right vertex is the destination ('d') for the hyperpath computation.
 
 
 ```python
