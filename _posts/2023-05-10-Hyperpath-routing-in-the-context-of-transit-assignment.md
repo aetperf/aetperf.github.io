@@ -70,12 +70,10 @@ $$d_a \sim \mathbf{U}[0,1)$$
 
 The constant $\alpha$ allows us to adjust the edge frequency as follows:
 
-\begin{equation}
-f_a = \begin{cases} 
+$$f_a = \begin{cases} 
 1 / \left( \alpha \; d_a \right) & \text{if $\alpha > 0$} \\ 
 \infty & \text{if $\alpha = 0$} \\ 
-\end{cases}
-\end{equation}
+\end{cases}$$
 
 A smaller $\alpha$ value implies higher edge frequencies, and vice versa. Next, we will create the network as a pandas dataframe.
 
