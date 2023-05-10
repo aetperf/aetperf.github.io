@@ -52,7 +52,7 @@ System information and package versions:
     pandas : 1.5.3
     numba : 0.56.4
     aequilibrae : dev version based on 0.9.0
-
+```
 
 ## Bell's network
 
@@ -283,7 +283,7 @@ _ = ax.set_title(f"Bell's network with $n$={n}", color="k")
 
     
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_13_0.png" alt="output_13_0">
+  <img width="800" src="/img/2023-05-10_01/output_13_0.png" alt="output_13_0">
 </p>
 
 We can also visualize the edge travel time:
@@ -320,7 +320,7 @@ _ = ax.set_title(
 
     
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_15_0.png" alt="output_15_0">
+  <img width="800" src="/img/2023-05-10_01/output_15_0.png" alt="output_15_0">
 </p>
 
 And the base delay:
@@ -355,7 +355,7 @@ _ = ax.set_title("Bell's network - edge base delay : $\\textit{delay_base}$", co
 
     
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_17_0.png" alt="output_17_0">
+  <img width="800" src="/img/2023-05-10_01/output_17_0.png" alt="output_17_0">
 </p>
 
 ## Hyperpath computation
@@ -436,7 +436,7 @@ plot_networkx(n=10, alpha=0.0)
 ```
     
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_21_0.png" alt="output_21_0">
+  <img width="800" src="/img/2023-05-10_01/output_21_0.png" alt="output_21_0">
 </p>
 
 The hyperpath that we obtain is the same as the shortest path that Dijkstra’s algorithm would have computed. Let's introduce some delay by increasing the value of $\alpha$:
@@ -447,7 +447,7 @@ plot_networkx(n=10, alpha=0.5)
 ```
 
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_23_0.png" alt="output_23_0">
+  <img width="800" src="/img/2023-05-10_01/output_23_0.png" alt="output_23_0">
 </p> 
 
 
@@ -460,7 +460,7 @@ plot_networkx(n=10, alpha=1.0)
     
     
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_25_0.png" alt="output_25_0">
+  <img width="800" src="/img/2023-05-10_01/output_25_0.png" alt="output_25_0">
 </p>
 
 
@@ -469,7 +469,7 @@ plot_networkx(n=10, alpha=100.0)
 ```
     
 <p align="center">
-  <img width="600" src="/img/2023-05-10_01/output_26_0.png" alt="output_26_0">
+  <img width="800" src="/img/2023-05-10_01/output_26_0.png" alt="output_26_0">
 </p>
 
 
