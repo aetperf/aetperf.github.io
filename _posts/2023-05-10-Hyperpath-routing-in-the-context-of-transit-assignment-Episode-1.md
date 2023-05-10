@@ -479,7 +479,7 @@ plot_networkx(n=10, alpha=100.0)
 
 [2] Ma, Jiangshan & Fukuda, Daisuke & Schmöcker, Jan-Dirk. *Faster hyperpath generating algorithms for vehicle navigation*, Transportmetrica, Volume 149, 2012, Pages 1-24. 10.1080/18128602.2012.719165. 
 
-[2] Bell, Michael G.H. , *Hyperstar: A multi-path Astar algorithm for risk averse vehicle navigation*, Transportation Research Part B: Methodological, Volume 43, Issue 1, 2009, Pages 97-107, ISSN 0191-2615,
+[3] Bell, Michael G.H. , *Hyperstar: A multi-path Astar algorithm for risk averse vehicle navigation*, Transportation Research Part B: Methodological, Volume 43, Issue 1, 2009, Pages 97-107, ISSN 0191-2615,
 https://doi.org/10.1016/j.trb.2008.05.010.
 
 
