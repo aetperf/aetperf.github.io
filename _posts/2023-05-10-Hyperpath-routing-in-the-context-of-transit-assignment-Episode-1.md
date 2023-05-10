@@ -13,9 +13,9 @@ tags:
 
 How do transit passengers choose their routes in a complex network of lines and services? How can we estimate the distribution of passenger flows and the performance of transit systems? These are some of the questions that transit assignment models aim to answer. Transit assignment models are mathematical tools that predict how passengers behave and travel in a transit network, given some assumptions and inputs.
 
-One of the key concepts in transit assignment models is hyperpath routing. Hyperpath routing is a way of representing the set of optimal routes that a passenger can take from an origin to a destination, based on some criterion such as travel time or cost. A hyperpath is a collection of links that form a subgraph of the transit network, such that any path within the subgraph is optimal. Each link in the hyperpath also has a probability of being used by the passenger, which reflects the attractiveness and uncertainty of the route choice.
+One of the key concepts in transit assignment models is hyperpath routing. Hyperpath routing is a way of representing the set of optimal routes that a passenger can take from an origin to a destination, based on some criterion such as travel time or generalized cost. A hyperpath is a collection of links that form a subgraph of the transit network. Each link in the hyperpath also has a probability of being used by the passenger, which reflects the attractiveness and uncertainty of the route choice. The shortest hyperpath is optimal regarding the combination of paths weighted by the probability of being used.
 
-Hyperpath routing can be applied to different types of transit assignment models, but in this post we will focus on frequency-based models. Frequency-based models assume that passengers do not have reliable information about the service schedules and arrival times, and they choose their routes based on the expected travel time or cost. This type of model is suitable for large-scale transit systems with irregular or frequent services.
+Hyperpath routing can be applied to different types of transit assignment models, but in this following posts we will focus on frequency-based models. Frequency-based models assume that passengers do not have reliable information about the service schedules and arrival times, and they choose their routes based on the expected travel time or cost. This type of model is suitable for large-scale transit systems with rather frequent services.
 
 To illustrate how hyperpath routing works in frequency-based models, we will use a classic algorithm by Spiess & Florian [1], which has been implemented as an experimental feature in the  [aequilibrae](http://www.aequilibrae.com/python/latest/) package. Aequilibrae is a comprehensive Python package for transportation modeling that offers various functionalities and features.
 
@@ -56,7 +56,7 @@ System information and package versions:
 
 ## Bell's network
 
-Let’s start by defining the directed graph $\mathcal{G} = \left( V, E \right) $, where $V$ and $E$ are the graph vertices and edges. The hyperpath generating algorithm requires 2 attributes for each edge $a \in V$:
+We start by defining the directed graph $\mathcal{G} = \left( V, E \right) $, where $V$ and $E$ are the graph vertices and edges. The hyperpath generating algorithm requires 2 attributes for each edge $a \in V$:
 - edge travel time $u_a \geq 0$
 - edge frequency $f_a \geq 0$
 
