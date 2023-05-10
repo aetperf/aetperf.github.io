@@ -63,9 +63,11 @@ We start by defining the directed graph $\mathcal{G} = \left( V, E \right) $, wh
 The edge frequency is inversely related to the exposure to delay. For example, in a transit network, a boarding edge has a frequency that is the inverse of the headway (or half the headway, depending on the model assumptions). A walking edge has no exposure to delay, so its frequency is assumed to be infinite.
 
 Bell's network is a synthetic network: it is a $n$-by-$n$ grid bi-directional network [2, 3]. The edge travel time is taken as random number following a uniform distribution:
+
 $$u_a \sim \mathbf{U}[0,1)$$
 
 To demonstrate how the hyperpath depends on the exposure to delay, we will use a positive constant $\alpha$ and a *base delay* $d_a$ for each edge that follows a uniform distribution:
+
 $$d_a \sim \mathbf{U}[0,1)$$
 
 The constant $\alpha$ allows us to adjust the edge frequency as follows:
