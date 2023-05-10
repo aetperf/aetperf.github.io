@@ -72,8 +72,8 @@ The constant $\alpha$ allows us to adjust the edge frequency as follows:
 
 $$f_a = \left\{
 \begin{array}{ll}
-1 / \left( \alpha \; d_a \right) & \text{if} \alpha > 0 \\ 
-\infty & \text{if} $\alpha = 0$ \\
+1 / \left( \alpha \; d_a \right) & \text{if} \; \alpha > 0 \\ 
+\infty & \text{if} \; \alpha = 0 \\
 \end{array} 
 \right.$$
 
@@ -152,7 +152,7 @@ vertices.head(3)
 
 ```python
 @jit
-def create_edges_inner(n):
+def create_edges_numba(n):
     m = 2 * n * (n - 1)
     tail = np.zeros(m, dtype=np.uint32)
     head = np.zeros(m, dtype=np.uint32)
@@ -169,7 +169,7 @@ def create_edges_inner(n):
 
 
 def create_edges(n, seed=124):
-    tail, head = create_edges_inner(n)
+    tail, head = create_edges_numba(n)
     edges = pd.DataFrame()
     edges["tail"] = tail
     edges["head"] = head
