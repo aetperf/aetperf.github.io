@@ -446,7 +446,7 @@ plot_shortest_hyperpath(n=10, alpha=0.0)
   <img width="800" src="/img/2023-05-10_01/output_21_0.png" alt="output_21_0">
 </p>
 
-The hyperpath that we obtain is the same as the shortest path that Dijkstra’s algorithm would have computed. We call NetworkX's `dijkstra_path` method in order to visualize the shortest path:
+The hyperpath that we obtain is the same as the shortest path that Dijkstra’s algorithm would have computed. We call NetworkX's `dijkstra_path` method in order to compute the shortest path:
 
 ```python
 G = nx.from_pandas_edgelist(
