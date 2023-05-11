@@ -446,7 +446,57 @@ plot_networkx(n=10, alpha=0.0)
   <img width="800" src="/img/2023-05-10_01/output_21_0.png" alt="output_21_0">
 </p>
 
-The hyperpath that we obtain is the same as the shortest path that Dijkstra’s algorithm would have computed. Let's introduce some delay by increasing the value of $\alpha$:
+The hyperpath that we obtain is the same as the shortest path that Dijkstra’s algorithm would have computed. We call NetworkX's `dijkstra_path` method in order to visualize the shortest path:
+
+```python
+G = nx.from_pandas_edgelist(
+    sf._edges,
+    source="tail",
+    target="head",
+    edge_attr="trav_time",
+    create_using=nx.DiGraph,
+)
+
+# Dijkstra
+nodes = nx.dijkstra_path(G, 0, n*n-1, weight='trav_time')
+edges = list(nx.utils.pairwise(nodes))
+
+# plot
+figure = plt.figure(figsize=FS)
+node_colors = n_vertices * ["gray"]
+node_colors[0] = "r"
+node_colors[-1] = "r"
+ns = 100 / n
+node_size = n_vertices * [ns]
+node_size[0] = 20 * ns
+node_size[-1] = 20 * ns
+labeldict = {}
+labeldict[0] = "o"
+labeldict[n * n - 1] = "d"
+widths = 1e2 * np.array([1 if (u,v) in edges else 0 for u, v in G.edges()]) / n
+pos = vertices[["x", "y"]].values
+nx.draw(
+    G,
+    pos=pos,
+    width=widths,
+    node_size=node_size,
+    node_color=node_colors,
+    arrowstyle="-",
+    labels=labeldict,
+    with_labels=True,
+)
+ax = plt.gca()
+_ = ax.set_title(
+    f"Shortest path - Bell's network", color="k"
+)
+```
+<p align="center">
+  <img width="800" src="/img/2023-05-10_01/output_24_0.png" alt="output_24_0">
+</p>
+
+
+
+Let's introduce some delay by increasing the value of $\alpha$:
 
 
 ```python
