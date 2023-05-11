@@ -367,7 +367,7 @@ _ = ax.set_title("Bell's network - edge base delay : $\\textit{delay_base}$", co
 
 ## Hyperpath computation
 
-We now introduce a function `shortest_hyperpath` that:
+We now introduce a function `plot_shortest_hyperpath` that:
 - creates the network, 
 - computes the edge frequency given an input value for $\alpha$, 
 - compute the shortest hyperpath,
@@ -375,7 +375,7 @@ We now introduce a function `shortest_hyperpath` that:
 
 
 ```python
-def shortest_hyperpath(n=10, alpha=10.0, figsize=FS, seed=RS):
+def plot_shortest_hyperpath(n=10, alpha=10.0, figsize=FS, seed=RS):
 
     # network creation
     vertices = create_vertices(n)
@@ -439,7 +439,7 @@ We start with $\alpha=0$. This implies that there is no delay over all the netwo
 
 
 ```python
-shortest_hyperpath(n=10, alpha=0.0)
+plot_shortest_hyperpath(n=10, alpha=0.0)
 ```
     
 <p align="center">
@@ -500,7 +500,7 @@ Let's introduce some delay by increasing the value of $\alpha$:
 
 
 ```python
-shortest_hyperpath(n=10, alpha=0.5)
+plot_shortest_hyperpath(n=10, alpha=0.5)
 ```
 
 <p align="center">
@@ -512,7 +512,7 @@ The shortest path is no longer unique and multiple routes are suggested. The lin
 
 
 ```python
-shortest_hyperpath(n=10, alpha=1.0)
+plot_shortest_hyperpath(n=10, alpha=1.0)
 ```
     
     
@@ -522,7 +522,7 @@ shortest_hyperpath(n=10, alpha=1.0)
 
 
 ```python
-shortest_hyperpath(n=10, alpha=100.0)
+plot_shortest_hyperpath(n=10, alpha=100.0)
 ```
     
 <p align="center">
