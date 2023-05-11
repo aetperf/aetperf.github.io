@@ -68,7 +68,7 @@ To demonstrate how the hyperpath depends on the exposure to delay, we will use a
 
 $$d_a \sim \mathbf{U}[0,1)$$
 
-The constant $\alpha$ allows us to adjust the edge frequency as follows:
+The constant $\alpha \geq 0$ allows us to adjust the edge frequency as follows:
 
 $$f_a = \left\{
 \begin{array}{ll}
