@@ -163,7 +163,7 @@ df.head(3)
 
 
 
-## Long time range daily mean
+## 1982-2012 mean
 
 
 ```python
