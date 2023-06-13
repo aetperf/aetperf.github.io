@@ -14,7 +14,7 @@ From the NOAA [website](https://www.ncei.noaa.gov/products/optimum-interpolation
 
 > The NOAA 1/4° Daily Optimum Interpolation Sea Surface Temperature (OISST) is a long term Climate Data Record that incorporates observations from different platforms (satellites, ships, buoys and Argo floats) into a regular global grid. The dataset is interpolated to fill gaps on the grid and create a spatially complete map of sea surface temperature. Satellite and ship observations are referenced to buoys to compensate for platform differences and sensor biases.
 
-In the present dataset, the surface temperature is averaged over the whole north Atlantic surface and over the daily time period. The data starts in 1981, and is avalaible until now (with may a fex days lag).
+In the present dataset, the surface temperature is averaged over the whole north Atlantic surface and over the daily time period. The data starts in 1981, and is avalaible until now (with maybe a few days lag).
 
 ```python
 import matplotlib.pyplot as plt
@@ -26,6 +26,7 @@ FS = (12, 7)  # figure size
 
 ## Load the Data
 
+The Data is given as a JSON file that we load with Pandas:
 
 ```python
 df = pd.read_json(
@@ -80,6 +81,7 @@ df.head(3)
 </div>
 
 
+Each year has 366 records with potentially a missing value at the end on non leap years:
 
 
 ```python
@@ -92,6 +94,7 @@ df["data"].map(len).unique()
     array([366])
 
 
+We explod the lists and transpose the table in order to have 366 rows and years as columns:
 
 
 ```python
@@ -170,6 +173,7 @@ df.head(3)
 
 ## 1982-2012 mean
 
+We compute the mean over the different years of the daily means:
 
 ```python
 year_start = 1982
