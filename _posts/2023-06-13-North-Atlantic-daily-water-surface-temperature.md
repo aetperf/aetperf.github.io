@@ -1,5 +1,5 @@
 ---
-title: orth Atlantic daily water surface temperature
+title: North Atlantic daily water surface temperature
 layout: post
 comments: true
 author: François Pacull
