@@ -10,6 +10,11 @@ tags:
 
 Data source : [https://climatereanalyzer.org](https://climatereanalyzer.org/clim/sst_daily/json/oisst2.1_natlan1_sst_day.json) (NOAA Optimum Interpolation SST (OISST) dataset version 2.1)
 
+From the NOAA [website](https://www.ncei.noaa.gov/products/optimum-interpolation-sst):
+
+> The NOAA 1/4° Daily Optimum Interpolation Sea Surface Temperature (OISST) is a long term Climate Data Record that incorporates observations from different platforms (satellites, ships, buoys and Argo floats) into a regular global grid. The dataset is interpolated to fill gaps on the grid and create a spatially complete map of sea surface temperature. Satellite and ship observations are referenced to buoys to compensate for platform differences and sensor biases.
+
+In the present dataset, the surface temperature is averaged over the whole north Atlantic surface and over the daily time period. The data starts in 1981, and is avalaible until now (with may a fex days lag).
 
 ```python
 import matplotlib.pyplot as plt
