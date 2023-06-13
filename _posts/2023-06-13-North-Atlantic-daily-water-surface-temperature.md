@@ -32,7 +32,6 @@ df.head(3)
 
 
 
-
 <div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
@@ -119,21 +118,7 @@ df.head(3)
       <th>name</th>
       <th>1981</th>
       <th>1982</th>
-      <th>1983</th>
-      <th>1984</th>
-      <th>1985</th>
-      <th>1986</th>
-      <th>1987</th>
-      <th>1988</th>
-      <th>1989</th>
-      <th>1990</th>
       <th>...</th>
-      <th>2017</th>
-      <th>2018</th>
-      <th>2019</th>
-      <th>2020</th>
-      <th>2021</th>
-      <th>2022</th>
       <th>2023</th>
       <th>1982-2011 mean</th>
       <th>plus 2σ</th>
@@ -145,21 +130,7 @@ df.head(3)
       <th>1</th>
       <td>NaN</td>
       <td>20.13</td>
-      <td>19.76</td>
-      <td>19.90</td>
-      <td>19.76</td>
-      <td>19.57</td>
-      <td>19.72</td>
-      <td>20.05</td>
-      <td>19.82</td>
-      <td>19.84</td>
       <td>...</td>
-      <td>20.56</td>
-      <td>20.77</td>
-      <td>20.30</td>
-      <td>20.60</td>
-      <td>20.66</td>
-      <td>20.85</td>
       <td>20.78</td>
       <td>20.09</td>
       <td>20.66</td>
@@ -169,21 +140,7 @@ df.head(3)
       <th>2</th>
       <td>NaN</td>
       <td>20.06</td>
-      <td>19.77</td>
-      <td>19.92</td>
-      <td>19.74</td>
-      <td>19.53</td>
-      <td>19.71</td>
-      <td>20.03</td>
-      <td>19.80</td>
-      <td>19.80</td>
       <td>...</td>
-      <td>20.56</td>
-      <td>20.71</td>
-      <td>20.27</td>
-      <td>20.58</td>
-      <td>20.63</td>
-      <td>20.82</td>
       <td>20.76</td>
       <td>20.07</td>
       <td>20.63</td>
@@ -193,21 +150,7 @@ df.head(3)
       <th>3</th>
       <td>NaN</td>
       <td>20.00</td>
-      <td>19.77</td>
-      <td>19.93</td>
-      <td>19.72</td>
-      <td>19.51</td>
-      <td>19.71</td>
-      <td>20.00</td>
-      <td>19.78</td>
-      <td>19.76</td>
       <td>...</td>
-      <td>20.54</td>
-      <td>20.66</td>
-      <td>20.22</td>
-      <td>20.55</td>
-      <td>20.61</td>
-      <td>20.80</td>
       <td>20.73</td>
       <td>20.05</td>
       <td>20.62</td>
