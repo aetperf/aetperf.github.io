@@ -188,28 +188,45 @@ df[f"{year_start}-{year_end} mean"] = df[
 Now let's plot the temperature anomaly:
 
 ```python
+year_start = 1982
+year_end = 2012
+current_year = 2023
+df[f"{year_start}-{year_end} mean"] = df[
+    [str(y) for y in range(year_start, year_end + 1)]
+].mean(axis=1)
+```
+
+```python
 alpha_1 = 0.2
 color_1 = "silver"
 alpha_2 = 0.4
 color_2 = "grey"
 color_3 = "black"
 
-ax = (df["1982"] - df["1982-2012 mean"]).plot(figsize=FS, color=color_1, alpha=alpha_1)
-for year in [str(y) for y in range(1983, 2012)]:
-    ax = (df[year] - df["1982-2012 mean"]).plot(ax=ax, color=color_1, alpha=alpha_1)
-ax = (df["2012"] - df["1982-2012 mean"]).plot(
-    ax=ax, color=color_1, label="1982-2012", alpha=alpha_1
+ax = (df[f"{year_start}"] - df[f"{year_start}-{year_end} mean"]).plot(
+    figsize=FS, color=color_1, alpha=alpha_1
+)
+for year in [str(y) for y in range(year_start + 1, year_end)]:
+    ax = (df[year] - df[f"{year_start}-{year_end} mean"]).plot(
+        ax=ax, color=color_1, alpha=alpha_1
+    )
+ax = (df[f"{year_end}"] - df[f"{year_start}-{year_end} mean"]).plot(
+    ax=ax, color=color_1, label=f"{year_start}-{year_end}", alpha=alpha_1
 )
 
-ax = (df["2013"] - df["1982-2012 mean"]).plot(ax=ax, color=color_2, alpha=alpha_2)
-for year in [str(y) for y in range(2014, 2022)]:
-    ax = (df[year] - df["1982-2012 mean"]).plot(ax=ax, color=color_2, alpha=alpha_2)
-ax = (df["2022"] - df["1982-2012 mean"]).plot(
-    ax=ax, color=color_2, label="2013-2022", alpha=alpha_2
+ax = (df[f"{year_end+1}"] - df[f"{year_start}-{year_end} mean"]).plot(
+    ax=ax, color=color_2, alpha=alpha_2
+)
+for year in [str(y) for y in range(year_end + 2, current_year - 1)]:
+    ax = (df[year] - df[f"{year_start}-{year_end} mean"]).plot(
+        ax=ax, color=color_2, alpha=alpha_2
+    )
+ax = (df[f"{current_year-1}"] - df[f"{year_start}-{year_end} mean"]).plot(
+    ax=ax, color=color_2, label=f"{year_end+1}-{current_year-1}", alpha=alpha_2
 )
 
-ax = (df["2023"] - df["1982-2012 mean"]).plot(
-    ax=ax, color=color_3, label="2023", alpha=1.0
+ax = (df[f"{current_year}"] - df[f"{year_start}-{year_end} mean"]).plot(
+    ax=ax, color=color_3, label=f"{current_year}", alpha=1.0
 )
 _ = ax.set_ylim(-1.0, +1.5)
 _ = ax.legend()
