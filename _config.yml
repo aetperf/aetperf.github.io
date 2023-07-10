@@ -7,10 +7,18 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: a2performance
 github_username:  aetperf
 
+
+google_analytics: G-Y052YM12PG
+
+show_excerpts: true
+
 # Build settings
-theme: minima
+# theme: minima
+remote_theme: jekyll/minima
+
 plugins:
   - jekyll-feed
+  - jekyll-remote-theme
 
 # Exclude from processing.
 # The following items will not be processed, by default.
@@ -43,6 +51,7 @@ analytics:
   google:
     measurement_id          : "G-B2W567YB76"
     anonymize_ip         : # true, false (default)
+
 
 # markdown
 markdown: kramdown
