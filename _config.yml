@@ -10,7 +10,7 @@ github_username:  aetperf
 
 google_analytics: G-Y052YM12PG
 
-show_excerpts: true
+show_excerpts: false
 
 # Build settings
 # theme: minima
@@ -44,14 +44,6 @@ plugins:
 # refer to http://shopify.github.io/liquid/filters/date/ if you want to customize this
 minima:
   date_format: "%b %-d, %Y"
-
-# Analytics
-analytics:
-  provider               : "google-gtag" # false (default), "google", "google-universal", "google-gtag", "custom"
-  google:
-    measurement_id          : "G-B2W567YB76"
-    anonymize_ip         : # true, false (default)
-
 
 # markdown
 markdown: kramdown
