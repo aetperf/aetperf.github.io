@@ -43,17 +43,10 @@ theme: jekyll-theme-cayman
 plugins:
  - jekyll-feed
  - jekyll-seo-tag
+ - jekyll-remote-theme
 
-# Google Analytics
-# google_analytics: G-B2W567YB76
-# UA-123584424-1
-
-# Analytics
-analytics:
-  provider: "google-gtag"
-  google:
-    measurement_id: "G-B2W567YB76"
-    anonymize_ip: false
+remote_theme: jekyll/minima
+google_analytics: G-B2W567YB76
 
 # markdown
 markdown: kramdown
