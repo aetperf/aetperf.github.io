@@ -43,7 +43,15 @@ plugins:
 - jekyll-remote-theme
 
 remote_theme: jekyll/minima
-google_analytics: G-B2W567YB76
+
+# Analytics
+analytics:
+  provider               : "google-gtag" # false (default), "google", "google-universal", "google-gtag", "custom"
+  google:
+    measurement_id          : "G-B2W567YB76"
+    anonymize_ip         : # true, false (default)
+
+
 
 # markdown
 markdown: kramdown
