@@ -37,12 +37,13 @@ minima:
 #header_pages:
 # - about.html
 
+remote_theme: jekyll/minima
+
 plugins:
 - jekyll-feed
 - jekyll-seo-tag
 - jekyll-remote-theme
 
-# remote_theme: jekyll/minima
 
 # Analytics
 analytics:
@@ -50,7 +51,7 @@ analytics:
   google:
     measurement_id          : "G-B2W567YB76"
     anonymize_ip         : # true, false (default)
-
+google_analytics: G-B2W567YB76
 
 
 # markdown
