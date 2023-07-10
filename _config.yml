@@ -1,49 +1,41 @@
 title: Architecture & Performance
-author: aetperf
 email: contact@architecture-performance.fr
 description: > # this means to ignore newlines until "twitter_username:"
-  Databases, Dataviz, Machine Learning.
-
-# social links
+  Algorithms, Databases, Python, Dataviz, Machine Learning.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: a2performance
 github_username:  aetperf
-rss: rss
-# dribbble_username: jekyll
-# facebook_username: jekyll
-# flickr_username: jekyll
-# instagram_username: jekyll
-# linkedin_username: jekyll
-# pinterest_username: jekyll
-# youtube_username: jekyll
-# googleplus_username: +jekyll
 
-# Mastodon instances
-# mastodon:
-# - username: jekyll
-#   instance: example.com
-# - username: jekyll2
-#   instance: example.com
+# Build settings
+theme: minima
+plugins:
+  - jekyll-feed
 
-
-show_excerpts: false # set to true to show excerpts on the homepage
+# Exclude from processing.
+# The following items will not be processed, by default.
+# Any item listed under the `exclude:` key here will be automatically added to
+# the internal "default list".
+#
+# Excluded items can be processed by explicitly listing the directories or
+# their entries' file path in the `include:` list.
+#
+# exclude:
+#   - .sass-cache/
+#   - .jekyll-cache/
+#   - gemfiles/
+#   - Gemfile
+#   - Gemfile.lock
+#   - node_modules/
+#   - vendor/bundle/
+#   - vendor/cache/
+#   - vendor/gems/
+#   - vendor/ruby/
 
 # Minima date format
 # refer to http://shopify.github.io/liquid/filters/date/ if you want to customize this
 minima:
   date_format: "%b %-d, %Y"
-
-# If you want to link only specific pages in your header, uncomment
-# this and add the path to the pages in order as they should show up
-#header_pages:
-# - about.html
-
-remote_theme: jekyll/minima
-
-plugins:
-- jekyll-feed
-- jekyll-seo-tag
-- jekyll-remote-theme
-
 
 # Analytics
 analytics:
@@ -51,8 +43,6 @@ analytics:
   google:
     measurement_id          : "G-B2W567YB76"
     anonymize_ip         : # true, false (default)
-google_analytics: G-B2W567YB76
-
 
 # markdown
 markdown: kramdown

@@ -237,7 +237,6 @@ _ = ax.set(
 )
 ```
 
-
 <p align="center">
   <img width="1000" src="/img/2023-06-13_01/output_9_0.png" alt="output_9_0">
 </p>
