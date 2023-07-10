@@ -42,7 +42,7 @@ plugins:
 - jekyll-seo-tag
 - jekyll-remote-theme
 
-remote_theme: jekyll/minima
+# remote_theme: jekyll/minima
 
 # Analytics
 analytics:
