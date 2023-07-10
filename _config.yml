@@ -37,13 +37,10 @@ minima:
 #header_pages:
 # - about.html
 
-# Build settings
-theme: jekyll-theme-cayman
-
 plugins:
- - jekyll-feed
- - jekyll-seo-tag
- - jekyll-remote-theme
+- jekyll-feed
+- jekyll-seo-tag
+- jekyll-remote-theme
 
 remote_theme: jekyll/minima
 google_analytics: G-B2W567YB76
