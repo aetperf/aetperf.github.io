@@ -16,14 +16,14 @@ google_analytics: G-B2W567YB76
 show_excerpts: false
 
 # Build settings
-# theme: minima
-remote_theme: jekyll/minima
+theme: minima
+# remote_theme: jekyll/minima
 
 plugins:
-  - jekyll-remote-theme
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
+#  - jekyll-remote-theme
 
 # Exclude from processing.
 # The following items will not be processed, by default.
