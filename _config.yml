@@ -20,8 +20,10 @@ show_excerpts: false
 remote_theme: jekyll/minima
 
 plugins:
-  - jekyll-feed
   - jekyll-remote-theme
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
 
 # Exclude from processing.
 # The following items will not be processed, by default.
@@ -46,7 +48,8 @@ plugins:
 # Minima date format
 # refer to http://shopify.github.io/liquid/filters/date/ if you want to customize this
 minima:
-  date_format: "%b %-d, %Y"
+  skin: dark
+#   date_format: "%b %-d, %Y"
 
 # markdown
 markdown: kramdown
