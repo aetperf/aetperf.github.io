@@ -8,6 +8,8 @@ tags:
 - Pandas
 ---
 
+**Updated** July 11, 2023 data update
+
 Data source : [https://climatereanalyzer.org](https://climatereanalyzer.org/clim/sst_daily/json/oisst2.1_natlan1_sst_day.json) (NOAA Optimum Interpolation SST (OISST) dataset version 2.1)
 
 From the NOAA [website](https://www.ncei.noaa.gov/products/optimum-interpolation-sst):
@@ -240,3 +242,26 @@ _ = ax.set(
 <p align="center">
   <img width="1000" src="/img/2023-06-13_01/output_9_0.png" alt="output_9_0">
 </p>
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
