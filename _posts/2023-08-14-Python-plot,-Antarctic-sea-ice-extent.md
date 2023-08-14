@@ -1,5 +1,5 @@
 ---
-title: Python plot - Antarctic Sea Ice Extent
+title: Python plot - Antarctic sea ice extent
 layout: post
 comments: true
 author: François Pacull
