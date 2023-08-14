@@ -60,7 +60,7 @@ $$d_a \sim \mathbf{U}[0,1)$$
 
 The constant $\alpha \geq 0$ allows us to adjust the edge frequency as follows:
 
-$$f_a = \left\{
+$$f_a = \left\\{
 \begin{align*}
 1  \\ 
 \infty
