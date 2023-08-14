@@ -214,7 +214,7 @@ edges.head(3)
 
 ### Plot the network
 
-We use the [NetworkX](https://networkx.org/) package to plot the network. The bottom left vertex is the origin ('o') and the top right vertex is the destination ('d') for the hyperpath computation.
+We use the [NetworkX](https://networkx.org/) package to plot the network. The bottom left vertex is the origin ($o$) and the top right vertex is the destination ($d$) for the hyperpath computation.
 
 
 ```python
