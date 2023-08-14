@@ -48,7 +48,7 @@ We start by defining the directed graph $\mathcal{G} = \left( V, E \right) $, wh
 - edge travel time $u_a \geq 0$
 - edge frequency $f_a \geq 0$
 
-The edge frequency is inversely related to the exposure to delay. For example, in a transit network, a boarding edge has a frequency that is the inverse of the headway (or half the headway, depending on the model assumptions). A walking edge has no exposure to delay, so its frequency is assumed to be infinite.
+The edge frequency is inversely related to the exposure to delay. For example, in a transit network, a boarding edge has a frequency that is the inverse of the headway [or half the headway, depending on the model assumptions]. A walking edge has no exposure to delay, so its frequency is assumed to be infinite.
 
 Bell's network is a synthetic network: it is a $n$-by-$n$ grid bi-directional network [2, 3]. The edge travel time is taken as random number following a uniform distribution:
 
@@ -62,10 +62,10 @@ The constant $\alpha \geq 0$ allows us to adjust the edge frequency as follows:
 
 $$
 f_a = \left\{
-\begin{array}{ll}
+\begin{align*}
 1 / \left( \alpha \; d_a \right) & \text{if $\alpha \; d_a \neq 0$} \\ 
-\infty & \text{otherwise} \\
-\end{array} 
+\infty & \text{otherwise}
+\end{align*} 
 \right.
 $$
 
