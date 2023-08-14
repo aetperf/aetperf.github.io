@@ -6,6 +6,7 @@ author: François Pacull
 tags: 
 - Python
 - Pandas
+- Matplotlib
 ---
 
 **Updated** July 11, 2023 data update
