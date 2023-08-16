@@ -21,7 +21,7 @@ We are going to use a recent text embedding model provided by the Beijing Academ
 | `BAAI/bge-base-en`        | yes |  no |  512 |  768 |
 | `text-embedding-ada-002`  |  no | yes | 1536 | 8191 |
 
-Note that we could have used the larger instance of the BAAI/bge model, `BAAI/bge-large-en`, however we wanted to use a relatively small model, 0.44GB, that can run fast on a regular machine. Despite its small size, `BAAI/bge-base-en` does rank well on the Massive Text Embedding Benchmark leaderboard (MTEB): [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard) 2nd rank at the time of writing this post.
+Note that we could have used the larger instance of the BAAI/bge model, `BAAI/bge-large-en`, however we wanted to use a relatively small model, 0.44GB, that can run fast on a regular machine. Despite its small size, `BAAI/bge-base-en` does rank well on the Massive Text Embedding Benchmark leaderboard (MTEB): [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard), 2nd rank at the time of writing this post.
 
 We are going to run this embedding model using the great Python library: [sentence_transformers](https://www.sbert.net/). We could also have used the other Python libraries giving access to this model: [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface) through Hugging Face. It is also possible to use Hugging face's library [transformers](https://github.com/huggingface/transformers) along PyTorch, but it is less straightforward.
 
@@ -116,10 +116,11 @@ np.linalg.norm(emb, ord=2)
 
 ## Compute some embeddings
 
+We use a little helper function that could be enriched to clean the input text. In the present version we only remove carriage return and line feed.
 
 ```python
 def get_embedding(text, normalize=True):
-    text = text.replace("\n", " ")
+    text = text.replace("\r", " ").replace("\n", " ")
     return model.encode(text, normalize_embeddings=normalize)
 ```
 
@@ -211,7 +212,7 @@ cosine_similarity(emb_1, emb_2)
 
 ## Cosine similarity heatmap
 
-Now we compute three more embedding and a 5-by-5 similarity matrix
+Now we compute 3 more embeddings and a 5-by-5 similarity matrix:
 
 ```python
 sen_3 = "Esplanade MRT station is an underground Mass Rapid Transit station on the Circle line in Singapore"
