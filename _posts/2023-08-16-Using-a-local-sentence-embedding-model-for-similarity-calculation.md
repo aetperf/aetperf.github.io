@@ -101,8 +101,6 @@ emb.shape
     (768,)
 
 
-
-
 ```python
 np.linalg.norm(emb, ord=2)
 ```
@@ -192,7 +190,7 @@ cosine_similarity(emb_1, emb_2)
 
     0.8196905
 
-## Cosine similarity heatmap
+## Cosine similarity heatmaps
 
 Let's take this a step further by generating a cosine similarity heatmap. To begin, we'll compute embeddings for three additional sentences:
 
@@ -303,7 +301,7 @@ df
 </div>
 
 
-This matrix will give us a numerical representation of the cosine similarity values between each pair of sentences. To visualize this information, we can create a heatmap using Seaborn:
+This matrix will give us a numerical representation of the cosine similarity values between each pair of sentences. To visualize this information, we create a heatmap using Seaborn:
 
 
 ```python
@@ -320,7 +318,47 @@ for label in ax.get_xticklabels():
   <img width="1000" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
 </p>
 
-The heatmap showcases the sentence embeddings' semantic relationships. Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than the others. 
+The heatmap showcases the sentence embeddings' semantic relationships: darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than the others. 
+
+Let's further illustrate the concept of cosine similarity by applying it to a different set of sentences centered around the message: "I love pizza." We'll start by creating embeddings for the following set of sentences:
+
+```python
+sentences = [
+    "I love pizza",
+    "i love Pizza",
+    "i have a passion for Pizza",
+    "I like pizza",
+    "Pizza is my favorite food",
+    "I think pizza is yummy!",
+    "I love eating pizza",
+    "I love to eat pizza",
+    "I like eating pizza",
+    "I am obsessed with pizza",
+    "I am addicted to pizza",
+    "Uranium-235 has a half-life of 703.8 million years",
+    "I HATE pizza",
+    "Pizza is disgusting!",
+    "Pizza is a horrible food",
+]
+```
+
+After encoding these sentences, we'll compute the cosine similarity matrix and visualize it using a heatmap:
+
+```python
+embeddings = model.encode(sentences, normalize_embeddings=True)
+df = compute_cosine_similarity_matrix(list(zip(sentences, embeddings)))
+fig, ax = plt.subplots(figsize=(6, 5))
+ax = sns.heatmap(df, cmap="YlGnBu")
+ax.xaxis.tick_top()
+for label in ax.get_xticklabels():
+    label.set_rotation(90)
+```
+
+<p align="center">
+  <img width="1000" src="/img/2023-08-16_01/Selection_105.png" alt="Selection_105">
+</p>
+
+Sentences expressing positive sentiments about pizza cluster together, forming regions of higher cosine similarity, while negative sentiments are distinctly separated. It's worth mentioning that one of the applications of sentence embedding models is sentiment analysis. We can also observe that the "Uranium" sentence is not related to the other sentences.
 
 ## Encoding processing time
 
@@ -350,3 +388,27 @@ So it takes 37s to encode these 100000 short sentences,
 ## Conclusion
 
 In this very short exploration of sentence embeddings, we've delved into the world of transforming textual information into meaningful numerical representations. One standout feature that makes this technology truly accessible is the ability to run open-source models locally, putting the power of sentence embeddings right at your fingertips.
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
