@@ -357,7 +357,7 @@ The GPU is a NVIDIA GeForce RTX 3070 Ti Laptop with 8GB of memory:
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
 </p>
 
-So it takes 37s to encode these 100000 short sentences.
+So it takes 37s to encode these 100,000  short sentences.
 
 ## Conclusion
 
