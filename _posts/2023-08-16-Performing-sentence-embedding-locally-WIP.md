@@ -21,7 +21,7 @@ We are going to use a recent text embedding model provided by the Beijing Academ
 | `BAAI/bge-base-en`        | yes |  no |  512 |  768 |
 | `text-embedding-ada-002`  |  no | yes | 1536 | 8191 |
 
-Note that we could have used the larger instance of the BAAI/bge model, `BAAI/bge-large-en`, however we wanted to use a relatively small model, 0.44GB, that can run fast on a regular machine. Despite its small size, `BAAI/bge-base-en` does rank decently on the Massive Text Embedding Benchmark leaderboard (MTEB): [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard) 2nd rank at the time of writing this post.
+Note that we could have used the larger instance of the BAAI/bge model, `BAAI/bge-large-en`, however we wanted to use a relatively small model, 0.44GB, that can run fast on a regular machine. Despite its small size, `BAAI/bge-base-en` does rank well on the Massive Text Embedding Benchmark leaderboard (MTEB): [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard) 2nd rank at the time of writing this post.
 
 We are going to run this embedding model using the great Python library: [sentence_transformers](https://www.sbert.net/). We could also have used the other Python libraries giving access to this model: [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface) through Hugging Face. It is also possible to use Hugging face's library [transformers](https://github.com/huggingface/transformers) along PyTorch, but it is less straightforward.
 
@@ -92,7 +92,7 @@ emb[:5]
     array([-0.01139987,  0.00527102, -0.00226131, -0.01054202,  0.04873622],
           dtype=float32)
 
-We can check the embedding dimension and that the resultign vector has been normalized:
+We can check the embedding dimension and that the resulting vector has been normalized:
 
 ```python
 emb.shape
@@ -169,7 +169,7 @@ emb_2 = get_embedding(sen_2)
 embs.append((sen_2, emb_2))
 ```
 
-## cosine similarity $S$
+### cosine similarity $S$
 
 $$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
 
@@ -359,8 +359,8 @@ for label in ax.get_xticklabels():
     label.set_rotation(90)
 ```
 
-
-    
-![png](output_24_0.png)
     
 
+<p align="center">
+  <img width="1000" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
+</p>
