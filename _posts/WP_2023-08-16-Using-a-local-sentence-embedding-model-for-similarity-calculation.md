@@ -2,16 +2,16 @@
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
 
-For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding, and appears to be a BERT-like model. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's well-known model: [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers some impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
+For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence - BAAI: [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding, and appears to be a BERT-like model. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's well-known model: [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers some impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
 
 | Model | Can Run Locally | Multilingual | Input Sequence Length | Embedding Dimension |
 |---|---:|---:|---:|---:|
 | `BAAI/bge-base-en`        | Yes |  No |  512 |  768 |
 | `text-embedding-ada-002`  |  No | Yes | 1536 | 8191 |
 
-While a larger instance of BAAI/bge - `BAAI/bge-large-en` - is available, we've opted for BAAI/bge-base-en for its relatively smaller size (0.44GB), making it fast and suitable for regular machines. It's also worth mentioning that despite its compact nature, `BAAI/bge-base-en` boasts a second-place rank on the Massive Text Embedding Benchmark leaderboard (MTEB) at the time of writing this post, which you can check out here: [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard).
+While a larger instance of BAAI/bge - `BAAI/bge-large-en` - is available, we've opted for BAAI/bge-base-en for its relatively smaller size of 0.44GB, making it fast and suitable for regular machines. It's also worth mentioning that despite its compact nature, `BAAI/bge-base-en` boasts a second-place rank on the Massive Text Embedding Benchmark leaderboard MTEB at the time of writing this post, which you can check out here: [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard).
 
-For the purpose of running this embedding model, we'll be utilizing the neat Python library [sentence_transformers](https://www.sbert.net/). Alternatively, there are other Python libraries that provide access to this model, such as [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface).
+For the purpose of running this embedding model, we'll be utilizing the neat Python library [`sentence_transformers`](https://www.sbert.net/). Alternatively, there are other Python libraries that provide access to this model, such as [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface).
 
 Now, let's get started by importing the necessary libraries.
 
@@ -82,7 +82,7 @@ emb[:5]
           dtype=float32)
 
 
-We can also check the dimensions of the embedding and confirm that the vector has been normalized:
+We can check the dimensions of the embedding and confirm that the vector has been normalized:
 
 ```python
 emb.shape
@@ -102,7 +102,7 @@ Next we'll compute embeddings for two sentences and then measure their cosine si
 
 ## Cosine similarity
 
-In order to compute embeddings, we'll use a helpful function that can be expanded upon in the future. For now, it only removes any carriage returns and line feeds from the input text:
+In order to compute an embedding, we'll use a helpful function that can be expanded upon in the future. For now, it only removes any carriage returns and line feeds from the input text:
 
 ```python
 def get_embedding(text, normalize=True):
@@ -132,7 +132,7 @@ embs.append((sen_2, emb_2))
 
 With the embeddings computed, we can now move on to calculating their cosine similarity. The cosine similarity $S(u,v)$ between two vectors $u$ and $v$ is defined as:
 
-$$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
+$$S(u,v) = cos(u, v) = \frac{u \cdot v}{\\|u\\|_2 \\|v\\|_2}$$
 
 
 ```python
