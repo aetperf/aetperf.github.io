@@ -14,7 +14,7 @@ What is sentence embedding? Sentence embedding refers to the process of represen
 
 The simple use case in the following is computing similarity between a few sentences. The similarity between two vectors measures their relatedness.
 
-We are going to use a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE is short for *BAAI General Embedding*. This model has an embedding dimension of 768 and an input sequence length of 512 tokens. This means that longer sequences will be truncated. As a comparison, OpenAi's embedding model `text-embedding-ada-002` has an embedding dimension of 8191 and an input sequence length of 1536 tokens. However, the latter model cannot be run locally. For the reference, here is a table comparing some of the features of both embedding models:
+We are going to use a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE is short for *BAAI General Embedding*. This model has an embedding dimension of 768 and an input sequence length of 512 tokens. This means that longer sequences will be truncated. As a comparison, OpenAi's embedding model [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models) has an embedding dimension of 8191 and an input sequence length of 1536 tokens. However, the latter model cannot be run locally. For the reference, here is a table comparing some of the features of both embedding models:
 
 | model | can run locally | multilingual | input sequence length | embedding dimension |
 |---|---:|---:|---:|---:|
@@ -23,7 +23,7 @@ We are going to use a recent text embedding model provided by the Beijing Academ
 
 Note that we could have used the larger instance of the BAAI/bge model, `BAAI/bge-large-en`, however we wanted to use a relatively small model, 0.44GB, that can run fast on a regular machine. Despite its small size, `BAAI/bge-base-en` does rank decently on the Massive Text Embedding Benchmark leaderboard (MTEB): [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard) 2nd rank at the time of writing this post.
 
-We are going to run this embedding model using the great Python library: [`sentence_transformers`](https://www.sbert.net/). We could also have used the other Python libraries giving access to this model: [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface) through Hugging Face. It is also possible to use Hugging face's library [transformers](https://github.com/huggingface/transformers) along PyTorch, but it is less straightforward.
+We are going to run this embedding model using the great Python library: [sentence_transformers](https://www.sbert.net/). We could also have used the other Python libraries giving access to this model: [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface) through Hugging Face. It is also possible to use Hugging face's library [transformers](https://github.com/huggingface/transformers) along PyTorch, but it is less straightforward.
 
 Let's start with the imports.
 
@@ -37,7 +37,7 @@ import seaborn as sns
 from sentence_transformers import SentenceTransformer
 ```
 
-System information and Package versions:
+System information and package versions:
 
     Python version       : 3.11.4
     OS                   : Linux
@@ -60,7 +60,7 @@ The very first time this model is instanciated as above, a bunch of files are do
   <img width="1000" src="/img/2023-08-16_01/Selection_103.png" alt="Selection_103">
 </p>
 
-The model artifact is stored is some hidden home directory:
+The model artifact is cached is some hidden home directory:
 
 ```bash
 $ tree .cache/torch/sentence_transformers/BAAI_bge-base-en
@@ -82,7 +82,7 @@ $ tree .cache/torch/sentence_transformers/BAAI_bge-base-en
 1 directory, 12 files
 ```
 
-We are now ready to transform our first sentence:
+We are now ready to encode our first sentence:
 
 ```python
 emb = model.encode("It’s not an easy thing to meet your maker", normalize_embeddings=True)
@@ -92,6 +92,7 @@ emb[:5]
     array([-0.01139987,  0.00527102, -0.00226131, -0.01054202,  0.04873622],
           dtype=float32)
 
+We can check the embedding dimension and that the resultign vector has been normalized:
 
 ```python
 emb.shape
@@ -101,7 +102,7 @@ emb.shape
     (768,)
 
 
-We can check that the embedding vector has been normalized:
+
 
 
 ```python
