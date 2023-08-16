@@ -6,11 +6,12 @@ author: François Pacull
 tags: 
 - Python
 - sentence embedding
-- sentence_transformers
+- BAAI/bge-base-en
+- on-premise
 - cosine similarity
-- hugging face
-- bge-base-en
+- Hugging Face
 - heatmap
+- sentence_transformers
 - seaborn
 - pandas
 - numpy
