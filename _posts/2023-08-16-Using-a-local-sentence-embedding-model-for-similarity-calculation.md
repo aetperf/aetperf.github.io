@@ -7,6 +7,13 @@ tags:
 - Python
 - sentence embedding
 - sentence_transformers
+- cosine similarity
+- hugging face
+- bge-base-en
+- heatmap
+- seaborn
+- pandas
+- numpy
 ---
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
