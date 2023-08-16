@@ -14,7 +14,7 @@ What is sentence embedding? Sentence embedding refers to the process of represen
 
 The simple use case in the following is computing similarity between a few sentences. The similarity between two vectors measures their relatedness.
 
-We are going to use a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE is short for BAAI General Embedding. This model has an embedding dimension of 768 and an input sequence length of 512 tokens. This means that longer sequences will be truncated. As a comparison, OpenAi's embedding model `text-embedding-ada-002` has an embedding dimension of 8191 and an input sequence length of 1536 tokens. However, the latter model cannot be run locally. For the reference, here is a table comparing some of the features of both embedding models:
+We are going to use a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE is short for *BAAI General Embedding*. This model has an embedding dimension of 768 and an input sequence length of 512 tokens. This means that longer sequences will be truncated. As a comparison, OpenAi's embedding model `text-embedding-ada-002` has an embedding dimension of 8191 and an input sequence length of 1536 tokens. However, the latter model cannot be run locally. For the reference, here is a table comparing some of the features of both embedding models:
 
 | model | can run locally | multilingual | input sequence length | embedding dimension |
 |---|---:|---:|---:|---:|
@@ -30,8 +30,6 @@ Let's start with the imports.
 ## Imports
 
 ```python
-import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -56,13 +54,13 @@ System information and Package versions:
 model = SentenceTransformer('BAAI/bge-base-en')
 ```
 
-The first time this model is instanciated as above, the model is downloaded:
+The very first time this model is instanciated as above, a bunch of files are downloaded:
 
 <p align="center">
   <img width="1000" src="/img/2023-08-16_01/Selection_103.png" alt="Selection_103">
 </p>
 
-The artifacts are stored is a home hidden directory:
+The model artifact is stored is some hidden home directory:
 
 ```bash
 $ tree .cache/torch/sentence_transformers/BAAI_bge-base-en
