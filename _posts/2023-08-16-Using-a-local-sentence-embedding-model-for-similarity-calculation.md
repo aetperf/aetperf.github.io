@@ -358,7 +358,7 @@ Sentences expressing positive sentiments about pizza cluster together, forming r
 
 ## Encoding processing time
 
-Performance is a crucial consideration when working with real-world datasets. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, and the chosen sentence is kind of short, this may provide us with a *rough estimate* of the time it takes to encode a large list of sentences.
+Performance is a crucial consideration when working with real-world datasets. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, and the chosen sentence is kind of short, this may provide us with a very *rough* estimate of the time it takes to encode a larger list of sentences.
 
 ```python
 sentences = 100_000 * ["All work and no play makes Jack a dull boy"]
