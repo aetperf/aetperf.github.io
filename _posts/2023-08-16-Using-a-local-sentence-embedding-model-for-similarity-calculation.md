@@ -11,18 +11,18 @@ tags:
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
 
-For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding, and appears to be a BERT-like model. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's well-known model: [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers some really impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
+For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding, and appears to be a BERT-like model. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's well-known model: [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers some impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
 
 | Model | Can Run Locally | Multilingual | Input Sequence Length | Embedding Dimension |
 |---|---:|---:|---:|---:|
 | `BAAI/bge-base-en`        | Yes |  No |  512 |  768 |
 | `text-embedding-ada-002`  |  No | Yes | 1536 | 8191 |
 
-While the larger instance of BAAI/bge, `BAAI/bge-large-en`, is available, we've opted for BAAI/bge-base-en for its relatively smaller size (0.44GB), making it fast and suitable for regular machines. It's also worth mentioning that despite its compact nature, BAAI/bge-base-en boasts an impressive second-place rank on the Massive Text Embedding Benchmark leaderboard (MTEB), which you can check out here: https://huggingface.co/spaces/mteb/leaderboard at the time of writing this post.
+While a larger instance of BAAI/bge - `BAAI/bge-large-en` - is available, we've opted for BAAI/bge-base-en for its relatively smaller size (0.44GB), making it fast and suitable for regular machines. It's also worth mentioning that despite its compact nature, `BAAI/bge-base-en` boasts a second-place rank on the Massive Text Embedding Benchmark leaderboard (MTEB) at the time of writing this post, which you can check out here: [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard).
 
 For the purpose of running this embedding model, we'll be utilizing the neat Python library [sentence_transformers](https://www.sbert.net/). Alternatively, there are other Python libraries that provide access to this model, such as [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface).
 
-Now, let's get started by importing the necessary libraries to delve into the world of sentence embeddings.
+Now, let's get started by importing the necessary libraries.
 
 ## Imports
 
@@ -97,7 +97,6 @@ We can also check the dimensions of the embedding and confirm that the vector ha
 emb.shape
 ```
 
-
     (768,)
 
 
@@ -105,17 +104,14 @@ emb.shape
 np.linalg.norm(emb, ord=2)
 ```
 
-
     0.99999994
 
 
-Now that we have a basic understanding of obtaining sentence embeddings, let's dive into a practical example. We'll compute embeddings for two sentences and then measure their cosine similarity.
+Next we'll compute embeddings for two sentences and then measure their cosine similarity.
 
-## Compute two embeddings and measure their cosine similarity
+## Cosine similarity
 
-
-To facilitate this process, we'll use a helpful function that can be expanded upon in the future. For now, it only removes any carriage returns and line feeds from the input text:
-
+In order to compute embeddings, we'll use a helpful function that can be expanded upon in the future. For now, it only removes any carriage returns and line feeds from the input text:
 
 ```python
 def get_embedding(text, normalize=True):
@@ -190,6 +186,8 @@ cosine_similarity(emb_1, emb_2)
 
     0.8196905
 
+This seems to be a rather large similarity value.
+
 ## Cosine similarity heatmaps
 
 Let's take this a step further by generating a cosine similarity heatmap. To begin, we'll compute embeddings for three additional sentences:
@@ -226,8 +224,6 @@ def compute_cosine_similarity_matrix(embs, label_size=30):
 df = compute_cosine_similarity_matrix(embs)
 df
 ```
-
-
 
 
 <div>
@@ -318,9 +314,9 @@ for label in ax.get_xticklabels():
   <img width="1000" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
 </p>
 
-The heatmap showcases the sentence embeddings' semantic relationships: darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than the others. 
+Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than others. 
 
-Let's further illustrate the concept of cosine similarity by applying it to a different set of sentences centered around the message: "I love pizza." We'll start by creating embeddings for the following set of sentences:
+Let's further illustrate the concept of cosine similarity by applying it to a different set of sentences centered around the message: "I love pizza". We'll start by creating embeddings for the following set of sentences:
 
 ```python
 sentences = [
@@ -362,7 +358,7 @@ Sentences expressing positive sentiments about pizza cluster together, forming r
 
 ## Encoding processing time
 
-Performance is a crucial consideration when working with real-world applications. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, this may provide us with a *rough estimate* of the time it takes to encode a large list of sentences.
+Performance is a crucial consideration when working with real-world datasets. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, and the chosen sentence is kind of short, this may provide us with a *rough estimate* of the time it takes to encode a large list of sentences.
 
 ```python
 sentences = 100_000 * ["All work and no play makes Jack a dull boy"]
