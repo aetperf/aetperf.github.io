@@ -1,5 +1,5 @@
 ---
-title: Using a local sentence embedding model for similarity calculation
+title: Using a Local Sentence Embedding for Similarity Calculation
 layout: post
 comments: true
 author: François Pacull
@@ -11,7 +11,7 @@ tags:
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. Similarity between sentence vectors measures the relatedness of the sentences in terms of their meaning. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
 
-For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding. This particular model boasts an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
+For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding and is a BERT-like model. This particular model boasts an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
 
 | Model | Can Run Locally | Multilingual | Input Sequence Length | Embedding Dimension |
 |---|---:|---:|---:|---:|
@@ -326,6 +326,28 @@ for label in ax.get_xticklabels():
 
 The heatmap showcases the sentence embeddings' semantic relationships. Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than the others. 
 
+## Encoding Processing Time
+
+Performance is a crucial consideration when working with real-world applications. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, this may provide us with a rough estimate of the time it takes to encode a large list of sentences.
+
+```python
+sentences = 100_000 * ["All work and no play makes Jack a dull boy"]
+```
+
+```python
+%%time
+embeddings = model.encode(sentences, normalize_embeddings=True)
+```
+
+    CPU times: user 46.7 s, sys: 3.48 s, total: 50.2 s
+    Wall time: 37 s
+
+
+The GPU is a NVIDIA GeForce RTX 3070 Ti Laptop with 8GB of memory:
+
+<p align="center">
+  <img width="1000" src="/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
+</p>
 
 ## Conclusion
 
