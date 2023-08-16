@@ -1,21 +1,4 @@
----
-title: Using a local sentence embedding model for similarity calculation
-layout: post
-comments: true
-author: François Pacull
-tags: 
-- Python
-- sentence embedding
-- BAAI/bge-base-en
-- on-premise
-- cosine similarity
-- Hugging Face
-- heatmap
-- sentence_transformers
-- seaborn
-- pandas
-- numpy
----
+# Using a local sentence embedding model for similarity calculation
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
 
@@ -62,7 +45,7 @@ model = SentenceTransformer('BAAI/bge-base-en')
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-08-16_01/Selection_103.png" alt="Selection_103">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-08-16_01/Selection_103.png" alt="Selection_103">
 </p>
 
 
@@ -235,19 +218,6 @@ df
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -319,7 +289,7 @@ for label in ax.get_xticklabels():
     
 
 <p align="center">
-  <img width="1000" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
 </p>
 
 Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than others. 
@@ -359,7 +329,7 @@ for label in ax.get_xticklabels():
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-08-16_01/Selection_105.png" alt="Selection_105">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-08-16_01/Selection_105.png" alt="Selection_105">
 </p>
 
 Sentences expressing positive sentiments about pizza cluster together, forming regions of higher cosine similarity, while negative sentiments are distinctly separated. It's worth mentioning that one of the applications of sentence embedding models is sentiment analysis. We can also observe that the "Uranium" sentence is not related to the other sentences.
@@ -384,7 +354,7 @@ embeddings = model.encode(sentences, normalize_embeddings=True)
 The GPU is a NVIDIA GeForce RTX 3070 Ti Laptop with 8GB of memory:
 
 <p align="center">
-  <img width="1000" src="/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
+  <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
 </p>
 
 So it takes 37s to encode these 100000 short sentences.
@@ -392,27 +362,3 @@ So it takes 37s to encode these 100000 short sentences.
 ## Conclusion
 
 In this very short exploration of sentence embeddings, we've delved into the world of transforming textual information into meaningful numerical representations. One standout feature that makes this technology truly accessible is the ability to run open-source models locally, putting the power of sentence embeddings right at your fingertips.
-
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
