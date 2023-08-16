@@ -20,7 +20,7 @@ For the purpose of this demonstration, we'll be using a recent text embedding mo
 
 While the larger instance of BAAI/bge, `BAAI/bge-large-en`, is available, we've opted for BAAI/bge-base-en for its relatively smaller size (0.44GB), making it fast and suitable for regular machines. It's also worth mentioning that despite its compact nature, BAAI/bge-base-en boasts an impressive second-place rank on the Massive Text Embedding Benchmark leaderboard (MTEB), which you can check out here: https://huggingface.co/spaces/mteb/leaderboard at the time of writing this post.
 
-For the purpose of running this embedding model, we'll be utilizing the neat Python library: [sentence_transformers](https://www.sbert.net/). Alternatively, there are other Python libraries that provide access to this model, such as [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) and [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface) through Hugging Face. It is also possible to work with Hugging Face's [transformers](https://github.com/huggingface/transformers) library in combination with PyTorch, although it might involve a slightly more intricate process.
+For the purpose of running this embedding model, we'll be utilizing the neat Python library [sentence_transformers](https://www.sbert.net/). Alternatively, there are other Python libraries that provide access to this model, such as [FlagEmbedding](https://github.com/FlagOpen/FlagEmbedding/tree/master) or [LangChain](https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface).
 
 Now, let's get started by importing the necessary libraries to delve into the world of sentence embeddings.
 
@@ -47,7 +47,7 @@ System information and package versions:
 
 ## Download and load the embedding model
 
-To get started with sentence embeddings, we'll need to download and load a suitable model. In this example, we'll use the `BAAI/bge-base-en` model using the `SentenceTransformer` library. If it's the first time you're using this model, executing the following code will trigger the download of various files:
+To get started with sentence embeddings, we'll need to download and load the `BAAI/bge-base-en` model using the `SentenceTransformer` library. If it's the first time you're using this model, executing the following code will trigger the download of various files:
 
 ```python
 model = SentenceTransformer('BAAI/bge-base-en')
@@ -58,7 +58,7 @@ model = SentenceTransformer('BAAI/bge-base-en')
 </p>
 
 
-The downloaded files include the model's artifacts, which are cached in a hidden home directory:
+The model's artifacts are cached in a hidden home directory:
 
 ```bash
 $ tree .cache/torch/sentence_transformers/BAAI_bge-base-en
@@ -116,7 +116,7 @@ Now that we have a basic understanding of obtaining sentence embeddings, let's d
 ## Compute two embeddings and measure their cosine similarity
 
 
-To facilitate this process, we'll use a helpful function that can be expanded upon in the future. For now, it removes any carriage returns and line feeds from the input text:
+To facilitate this process, we'll use a helpful function that can be expanded upon in the future. For now, it only removes any carriage returns and line feeds from the input text:
 
 
 ```python
@@ -125,7 +125,7 @@ def get_embedding(text, normalize=True):
     return model.encode(text, normalize_embeddings=normalize)
 ```
 
-Let's start by creating an empty list to store the embeddings:
+Let's start by creating an empty list to store the resulting embeddings:
 
 ```python
 embs = []
@@ -190,14 +190,11 @@ Now, let's compute the similarity between the embeddings of the two sentences re
 cosine_similarity(emb_1, emb_2)
 ```
 
-
     0.8196905
 
 ## Cosine similarity heatmap
 
-Let's take this a step further by generating a cosine similarity heatmap. This heatmap provides a visual representation of the similarity between different sentences, offering valuable insights into their semantic relationships.
-
-To begin, we'll compute embeddings for three additional sentences:
+Let's take this a step further by generating a cosine similarity heatmap. To begin, we'll compute embeddings for three additional sentences:
 
 ```python
 sen_3 = "Esplanade MRT station is an underground Mass Rapid Transit station on the Circle line in Singapore"
@@ -222,7 +219,7 @@ def compute_cosine_similarity_matrix(embs, label_size=30):
         for j in range(i + 1, l):
             cs = cosine_similarity(emb, embs[j][1], normalized=True)
             cds[i, j] = cs
-    cds += np.transpose(cds)  # the matrix is symmetric
+    cds += np.transpose(cds)  # the matrix is symmetric with unit diagonal
     labels = [t[0][:label_size] + "..." for t in embs]
     df = pd.DataFrame(data=cds, index=labels, columns=labels)
     return df
