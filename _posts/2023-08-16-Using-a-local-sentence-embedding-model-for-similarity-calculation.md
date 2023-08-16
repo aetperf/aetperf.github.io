@@ -319,10 +319,10 @@ for label in ax.get_xticklabels():
     
 
 <p align="center">
-  <img width="1000" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
+  <img width="800" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0">
 </p>
 
-Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than others. 
+Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger cross similarity than others. 
 
 Let's further illustrate the concept of cosine similarity by applying it to a different set of sentences centered around the message: "I love pizza". We'll start by creating embeddings for the following set of sentences:
 
@@ -346,7 +346,7 @@ sentences = [
 ]
 ```
 
-After encoding these sentences, we'll compute the cosine similarity matrix and visualize it using a heatmap:
+After encoding these sentences, we'll compute the cosine similarity matrix and visualize it with a heatmap:
 
 ```python
 embeddings = model.encode(sentences, normalize_embeddings=True)
@@ -384,7 +384,7 @@ embeddings = model.encode(sentences, normalize_embeddings=True)
 The GPU is a NVIDIA GeForce RTX 3070 Ti Laptop with 8GB of memory:
 
 <p align="center">
-  <img width="1000" src="/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
+  <img width="600" src="/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
 </p>
 
 So it takes 37s to encode these 100000 short sentences.
