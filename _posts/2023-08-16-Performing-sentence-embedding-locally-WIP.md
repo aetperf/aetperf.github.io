@@ -106,7 +106,7 @@ emb.shape
 
 
 ```python
-np.linalg.norm(emb, 2)
+np.linalg.norm(emb, ord=2)
 ```
 
 
@@ -142,24 +142,15 @@ emb_1[:5]
 ```
 
 
-
-
     array([-0.02016803, -0.00276157,  0.03377605,  0.00311152,  0.02026351],
           dtype=float32)
-
-
 
 
 ```python
 emb_1.shape
 ```
 
-
-
-
     (768,)
-
-
 
 
 ```python
@@ -170,6 +161,8 @@ embs.append((sen_2, emb_2))
 ```
 
 ### cosine similarity $S$
+
+We can check that these two previous sentences are related by computing their cosine similarity:
 
 $$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
 
@@ -184,79 +177,53 @@ def cosine_similarity(vec1, vec2, normalized=True):
         )
 ```
 
+The value of "S" is bounded between -1 and 1: $S(u,u)=1$ and $S(u,-u)=S(-u,u)=-1$:
+
+```python
+cosine_similarity(emb_1, emb_1)
+```
+
+    1.0000001
+
+```python
+cosine_similarity(-emb_1, emb_1)
+```
+
+    -1.0000001
+
+A zero value indicates that the two vectors are orthogonal:
+
+```python
+cosine_similarity(emb_1, emb_2 - np.dot(emb_1, emb_2) * emb_1)
+```
+
+    -4.4703484e-08
+
+So let's compute the similarity the two sentences dealing with capitals:
+
 
 ```python
 cosine_similarity(emb_1, emb_2)
 ```
 
 
-
-
     0.8196905
 
+## Cosine similarity heatmap
 
-
-
-```python
-cosine_similarity(emb_1, emb_1)
-```
-
-
-
-
-    1.0000001
-
-
-
+Now we compute three more embedding and a 5-by-5 similarity matrix
 
 ```python
 sen_3 = "Esplanade MRT station is an underground Mass Rapid Transit station on the Circle line in Singapore"
 emb_3 = get_embedding(sen_3)
 embs.append((sen_3, emb_3))
-```
-
-
-```python
-cosine_similarity(emb_2, emb_3)
-```
-
-
-
-
-    0.7029615
-
-
-
-
-```python
 sen_4 = "Remove jalapeños from surface and stir in the additional chili powder, ground cumin and onion powder."
 emb_4 = get_embedding(sen_4)
 embs.append((sen_4, emb_4))
-```
-
-
-```python
-cosine_similarity(emb_1, emb_4)
-```
-
-
-
-
-    0.68521607
-
-
-
-
-```python
 sen_5 = "Fideua is a traditional dish, similar in style to paella but made with short spaghetti-like pasta."
 emb_5 = get_embedding(sen_5)
 embs.append((sen_5, emb_5))
-```
 
-## Cosine similarity heatmap
-
-
-```python
 def compute_cosine_similarity_matrix(embs, label_size=30):
     l = len(embs)
     cds = np.zeros((l, l), dtype=np.float64)
@@ -349,6 +316,7 @@ df
 </div>
 
 
+Finally we plot the heatmap associated with the similarity matrix:
 
 
 ```python
