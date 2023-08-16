@@ -1,5 +1,5 @@
 ---
-title: Using a Local Sentence Embedding for Similarity Calculation
+title: Using a local sentence embedding for similarity calculation
 layout: post
 comments: true
 author: François Pacull
@@ -46,7 +46,7 @@ System information and package versions:
     seaborn              : 0.12.2
     sentence_transformers: 2.2.2
 
-## Download and Load the Embedding Model
+## Download and load the embedding model
 
 To get started with sentence embeddings, we'll need to download and load a suitable model. In this example, we'll use the `BAAI/bge-base-en` model using the `SentenceTransformer` library. If it's the first time you're using this model, executing the following code will trigger the download of various files:
 
@@ -114,7 +114,7 @@ np.linalg.norm(emb, ord=2)
 
 Now that we have a basic understanding of obtaining sentence embeddings, let's dive into a practical example. We'll compute embeddings for two sentences and then measure their cosine similarity.
 
-## Compute Two Embeddings and Measure Their Cosine Similarity
+## Compute two embeddings and measure their cosine similarity
 
 
 To facilitate this process, we'll use a helpful function that can be expanded upon in the future. For now, it removes any carriage returns and line feeds from the input text:
@@ -326,9 +326,9 @@ for label in ax.get_xticklabels():
 
 The heatmap showcases the sentence embeddings' semantic relationships. Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger similarity than the others. 
 
-## Encoding Processing Time
+## Encoding processing time
 
-Performance is a crucial consideration when working with real-world applications. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, this may provide us with a rough estimate of the time it takes to encode a large list of sentences.
+Performance is a crucial consideration when working with real-world applications. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, this may provide us with a *rough estimate* of the time it takes to encode a large list of sentences.
 
 ```python
 sentences = 100_000 * ["All work and no play makes Jack a dull boy"]
@@ -348,6 +348,8 @@ The GPU is a NVIDIA GeForce RTX 3070 Ti Laptop with 8GB of memory:
 <p align="center">
   <img width="1000" src="/img/2023-08-16_01/Selection_104.png" alt="Selection_104">
 </p>
+
+So it takes 37s to encode these 100000 short sentences,
 
 ## Conclusion
 
