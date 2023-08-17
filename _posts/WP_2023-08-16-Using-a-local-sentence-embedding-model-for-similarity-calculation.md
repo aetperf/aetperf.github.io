@@ -52,7 +52,7 @@ model = SentenceTransformer('BAAI/bge-base-en')
 The model's artifacts are cached in a hidden home directory:
 
 ```bash
-$ tree .cache/torch/sentence_transformers/BAAI_bge-base-en
+$ tree ~/.cache/torch/sentence_transformers/BAAI_bge-base-en
 .cache/torch/sentence_transformers/BAAI_bge-base-en
 ├── 1_Pooling
 │   └── config.json
@@ -102,7 +102,7 @@ Next we'll compute embeddings for two sentences and then measure their cosine si
 
 ## Cosine similarity
 
-In order to compute an embedding, we'll use a helpful function that can be expanded upon in the future. For now, it only removes any carriage returns and line feeds from the input text:
+In order to compute an embedding, we'll use a helper function that can be expanded upon in the future to clean the input text. For now, it only removes any carriage returns and line feeds from the input text:
 
 ```python
 def get_embedding(text, normalize=True):
@@ -116,7 +116,7 @@ Let's start by creating an empty list to store the resulting embeddings:
 embs = []
 ```
 
-Next, we'll compute embeddings for two example sentences:
+Now we compute two embeddings:
 
 ```python
 # first sentence
@@ -132,7 +132,7 @@ embs.append((sen_2, emb_2))
 
 With the embeddings computed, we can now move on to calculating their cosine similarity. The cosine similarity $S(u,v)$ between two vectors $u$ and $v$ is defined as:
 
-$$S(u,v) = cos(u, v) = \frac{u \cdot v}{\\|u\\|_2 \\|v\\|_2}$$
+$$S(u, v) = cos(u, v) = \frac{u \cdot v}{\\|u\\|_2 \\|v\\|_2}$$
 
 
 ```python
@@ -169,7 +169,10 @@ cosine_similarity(emb_1, emb_2 - np.dot(emb_1, emb_2) * emb_1)
 
     -4.4703484e-08
 
-Now, let's compute the similarity between the embeddings of the two sentences related to country capitals:
+Keep in mind that this cosine similarity is related to an angle. Collinear vectors are seen as similar although they might have different magnitudes. $S(u, v)=1$ implies $u=v$ only when dealing with unit vectors. Also,
+a common associated distance is the *cosine distance*: $d(u, v)=1 - S(u, v)$, although it is not a metric since it does not satisfy the triangle inequality $d(u, v) \leq d(u, w) + d(w, v)$ for any $w$.
+
+And here is the cosine similarity between the embeddings of the two sentences computed above:
 
 ```python
 cosine_similarity(emb_1, emb_2)
@@ -206,7 +209,8 @@ def compute_cosine_similarity_matrix(embs, label_size=30):
         for j in range(i + 1, l):
             cs = cosine_similarity(emb, embs[j][1], normalized=True)
             cds[i, j] = cs
-    cds += np.transpose(cds)  # the matrix is symmetric with unit diagonal
+    # the matrix is symmetric with unit diagonal
+    cds += np.transpose(cds)
     labels = [t[0][:label_size] + "..." for t in embs]
     df = pd.DataFrame(data=cds, index=labels, columns=labels)
     return df
@@ -275,7 +279,7 @@ df
 </div>
 
 
-This matrix will give us a numerical representation of the cosine similarity values between each pair of sentences. To visualize this information, we create a heatmap using Seaborn:
+To visualize this information, we create a heatmap using Seaborn:
 
 
 ```python
@@ -332,11 +336,11 @@ for label in ax.get_xticklabels():
   <img width="1000" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-08-16_01/Selection_105.png" alt="Selection_105">
 </p>
 
-Sentences expressing positive sentiments about pizza cluster together, forming regions of higher cosine similarity, while negative sentiments are distinctly separated. It's worth mentioning that one of the applications of sentence embedding models is sentiment analysis. We can also observe that the "Uranium" sentence is not related to the other sentences.
+Sentences expressing positive sentiments about pizza cluster together, forming regions of higher cosine similarity, while negative sentiments are distinctly separated. It's worth mentioning that one of the applications of sentence embedding models is sentiment analysis. We can also observe that the "Uranium-235" sentence is not related to the other sentences.
 
 ## Encoding processing time
 
-Performance is a crucial consideration when working with real-world datasets. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, and the chosen sentence is kind of short, this may provide us with a very *rough* estimate of the time it takes to encode a larger list of sentences.
+Performance is a crucial consideration when working with real-world datasets. Let's take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we'll encode a list of 100,000 identical sentences. While this might seem repetitive, and the chosen sentence is kind of short, this will provide us with a very *rough* estimate of the time it takes to encode a larger list of sentences.
 
 ```python
 sentences = 100_000 * ["All work and no play makes Jack a dull boy"]
