@@ -187,9 +187,7 @@ cosine_similarity(emb_1, emb_2 - np.dot(emb_1, emb_2) * emb_1)
 
     -4.4703484e-08
 
-Keep in mind that this cosine similarity is related to an angle. Collinear vectors are seen as similar although they might have different magnitudes. $S(u, v)=1$ implies $u=v$ only when dealing with unit vectors. Also,
-a common associated distance is the *cosine distance*: $d(u, v)=1 - S(u, v)$, even if it is not a metric since it does not satisfy the triangle inequality $d(u, v) \leq d(u, w) + d(w, v)$ for any $w$.
-
+Remember that the concept of cosine similarity is tied to angles. Even when vectors have different magnitudes, collinear vectors are perceived as similar. It's important to note that $S(u,v) = 1$ indicates that $u = v$, only when working with vectors of same magnitude. Another related measure is cosine distance: $d(u,v) = 1 - S(u,v)$. However, it's worth mentioning that cosine distance doesn't qualify as a metric due to its failure to meet the triangle inequality requirement: $d(u, v) \leq d(u, w) + d(w, v)$ for any $w$.
 
 And here is the cosine similarity between the embeddings of the two sentences computed above:
 
