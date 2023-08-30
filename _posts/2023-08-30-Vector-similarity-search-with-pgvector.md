@@ -814,10 +814,6 @@ print(answer["result"])
 The example showcases how the LangChain-based QA bot can retrieve answers from the `PGVector` collection based on queries. The bot provides accurate answers along with the relevant source documents, making it a useful tool for extracting information from the stored documents.
 
 
-
-
-
-
 {% if page.comments %}
 <div id="disqus_thread"></div>
 <script>
