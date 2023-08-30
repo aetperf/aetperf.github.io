@@ -170,7 +170,7 @@ with conn:
         conn.commit()
 ```
 
-- Enabling the *pgvector* Extension:
+- Enabling the *pgvector* extension:
 
 ```python
 sql = "CREATE EXTENSION IF NOT EXISTS vector;"
@@ -204,7 +204,7 @@ with conn:
         conn.commit()
 ```
 
-- Loading the Dataset:
+- Loading the dataset:
 
 Here, the dataset is loaded from the provided CSV file into the `wikipedia_articles` table using the `COPY` command. This is done in a batched manner to efficiently process and insert the data.
 
@@ -535,15 +535,15 @@ Now we are going to use the *PGVector* vectorstore from the [LangChain package](
 
 ## LangChain vectorstore PGVector integration
 
-Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. So in this section, we load the `wikipedia_articles` into the LangChain [*PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) vectorstore. *PGVector* is LangChain interface with *pgvector*.
+Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain, since they have a slightly different data model. In this section, we are going to load the `wikipedia_articles` table again into Postgres, but this time into the LangChain [*PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) vectorstore. *PGVector* is LangChain interface to *pgvector*.
 
 The *PGVector* vectorstore creates two tables into Postgres:
 - `langchain_pg_collection` listing the different collections
-- `langchain_pg_embedding` storing texts, embeddings, metadata and collection name
+- `langchain_pg_embedding` storing texts, embeddings, metadata and parent collection name
 
 Below is a step-by-step explanation of the process:
 
-- Connection String Setup:
+- Connection string setup:
 
 The `CONNECTION_STRING` is generated using the Postgres database credentials provided:
 
@@ -558,9 +558,9 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
 )
 ```
 
-- Creating the PGVector Store:
+- Creating the PGVector store:
 
-We create a *PGVector* store named `wikipedia_articles` using the connection string and an instance of the `OpenAIEmbeddings` class to generate embeddings. The `pre_delete_collection` flag indicates that any existing collection with the same name should be deleted before creating the new collection:
+We create a *PGVector* store named `wikipedia_articles` using the connection string and an instance of the `OpenAIEmbeddings` class to generate embeddings, if ever some text is added to the collection without the associated embeddings. The `pre_delete_collection` flag indicates that any existing collection with the same name should be deleted before creating the new collection:
 
 ```python
 embeddings = OpenAIEmbeddings(openai_api_key=openai.api_key)
@@ -572,9 +572,9 @@ store = PGVector(
 )
 ```
 
-- Fetching Data from PostgreSQL:
+- Fetching data from PostgreSQL:
 
-Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame using SQL queries. This data will be used to load embeddings into the *PGVector* collection. This step in not so efficient, since we are going to fetch all the data from the `wikipedia_articles` in memory...
+Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame. This data will be loaded into the *PGVector* collection. This step in not so efficient, since we are fetchign all the data from the `wikipedia_articles` into pandas...
 
 ```python
 %%time
@@ -585,7 +585,7 @@ df = pd.read_sql(sql=sql, con=conn)
     CPU times: user 251 ms, sys: 194 ms, total: 444 ms
     Wall time: 1.33 s
 
-- Converting Embedding Strings to Lists:
+- Converting embedding strings to lists:
 
 The embedding vectors in the DataFrame are stored as strings. We convert these strings to lists of floats using the `ast.literal_eval` function, enabling compatibility with the *PGVector* store:
 
@@ -599,7 +599,7 @@ df.content_vector = df.content_vector.map(ast.literal_eval)
     Wall time: 1min 11s
 
 
-- Loading Data into PGVector Collection:
+- Loading data into PGVector collection:
 
 The embeddings, texts, metadata, and IDs are loaded into the *PGVector* collection using the `add_embeddings` method. This step makes the dataset's embeddings available for similarity search:
 
@@ -644,7 +644,7 @@ Also we can close the psycopg2 now, since it is no longer needed:
 conn.close()
 ```
 
-- Querying with PGVector Store:
+- Querying the PGVector store:
 
 An example query is demonstrated using the `store.similarity_search` method. Given a query "Tell me about Hip Hop?", the method retrieves the `k=3` most similar documents from the *PGVector* collection. In this case, the returned documents are those that have similar content to the query.
 
@@ -681,7 +681,7 @@ article_id = df["id"].max() + 1
 vector_id = df["vector_id"].max() + 1
 ```
 
-- Creating Fake Article Data:
+- Creating some fake article data:
 
 A fake Wikipedia article named "François Pacull" is created with a fictitious biography. The article's title, URL, text, and content are defined, and vector embeddings are generated for the title and content using the get_embedding function.
 
@@ -733,7 +733,7 @@ The process of adding this fake article demonstrates how to incorporate addition
 
 The following code demonstrates an example of using the LangChain framework to build a Question-Answering (QA) bot that retrieves answers from documents stored in the *PGVector* collection. Here's how the example works:
 
-- Creating the Retriever:
+- Creating the retriever:
 
 The `store` object is used to create a `retriever` using the `as_retriever` method:
 
@@ -746,7 +746,7 @@ retriever = store.as_retriever(
 
 The default similarity metric is cosine. We retrive the 3 most similar entries for each query.
 
-- Creating the QA Model:
+- Creating the QA model:
 
 The `RetrievalQA` class is instantiated using the OpenAI's *gpt-3.5-turbo* chat model, the previously created `retriever`, and `return_source_documents` set to `True`. This configuration enables the bot to return the source documents that contributed to its answer:
 
@@ -760,7 +760,7 @@ qa = RetrievalQA.from_chain_type(
 )
 ```
 
-- Querying the QA Bot:
+- Querying the QA bot:
 
 Queries are posed to the QA bot using the `qa` instance. For each query, the bot generates an answer and returns the result along with the source documents that were used to derive the answer:
 
@@ -808,7 +808,7 @@ answer = qa({"query": query})
 print(answer["result"])
 ```
 
-    François Pacull is a Python developer known for his passion for pizza. However, beyond this information, there is not much else known about François Pacull.
+    François Pacull is a Python developer known for his passion for pizza. He is a mysterious figure, and not much is known about his early life and education. However, he has made a mark in both the digital and culinary realms with his coding skills and love for pizza.
 
 
 The example showcases how the LangChain-based QA bot can retrieve answers from the *PGVector* collection based on queries. The bot provides accurate answers along with the relevant source documents, making it a useful tool for extracting information from the stored documents.
