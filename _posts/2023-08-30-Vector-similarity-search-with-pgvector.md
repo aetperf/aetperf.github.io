@@ -19,18 +19,18 @@ tags:
 ---
 
 
-In the realm of vector databases, [pgvector](https://github.com/pgvector/pgvector) emerges as a noteworthy open-source extension tailored for Postgres databases. This extension equips Postgres with the capability to efficiently perform vector similarity searches, a powerful technique with applications ranging from recommendation systems to semantic search.
+In the realm of vector databases, [*pgvector*](https://github.com/pgvector/pgvector) emerges as a noteworthy open-source extension tailored for Postgres databases. This extension equips Postgres with the capability to efficiently perform vector similarity searches, a powerful technique with applications ranging from recommendation systems to semantic search.
 
-To illustrate the practical implementation of Pgvector, we'll delve into a specific use case involving the "Simple English Wikipedia" dataset. This dataset, [available from OpenAI](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip), contains vector embeddings for Wikipedia articles.
+To illustrate the practical implementation of *pgvector*, we'll delve into a specific use case involving the "Simple English Wikipedia" dataset. This dataset, available [here](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip) from OpenAI, contains vector embeddings for Wikipedia articles.
 
-We'll guide you through the process of setting up and utilizing Pgvector for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the [Langchain vectorstore PGVector](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over documents.
+We'll guide you through the process of setting up and utilizing *pgvector* for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the [Langchain vectorstore *PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over the documents stored in Postgres.
 
 ## The *Simple English Wikipedia* dataset
 
 The *Simple English Wikipedia dataset* is a substantial resource provided by OpenAI. This dataset is accessible through [this link](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip
 ) and weighs approximately 700MB when compressed, expanding to around 1.7GB when in CSV format. 
 
-The dataset comprises a collection of Wikipedia articles, each equipped with associated vector embeddings. The embeddings are constructed using [OpenAI's *text-embedding-ada-002*](https://platform.openai.com/docs/guides/embeddings/what-are-embeddings) model, yielding vectors with 1536 elements or dimensions.
+The dataset comprises a collection of Wikipedia articles, each equipped with associated vector embeddings. The embeddings are constructed using [OpenAI's *text-embedding-ada-002*](https://platform.openai.com/docs/guides/embeddings/what-are-embeddings) model, yielding vectors with 1536 elements.
 
 The dataset's columns of significance include `content_vector` and `title_vector`, representing the vector embeddings for the article's title and content. 
 
@@ -65,7 +65,7 @@ from langchain.vectorstores.pgvector import PGVector
 openai_json_fp = "./openai.json"
 postgres_json_fp = "./postgres.json"
 
-# the dataset file is licated in the tmp dir
+# the dataset file is located in the /tmp dir
 # postgres must have read access on all directories above where the file is located
 dataset_fp = "/tmp/vector_database_wikipedia_articles_embedded.csv"  
 ```
@@ -136,7 +136,7 @@ if os.path.exists(postgres_json_fp):
 else:
     raise RuntimeError("Postgres credentials not found")
 ```
-Once the Postgres credentials are acquired fro a JSON file, the following step involves establishing a connection to the database with the `psycopg2` package:
+Once the Postgres credentials are acquired from a JSON file, the following step involves establishing a connection to the database with the `psycopg2` package:
 
 ```python
 conn = psycopg2.connect(**pg_credentials)
@@ -146,6 +146,15 @@ conn = psycopg2.connect(**pg_credentials)
 
 Here are the official installation notes: [https://github.com/pgvector/pgvector#installation-notes](https://github.com/pgvector/pgvector#installation-notes). The process of installing *pgvector* is relatively straightforward, particularly on Linux systems. 
 
+```bash
+cd /tmp
+git clone --branch v0.4.4 https://github.com/pgvector/pgvector.git
+cd pgvector
+make
+make install
+```
+
+I also had to specify the path to `pg_config` before the installation. 
 
 ## Loading the Dataset into Postgres
 
@@ -309,7 +318,7 @@ $$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
 
 Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors. In SQL we are going to use the `<#>` operator, that returns the negative inner product.
 
-From pgvector's [documentation](https://github.com/pgvector/pgvector#installation-notes):  
+From *pgvector*'s [documentation](https://github.com/pgvector/pgvector#installation-notes):  
 > <#> returns the negative inner product since Postgres only supports ASC order index scans on operators
 
 
@@ -381,16 +390,17 @@ pd.read_sql(sql=sql, con=conn)
 </table>
 </div>
 
-The first article of the table is about the month of April. Similar articles in the table are also about months: May, March, ...
+The first article of the table is about the month of April. We can see that similar articles in the table are also about months: May, March, ...
 
 
+## Querying with Text Input
 
-## Second query with text input
+In this section, we've provided a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input. Here's a breakdown of the components:
 
+The following function takes an embedding (`emb`) and performs a similarity search using a Common Table Expression (CTE). It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count (`match_count`). The function returns a DataFrame containing the article IDs, titles, and their similarity scores.
 
 ```python
 def similarity_search(emb, conn, match_threshold=0.75, match_count=10):
-    """WITH a command table expression"""
     sql = f"""WITH cte AS (SELECT id, title, (content_vector <#> '{emb}') as similarity 
     FROM wikipedia_articles
     ORDER BY similarity asc
@@ -401,8 +411,11 @@ def similarity_search(emb, conn, match_threshold=0.75, match_count=10):
     df = pd.read_sql(sql=sql, con=conn)
     df.similarity *= -1.0
     return df
+```
 
+This higher-level function `simple_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search` function to perform the similarity search. The matching articles with similarity scores above a specified threshold (`match_threshold`) are returned in a DataFrame.
 
+```python
 def simple_search(text, match_threshold=0.75, match_count=10):
     start = perf_counter()
     emb = get_embedding(text, out_type="list")
@@ -419,6 +432,7 @@ def simple_search(text, match_threshold=0.75, match_count=10):
     return df
 ```
 
+This example demonstrates how to use the functions to find articles related to "The Foundation series by Isaac Asimov" with their corresponding similarity scores:
 
 ```python
 %%time
@@ -429,8 +443,6 @@ simple_search("The Foundation series by Isaac Asimov")
     similarity search : 0.120
     CPU times: user 8.86 ms, sys: 1.16 ms, total: 10 ms
     Wall time: 502 ms
-
-
 
 
 
@@ -522,14 +534,13 @@ simple_search("The Foundation series by Isaac Asimov")
 </table>
 </div>
 
+Now we are going to use the `PGVector` vectorstore from the [LangChain package](https://python.langchain.com/docs/get_started/introduction.html).
 
+# LangChain vectorstore `PGVector`
 
-# Langchain vectorstore PGVector
-
-
-```python
-
-```
+Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. The `PGVector` vectorstore creates two tables into Postgres:
+- `langchain_pg_collection` listing the different collections
+- `langchain_pg_embeddings` storing texts, embeddings, metadata and collection name
 
 
 ```python
@@ -556,84 +567,19 @@ store = PGVector(
 )
 ```
 
-Fetch the data into a dataframe:
-
+The following step in not so efficient, since we are going to fetch all the data from the `wikipedia_articles` into a Pandas dataframe in order to load it into a the `wikipedia_articles` `PGVector` collection just created:
 
 ```python
 %%time
 sql = f"SELECT id, url, title, text, content_vector, vector_id FROM wikipedia_articles"
 df = pd.read_sql(sql=sql, con=conn)
-df.head(3)
 ```
 
     CPU times: user 251 ms, sys: 194 ms, total: 444 ms
     Wall time: 1.33 s
 
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>id</th>
-      <th>url</th>
-      <th>title</th>
-      <th>text</th>
-      <th>content_vector</th>
-      <th>vector_id</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1</td>
-      <td>https://simple.wikipedia.org/wiki/April</td>
-      <td>April</td>
-      <td>April is the fourth month of the year in the J...</td>
-      <td>[-0.011253941,-0.013491976,-0.016845843,-0.039...</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>2</td>
-      <td>https://simple.wikipedia.org/wiki/August</td>
-      <td>August</td>
-      <td>August (Aug.) is the eighth month of the year ...</td>
-      <td>[0.00036099547,0.007262262,0.0018810921,-0.027...</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>6</td>
-      <td>https://simple.wikipedia.org/wiki/Art</td>
-      <td>Art</td>
-      <td>Art is a creative activity that expresses imag...</td>
-      <td>[-0.0049596895,0.015772194,0.006536909,-0.0027...</td>
-      <td>2</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-The embedding vectors are in a stores as a list of strings. Let's transform each string as a list of floats:
+However, the embedding vectors from this dataframe are stored as long strings while LangChain expect a list of floats. Let's transform each string as a list of floats:
 
 
 ```python
@@ -644,7 +590,7 @@ df.content_vector = df.content_vector.map(ast.literal_eval)
     CPU times: user 1min 11s, sys: 236 ms, total: 1min 11s
     Wall time: 1min 11s
 
-
+We can now load the data into the `PGVector` collection:
 
 ```python
 %%time
@@ -659,6 +605,31 @@ _ = store.add_embeddings(
     CPU times: user 9.29 s, sys: 180 ms, total: 9.47 s
     Wall time: 15.4 s
 
+And we can perform a first query over the vector store:
+
+```python
+query = "Tell me about Hip Hop?"
+
+# Fetch the k=3 most similar documents
+docs = store.similarity_search(query, k=3)
+```
+
+
+```python
+docs
+```
+
+
+    [Document(page_content='Hip hop is a type of culture/art style that started in the 1970s in the Bronx. [...]', metadata={}),
+     Document(page_content='Rapping is a type of vocals, like singing. [...]', metadata={}),
+     Document(page_content="Breakdance (also called breaking, b-boying or b-girling) is a type of dance that is done by people who are part of the hip hop culture. [...] ", metadata={})]
+
+
+However, this is just returning articles with similar contents to the question text, but not really answering the question. So let's use a ChatLLM to build a Q&A bot to query the vector store easily using questions. 
+
+Before that, we are going to add an fake entry to the wikipedia articles in order to check that the bot is using the vector store.
+
+## Adding a fake wikipedia article
 
 
 ```python
@@ -721,39 +692,6 @@ _ = store.add_embeddings(
 
 ## Documents Q&A bot example with LangChain
 
-https://lancedb.github.io/lancedb/notebooks/code_qa_bot/
-
-https://www.timescale.com/blog/how-to-build-llm-applications-with-pgvector-vector-store-in-langchain/
-
-
-```python
-
-```
-
-work with an existing vectorstore:
-
-
-```python
-query = "Tell me about Hip Hop?"
-
-# Fetch the k=3 most similar documents
-docs = store.similarity_search(query, k=3)
-```
-
-
-```python
-docs
-```
-
-
-
-
-    [Document(page_content='Hip hop is a type of culture/art style that started in the 1970s in the Bronx. It began in Jamaican American, African American, and Puerto Rican/Hispanic and Latino American urban areas in some of the larger cities of the United States. Hip hop uses drum beats produced by a drum machine, and rapping, where the rapper or group chants or says words with a rhythm that rhymes. The lyrics of hip hop songs are often about the life of urban people in the big cities. Hip hop music also uses musical styles from pop music such as disco and reggae. Rap and hip hop music have become successful music genres.\n\nHip hop as a culture involves the music as well as a style of dressing called "urban" clothes (baggy pants, Timberland leather work boots, and oversize shirts); a dancing style called breakdancing or "B-boying"; and graffiti, a street art in which people paint pictures or words on walls. In the 2000s, hip hop music and hip hop culture are very popular in the United States and Canada. Hip hop musicians usually use nicknames. Many of the popular hip hop musicians from the 2000s use nicknames, such as Snoop Dogg, Jay-Z, Eminem, Lil\' Wayne, and 50 Cent. Hip hop is sometimes fused with other genres such as country music and rock music.\n\nRapping\nRapping is a form of singing. It is a mix between singing and talking. The words are spoken with rhythm and in the text there are rhymes. The urban youth made rhyming games based on rap. The beat in the background is a simple loop that is sometimes made by the rapper themself or sometimes copied from a sample CD. The simple loop carries out through the entire song usually, except for the chorus. It developed in the ethnic minority urban (city) areas, as an American form of Jamaican "toasting" (chanting and rhyming with a microphone).\n\nRun DMC and The Sugarhill Gang were early popular hip hop groups in the 1980s. When rappers began to use violent language and gestures, the music was then liked by gangsters. This kind of music was called "gangsta rap". Gangsta rap often has lyrics which are about guns, drug dealing and life as a thug on the street. This genre also began in the 1980s and is still produced.\n\nSome well known early rappers include: Tupac Shakur, Snoop Dogg, The Notorious B.I.G., Eminem, and Sean "P-Diddy" Combs. During the 1990s there was a rivalry between the two big record labels "Death Row Records" and "Bad Boy Records". The rappers Tupac Shakur and Notorious B.I.G. were murdered. Later, the two record labels stopped the rivalry. Because most of the rappers who rapped for "Death Row Records" were from the West Coast of the US and most of the rappers who rapped for "Bad Boy Records" were from the East Coast, this rivalry was called "the West Coast – East Coast beef".\n\nThe fastest rapper according to Guinness World Records is Twista. In 1992, he rapped 11 syllables in one second. In 2013, the song Rap God by Eminem took the record for most words in a song; 1,560 in a little over 6 minutes, which is about 4 words per second.\n\nRelated pages\n Rhythm and blues\n Rock and roll\n Soul music\n Contemporary R&B\n Jazz\n Funk\n Pop music\n Country music\n Breakdance\n Reggaeton\n West Coast hip hop\n Comedy hip hop\n Old-school hip hop\n Political hip hop\n Underground hip hop\n Dirty rap\n Hip hop soul\n Rap metal\n Horrorcore\n Battle rap\n\nReferences \n\nHip hop\nMusic genres', metadata={}),
-     Document(page_content='Rapping is a type of vocals, like singing. It is different to singing because it is more like talking, but timed with rhythm over music. Someone who raps is called a rapper, or sometimes an MC. That stands for Master of Ceremonies.\n\nRapping can be done over music of many types (or genres), including jazz, house, reggae and many more. One genre of music that includes a lot of rapping is hip hop. What people think of as rapping today, was started by African Americans in New York City, USA, in the 1970s. People would talk over disco music DJs at parties, and this gradually evolved into rapping. But, the start of the art of rapping is even older. Reggae artists in Jamaica used a similar style to rapping from the 1950s. Going back further than that, the West African Griots (travelling musicians and poets) would also rap over tribal drums in the 1400s.\n\nToday rapping is a very popular style of vocals. Many of the best selling artists in the world use it in their music.\n\nReferences \n\nMusic', metadata={}),
-     Document(page_content="Breakdance (also called breaking, b-boying or b-girling) is a type of dance that is done by people who are part of the hip hop culture. B-boy means boy who dances on breaks (breakbeats). Breakdancing was invented in the early 1970s by African American and Latino American inner-city youth in the South Bronx in New York City.The dance style evolved during the 70s and 80s in big cities of the United States.\n\nBreakdancing uses different body movements, spins, arm movements, leg movements, all of which are done to the rhythm of hip hop music. Breakdancing was most popular in the 1980s but continues to be common today.\n\nThere are four categories in breakdance. They are power moves (windmill, tomas, airtrax and so on), style moves, toprock, downrock (footwork), and freezes (chair, airchair and so on). Many of moves come from gymnastics and kung-fu.\n\nBreakdancers dance with breakbeats. The difficulty of their skills decides the better b-boy. One of the biggest breakdance contests in the world is Battle of the Year (BOTY). It has several different types of contests. There are one-on-one battles, team battle, contest of showcase and so on. B-boy battle means dancing on random music. In 2013, the team coming from South Korea, Fusion MC, won the championship. Floorriorz coming from Japan got the award of best show.Good behavior with the sub\n\nHistory\nBreakdance occurred around a time where there was a lot of violence, on the streets of New York\n\nImportant Movements\nA\xa0freeze\xa0is a\xa0technique where the dancer suddenly stops, often in an interesting or balance-intensive position. Freezes often incorporate various twists of the body into stylish and often difficult positions.\nThe two-step move sets up the direction of movement and builds up momentum when dancing. This move allows the dancer to stay low and in contact with the ground, which places him in a good position for performing other\xa0dance\xa0moves.\xa0 As such, the two-step is often one of the first moves a break-dancer learns and it leads onto the 6-step.\nA kick in breakdance is a one-handed handstand, with often an impressive leg position and the free arm in some stylish position. They are often executed quickly to impress.\n\nLiterature\n-Guillaume Éradel, C'est quoi le breakdance? Saint-Denis, Edilivre, 2015 ()\n\nReferences\n\nDance\nHip hop", metadata={})]
-
-
-
 
 ```python
 retriever = store.as_retriever(
@@ -765,7 +703,6 @@ retriever = store.as_retriever(
 
 ```python
 qa = RetrievalQA.from_chain_type(
-    # llm=OpenAI(openai_api_key=openai.api_key),
     llm=ChatOpenAI(openai_api_key=openai.api_key, temperature=0),
     chain_type="stuff",
     retriever=retriever,
