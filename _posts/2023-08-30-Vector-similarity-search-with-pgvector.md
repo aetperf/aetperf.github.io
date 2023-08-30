@@ -574,7 +574,7 @@ store = PGVector(
 
 - Fetching data from PostgreSQL:
 
-Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame. This data will be loaded into the *PGVector* collection. This step in not so efficient, since we are fetchign all the data from the `wikipedia_articles` into pandas...
+Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame. This data will be loaded into the *PGVector* collection. This step in not so efficient, since we are fetching all the data from the `wikipedia_articles` into pandas...
 
 ```python
 %%time
@@ -638,7 +638,7 @@ print(size)
 
     25000
 
-Also we can close the psycopg2 now, since it is no longer needed:
+Also we can close the psycopg2 connection now, since it is no longer needed:
 
 ```python
 conn.close()
