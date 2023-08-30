@@ -23,14 +23,14 @@ In the realm of vector databases, [*pgvector*](https://github.com/pgvector/pgvec
 
 To illustrate the practical implementation of *pgvector*, we'll delve into a specific use case involving the "Simple English Wikipedia" dataset. This dataset, available [here](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip) from OpenAI, contains vector embeddings for Wikipedia articles.
 
-We'll guide you through the process of setting up and utilizing *pgvector* for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the [Langchain vectorstore *PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over the documents stored in Postgres.
+We'll guide you through the process of setting up and utilizing *pgvector* for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the Langchain vectorstore [*PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over the documents stored in Postgres.
 
 ## The *Simple English Wikipedia* dataset
 
 The *Simple English Wikipedia dataset* is a substantial resource provided by OpenAI. This dataset is accessible through [this link](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip
 ) and weighs approximately 700MB when compressed, expanding to around 1.7GB when in CSV format. 
 
-The dataset comprises a collection of Wikipedia articles, each equipped with associated vector embeddings. The embeddings are constructed using [OpenAI's *text-embedding-ada-002*](https://platform.openai.com/docs/guides/embeddings/what-are-embeddings) model, yielding vectors with 1536 elements.
+The dataset comprises a collection of Wikipedia articles, each equipped with associated vector embeddings. The embeddings are constructed using OpenAI's [*text-embedding-ada-002*](https://platform.openai.com/docs/guides/embeddings/what-are-embeddings) model, yielding vectors with 1536 elements.
 
 The dataset's columns of significance include `content_vector` and `title_vector`, representing the vector embeddings for the article's title and content. 
 
@@ -144,7 +144,7 @@ conn = psycopg2.connect(**pg_credentials)
 
 ## Installing *pgvector*
 
-Here are the official installation notes: [https://github.com/pgvector/pgvector#installation-notes](https://github.com/pgvector/pgvector#installation-notes). The process of installing *pgvector* is relatively straightforward, particularly on Linux systems. 
+Here are the official installation notes: [https://github.com/pgvector/pgvector#installation-notes](https://github.com/pgvector/pgvector#installation-notes). The process of installing *pgvector* is relatively straightforward on Linux systems:
 
 ```bash
 cd /tmp
@@ -154,7 +154,7 @@ make
 make install
 ```
 
-I also had to specify the path to `pg_config` before the installation. 
+We also had to specify the path to `pg_config` before the installation. 
 
 ## Loading the Dataset into Postgres
 
@@ -184,9 +184,12 @@ with conn:
 sql = "SELECT extname, extversion FROM pg_extension WHERE extname='vector';"
 pd.read_sql(sql=sql, con=conn).to_markdown()
 ```
+
+
 |    | extname   | extversion   |
-|---:|:----------|:-------------|
+|---:|----------:|-------------:|
 |  0 | vector    | 0.4.4        |
+
 
 - Creating the Table:
 
@@ -199,7 +202,7 @@ with conn:
         conn.commit()
 ```
 
-This step involves creating the table `wikipedia_articles` with various columns, including `id`, `url`, `title`, `text`, `title_vector`, `content_vector`, and `vector_id`. The column types are defined, including the `vector` columns with 1536 dimensions.
+This step involves creating the table `wikipedia_articles` with various columns: `id`, `url`, `title`, `text`, `title_vector`, `content_vector`, and `vector_id`. The column types are defined, including the `vector` columns with 1536 dimensions.
 
 - Loading the Dataset:
 
@@ -269,8 +272,7 @@ df.head(n)
       <th>url</th>
       <th>title</th>
       <th>text</th>
-      <th>title_vector</th>
-      <th>content_vector</th>
+      <th>...</th>
       <th>vector_id</th>
     </tr>
   </thead>
@@ -281,8 +283,7 @@ df.head(n)
       <td>https://simple.wikipedia.org/wiki/April</td>
       <td>April</td>
       <td>April is the fourth month of the year in the J...</td>
-      <td>[0.0010094646,-0.020700546,-0.012527447,-0.043...</td>
-      <td>[-0.011253941,-0.013491976,-0.016845843,-0.039...</td>
+      <td>...</td>
       <td>0</td>
     </tr>
     <tr>
@@ -291,8 +292,7 @@ df.head(n)
       <td>https://simple.wikipedia.org/wiki/August</td>
       <td>August</td>
       <td>August (Aug.) is the eighth month of the year ...</td>
-      <td>[0.0009286514,0.000820168,-0.0042785504,-0.015...</td>
-      <td>[0.00036099547,0.007262262,0.0018810921,-0.027...</td>
+      <td>...</td>
       <td>1</td>
     </tr>
     <tr>
@@ -301,8 +301,7 @@ df.head(n)
       <td>https://simple.wikipedia.org/wiki/Art</td>
       <td>Art</td>
       <td>Art is a creative activity that expresses imag...</td>
-      <td>[0.0033937139,0.0061537535,0.011738217,-0.0080...</td>
-      <td>[-0.0049596895,0.015772194,0.006536909,-0.0027...</td>
+      <td>...</td>
       <td>2</td>
     </tr>
   </tbody>
@@ -316,9 +315,7 @@ We look for the nearest neighbors to the first article of the table, comparing a
 
 $$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
 
-Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors. In SQL we are going to use the `<#>` operator, that returns the negative inner product.
-
-From *pgvector*'s [documentation](https://github.com/pgvector/pgvector#installation-notes):  
+Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors. In SQL we are going to use the `<#>` operator, that returns the negative inner product. From *pgvector*'s [documentation](https://github.com/pgvector/pgvector#installation-notes):  
 > <#> returns the negative inner product since Postgres only supports ASC order index scans on operators
 
 
@@ -395,7 +392,7 @@ The first article of the table is about the month of April. We can see that simi
 
 ## Querying with Text Input
 
-In this section, we've provided a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input. Here's a breakdown of the components:
+In this section, we provide a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input. Here's a breakdown of the components:
 
 The following function takes an embedding (`emb`) and performs a similarity search using a Common Table Expression (CTE). It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count (`match_count`). The function returns a DataFrame containing the article IDs, titles, and their similarity scores.
 
