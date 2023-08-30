@@ -23,7 +23,7 @@ In the realm of vector databases, [*pgvector*](https://github.com/pgvector/pgvec
 
 To illustrate the practical implementation of *pgvector*, we'll delve into a specific use case involving the "Simple English Wikipedia" dataset. This dataset, available [here](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip) from OpenAI, contains vector embeddings for Wikipedia articles.
 
-We'll guide you through the process of setting up and utilizing *pgvector* for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the Langchain vectorstore [*PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over the documents stored in Postgres.
+We'll guide you through the process of setting up and utilizing *pgvector* for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the Langchain vectorstore [*PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over the documents stored in Postgres with [LangChain](https://python.langchain.com/docs/get_started/introduction.html).
 
 ## The *Simple English Wikipedia* dataset
 
@@ -182,13 +182,13 @@ with conn:
 
 ```python
 sql = "SELECT extname, extversion FROM pg_extension WHERE extname='vector';"
-pd.read_sql(sql=sql, con=conn).to_markdown()
+pd.read_sql(sql=sql, con=conn, index_col="extname")
 ```
 
 
-|    | extname   | extversion   |
-|---:|----------:|-------------:|
-|  0 | vector    | 0.4.4        |
+| extname   | extversion   |
+|----------:|-------------:|
+| vector    | 0.4.4        |
 
 
 - Creating the Table:
@@ -397,7 +397,7 @@ In this section, we provide a set of functions that allow you to perform a simil
 The following function takes an embedding (`emb`) and performs a similarity search using a Common Table Expression (CTE). It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count (`match_count`). The function returns a DataFrame containing the article IDs, titles, and their similarity scores.
 
 ```python
-def similarity_search(emb, conn, match_threshold=0.75, match_count=10):
+def similarity_search_from emb(emb, conn, match_threshold=0.75, match_count=10):
     sql = f"""WITH cte AS (SELECT id, title, (content_vector <#> '{emb}') as similarity 
     FROM wikipedia_articles
     ORDER BY similarity asc
@@ -410,10 +410,10 @@ def similarity_search(emb, conn, match_threshold=0.75, match_count=10):
     return df
 ```
 
-This higher-level function `simple_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search` function to perform the similarity search. The matching articles with similarity scores above a specified threshold (`match_threshold`) are returned in a DataFrame.
+This higher-level function `similarity_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search_from_emb` function to perform the similarity search. The matching articles with similarity scores above a specified threshold (`match_threshold`) are returned in a DataFrame.
 
 ```python
-def simple_search(text, match_threshold=0.75, match_count=10):
+def similarity_search(text, match_threshold=0.75, match_count=10):
     start = perf_counter()
     emb = get_embedding(text, out_type="list")
     end = perf_counter()
@@ -421,7 +421,7 @@ def simple_search(text, match_threshold=0.75, match_count=10):
     print(f"get embedding : {elapsed_time:5.3f}")
 
     start = perf_counter()
-    df = similarity_search(emb, conn, match_threshold=0.75, match_count=match_count)
+    df = similarity_search_from_emb(emb, conn, match_threshold=0.75, match_count=match_count)
     end = perf_counter()
     elapsed_time = end - start
     print(f"similarity search : {elapsed_time:5.3f}")
@@ -433,7 +433,7 @@ This example demonstrates how to use the functions to find articles related to "
 
 ```python
 %%time
-simple_search("The Foundation series by Isaac Asimov")
+similarity_search("The Foundation series by Isaac Asimov")
 ```
 
     get embedding : 0.382
@@ -537,7 +537,7 @@ Now we are going to use the `PGVector` vectorstore from the [LangChain package](
 
 Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. The `PGVector` vectorstore creates two tables into Postgres:
 - `langchain_pg_collection` listing the different collections
-- `langchain_pg_embeddings` storing texts, embeddings, metadata and collection name
+- `langchain_pg_embedding` storing texts, embeddings, metadata and collection name
 
 
 ```python
@@ -602,7 +602,30 @@ _ = store.add_embeddings(
     CPU times: user 9.29 s, sys: 180 ms, total: 9.47 s
     Wall time: 15.4 s
 
+```python
+sql = "SELECT * FROM langchain_pg_collection"
+pd.read_sql(sql, conn)
+```
+
+
+|    | name               | cmetadata   | uuid                                 |
+|---:|:-------------------|:------------|:-------------------------------------|
+|  0 | wikipedia_articles |             | 6fb17082-8a07-4c51-907c-5d3712359876 |
+
+
+```python
+sql = "SELECT COUNT(*) FROM langchain_pg_embedding"
+with conn:
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        size = cur.fetchone()[0]
+print(size)
+```
+
+    25000
+
 And we can perform a first query over the vector store:
+
 
 ```python
 query = "Tell me about Hip Hop?"
