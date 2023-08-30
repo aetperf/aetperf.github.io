@@ -533,12 +533,19 @@ similarity_search("The Foundation series by Isaac Asimov")
 
 Now we are going to use the `PGVector` vectorstore from the [LangChain package](https://python.langchain.com/docs/get_started/introduction.html).
 
-# LangChain vectorstore `PGVector`
+# LangChain Vectorstore PGVector Integration
 
-Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. The `PGVector` vectorstore creates two tables into Postgres:
+Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. So in this section, we load the `wikipedia_articles` into the LangChain [`PGVector`](https://python.langchain.com/docs/integrations/vectorstores/pgvector) vectorstore. `PGVector` is LangChain interface with *pgvector*.
+
+The `PGVector` vectorstore creates two tables into Postgres:
 - `langchain_pg_collection` listing the different collections
 - `langchain_pg_embedding` storing texts, embeddings, metadata and collection name
 
+Below is a step-by-step explanation of the process:
+
+- Connection String Setup:
+
+The `CONNECTION_STRING` is generated using the Postgres database credentials provided:
 
 ```python
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
@@ -551,8 +558,9 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
 )
 ```
 
-Create the store:
+- Creating the PGVector Store:
 
+We create a `PGVector` store named `wikipedia_articles` using the connection string and an instance of the `OpenAIEmbeddings` class to generate embeddings. The `pre_delete_collection` flag indicates that any existing collection with the same name should be deleted before creating the new collection:
 
 ```python
 embeddings = OpenAIEmbeddings(openai_api_key=openai.api_key)
@@ -564,7 +572,9 @@ store = PGVector(
 )
 ```
 
-The following step in not so efficient, since we are going to fetch all the data from the `wikipedia_articles` into a Pandas dataframe in order to load it into a the `wikipedia_articles` `PGVector` collection just created:
+- Fetching Data from PostgreSQL:
+
+Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame using SQL queries. This data will be used to load embeddings into the `PGVector` collection. This step in not so efficient, since we are going to fetch all the data from the `wikipedia_articles` in memory...
 
 ```python
 %%time
@@ -575,8 +585,9 @@ df = pd.read_sql(sql=sql, con=conn)
     CPU times: user 251 ms, sys: 194 ms, total: 444 ms
     Wall time: 1.33 s
 
+- Converting Embedding Strings to Lists:
 
-However, the embedding vectors from this dataframe are stored as long strings while LangChain expect a list of floats. Let's transform each string as a list of floats:
+The embedding vectors in the DataFrame are stored as strings. We convert these strings to lists of floats using the `ast.literal_eval` function, enabling compatibility with the `PGVector` store:
 
 
 ```python
@@ -587,7 +598,10 @@ df.content_vector = df.content_vector.map(ast.literal_eval)
     CPU times: user 1min 11s, sys: 236 ms, total: 1min 11s
     Wall time: 1min 11s
 
-We can now load the data into the `PGVector` collection:
+
+- Loading Data into PGVector Collection:
+
+The embeddings, texts, metadata, and IDs are loaded into the `PGVector` collection using the `add_embeddings` method. This step makes the dataset's embeddings available for similarity search:
 
 ```python
 %%time
@@ -624,8 +638,15 @@ print(size)
 
     25000
 
-And we can perform a first query over the vector store:
+Also we can close the psycopg2 now, since it is no longer needed:
 
+```python
+conn.close()
+```
+
+- Querying with PGVector Store:
+
+An example query is demonstrated using the `store.similarity_search` method. Given a query "Tell me about Hip Hop?", the method retrieves the `k=3` most similar documents from the `PGVector` collection. In this case, the returned documents are those that have similar content to the query.
 
 ```python
 query = "Tell me about Hip Hop?"
@@ -645,24 +666,27 @@ docs
      Document(page_content="Breakdance (also called breaking, b-boying or b-girling) is a type of dance that is done by people who are part of the hip hop culture. [...] ", metadata={})]
 
 
-However, this is just returning articles with similar contents to the question text, but not really answering the question. So let's use a ChatLLM to build a Q&A bot to query the vector store easily using questions. 
+It's important to note that while the PGVector similarity search retrieves documents with similar content, it may not provide answers to specific questions. To address this, we are going to use a Chat Language Model (ChatLLM) to build a Q&A bot that leverages the vector store for efficient querying and integrates natural language understanding to answer questions more effectively.
 
-Before that, we are going to add an fake entry to the wikipedia articles in order to check that the bot is using the vector store.
+Before building the Q&A bot using a ChatLLM and querying the vectorstore, a fake Wikipedia article is added to ensure that the bot is utilizing the vectorstore and not its own memory.
 
 ## Adding a fake wikipedia article
 
+- Fetching maximum IDs:
+
+These values will be used to assign new IDs for the fake article:
 
 ```python
-with conn:
-    with conn.cursor() as cur:
-        sql = f"SELECT MAX(id) FROM wikipedia_articles"
-        cur.execute(sql)
-        max_id = cur.fetchone()[0]
-        sql = f"SELECT MAX(vector_id) FROM wikipedia_articles"
-        cur.execute(sql)
-        max_vector_id = cur.fetchone()[0]
+article_id = df["id"].max() + 1
+vector_id = df["vector_id"].max() + 1
+```
 
-article_id = max_id + 1
+- Creating Fake Article Data:
+
+A fake Wikipedia article named "François Pacull" is created with a fictitious biography. The article's title, URL, text, and content are defined, and vector embeddings are generated for the title and content using the get_embedding function.
+
+
+```python
 url = "https://simple.wikipedia.org/wiki/FrancoisPacull"
 title = "François Pacull"
 text = """François Pacull
@@ -672,17 +696,10 @@ François Pacull is a Python developer, known for his unbridled passion for pizz
 Early Life and Education
 
 Details about François Pacull's early life remain shrouded in mystery, much like the inner workings of a black box algorithm. It is said that he demonstrated an uncanny knack for deciphering complex problems from a young age, often using pizza slices as visual aids in his learning process.
-
-Pacull's formal education reportedly includes degrees in Mathematic.
-
-Pythonic Pizzas and Pizza-Infused Python
-
-François Pacull's coding prowess was not confined to the digital realm alone; he ventured into the culinary sphere as well. Armed with his coding skills, he created a Python program that generated pizza recipes based on mathematical parameters. Whether it was a Fibonacci-inspired topping arrangement or a Pi-themed crust, François Pacull's pizzas transcended taste to become mathematical masterpieces.
-
-Conversely, he harnessed his love for pizza to inspire Python projects. The "PizzaSort" algorithm, for instance, sorted pizza slices based on their toppings' complexity, much like sorting elements in an array."""
+"""
 title_vector = get_embedding(title)
 content_vector = get_embedding(text)
-vector_id = max_vector_id + 1
+
 df_1 = pd.DataFrame(
     data={
         "id": [article_id],
@@ -695,6 +712,7 @@ df_1 = pd.DataFrame(
 )
 ```
 
+- Adding the record to the `PGVector` collection:
 
 ```python
 %%time
@@ -709,9 +727,15 @@ _ = store.add_embeddings(
     CPU times: user 2.18 ms, sys: 3.84 ms, total: 6.02 ms
     Wall time: 9.55 ms
 
+The process of adding this fake article demonstrates how to incorporate additional data into the `PèGVector` collection. Let's create the Q&A bot.
 
-## Documents Q&A bot example with LangChain
+## Documents Q&A Bot Example with LangChain
 
+The following code demonstrates an example of using the LangChain framework to build a Question-Answering (QA) bot that retrieves answers from documents stored in the `PGVector` collection. Here's how the example works:
+
+- Creating the Retriever:
+
+The `store` object is used to create a `retriever` using the `as_retriever` method:
 
 ```python
 retriever = store.as_retriever(
@@ -720,16 +744,25 @@ retriever = store.as_retriever(
 )
 ```
 
+The default similarity metric is cosine. We retrive the 3 most similar entries for each query.
+
+- Creating the QA Model:
+
+The `RetrievalQA` class is instantiated using the OpenAI's *gpt-3.5-turbo* chat model, the previously created `retriever`, and `return_source_documents` set to `True`. This configuration enables the bot to return the source documents that contributed to its answer:
+
 
 ```python
 qa = RetrievalQA.from_chain_type(
-    llm=ChatOpenAI(openai_api_key=openai.api_key, temperature=0),
+    llm=ChatOpenAI(openai_api_key=openai.api_key, model_name="gpt-3.5-turbo", temperature=0),
     chain_type="stuff",
     retriever=retriever,
     return_source_documents=True,
 )
 ```
 
+- Querying the QA Bot:
+
+Queries are posed to the QA bot using the `qa` instance. For each query, the bot generates an answer and returns the result along with the source documents that were used to derive the answer:
 
 ```python
 query = "When was written the Foundations series by Isaac Asimov"
@@ -746,11 +779,9 @@ len(answer["source_documents"])
 ```
 
 
-
-
     3
 
-
+Let's try another question:
 
 
 ```python
@@ -768,6 +799,8 @@ print(answer["result"])
     3. A robot must protect its own existence as long as such protection does not conflict with the First or Second Law.
 
 
+Finally, let's ask a question about something that cannot be found outside the vectorstore:
+
 
 ```python
 query = "Who is François Pacull ?"
@@ -775,13 +808,14 @@ answer = qa({"query": query})
 print(answer["result"])
 ```
 
-    François Pacull is a Python developer known for his passion for pizza. He is also known for creating a Python program that generates pizza recipes based on mathematical parameters. However, beyond this information, there is not much else known about François Pacull.
+    François Pacull is a Python developer known for his passion for pizza. However, beyond this information, there is not much else known about François Pacull.
+
+
+The example showcases how the LangChain-based QA bot can retrieve answers from the `PGVector` collection based on queries. The bot provides accurate answers along with the relevant source documents, making it a useful tool for extracting information from the stored documents.
 
 
 
-```python
-conn.close()
-```
+
 
 
 {% if page.comments %}
