@@ -158,9 +158,9 @@ We also had to specify the path to `pg_config` before the installation.
 
 ## Loading the Dataset into Postgres
 
-To efficiently load the provided dataset into your Postgres database, the following code sections illustrate each step of the process:
+To efficiently load the provided dataset into the Postgres database, the following code sections illustrate each step of the process:
 
-- Dropping Existing Table (if exists):
+- Dropping existing table, if exists:
 
 ```python
 sql = "DROP TABLE IF EXISTS wikipedia_articles;"
@@ -193,6 +193,8 @@ pd.read_sql(sql=sql, con=conn, index_col="extname")
 
 - Creating the Table:
 
+This step involves creating the table `wikipedia_articles` with various columns: `id`, `url`, `title`, `text`, `title_vector`, `content_vector`, and `vector_id`. The column types are defined, including the `vector` columns with 1536 dimensions.
+
 
 ```python
 sql = "CREATE TABLE wikipedia_articles (id int PRIMARY KEY, url varchar(1000), title varchar(1000), text varchar, title_vector vector(1536), content_vector vector(1536), vector_id int);"
@@ -202,9 +204,9 @@ with conn:
         conn.commit()
 ```
 
-This step involves creating the table `wikipedia_articles` with various columns: `id`, `url`, `title`, `text`, `title_vector`, `content_vector`, and `vector_id`. The column types are defined, including the `vector` columns with 1536 dimensions.
-
 - Loading the Dataset:
+
+Here, the dataset is loaded from the provided CSV file into the `wikipedia_articles` table using the `COPY` command. This is done in a batched manner to efficiently process and insert the data.
 
 
 ```python
@@ -223,8 +225,6 @@ with conn:
     CPU times: user 1.86 ms, sys: 0 ns, total: 1.86 ms
     Wall time: 13.9 s
 
-
-Here, the dataset is loaded from the provided CSV file (`dataset_fp`) into the `wikipedia_articles` table using the `COPY` command. This is done in a batched manner to efficiently process and insert the data.
 
 - Verifying the number of rows:
 
@@ -392,9 +392,9 @@ The first article of the table is about the month of April. We can see that simi
 
 ## Querying with Text Input
 
-In this section, we provide a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input. Here's a breakdown of the components:
+In this section, we provide a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input.
 
-The following function takes an embedding (`emb`) and performs a similarity search using a Common Table Expression (CTE). It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count (`match_count`). The function returns a DataFrame containing the article IDs, titles, and their similarity scores.
+The following function takes an embedding `emb` and performs a similarity search using a Common Table Expression. It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count `match_count`. The function returns a DataFrame containing the article IDs, titles, and their similarity scores.
 
 ```python
 def similarity_search_from emb(emb, conn, match_threshold=0.75, match_count=10):
@@ -410,7 +410,7 @@ def similarity_search_from emb(emb, conn, match_threshold=0.75, match_count=10):
     return df
 ```
 
-This higher-level function `similarity_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search_from_emb` function to perform the similarity search. The matching articles with similarity scores above a specified threshold (`match_threshold`) are returned in a DataFrame.
+This higher-level function `similarity_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search_from_emb` function to perform the similarity search. The matching articles with similarity scores above a specified threshold `match_threshold` are returned in a DataFrame.
 
 ```python
 def similarity_search(text, match_threshold=0.75, match_count=10):
@@ -666,7 +666,7 @@ docs
      Document(page_content="Breakdance (also called breaking, b-boying or b-girling) is a type of dance that is done by people who are part of the hip hop culture. [...] ", metadata={})]
 
 
-It's important to note that while the PGVector similarity search retrieves documents with similar content, it may not provide answers to specific questions. To address this, we are going to use a Chat Language Model (ChatLLM) to build a Q&A bot that leverages the vector store for efficient querying and integrates natural language understanding to answer questions more effectively.
+It's important to note that while the PGVector similarity search retrieves documents with similar content, it may not provide answers to specific questions. To address this, we are going to use a Chat Language Model to build a Q&A bot that leverages the vector store for efficient querying and integrates natural language understanding to answer questions more effectively.
 
 Before building the Q&A bot using a ChatLLM and querying the vectorstore, a fake Wikipedia article is added to ensure that the bot is utilizing the vectorstore and not its own memory.
 
@@ -727,7 +727,7 @@ _ = store.add_embeddings(
     CPU times: user 2.18 ms, sys: 3.84 ms, total: 6.02 ms
     Wall time: 9.55 ms
 
-The process of adding this fake article demonstrates how to incorporate additional data into the `PèGVector` collection. Let's create the Q&A bot.
+The process of adding this fake article demonstrates how to incorporate additional data into the `PGVector` collection. Let's create the Q&A bot.
 
 ## Documents Q&A Bot Example with LangChain
 
