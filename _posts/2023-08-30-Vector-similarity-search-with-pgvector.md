@@ -394,7 +394,7 @@ The first article of the table is about the month of April. We can see that simi
 
 In this section, we provide a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input.
 
-The following function takes an embedding `emb` and performs a similarity search using a Common Table Expression. It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count `match_count`. The function returns a DataFrame containing the article IDs, titles, and their similarity scores.
+The following function takes an embedding `emb` and performs a similarity search using a Common Table Expression. It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count `match_count`. The function returns a dataframe containing the article IDs, titles, and their similarity scores.
 
 ```python
 def similarity_search_from emb(emb, conn, match_threshold=0.75, match_count=10):
@@ -410,7 +410,7 @@ def similarity_search_from emb(emb, conn, match_threshold=0.75, match_count=10):
     return df
 ```
 
-This higher-level function `similarity_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search_from_emb` function to perform the similarity search. The matching articles with similarity scores above a specified threshold `match_threshold` are returned in a DataFrame.
+This higher-level function `similarity_search` combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the `get_embedding` function, and then uses the `similarity_search_from_emb` function to perform the similarity search. The matching articles with similarity scores above a specified threshold `match_threshold` are returned as a dataframe.
 
 ```python
 def similarity_search(text, match_threshold=0.75, match_count=10):
@@ -531,13 +531,13 @@ similarity_search("The Foundation series by Isaac Asimov")
 </table>
 </div>
 
-Now we are going to use the `PGVector` vectorstore from the [LangChain package](https://python.langchain.com/docs/get_started/introduction.html).
+Now we are going to use the *PGVector* vectorstore from the [LangChain package](https://python.langchain.com/docs/get_started/introduction.html).
 
 ## LangChain vectorstore PGVector integration
 
-Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. So in this section, we load the `wikipedia_articles` into the LangChain [`PGVector`](https://python.langchain.com/docs/integrations/vectorstores/pgvector) vectorstore. `PGVector` is LangChain interface with *pgvector*.
+Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. So in this section, we load the `wikipedia_articles` into the LangChain [*PGVector*](https://python.langchain.com/docs/integrations/vectorstores/pgvector) vectorstore. *PGVector* is LangChain interface with *pgvector*.
 
-The `PGVector` vectorstore creates two tables into Postgres:
+The *PGVector* vectorstore creates two tables into Postgres:
 - `langchain_pg_collection` listing the different collections
 - `langchain_pg_embedding` storing texts, embeddings, metadata and collection name
 
@@ -560,7 +560,7 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
 
 - Creating the PGVector Store:
 
-We create a `PGVector` store named `wikipedia_articles` using the connection string and an instance of the `OpenAIEmbeddings` class to generate embeddings. The `pre_delete_collection` flag indicates that any existing collection with the same name should be deleted before creating the new collection:
+We create a *PGVector* store named `wikipedia_articles` using the connection string and an instance of the `OpenAIEmbeddings` class to generate embeddings. The `pre_delete_collection` flag indicates that any existing collection with the same name should be deleted before creating the new collection:
 
 ```python
 embeddings = OpenAIEmbeddings(openai_api_key=openai.api_key)
@@ -574,7 +574,7 @@ store = PGVector(
 
 - Fetching Data from PostgreSQL:
 
-Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame using SQL queries. This data will be used to load embeddings into the `PGVector` collection. This step in not so efficient, since we are going to fetch all the data from the `wikipedia_articles` in memory...
+Data from the `wikipedia_articles` table is fetched into a Pandas DataFrame using SQL queries. This data will be used to load embeddings into the *PGVector* collection. This step in not so efficient, since we are going to fetch all the data from the `wikipedia_articles` in memory...
 
 ```python
 %%time
@@ -587,7 +587,7 @@ df = pd.read_sql(sql=sql, con=conn)
 
 - Converting Embedding Strings to Lists:
 
-The embedding vectors in the DataFrame are stored as strings. We convert these strings to lists of floats using the `ast.literal_eval` function, enabling compatibility with the `PGVector` store:
+The embedding vectors in the DataFrame are stored as strings. We convert these strings to lists of floats using the `ast.literal_eval` function, enabling compatibility with the *PGVector* store:
 
 
 ```python
@@ -601,7 +601,7 @@ df.content_vector = df.content_vector.map(ast.literal_eval)
 
 - Loading Data into PGVector Collection:
 
-The embeddings, texts, metadata, and IDs are loaded into the `PGVector` collection using the `add_embeddings` method. This step makes the dataset's embeddings available for similarity search:
+The embeddings, texts, metadata, and IDs are loaded into the *PGVector* collection using the `add_embeddings` method. This step makes the dataset's embeddings available for similarity search:
 
 ```python
 %%time
@@ -646,7 +646,7 @@ conn.close()
 
 - Querying with PGVector Store:
 
-An example query is demonstrated using the `store.similarity_search` method. Given a query "Tell me about Hip Hop?", the method retrieves the `k=3` most similar documents from the `PGVector` collection. In this case, the returned documents are those that have similar content to the query.
+An example query is demonstrated using the `store.similarity_search` method. Given a query "Tell me about Hip Hop?", the method retrieves the `k=3` most similar documents from the *PGVector* collection. In this case, the returned documents are those that have similar content to the query.
 
 ```python
 query = "Tell me about Hip Hop?"
@@ -712,7 +712,7 @@ df_1 = pd.DataFrame(
 )
 ```
 
-- Adding the record to the `PGVector` collection:
+- Adding the record to the *PGVector* collection:
 
 ```python
 %%time
@@ -727,11 +727,11 @@ _ = store.add_embeddings(
     CPU times: user 2.18 ms, sys: 3.84 ms, total: 6.02 ms
     Wall time: 9.55 ms
 
-The process of adding this fake article demonstrates how to incorporate additional data into the `PGVector` collection. Let's create the Q&A bot.
+The process of adding this fake article demonstrates how to incorporate additional data into the *PGVector* collection. Let's create the Q&A bot.
 
 ## Documents Q&A bot example with LangChain
 
-The following code demonstrates an example of using the LangChain framework to build a Question-Answering (QA) bot that retrieves answers from documents stored in the `PGVector` collection. Here's how the example works:
+The following code demonstrates an example of using the LangChain framework to build a Question-Answering (QA) bot that retrieves answers from documents stored in the *PGVector* collection. Here's how the example works:
 
 - Creating the Retriever:
 
@@ -811,7 +811,7 @@ print(answer["result"])
     François Pacull is a Python developer known for his passion for pizza. However, beyond this information, there is not much else known about François Pacull.
 
 
-The example showcases how the LangChain-based QA bot can retrieve answers from the `PGVector` collection based on queries. The bot provides accurate answers along with the relevant source documents, making it a useful tool for extracting information from the stored documents.
+The example showcases how the LangChain-based QA bot can retrieve answers from the *PGVector* collection based on queries. The bot provides accurate answers along with the relevant source documents, making it a useful tool for extracting information from the stored documents.
 
 
 {% if page.comments %}
