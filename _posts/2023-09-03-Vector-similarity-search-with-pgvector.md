@@ -18,14 +18,14 @@ tags:
 - question answering over documents
 ---
 
+
 In the realm of vector databases, [pgvector](https://github.com/pgvector/pgvector) emerges as a noteworthy open-source extension tailored for Postgres databases. This extension equips Postgres with the capability to efficiently perform vector similarity searches, a powerful technique with applications ranging from recommendation systems to semantic search.
 
 To illustrate the practical implementation of Pgvector, we'll delve into a specific use case involving the "Simple English Wikipedia" dataset. This dataset, [available from OpenAI](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip), contains vector embeddings for Wikipedia articles.
 
 We'll guide you through the process of setting up and utilizing Pgvector for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we'll demonstrate how to integrate the [Langchain vectorstore PGVector](https://python.langchain.com/docs/integrations/vectorstores/pgvector) to streamline embedding storage and retrieval. We will finally perform question answering over documents.
 
-
-# The Simple English Wikipedia dataset
+## The *Simple English Wikipedia* dataset
 
 The *Simple English Wikipedia dataset* is a substantial resource provided by OpenAI. This dataset is accessible through [this link](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip
 ) and weighs approximately 700MB when compressed, expanding to around 1.7GB when in CSV format. 
@@ -81,6 +81,8 @@ System information and package versions:
     pandas               : 2.0.3
     psycopg2             : 2.9.6
     langchain            : 0.0.271
+    PostgreSQL           : 15.4
+    pgvector             : 0.4.4 
     
 
 Before delving into the practical aspects, it's imperative to configure the OpenAI API key. This ensures seamless interaction with OpenAI services for embedding generation and more. 
@@ -140,8 +142,16 @@ Once the Postgres credentials are acquired fro a JSON file, the following step i
 conn = psycopg2.connect(**pg_credentials)
 ```
 
-## Load the dataset into Postgres
+## Installing *pgvector*
 
+Here are the official installation notes: [https://github.com/pgvector/pgvector#installation-notes](https://github.com/pgvector/pgvector#installation-notes). The process of installing *pgvector* is relatively straightforward, particularly on Linux systems. 
+
+
+## Loading the Dataset into Postgres
+
+To efficiently load the provided dataset into your Postgres database, the following code sections illustrate each step of the process:
+
+- Dropping Existing Table (if exists):
 
 ```python
 sql = "DROP TABLE IF EXISTS wikipedia_articles;"
@@ -151,8 +161,7 @@ with conn:
         conn.commit()
 ```
 
-Enable the extension:
-
+- Enabling the *pgvector* Extension:
 
 ```python
 sql = "CREATE EXTENSION IF NOT EXISTS vector;"
@@ -162,7 +171,15 @@ with conn:
         conn.commit()
 ```
 
-Create a vector column with 7 dimensions:
+```python
+sql = "SELECT extname, extversion FROM pg_extension WHERE extname='vector';"
+pd.read_sql(sql=sql, con=conn).to_markdown()
+```
+|    | extname   | extversion   |
+|---:|:----------|:-------------|
+|  0 | vector    | 0.4.4        |
+
+- Creating the Table:
 
 
 ```python
@@ -173,7 +190,9 @@ with conn:
         conn.commit()
 ```
 
-Load the dataset (from the OpenAI website):
+This step involves creating the table `wikipedia_articles` with various columns, including `id`, `url`, `title`, `text`, `title_vector`, `content_vector`, and `vector_id`. The column types are defined, including the `vector` columns with 1536 dimensions.
+
+- Loading the Dataset:
 
 
 ```python
@@ -193,6 +212,10 @@ with conn:
     Wall time: 13.9 s
 
 
+Here, the dataset is loaded from the provided CSV file (`dataset_fp`) into the `wikipedia_articles` table using the `COPY` command. This is done in a batched manner to efficiently process and insert the data.
+
+- Verifying the number of rows:
+
 
 ```python
 sql = "SELECT COUNT(*) FROM wikipedia_articles"
@@ -205,7 +228,7 @@ with conn:
 
     n_rows = 25000
 
-
+- Displaying the first 3 rows of the table:
 
 ```python
 n = 3
@@ -213,8 +236,6 @@ sql = f"SELECT * FROM wikipedia_articles ORDER BY id ASC LIMIT {n}"
 df = pd.read_sql(sql=sql, con=conn)
 df.head(n)
 ```
-
-
 
 
 <div>
@@ -280,16 +301,13 @@ df.head(n)
 </div>
 
 
-
 ## First query on the vector table
 
-Nearest neighbor to the first article content, using cosine similarity $S$.
+We look for the nearest neighbors to the first article of the table, comparing article contents using cosine similarity $S$:
 
 $$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
 
-Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors.
-
-In SQL we are going to use the `<#>` operator, that returns the negative inner product.
+Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors. In SQL we are going to use the `<#>` operator, that returns the negative inner product.
 
 From pgvector's [documentation](https://github.com/pgvector/pgvector#installation-notes):  
 > <#> returns the negative inner product since Postgres only supports ASC order index scans on operators
@@ -307,7 +325,6 @@ pd.read_sql(sql=sql, con=conn)
 
     CPU times: user 703 µs, sys: 987 µs, total: 1.69 ms
     Wall time: 172 ms
-
 
 
 
@@ -363,6 +380,8 @@ pd.read_sql(sql=sql, con=conn)
   </tbody>
 </table>
 </div>
+
+The first article of the table is about the month of April. Similar articles in the table are also about months: May, March, ...
 
 
 
