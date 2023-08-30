@@ -90,8 +90,8 @@ Before delving into the practical aspects, it's imperative to configure the Open
 ## OpenAI API key
 
 There are two approaches to handle this key in the following:
-- Environment Variable 
-- JSON File  
+- environment variable 
+- JSON file  
 
 ```python
 if os.getenv("OPENAI_API_KEY") is not None:
@@ -127,7 +127,7 @@ get_embedding("Yeah man!!")
            -0.00406699, -0.02893774])
 
 
-## Postgres Credentials
+## Postgres credentials
 
 ```python
 if os.path.exists(postgres_json_fp):
@@ -156,7 +156,7 @@ make install
 
 We also had to specify the path to `pg_config` before the installation. 
 
-## Loading the Dataset into Postgres
+## Loading the dataset into Postgres
 
 To efficiently load the provided dataset into the Postgres database, the following code sections illustrate each step of the process:
 
@@ -390,7 +390,7 @@ pd.read_sql(sql=sql, con=conn)
 The first article of the table is about the month of April. We can see that similar articles in the table are also about months: May, March, ...
 
 
-## Querying with Text Input
+## Querying with text input
 
 In this section, we provide a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input.
 
@@ -533,7 +533,7 @@ similarity_search("The Foundation series by Isaac Asimov")
 
 Now we are going to use the `PGVector` vectorstore from the [LangChain package](https://python.langchain.com/docs/get_started/introduction.html).
 
-# LangChain Vectorstore PGVector Integration
+## LangChain vectorstore PGVector integration
 
 Unfortunatly we cannot query the previous `wikipedia_articles` table with LangChain. So in this section, we load the `wikipedia_articles` into the LangChain [`PGVector`](https://python.langchain.com/docs/integrations/vectorstores/pgvector) vectorstore. `PGVector` is LangChain interface with *pgvector*.
 
@@ -729,7 +729,7 @@ _ = store.add_embeddings(
 
 The process of adding this fake article demonstrates how to incorporate additional data into the `PGVector` collection. Let's create the Q&A bot.
 
-## Documents Q&A Bot Example with LangChain
+## Documents Q&A bot example with LangChain
 
 The following code demonstrates an example of using the LangChain framework to build a Question-Answering (QA) bot that retrieves answers from documents stored in the `PGVector` collection. Here's how the example works:
 
