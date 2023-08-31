@@ -3,7 +3,11 @@ title: Minimizing continuous non-convex functions with Optuna
 layout: post
 comments: true
 author: François Pacull
-tags: Python Optuna Optimization HPO
+tags: 
+- Python 
+- Optuna 
+- Optimization 
+- HPO
 ---
 
 <p align="center">
