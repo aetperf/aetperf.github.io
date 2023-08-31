@@ -389,6 +389,22 @@ pd.read_sql(sql=sql, con=conn)
 
 The first article of the table is about the month of April. We can see that similar articles in the table are also about months: May, March, ...
 
+## A Note on indexing
+
+By default, *pgvector* performs a sequential scan of all items, which means that it compares the given vector with all the stored vectors and keep track of the elements with closest distance. This returns an exact nearest neighbors result, but does not scale well with larger tables.  
+
+One way to reduce the process is to filter the vectors with the metadata, but it is also possible to use an index to perform an approximate nearest neighbors search. Keep in mind that this does increase speed but may alter the result. The supported index types are the following:   
+- IVFFlat - Inverted File Flat  
+- HNSW - Hierarchical Navigable Small Worlds - added in 0.5.0   
+
+In IVVFlat, a k-means clustering is performed on the vectors. Then the given vector is compared with the cluster centroids. An inverted index keep track of all the vectors associated with each cluster. It is used to retrieve the vectors associated with the closest cluster centroids. Usually, the vectors from the neighboring clusters are also retrieved in order improve the accuracy.
+
+Here are two really good articles describing IVFFlat in *pgvector*: 
+- [link 1](https://www.timescale.com/blog/nearest-neighbor-indexes-what-are-ivfflat-indexes-in-pgvector-and-how-do-they-work/)
+- [link 2](https://neon.tech/blog/optimizing-vector-search-performance-with-pgvector)
+
+
+
 
 ## Querying with text input
 
@@ -668,7 +684,7 @@ docs
 
 It's important to note that while the PGVector similarity search retrieves documents with similar content, it may not provide answers to specific questions. To address this, we are going to use a Chat Language Model to build a Q&A bot that leverages the vector store for efficient querying and integrates natural language understanding to answer questions more effectively.
 
-Before building the Q&A bot using a ChatLLM and querying the vectorstore, a fake Wikipedia article is added to ensure that the bot is utilizing the vectorstore and not its own memory.
+Before building the Q&A bot using a ChatLLM and querying the vectorstore, a fake Wikipedia article is added to ensure that the bot is utilizing the vectorstore and not its memory of the training data.
 
 ## Adding a fake wikipedia article
 
