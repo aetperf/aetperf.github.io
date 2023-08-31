@@ -281,7 +281,7 @@ df.head(n)
 
 We look for the nearest neighbors to the first article of the table, comparing article contents using cosine similarity $S$:
 
-$$S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
+$$S(u, v) = cos(u, v) = \frac{u \cdot v}{\\|u\\|_2 \\|v\\|_2}$$
 
 Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors. In SQL we are going to use the `<#>` operator, that returns the negative inner product. From *pgvector*'s [documentation](https://github.com/pgvector/pgvector#installation-notes):  
 > <#> returns the negative inner product since Postgres only supports ASC order index scans on operators
