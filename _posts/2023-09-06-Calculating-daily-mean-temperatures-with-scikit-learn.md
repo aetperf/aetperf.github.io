@@ -45,11 +45,10 @@ from astral import Observer
 from astral.sun import daylight
 from optuna import create_study
 from optuna.exceptions import ExperimentalWarning
-from optuna.samplers import NSGAIISampler, TPESampler
+from optuna.samplers import NSGAIISampler
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
-from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import max_error, mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
