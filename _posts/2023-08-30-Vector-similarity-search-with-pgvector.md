@@ -397,7 +397,7 @@ One way to reduce the process burden is to filter the vectors with the metadata,
 - IVFFlat - Inverted File Flat  
 - HNSW - Hierarchical Navigable Small Worlds - added in 0.5.0   
 
-In IVVFlat, a k-means clustering is performed on the vectors. Then the given vector is compared with the cluster centroids. An inverted index keep track of all the vectors associated with each cluster. It is used to retrieve the vectors associated with the closest cluster centroids. Usually, the vectors from the neighboring clusters are also retrieved in order improve accuracy.
+In IVFFlat, a k-means clustering is performed on the vectors. Then the given vector is compared with the cluster centroids. An inverted index keep track of all the vectors associated with each cluster. It is used to retrieve the vectors associated with the closest cluster centroids. Usually, the vectors from the neighboring clusters are also retrieved in order improve accuracy.
 
 Here are two really good articles describing IVFFlat in *pgvector*: 
 - [link 1](https://www.timescale.com/blog/nearest-neighbor-indexes-what-are-ivfflat-indexes-in-pgvector-and-how-do-they-work/) from Timescale  
