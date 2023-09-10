@@ -2,12 +2,12 @@
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
 
-For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence - BAAI: [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding, and appears to be a BERT-like family of models, with a MIT licence. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's well-known model: [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 8191 and an input sequence length of 1536 tokens. While the latter model offers some impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
+For the purpose of this demonstration, we'll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence - BAAI: [`BAAI/bge-base-en`](https://huggingface.co/BAAI/bge-base-en). BGE stands for BAAI General Embedding, and appears to be a BERT-like family of models, with a MIT licence. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let's compare it to OpenAI's well-known model: [`text-embedding-ada-002`](https://platform.openai.com/docs/guides/embeddings/second-generation-models), which features an embedding dimension of 1536 and an input sequence length of 8191 tokens. While the latter model offers some impressive capabilities, it's worth noting that it cannot be run locally. Here's a quick comparison of these two embedding models:
 
 | Model | Can Run Locally | Multilingual | Input Sequence Length | Embedding Dimension |
 |---|---:|---:|---:|---:|
 | `BAAI/bge-base-en`        | Yes |  No |  512 |  768 |
-| `text-embedding-ada-002`  |  No | Yes | 1536 | 8191 |
+| `text-embedding-ada-002`  |  No | Yes | 8191 | 1536 |
 
 While a larger instance of BAAI/bge - `BAAI/bge-large-en` - is available, we've opted for BAAI/bge-base-en for its relatively smaller size of 0.44GB, making it fast and suitable for regular machines. It's also worth mentioning that despite its compact nature, `BAAI/bge-base-en` boasts a second-place rank on the Massive Text Embedding Benchmark leaderboard MTEB at the time of writing this post, which you can check out here: [https://huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard).
 
