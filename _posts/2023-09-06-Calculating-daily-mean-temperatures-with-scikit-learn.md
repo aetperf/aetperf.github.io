@@ -13,7 +13,11 @@ tags:
 ---
 
 
-The goal is of this post is to compute the daily mean air temperature TAVG from other values in the daily summaries: maximum and minimum daily temperatures and daily precipitation. The data comes from the [Climate Data Online Search](https://www.ncei.noaa.gov/cdo-web/search) of the National Centers for Environmental Information (NCEI). NCEI is a U.S. government agency that manages one of the world’s largest archives of atmospheric, coastal, geophysical, and oceanic data. We downloaded the Daily Sumaries on all the available time range, from 1920 to today, for the Lyon' station. This station is actually located at the St Exupery airport, rather outside of the city. Here is a description of the variables from their [documentation](https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt):
+The goal is of this post is to predict the daily mean air temperature TAVG from the following climate data variables: maximum and minimum daily temperatures and daily precipitation, using Python and various machine learning techniques available in [scikit-learn](https://scikit-learn.org/stable/).
+
+Our dataset comes from the [Climate Data Online Search](https://www.ncei.noaa.gov/cdo-web/search) provided by the National Centers for Environmental Information (NCEI), a U.S. government agency that manages an extensive archive of atmospheric, coastal, geophysical, and oceanic data. Specifically, we've gathered data from the Lyon station, located at St Exupery airport, spanning from 1920 to the present day.
+
+The key variables we'll be working with are:
 
     PRCP = Precipitation (tenths of mm)
     TMAX = Maximum temperature (tenths of degrees C)
@@ -23,13 +27,28 @@ The goal is of this post is to compute the daily mean air temperature TAVG from 
        to an average for the period ending at
        2400 UTC rather than local midnight]
 
-The dataset has 37614 rows and 5 columns: DATE, PRCP, TAVG, TMAX and TMIN. However, TAVG is missing for more that half of the time range:
+The description above can be found in the dataset [documentation](https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt).
+
+However, a significant portion of the TAVG data is missing. The dataset has 37614 rows and 5 columns: DATE, PRCP, TAVG, TMAX and TMIN. However, TAVG is missing for more that half of the time range:
 
 <p align="center">
   <img width="1000" src="/img/2023-09-06_01/missingno.png" alt="missingno">
 </p>
 
-An obvious approach would be to compute TAVG as the arithmetic mean of TMAX and TMIN, and this is going to be our first approach. Because TAVG is available on half of the table, will use this part without missing data to create our dataset, split it into train/test sets and try out different approaches available in [scikit-learn](https://scikit-learn.org/stable/).
+
+Our initial strategy involves calculating TAVG as the arithmetic mean of TMAX and TMIN, but here is a excerpt fromthe dissertation abstract by Jase Bernhardt [1] about this traditional approach:
+
+> Traditionally, daily average temperature is computed by taking the mean of two values- the maximum temperature over a 24-hour period and the minimum temperature over the same period. These data form the basis for numerous studies of long-term climatologies (e.g. 30-year normals) and recent temperature trends and changes. However, many first-order weather stations (e.g. airports) also record hourly temperature data. Using an average of the 24 hourly temperature readings to compute daily average temperature should provide a more precise and representative estimate of a given day's temperature. These two methods of daily temperature averaging ([Tmax + Tmin]/2, average of 24 hourly temperature values) were computed and mapped for all first-order weather stations across the United States for the 30-year period 1981-2010. This analysis indicates a statistically significant difference between the two methods, as well as an overestimation of temperature by the traditional method ([Tmax + Tmin]/2), particularly in southern and coastal portions of the Continental U.S. The likely explanation for the long-term difference between the two methods is the underlying assumption of the twice-daily method that the diurnal curve of temperature follows a symmetrical pattern. 
+
+In this post, we'll go through feature engineering: extract temporal features, compute the diurnal temperature range (DTR), consider daylight duration, and calculate the deltas of TMIN and TMAX with the previous and next days. We'll evaluate the performance of different models, including:
+
+- Baseline Model: Arithmetic mean of TMIN and TMAX
+- Ridge Regression
+- Decision Tree Regressor
+- Random Forest Regressor
+- Histogram-based Gradient Boosting Regressor
+
+We'll assess these models using mean absolute error (MAE) and root mean squared error (RMSE) to determine which one provides the most accurate predictions for TAVG.
 
 ## Imports
 
@@ -1418,15 +1437,10 @@ ax.set_title(
 
 
 
-## References
+## Reference
 
-https://etda.libraries.psu.edu/catalog/13504jeb5249
 
-https://climate.rutgers.edu/stateclim/?section=menu&%20target=calculating_daily_mean_temperature
-
-https://www.sciencedirect.com/science/article/abs/pii/S0168192304002199
-
-https://www.njweather.org/content/better-approach-calculating-daily-mean-temperature-0
+[1] Bernhardt, J., *“A comparison of daily temperature-averaging methods: Uncertainties, spatial variability, and societal implications”*, PhDT, Pennsylvania State University, 2016.
 
 
 {% if page.comments %}
