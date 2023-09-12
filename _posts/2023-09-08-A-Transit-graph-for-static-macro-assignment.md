@@ -247,7 +247,7 @@ A few more edges types have been introduced in AequilibraE. Mainly we differenti
 - outer_transfer
 - walking
 
-If we buit the graph for the city of Lypn France (GTFS files from 2022), we get 20196 vertices and 91107 edges. Here is the distribution of edge types:
+If we buit the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges. Here is the distribution of edge types:
 
 | Edge type        |   Count |
 |:-----------------|--------:|
