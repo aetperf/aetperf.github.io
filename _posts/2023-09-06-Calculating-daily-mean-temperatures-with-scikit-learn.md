@@ -13,9 +13,9 @@ tags:
 ---
 
 
-The goal is of this post is to predict the daily mean air temperature TAVG from the following climate data variables: maximum and minimum daily temperatures and daily precipitation, using Python and various machine learning techniques available in [scikit-learn](https://scikit-learn.org/stable/).
+The goal is of this post is to predict the daily mean air temperature TAVG from the following climate data variables: maximum and minimum daily temperatures and daily precipitation, using Python and some machine learning techniques available in [scikit-learn](https://scikit-learn.org/stable/).
 
-Our dataset comes from the [Climate Data Online Search](https://www.ncei.noaa.gov/cdo-web/search) provided by the National Centers for Environmental Information (NCEI), a U.S. government agency that manages an extensive archive of atmospheric, coastal, geophysical, and oceanic data. Specifically, we've gathered data from the Lyon station, located at St Exupery airport, spanning from 1920 to the present day.
+Our dataset comes from the [Climate Data Online Search](https://www.ncei.noaa.gov/cdo-web/search) provided by the National Centers for Environmental Information (NCEI), a U.S. government agency that manages an extensive archive of atmospheric, coastal, geophysical, and oceanic data. Specifically, they have gathered data from the Lyon station, located at the Saint-Exupéry airport, spanning from 1920 to the present day.
 
 The key variables we'll be working with are:
 
@@ -36,7 +36,7 @@ However, a significant portion of the TAVG data is missing. The dataset has 3761
 </p>
 
 
-Our initial strategy involves calculating TAVG as the arithmetic mean of TMAX and TMIN, but here is a excerpt fromthe dissertation abstract by Jase Bernhardt [1] about this traditional approach:
+Our initial strategy involves calculating TAVG as the arithmetic mean of TMAX and TMIN, but this is not the best option. Here is a excerpt from the dissertation abstract by Jase Bernhardt [1] about this traditional approach:
 
 > Traditionally, daily average temperature is computed by taking the mean of two values- the maximum temperature over a 24-hour period and the minimum temperature over the same period. These data form the basis for numerous studies of long-term climatologies (e.g. 30-year normals) and recent temperature trends and changes. However, many first-order weather stations (e.g. airports) also record hourly temperature data. Using an average of the 24 hourly temperature readings to compute daily average temperature should provide a more precise and representative estimate of a given day's temperature. These two methods of daily temperature averaging ([Tmax + Tmin]/2, average of 24 hourly temperature values) were computed and mapped for all first-order weather stations across the United States for the 30-year period 1981-2010. This analysis indicates a statistically significant difference between the two methods, as well as an overestimation of temperature by the traditional method ([Tmax + Tmin]/2), particularly in southern and coastal portions of the Continental U.S. The likely explanation for the long-term difference between the two methods is the underlying assumption of the twice-daily method that the diurnal curve of temperature follows a symmetrical pattern. 
 
@@ -48,9 +48,11 @@ In this post, we'll go through feature engineering: extract temporal features, c
 - Random Forest Regressor
 - Histogram-based Gradient Boosting Regressor
 
-We'll assess these models using mean absolute error (MAE) and root mean squared error (RMSE) to determine which one provides the most accurate predictions for TAVG.
+We'll assess these models using mean absolute error (MAE) and root mean squared error (RMSE) to determine which one provides the most accurate predictions for TAVG, with the baseline being the arithmetic mean of TMIN and TMAX.
 
 ## Imports
+
+Let's start by gathering the tools we need in the following:
 
 
 ```python
@@ -94,15 +96,20 @@ FS = (9, 6)  # figure size
 
 ## Load the data
 
+Let's start by loading the data we'll be working with. In this section, we read the dataset from the provided file path:
+
 
 ```python
-df = pd.read_csv(temperature_fp)
+df = pd.read_csv(temperature_fp)  # Load the dataset and select the relevant columns
 station = df[["STATION", "NAME", "LATITUDE", "LONGITUDE", "ELEVATION"]].iloc[0]
 df = df[["DATE", "PRCP", "TAVG", "TMIN", "TMAX"]].dropna(how="all")
+
+# Convert the 'DATE' column to a datetime format and set it as the index
 df.DATE = pd.to_datetime(df.DATE)
 df.set_index("DATE", inplace=True)
 df = df.asfreq("D")
 df.sort_index(inplace=True)
+
 df.head(3)
 ```
 
@@ -167,7 +174,7 @@ df.head(3)
 </div>
 
 
-
+Now, let's take a closer look at the dataset's dimensions:
 
 ```python
 df.shape
@@ -179,7 +186,7 @@ df.shape
     (37617, 4)
 
 
-
+We also have some information about the weather station:
 
 ```python
 station
@@ -197,7 +204,7 @@ station
 
 
 
-A surprising fact about these data set is that the daily mean temperature can be slightly smaller than the daily min:
+It's worth noting a peculiar aspect of the data: the daily mean temperature can sometimes be slightly smaller than the daily minimum temperature:
 
 
 ```python
@@ -210,8 +217,7 @@ len(df[df.TAVG < df.TMIN])
     31
 
 
-
-and larger that the daily max:
+And, on occasion, it can surpass the daily maximum temperature:
 
 
 ```python
@@ -223,12 +229,9 @@ len(df[df.TAVG > df.TMAX])
 
     235
 
+This intriguing phenomenon may be attributed to measurement methods and the consideration that TAVG corresponds to an average for the period ending at 2400 UTC rather than local midnight.
 
-
-I guess that it comes from the measurement methods and also from different daily time ranges:
-> TAVG corresponds to an average for the period ending at 2400 UTC rather than local midnight
-
-## Missing values
+Now let's take a closer look at missing values within our dataset: 
 
 
 ```python
@@ -244,10 +247,12 @@ _ = ax.set(
   <img width="1000" src="/img/2023-09-06_01/output_16_0.png" alt="output_16_0">
 </p>
 
+Note that we are going to use parts of the available TAVG values as training and testing datasets.
 
 
 ## First approach : TAVG_am, arithmetic mean of TMIN and TMAX
 
+Let's kick off our analysis by introducing TAVG_am, which represents the arithmetic mean of TMIN and TMAX:
 
 ```python
 df["TAVG_am"] = 0.5 * (df["TMIN"] + df["TMAX"])
@@ -276,9 +281,9 @@ _ = ax.set(title="Correlation between TAVG and TAVG_am")
   <img width="1000" src="/img/2023-09-06_01/output_18_0.png" alt="output_18_0">
 </p>
 
+As seen in the scatter plot above, there's a clear correlation between TAVG and TAVG_am. However, it's worth noting that on warm days, TAVG_am may deviate by around 3 or 4 degrees.
 
-Although both values are clearly correlated, we see that TAVG_am may be off by 3 or 4 degrees on warm days.
-
+To delve deeper into this discrepancy, let's examine the error distribution between TAVG and TAVG_am:
 
 ```python
 diff = (df.TAVG - df.TAVG_am).dropna()
@@ -300,6 +305,7 @@ _ = ax.set(title="Distribution of the error of TAVG_am", xlabel="TAVG - TAVG_am"
 
 ## Model evaluation
 
+In order to assess the performance of our model, we've defined a convenient evaluation function:
 
 ```python
 def evaluate(y_true, y_pred, return_score=False):
@@ -314,6 +320,13 @@ def evaluate(y_true, y_pred, return_score=False):
         )
 ```
 
+This function computes two important metrics:
+
+- Mean Absolute Error (MAE): A measure of the average absolute difference between the true and predicted values. 
+- Root Mean Squared Error (RMSE): A measure of the square root of the average squared differences between true and predicted values.
+
+Now, let's apply this evaluation function to our model predictions:
+
 
 ```python
 y_pred = df.loc[~df.TAVG.isna() & ~df.TAVG_am.isna(), "TAVG_am"].values
@@ -326,7 +339,7 @@ evaluate(y_true, y_pred)
 
 
 ```python
-# cleanup
+# # cleanup: remove the temporary TAVG_am column
 df.drop("TAVG_am", axis=1, inplace=True)
 ```
 
