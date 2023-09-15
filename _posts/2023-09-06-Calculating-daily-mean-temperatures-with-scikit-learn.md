@@ -1,5 +1,5 @@
 ---
-title: Calculating daily mean temperatures with scikit-learn WIP
+title: Calculating daily mean temperatures with scikit-learn
 layout: post
 comments: true
 author: François Pacull
@@ -32,7 +32,7 @@ The description above can be found in the dataset [documentation](https://www.nc
 However, a significant portion of the TAVG data is missing. The dataset has 37614 rows and 5 columns: DATE, PRCP, TAVG, TMAX and TMIN. However, TAVG is missing for more that half of the time range:
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/missingno.png" alt="missingno">
+  <img width="1000" src="/img/2023-09-15_01/missingno.png" alt="missingno">
 </p>
 
 
@@ -244,7 +244,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_16_0.png" alt="output_16_0">
+  <img width="1000" src="/img/2023-09-15_01/output_16_0.png" alt="output_16_0">
 </p>
 
 We will utilize select segments of the existing TAVG data as both training and testing datasets, with the ultimate aim of predicting the absent values.
@@ -277,7 +277,7 @@ _ = ax.set(title="Correlation between TAVG and TAVG_am")
 
     
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_18_0.png" alt="output_18_0">
+  <img width="1000" src="/img/2023-09-15_01/output_18_0.png" alt="output_18_0">
 </p>
 
 As seen in the scatter plot above, there's a clear correlation between TAVG and TAVG_am. However, it's worth noting that on warm days, TAVG_am may deviate by around 3 or 4 degrees. To delve deeper into this discrepancy, let's examine the error distribution between TAVG and TAVG_am:
@@ -296,7 +296,7 @@ _ = ax.set(title="Distribution of the error of TAVG_am", xlabel="TAVG - TAVG_am"
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_20_0.png" alt="output_20_0">
+  <img width="1000" src="/img/2023-09-15_01/output_20_0.png" alt="output_20_0">
 </p>
 
 
@@ -458,7 +458,7 @@ _ = ax.set(title="Cyclical encoded day-of-year", xlabel="Day-of-year")
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_29_0.png" alt="output_29_0">
+  <img width="1000" src="/img/2023-09-15_01/output_29_0.png" alt="output_29_0">
 </p>
 
 
@@ -486,7 +486,7 @@ for ax in axs:
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_31_0.png" alt="output_31_0">
+  <img width="1000" src="/img/2023-09-15_01/output_31_0.png" alt="output_31_0">
 </p>
 
 
@@ -734,7 +734,7 @@ ax.invert_yaxis()
 
     
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_49_0.png" alt="output_49_0">
+  <img width="1000" src="/img/2023-09-15_01/output_49_0.png" alt="output_49_0">
 </p>
 
 
@@ -790,7 +790,7 @@ _ = ax.set(title="Train/test error vs max_depth", xlabel="max_depth", ylabel="MA
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_54_0.png" alt="output_54_0">
+  <img width="1000" src="/img/2023-09-15_01/output_54_0.png" alt="output_54_0">
 </p>
 
 
@@ -877,7 +877,7 @@ _ = ax.set(
 ```
     
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_57_0.png" alt="output_57_0">
+  <img width="1000" src="/img/2023-09-15_01/output_57_0.png" alt="output_57_0">
 </p>
 
  Finally, we perform feature selection by removing certain useless features from the dataset and update the features list accordingly.
@@ -992,7 +992,7 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_63_0.png" alt="output_63_0">
+  <img width="1000" src="/img/2023-09-15_01/output_63_0.png" alt="output_63_0">
 </p>
 
 
@@ -1212,7 +1212,7 @@ ax = trials[["number", "value"]].plot.scatter(
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_71_0.png" alt="output_71_0">
+  <img width="1000" src="/img/2023-09-15_01/output_71_0.png" alt="output_71_0">
 </p>
 
 
@@ -1352,7 +1352,7 @@ _ = msno.matrix(df)
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_79_0.png" alt="output_79_0">
+  <img width="1000" src="/img/2023-09-15_01/output_79_0.png" alt="output_79_0">
 </p>
 
 
@@ -1402,7 +1402,7 @@ ax.set_title(
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_86_0.png" alt="output_86_0">
+  <img width="1000" src="/img/2023-09-15_01/output_86_0.png" alt="output_86_0">
 </p>
 
 
