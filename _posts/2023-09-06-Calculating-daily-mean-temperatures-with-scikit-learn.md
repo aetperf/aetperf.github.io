@@ -658,7 +658,7 @@ results
 
 ## Ridge
 
-In this section, we introduce our first predictive model: Ridge Regression. Ridge Regression is a linear regression variant that is particularly useful when dealing with multicollinearity in the data.
+Now we introduce our first predictive model: Ridge Regression. Ridge Regression is a linear regression variant that is particularly useful when dealing with multicollinearity in the data.
 
 ```python
 ridge_reg = Pipeline(
@@ -749,7 +749,7 @@ for f in drop_features:
 
 ## DecisionTreeRegressor
 
-In this section, we explore the Decision Tree Regressor, a non-linear regression model. We assess its performance and analyze feature importance.
+Let's explore the Decision Tree Regressor, a non-linear regression model. We assess its performance and analyze feature importance.
 
 ```python
 dtr = DecisionTreeRegressor(random_state=RS)
@@ -1009,6 +1009,9 @@ for f in drop_features:
 ## HistGradientBoostingRegressor
 
 
+Next we use the HistGradientBoostingRegressor, a gradient boosting algorithm that's known for its efficiency and performance:
+
+
 ```python
 hgbr = HistGradientBoostingRegressor(random_state=RS)
 hgbr.fit(X_train, y_train)
@@ -1088,6 +1091,7 @@ results
 </table>
 </div>
 
+The default values are giving good results, but let's try to perfom some hyperparameter optimization with [Optuna](https://optuna.org/). The optimization process aims to find the best combination of hyperparameters that results in a model with improved predictive performance. 
 
 
 
@@ -1321,9 +1325,13 @@ results
 </div>
 
 
+The final evaluation confirms that our HPO did not improve the model. It does not always lead to better results...
+
 
 ## Fill the missing TAVG values
 
+
+Low it's time to handle the missing TAVG values through prediction and imputation, ensuring that the dataset is ready for further analysis:
 
 ```python
 X_mv = df[df.TAVG.isna()][features]  # dataset with missing TAVG values
@@ -1348,16 +1356,16 @@ _ = msno.matrix(df)
 </p>
 
 
-Now we save the updated dataset in our favorite file format:
+Let's save the updated dataset in our favorite file format:
 
 ```python
 df.to_parquet("./lyon_historical_temperatures.parquet")
 ```
-
+The following code performs an analysis of temperature anomalies during meteorological summer months with respect to a historical average. 
 
 ## Meteorological Summer months temperature anomalies
 
-Meteorological summer begins on June 1 and ends on August 31.
+We are going to analyzing temperature anomalies during meteorological summer months (June, July, August) in Lyon – Saint-Exupéry Airport, France, compared to a historical average:
 
 ```python
 start, end = "1920", "1980"
