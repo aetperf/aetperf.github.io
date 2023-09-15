@@ -1361,7 +1361,7 @@ Let's save the updated dataset in our favorite file format:
 ```python
 df.to_parquet("./lyon_historical_temperatures.parquet")
 ```
-The following code performs an analysis of temperature anomalies during meteorological summer months with respect to a historical average. 
+In the following section we perform an analysis of the temperature anomalies during meteorological summer months with respect to a historical average. This will make use of the reconstructed variable TAVG, by taking the average of this mean daily temperature over the 3 warmest months of the year.
 
 ## Meteorological Summer months temperature anomalies
 
