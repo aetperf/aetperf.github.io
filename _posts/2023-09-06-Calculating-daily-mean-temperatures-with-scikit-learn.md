@@ -247,8 +247,7 @@ _ = ax.set(
   <img width="1000" src="/img/2023-09-06_01/output_16_0.png" alt="output_16_0">
 </p>
 
-Note that we are going to use parts of the available TAVG values as training and testing datasets.
-
+We will utilize select segments of the existing TAVG data as both training and testing datasets, with the ultimate aim of predicting the absent values.
 
 ## First approach : TAVG_am, arithmetic mean of TMIN and TMAX
 
@@ -281,9 +280,7 @@ _ = ax.set(title="Correlation between TAVG and TAVG_am")
   <img width="1000" src="/img/2023-09-06_01/output_18_0.png" alt="output_18_0">
 </p>
 
-As seen in the scatter plot above, there's a clear correlation between TAVG and TAVG_am. However, it's worth noting that on warm days, TAVG_am may deviate by around 3 or 4 degrees.
-
-To delve deeper into this discrepancy, let's examine the error distribution between TAVG and TAVG_am:
+As seen in the scatter plot above, there's a clear correlation between TAVG and TAVG_am. However, it's worth noting that on warm days, TAVG_am may deviate by around 3 or 4 degrees. To delve deeper into this discrepancy, let's examine the error distribution between TAVG and TAVG_am:
 
 ```python
 diff = (df.TAVG - df.TAVG_am).dropna()
@@ -336,7 +333,7 @@ evaluate(y_true, y_pred)
 
     Mean absolute error :   0.9098, Mean squared error :   1.2088
 
-
+This gives us an idea of the baseline score, which we are going to improve.
 
 ```python
 # # cleanup: remove the temporary TAVG_am column
@@ -345,10 +342,13 @@ df.drop("TAVG_am", axis=1, inplace=True)
 
 ## Feature engineering
 
-- encode cyclic time data  
-- diurnal temperature range (DTR)  
-- daylight  
-- TMIN and TMAX delta with the day before
+- **Cyclic Time Data Encoding**: Implement encoding techniques for handling cyclic time data effectively.
+
+- **Diurnal Temperature Range (DTR)**: Create features or transformations related to diurnal temperature variations.
+
+- **Daylight**: Incorporate features related to daylight length.
+
+- **TMIN and TMAX Delta with Adjacent Days**: Calculate temperature differences (delta) between TMIN and TMAX compared to both the previous day and the following day.
 
 ### Temporal features
 
@@ -463,7 +463,7 @@ _ = ax.set(title="Cyclical encoded day-of-year", xlabel="Day-of-year")
 
 
 
-Radial basis functions
+Radial basis functions:
 
 
 ```python
@@ -542,6 +542,7 @@ df.drop("datetime", axis=1, inplace=True)
 
 ## Train/test split
 
+In this section, we split our dataset into two distinct sets – the training set and the testing set. First, we identify our target variable, which is what we want to predict – in this case, it's "TAVG," representing average temperature. We also define our features, which are the input variables used to make predictions. These features include weather-related data like precipitation (PRCP), minimum temperature (TMIN), maximum temperature (TMAX), time-related attributes, and derived features.
 
 ```python
 target = "TAVG"
@@ -574,7 +575,6 @@ features
 
 
 
-
 ```python
 dataset = df[~df.TAVG.isna()].copy(deep=True)
 dataset.dropna(how="any", inplace=True)
@@ -586,6 +586,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 ## Baseline : arithmetic mean
 
+In this section, we establish a simple baseline model for predicting the average temperature with the arithmetic mean:
 
 ```python
 class BaselineModel:
@@ -657,6 +658,7 @@ results
 
 ## Ridge
 
+In this section, we introduce our first predictive model: Ridge Regression. Ridge Regression is a linear regression variant that is particularly useful when dealing with multicollinearity in the data.
 
 ```python
 ridge_reg = Pipeline(
@@ -680,7 +682,6 @@ results = pd.concat(
 )
 results
 ```
-
 
 
 
@@ -748,6 +749,7 @@ for f in drop_features:
 
 ## DecisionTreeRegressor
 
+In this section, we explore the Decision Tree Regressor, a non-linear regression model. We assess its performance and analyze feature importance.
 
 ```python
 dtr = DecisionTreeRegressor(random_state=RS)
@@ -759,6 +761,7 @@ evaluate(y_test, y_pred)
     Mean absolute error :   0.9473, Mean squared error :   1.2625
 
 
+Next, we experiment with different tree depths ranging from 2 to 20. For each depth, we evaluate the model's performance on both the training and testing data, recording the MAE scores for each.
 
 ```python
 mae_train_score = []
@@ -791,6 +794,7 @@ _ = ax.set(title="Train/test error vs max_depth", xlabel="max_depth", ylabel="MA
 </p>
 
 
+It seems like `max_depth`=8 is the best one:
 
 ```python
 dtr = DecisionTreeRegressor(max_depth=8, random_state=RS)
@@ -876,8 +880,7 @@ _ = ax.set(
   <img width="1000" src="/img/2023-09-06_01/output_57_0.png" alt="output_57_0">
 </p>
 
-Feature selection:
-
+ Finally, we perform feature selection by removing certain useless features from the dataset and update the features list accordingly.
 
 ```python
 drop_features = ["rbf_2", "rbf_4", "sin_encoded_year"]
@@ -1345,69 +1348,16 @@ _ = msno.matrix(df)
 </p>
 
 
-
-```python
-ax = (
-    df[["TMIN", "TMAX", "TAVG"]]["1921":"2022"]
-    .resample("Y")
-    .mean()
-    .plot(figsize=(6, 4))
-)
-_ = ax.set(
-    title="Yearly average temperatures in Lyon",
-    xlabel="Year",
-    ylabel="Temperature (°C)",
-)
-```
-
-<p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_80_0.png" alt="output_80_0">
-</p>
-
-
+Now we save the updated dataset in our favorite file format:
 
 ```python
 df.to_parquet("./lyon_historical_temperatures.parquet")
 ```
 
-    /home/francois/miniconda3/envs/py311/lib/python3.11/site-packages/pyarrow/pandas_compat.py:373: FutureWarning: is_sparse is deprecated and will be removed in a future version. Check `isinstance(dtype, pd.SparseDtype)` instead.
-      if _pandas_api.is_sparse(col):
 
+## Meteorological Summer months temperature anomalies
 
-## Mean June Temperatures
-
-
-```python
-T_month = (
-    df[["TMIN", "TAVG", "TMAX"]]
-    .resample("M")
-    .agg({"TMIN": "min", "TAVG": "mean", "TMAX": "max"})
-)
-T_month["month"] = T_month.index.month
-```
-
-
-```python
-T_june = T_month[T_month.month == 6].copy(deep=True)
-ax = T_june[["TMIN", "TAVG", "TMAX"]].plot(
-    style="-", linewidth=1, drawstyle="steps-mid", figsize=(9, 6), legend=False
-)
-_ = ax.set(
-    title="June temperatures\n in Lyon Saint-Exupéry",
-    xlabel="Year",
-    ylabel="Temperature (°C)",
-)
-_ = ax.legend(("min(TMIN)", "mean(TAVG)", "max(TMAX)"))
-```
-
-<p align="center">
-  <img width="1000" src="/img/2023-09-06_01/output_84_0.png" alt="output_84_0">
-</p>
-
-
-
-## Summer months temperature anomalies
-
+Meteorological summer begins on June 1 and ends on August 31.
 
 ```python
 start, end = "1920", "1980"
@@ -1430,16 +1380,16 @@ plt.plot(
     rw[start:].window.values,
     "k",
     linewidth=3,
-    alpha=0.5,
+    alpha=0.4,
     label="10-year moving average",
 )
 
+_ = plt.axvline(x=int(end), color="grey", linewidth=1, alpha=0.5)
 ax.legend()
 ax.set_xlabel("Date")
 ax.set_ylabel(f"Degrees (°C) +/- from {start}-{end} average")
-plt.autoscale(enable=True, axis="x", tight=True)
 ax.set_title(
-    f"June-July-August temperature anomalies\n in Lyon-France w.r.t {start}-{end} mean"
+    f"Meteorological summer temperature anomalies\n in Lyon – Saint-Exupéry Airport – France \nw.r.t {start}-{end} mean"
 );
 ```
 
