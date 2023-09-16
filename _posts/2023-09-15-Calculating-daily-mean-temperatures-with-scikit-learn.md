@@ -298,7 +298,7 @@ _ = ax.set(title="Distribution of the error of TAVG_am", xlabel="TAVG - TAVG_am"
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_20_0.png" alt="output_20_0">
+  <img width="600" src="/img/2023-09-15_01/output_20_0.png" alt="output_20_0">
 </p>
 
 
@@ -1193,6 +1193,7 @@ print(f"{'best objective value':>20s} : {study.best_value}")
     best objective value : 0.6764808748435326
 
 
+Next we plot the HPO history. We can observe that the minimization process is rapidly reaching a plateau: 
 
 ```python
 trials = study.trials_dataframe()
@@ -1214,12 +1215,11 @@ ax = trials[["number", "value"]].plot.scatter(
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_71_0.png" alt="output_71_0">
+  <img width="600" src="/img/2023-09-15_01/output_71_0.png" alt="output_71_0">
 </p>
 
 
-
-Eval on train set:
+Let's evaluate our model. Eval on train set:
 
 
 ```python
@@ -1327,7 +1327,7 @@ results
 </div>
 
 
-The final evaluation confirms that our HPO did not improve the model. It does not always lead to better results...
+The final evaluation confirms that our HPO did not really improve the model. It does not always lead to better results...
 
 
 ## Fill the missing TAVG values
