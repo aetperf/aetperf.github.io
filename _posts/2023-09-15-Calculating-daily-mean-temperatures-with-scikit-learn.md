@@ -29,7 +29,7 @@ The key variables we'll be working with are:
 
 The description above can be found in the dataset [documentation](https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt).
 
-However, a significant portion of the TAVG data is missing. The dataset has 37614 rows and 5 columns: DATE, PRCP, TAVG, TMAX and TMIN. However, TAVG is missing for more that half of the time range:
+However, a significant portion of the TAVG data is missing. The dataset has 37614 rows and 5 columns: DATE, PRCP, TAVG, TMAX and TMIN, and TAVG is missing for more that half of the time range:
 
 <p align="center">
   <img width="1000" src="/img/2023-09-15_01/missingno.png" alt="missingno">
@@ -84,6 +84,8 @@ RS = 124  # random seed
 FS = (9, 6)  # figure size
 ```
 
+OS and package versions:
+
     Python version       : 3.11.5  
     OS                   : Linux  
     Machine              : x86_64  
@@ -96,7 +98,7 @@ FS = (9, 6)  # figure size
 
 ## Load the data
 
-Let's start by loading the data we'll be working with. In this section, we read the dataset from the provided file path:
+Let's start by loading the data we'll be working with, downloaded as a CSV file:
 
 
 ```python
@@ -186,7 +188,7 @@ df.shape
     (37617, 4)
 
 
-We also have some information about the weather station:
+This corresponds to approximately 103 years of daily data. We also got some information about the weather station:
 
 ```python
 station
@@ -244,10 +246,10 @@ _ = ax.set(
 
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_16_0.png" alt="output_16_0">
+  <img width="600" src="/img/2023-09-15_01/output_16_0.png" alt="output_16_0">
 </p>
 
-We will utilize select segments of the existing TAVG data as both training and testing datasets, with the ultimate aim of predicting the absent values.
+We will utilize segments of the existing TAVG data as both training and testing datasets, with the ultimate aim of predicting the absent values.
 
 ## First approach : TAVG_am, arithmetic mean of TMIN and TMAX
 
