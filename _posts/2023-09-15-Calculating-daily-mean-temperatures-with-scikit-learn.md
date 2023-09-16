@@ -344,13 +344,12 @@ df.drop("TAVG_am", axis=1, inplace=True)
 
 ## Feature engineering
 
-- **Cyclic Time Data Encoding**: Implement encoding techniques for handling cyclic time data effectively.
+Let's add the following features to the dataset:
 
-- **Diurnal Temperature Range (DTR)**: Create features or transformations related to diurnal temperature variations.
-
-- **Daylight**: Incorporate features related to daylight length.
-
-- **TMIN and TMAX Delta with Adjacent Days**: Calculate temperature differences (delta) between TMIN and TMAX compared to both the previous day and the following day.
+- **Cyclic time data encoding**
+- **Diurnal Temperature Range (DTR)**
+- **Daylight length**
+- **TMIN and TMAX delta with adjacent days**
 
 ### Temporal features
 
@@ -460,7 +459,7 @@ _ = ax.set(title="Cyclical encoded day-of-year", xlabel="Day-of-year")
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_29_0.png" alt="output_29_0">
+  <img width="600" src="/img/2023-09-15_01/output_29_0.png" alt="output_29_0">
 </p>
 
 
@@ -488,7 +487,7 @@ for ax in axs:
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_31_0.png" alt="output_31_0">
+  <img width="600" src="/img/2023-09-15_01/output_31_0.png" alt="output_31_0">
 </p>
 
 
