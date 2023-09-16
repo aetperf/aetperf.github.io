@@ -543,7 +543,7 @@ df.drop("datetime", axis=1, inplace=True)
 
 ## Train/test split
 
-In this section, we split our dataset into two distinct sets – the training set and the testing set. First, we identify our target variable, which is what we want to predict – in this case, it's "TAVG," representing average temperature. We also define our features, which are the input variables used to make predictions. These features include weather-related data like precipitation (PRCP), minimum temperature (TMIN), maximum temperature (TMAX), time-related attributes, and derived features.
+In this section, we split our dataset into two distinct sets – the training set and the testing set. First, we identify our target variable, which is what we want to predict – TAVG. We also define our features, which are the input variables used to make predictions. 
 
 ```python
 target = "TAVG"
