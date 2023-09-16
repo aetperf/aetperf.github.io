@@ -724,7 +724,7 @@ results
 </div>
 
 
-
+Also, let's plot the feature importance and drop the least important features:
 
 ```python
 fi = pd.DataFrame(data={"importance": ridge_reg["ridge"].coef_}, index=X_train.columns)
@@ -750,7 +750,7 @@ for f in drop_features:
 
 ## DecisionTreeRegressor
 
-Let's explore the Decision Tree Regressor, a non-linear regression model. We assess its performance and analyze feature importance.
+Let's explore the Decision Tree Regressor, a non-linear regression model:
 
 ```python
 dtr = DecisionTreeRegressor(random_state=RS)
@@ -791,7 +791,7 @@ _ = ax.set(title="Train/test error vs max_depth", xlabel="max_depth", ylabel="MA
 ```
 
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_54_0.png" alt="output_54_0">
+  <img width="600" src="/img/2023-09-15_01/output_54_0.png" alt="output_54_0">
 </p>
 
 
@@ -862,8 +862,7 @@ results
 </table>
 </div>
 
-
-
+Now we analyze feature importance and remove some useless features from the dataset:
 
 ```python
 fi = pd.DataFrame(data={"importance": dtr.feature_importances_}, index=X_train.columns)
@@ -881,7 +880,6 @@ _ = ax.set(
   <img width="1000" src="/img/2023-09-15_01/output_57_0.png" alt="output_57_0">
 </p>
 
- Finally, we perform feature selection by removing certain useless features from the dataset and update the features list accordingly.
 
 ```python
 drop_features = ["rbf_2", "rbf_4", "sin_encoded_year"]
@@ -894,6 +892,9 @@ for f in drop_features:
 
 ## RandomForestRegressor
 
+From scikit-learn's [documentation](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html):
+
+> A random forest is a meta estimator that fits a number of classifying decision trees on various sub-samples of the dataset and uses averaging to improve the predictive accuracy and control over-fitting.
 
 ```python
 rfr = RandomForestRegressor(
@@ -1010,7 +1011,7 @@ for f in drop_features:
 ## HistGradientBoostingRegressor
 
 
-Next we use the HistGradientBoostingRegressor, a gradient boosting algorithm that's known for its efficiency and performance:
+Next we use the *HistGradientBoostingRegressor*, a gradient boosting algorithm that's known for its efficiency and performance:
 
 
 ```python
