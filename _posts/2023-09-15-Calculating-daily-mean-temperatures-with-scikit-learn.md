@@ -253,7 +253,7 @@ We will utilize segments of the existing TAVG data as both training and testing 
 
 ## First approach : TAVG_am, arithmetic mean of TMIN and TMAX
 
-Let's kick off our analysis by introducing TAVG_am, which represents the arithmetic mean of TMIN and TMAX:
+Let's kick off our analysis by introducing TAVG_am, which represents the *arithmetic mean* of TMIN and TMAX:
 
 ```python
 df["TAVG_am"] = 0.5 * (df["TMIN"] + df["TMAX"])
@@ -279,10 +279,10 @@ _ = ax.set(title="Correlation between TAVG and TAVG_am")
 
     
 <p align="center">
-  <img width="1000" src="/img/2023-09-15_01/output_18_0.png" alt="output_18_0">
+  <img width="600" src="/img/2023-09-15_01/output_18_0.png" alt="output_18_0">
 </p>
 
-As seen in the scatter plot above, there's a clear correlation between TAVG and TAVG_am. However, it's worth noting that on warm days, TAVG_am may deviate by around 3 or 4 degrees. To delve deeper into this discrepancy, let's examine the error distribution between TAVG and TAVG_am:
+As seen in the scatter plot above, there's a clear correlation between TAVG and TAVG_am. However, we can observe that TAVG_am may underestimate TAVG by around 3 or 4 degrees. To delve deeper into this discrepancy, let's examine the error distribution between TAVG and TAVG_am:
 
 ```python
 diff = (df.TAVG - df.TAVG_am).dropna()
@@ -321,8 +321,8 @@ def evaluate(y_true, y_pred, return_score=False):
 
 This function computes two important metrics:
 
-- Mean Absolute Error (MAE): A measure of the average absolute difference between the true and predicted values. 
-- Root Mean Squared Error (RMSE): A measure of the square root of the average squared differences between true and predicted values.
+- Mean Absolute Error (MAE)
+- Root Mean Squared Error (RMSE)
 
 Now, let's apply this evaluation function to our model predictions:
 
@@ -338,7 +338,7 @@ evaluate(y_true, y_pred)
 This gives us an idea of the baseline score, which we are going to improve.
 
 ```python
-# # cleanup: remove the temporary TAVG_am column
+# cleanup: remove the temporary TAVG_am column
 df.drop("TAVG_am", axis=1, inplace=True)
 ```
 
