@@ -5,7 +5,7 @@ comments: true
 author: François Pacull
 tags: 
 - Python
-- supervised machine learning
+- supervised learning
 - regression
 - scikit-learn
 - optuna
