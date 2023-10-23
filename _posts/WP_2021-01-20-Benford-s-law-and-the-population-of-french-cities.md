@@ -324,7 +324,7 @@ Here is the generalization of Benford's law, from Hill [1] :
 P(D_1 = d_1, ... ,D_k = d_k) = log_{10} \left[ 1 + \left( \sum_{i=1}^k d_i 10^{k-i} \right)^{-1} \right], k \geq 1
 \end{equation}
 
-where $d_j$ is the $j$-th significant digit [$d_1 \in (1, ..., 9)$ and $d_j \in (0, ..., 9)$ for $j>1$].
+where $d_j$ is the $j$-th significant digit [$d_1 \in (1, ..., 9)$ and $d_j \in (0, ..., 9)$ for $j > 1$].
 
 So the distribution of the second digit is the following one :
 
