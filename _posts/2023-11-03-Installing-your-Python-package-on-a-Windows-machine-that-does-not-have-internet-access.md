@@ -16,13 +16,13 @@ tags:
 ---
 
 
-**Disclaimer:** I am not a Windows expert. The process outlined in this blog post is something I learned recently and wanted to share, especially for those who, like me, may not be Windows experts. Writing about it also helps me grasp new concepts and share them with the community.
+**Disclaimer:** I am not a Windows expert. The process outlined in this blog post is something I learned recently and wanted to share. Writing about it also helps me grasp new concepts and techniques.
 
-Suppose you've developed a Python package called `MyPackage` on Linux, with specific package requirements, and need to install it on a Windows machine that lacks internet access. This blog post will guide you through the process, which involves downloading necessary files on a similar Windows machine with internet access and then transferring them to the isolated machine.
+Suppose you've developed a Python package called `MyPackage` on Linux, with specific package requirements, and need to install it on a Windows machine that lacks internet access, on which you may not have any specific priviledges. This blog post will show you one way to do that, which involves downloading Wheel files on a similar Windows machine with internet access, then transferring them to the isolated machine and install them in a virtual env.
 
 ## On a machine that has internet access
 
-Begin by preparing your working environment:
+Begin by preparing your working environment.
 
 - Create a Main Directory
 
@@ -84,7 +84,9 @@ Open the `python37._pth` file and uncomment the following line by removing the '
 #import site
 ```
 
-Create a Wheelhouse Directory
+- Create a Wheelhouse Directory
+
+*Wheel* is a built distribution format: a wheel file is a zipped archive with the `.whl` extension, usually containing a pre-built binary package.
 
 In the root folder, create a directory named `wheelhouse` to store all the wheel files:
 
@@ -261,7 +263,7 @@ setup(
 )
 ```
 
-Now, your Python package is successfully installed and ready to use on a machine without internet access.
+Now, your Python package is successfully installed and ready to use.
 
 In summary, this post demonstrates how to install your Python package on a Windows machine without internet access, using the embedded Python version, which does not require any special privileges.
 
