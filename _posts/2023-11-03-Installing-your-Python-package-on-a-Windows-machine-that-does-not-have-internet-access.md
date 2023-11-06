@@ -224,10 +224,12 @@ PS C:\Users\Francois\MyPackageFolder> .\testenv\Scripts\activate.ps1
 - now we can install our package:
 
 ```powershell
-(testenv) PS C:\Users\Francois\MyPackageFolder> python -m pip install .\MyPackage\ --no-build-isolation
+(testenv) PS C:\Users\Francois\MyPackageFolder> python -m pip install -e .\MyPackage\ --no-build-isolation
 ```
 
-Here you go!
+
+Here you go! Note that the package is installed in *editable* mode in this case with the `-e` option.
+
 
 ```powershell
 (testenv) PS C:\Users\Francois\MyPackageFolder> python
