@@ -15,9 +15,6 @@ tags:
 - Privilege-Free Installation
 ---
 
-
-**Disclaimer:** I am not a Windows expert. The process outlined in this blog post is something I learned recently and wanted to share. Writing about it also helps me grasp new concepts and techniques.
-
 Suppose you've developed a Python package called `MyPackage` on Linux, with specific package requirements, and need to install it on a Windows machine that lacks internet access, on which you may not have any specific priviledges. This blog post will show you one way to do that, which involves downloading Wheel files on a similar Windows machine with internet access, then transferring them to the isolated machine and install them in a virtual environment.
 
 ## On a machine that has internet access
