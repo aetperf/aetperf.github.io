@@ -1,5 +1,3 @@
-# Hyperpath routing in the context of transit assignment
-
 
 How do transit passengers choose their routes in a complex network of lines and services? How can we estimate the distribution of passenger flows and the performance of transit systems? These are some of the questions that transit assignment models aim to answer. Transit assignment models are mathematical tools that predict how passengers behave and travel in a transit network, given some assumptions and inputs.
 

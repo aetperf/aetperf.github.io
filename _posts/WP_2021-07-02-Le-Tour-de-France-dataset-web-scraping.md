@@ -1,5 +1,4 @@
 
-# LeTour data set 
 This file downloads raw data about every rider of every Tour de France (from 1903 up to 2020). This data will then be postprocessed and stored in CSV format.
 Executing this notebook might take some minutes.
 

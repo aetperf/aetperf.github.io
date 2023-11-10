@@ -1,5 +1,3 @@
-# TPC-H benchmark of DuckDB and Hyper on native files
-
 
 In this blog post, we examine the performance of two popular SQL engines for querying large files: 
 - [Tableau Hyper](https://help.tableau.com/current/api/hyper_api/en-us/index.html) / Proprietary License

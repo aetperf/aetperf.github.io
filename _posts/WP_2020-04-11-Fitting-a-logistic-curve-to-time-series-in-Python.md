@@ -1,3 +1,4 @@
+
 In this notebook we are going to fit a logistic curve to time series stored in [Pandas](https://pandas.pydata.org/), using a simple linear regression from [scikit-learn](https://scikit-learn.org/stable/) to find the coefficients of the logistic curve.
 
 **Disclaimer:** although we are going to use some COVID-19 data in this notebook, I want the reader to know that I have ABSOLUTELY no knowledge in epidemiology or any medicine-related subject, and clearly state that the result of fitting logistic curve to these data is an incredibly simplistic and naive approach. The point of this post is not the COVID-19 at all but only to show an application of the Python data stack.

@@ -1,4 +1,3 @@
-# Using a local sentence embedding model for similarity calculation
 
 A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.
 

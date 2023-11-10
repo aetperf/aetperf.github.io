@@ -1,5 +1,3 @@
-# Minimizing continuous non-convex functions with Optuna
-
 
 <p align="center">
   <img width="400" src="https://optuna.readthedocs.io/en/stable/_static/optuna-logo.png" alt="world">

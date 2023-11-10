@@ -1,5 +1,3 @@
-# TPC-H benchmark of Hyper and DuckDB on Windows and Linux OS
-
 
 **Update** Apr 12, 2023 - It seems that Windows 11's poor performance may be due to conflicting BIOS/OS settings when dual-booting. We are investigating... Additionally, I have corrected the version of Windows 11 in the post from Home to Professional.
 

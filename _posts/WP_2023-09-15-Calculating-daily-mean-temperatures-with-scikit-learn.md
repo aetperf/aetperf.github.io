@@ -1,4 +1,3 @@
-# Calculating daily mean temperatures with scikit-learn
 
 The goal is of this post is to predict the daily mean air temperature TAVG from the following climate data variables: maximum and minimum daily temperatures and daily precipitation, using Python and some machine learning techniques available in [scikit-learn](https://scikit-learn.org/stable/).
 

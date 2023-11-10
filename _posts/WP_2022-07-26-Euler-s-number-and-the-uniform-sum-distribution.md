@@ -1,4 +1,3 @@
-# Euler's number and the uniform sum distribution
 
 Last year I stumbled upon this tweet from *[@fermatslibrary](https://twitter.com/fermatslibrary)* [[1]](https://twitter.com/fermatslibrary/status/1388491536640487428?s=20): 
 

@@ -1,7 +1,4 @@
 
-# Dijkstra's algorithm in Cython, part 1/3
-
-
 In this post, we are going to present an implementation of Dijkstra's algorithm in [Cython](https://cython.readthedocs.io/en/stable/index.html). Dijkstra's algorithm is a *shortest path* algorithm. It was conceived by Edsger W. Dijkstra in 1956, and published in 1959 [1]. 
 
 <figure>

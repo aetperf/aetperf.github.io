@@ -1,3 +1,4 @@
+
 [JAX](https://github.com/google/jax) is a Python package for [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) from Google Research. It is a really powerful and efficient library. JAX can automatically differentiate some Python code [supports the reverse- and forward-mode]. It can also speed up the exection time by using the [XLA - Accelerated Linear Algebra](https://www.tensorflow.org/xla?hl=fi) compiler. JAX allows your code to run efficiently on CPUs, GPUs and TPUs. It is a library mainly used for machine learning. We refer to the [The Autodiff Cookbook](https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html) [2] for a very good introduction to JAX.
 
 <p align="center">

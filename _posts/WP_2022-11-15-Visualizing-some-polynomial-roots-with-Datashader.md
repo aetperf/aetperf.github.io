@@ -1,7 +1,4 @@
 
-# Visualizing some polynomial roots with Datashader
-
-
 Last week-end I found this interesting [tweet](https://twitter.com/souplovr23/status/1591228278454767616?s=20&t=w8A4XrwQGsax_zbbkY9GIg) by [sara](https://twitter.com/souplovr23): 
 
 <p align="center">

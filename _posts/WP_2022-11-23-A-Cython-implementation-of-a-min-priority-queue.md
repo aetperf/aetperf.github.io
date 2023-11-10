@@ -1,7 +1,4 @@
 
-# A Cython implementation of a priority queue
-
-
 <figure>
     <p align="center">
     <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2022-11-23_01/abstract_data_structure.jpg" alt="penrose" />

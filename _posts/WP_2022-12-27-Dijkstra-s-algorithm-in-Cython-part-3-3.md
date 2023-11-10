@@ -1,7 +1,4 @@
 
-# Dijkstra's algorithm in Cython, part 3/3
-
-
 *Running time of Dijkstra's algorithm on DIMACS networks with various implementations in Python*.
 
 This post is the last part of a three-part series:

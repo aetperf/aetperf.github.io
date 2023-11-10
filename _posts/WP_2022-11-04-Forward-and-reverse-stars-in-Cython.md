@@ -1,7 +1,4 @@
 
-# Forward and reverse stars in Cython
-
-
 This notebook is the following of a previous one, where we looked at the forward and reverse star representations of a sparse directed graph in pure Python:  
 [Forward and reverse star representation of a digraph](https://www.architecture-performance.fr/ap_blog/forward-and-reverse-star-representation-of-a-digraph/).
 

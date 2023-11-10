@@ -1,4 +1,3 @@
-# Vector similarity search with pgvector
 
 In the realm of vector databases, [*pgvector*](https://github.com/pgvector/pgvector) emerges as a noteworthy open-source extension tailored for Postgres databases. This extension equips Postgres with the capability to efficiently perform vector similarity searches, a powerful technique with applications ranging from recommendation systems to semantic search.
 

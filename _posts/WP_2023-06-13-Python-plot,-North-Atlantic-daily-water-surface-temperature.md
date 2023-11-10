@@ -1,4 +1,3 @@
-# Python plot - North Atlantic daily water surface temperature
 
 **Updated** July 11, 2023 data update
 

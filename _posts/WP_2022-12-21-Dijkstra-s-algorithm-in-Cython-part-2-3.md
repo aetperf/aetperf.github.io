@@ -1,6 +1,4 @@
 
-# Dijkstra's algorithm in Cython, part 2/3
-
 This post is the second part of a three-part series. In the [first part](https://www.architecture-performance.fr/ap_blog/dijkstras-algorithm-in-cython-part-1-3/), we looked at the Cython implementation of Dijkstra's algorithm. In the current post, we are going to compare different priority queue implementations, using Dijkstra's algorithm on some road networks.
 
 We apply the shortest path algorithm to the DIMACS road networks that we downloaded in a previous post: [Download some benchmark road networks for Shortest Paths algorithms

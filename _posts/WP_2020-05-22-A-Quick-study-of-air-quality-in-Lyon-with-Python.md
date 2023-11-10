@@ -1,3 +1,4 @@
+
 The aim of this post is to use Python to fetch air quality data from a web service and to create a few plots. 
 
 We are going to: 

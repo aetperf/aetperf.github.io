@@ -1,4 +1,3 @@
-# Python plot - Antarctic sea ice extent
 
 Data source : https://ads.nipr.ac.jp/vishop/#/extent   
 REGION SELECTOR = Antarctic  

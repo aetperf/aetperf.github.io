@@ -1,6 +1,4 @@
 
-# Download some benchmark road networks for Shortest Paths algorithms
-
 **Updated** September 26, 2022 bugfix
 
 The goal of this Python notebook is to download and prepare a suite of benchmark networks for some shortest path algorithms. We would like to experiment with some simple directed graphs with non-negative weights. We are specially interested in road networks. 
