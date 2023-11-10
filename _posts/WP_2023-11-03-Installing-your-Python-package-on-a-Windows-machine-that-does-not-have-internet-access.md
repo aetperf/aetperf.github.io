@@ -1,4 +1,3 @@
-# Installing your Python package on a Windows machine that does not have internet access
 
 Suppose you've developed a Python package called `MyPackage` on Linux, with specific package requirements, and need to install it on a Windows machine that lacks internet access, on which you may not have any specific priviledges. This blog post will show you one way to do that, which involves downloading Wheel files on a similar Windows machine with internet access, then transferring them to the isolated machine and install them in a virtual environment.
 
