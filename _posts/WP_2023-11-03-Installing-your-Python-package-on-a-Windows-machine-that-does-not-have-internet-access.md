@@ -1,19 +1,4 @@
----
-title: Installing your Python package on a Windows machine that does not have internet access
-layout: post
-comments: true
-author: François Pacull
-tags: 
-- Python 
-- Python Installation
-- Windows
-- Offline Installation
-- Python Package
-- Embedded Python
-- Virtual Environment
-- No Internet Access
-- Privilege-Free Installation
----
+# Installing your Python package on a Windows machine that does not have internet access
 
 Suppose you've developed a Python package called `MyPackage` on Linux, with specific package requirements, and need to install it on a Windows machine that lacks internet access, on which you may not have any specific priviledges. This blog post will show you one way to do that, which involves downloading Wheel files on a similar Windows machine with internet access, then transferring them to the isolated machine and install them in a virtual environment.
 
@@ -31,7 +16,7 @@ PS C:\Users\Francois> cd MyPackageFolder
 ```
 - Download Python
 
-Download the Python embedded package from the official Python [Python web site](https://www.python.org/downloads/release/python-3116/). Specifically, choose the "Windows embeddable package (64-bit)" from [this](https://www.python.org/ftp/python/3.11.6/python-3.11.6-embed-amd64.zip) link. The file size is about 10.7 MB for Python 3.11. Once downloaded, copy the zip archive (`python-3.11.6-embed-amd64.zip`) into your directory, extract and delete it:
+Download the Python embedded package from the official Python [Python web site](https://www.python.org/downloads/release/python-3116/). Specifically, choose the "Windows embeddable package 64-bit" from [this](https://www.python.org/ftp/python/3.11.6/python-3.11.6-embed-amd64.zip) link. The file size is about 10.7 MB for Python 3.11. Once downloaded, copy the zip archive - `python-3.11.6-embed-amd64.zip` - into your directory, extract and delete it: 
 
 ```powershell
 PS C:\Users\Francois\MyPackageFolder> ls
@@ -47,7 +32,7 @@ PS C:\Users\Francois\MyPackageFolder> ls
 
 - Add Your Python Package
 
-Copy your Python package folder (named `MyPackage`) into this directory, excluding any hidden or useless folders like `.git`, `.github`, `__pycache__`, `.ruff_cache`...
+Copy your Python package folder - named `MyPackage` - into this directory, excluding any hidden or useless folders like `.git`, `.github`, `__pycache__`, `.ruff_cache`...
 
 - Get pip
 
@@ -244,7 +229,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> quit()
 ```
 
-Additionally, you can verify that a command line entry point `myentrypoint` (that does nothing here) is available in the shell:
+Additionally, you can verify that a command line entry point `myentrypoint` - that does nothing here - is available in the shell:
 
 ```powershell
 (testenv) PS C:\Users\Francois\MyPackageFolder> myentrypoint
@@ -279,26 +264,3 @@ In summary, this post shows how to install your Python package in a virtual envi
 - Microsoft - [Install Python in an offline Windows environment](https://learn.microsoft.com/bs-latn-ba/azure-data-studio/notebooks/notebooks-python-offline-installation?view=sql-server-2016)
 
 - Bojan Nikolic - [Installing Python on Windows using the embedded package (no privileges needed)](https://bnikolic.co.uk/blog/python/2022/03/14/python-embedwin.html)
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
