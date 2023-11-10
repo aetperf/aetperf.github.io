@@ -156,6 +156,14 @@ PS C:\Users\Francois\MyPackageFolder> ls .\wheelhouse\
 
 - Zip and Transfer
 
+Note that you could also include your own package in this `wheelhouse` folder, or a package you edited. In the case of a pure python package, here is the process:
+
+```powershell
+PS C:\Users\Francois\MyPackageFolder> cd ..\MyOwnRequiredPackage\  
+PS C:\Users\Francois\MyOwnRequiredPackage> python setup.py bdist_wheel  
+PS C:\Users\Francois\MyOwnRequiredPackage> cp .\dist\myownrequiredpackage-1.0-py3-none-any.whl ..\wheelhouse\
+```
+
 Now, zip the entire `MyPackageFolder` folder and move it to the machine without internet access. 
 
 With this zipped package in hand, you can install your Python package and its dependencies on the isolated Windows machine.
