@@ -154,8 +154,6 @@ PS C:\Users\Francois\MyPackageFolder> ls .\wheelhouse\
 	-a----         11/1/2023   8:28 PM        3768405 virtualenv-20.24.6-py3-none-any.whl
 	-a----         11/1/2023   8:27 PM           3604 win32_setctime-1.1.0-py3-none-any.whl
 
-- Zip and Transfer
-
 Note that you could also include your own package in this `wheelhouse` folder, or a package you edited. In the case of a pure python package, here is the process:
 
 ```powershell
@@ -163,6 +161,8 @@ PS C:\Users\Francois\MyPackageFolder> cd ..\MyOwnRequiredPackage\
 PS C:\Users\Francois\MyOwnRequiredPackage> python setup.py bdist_wheel  
 PS C:\Users\Francois\MyOwnRequiredPackage> cp .\dist\myownrequiredpackage-1.0-py3-none-any.whl ..\wheelhouse\
 ```
+
+- Zip and Transfer
 
 Now, zip the entire `MyPackageFolder` folder and move it to the machine without internet access. 
 
