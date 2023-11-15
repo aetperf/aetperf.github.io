@@ -5,7 +5,7 @@ Some time ago, we came across an intriguing Parquet sorting test shared by Mimou
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2023-11-15_01/Mimoune.png" alt="Mimoune">
 </p>
 
-The dataset under consideration is derived from the [TPC-H](https://www.tpc.org/tpch/) benchmark with a scale factor (SF) of 10, specifically the `lineitem` table, comprising 59,986,052 rows. The data was generated using DuckDB's [TPC-H](https://duckdb.org/docs/extensions/tpch) extension and saved as Parquet files with "snappy" compression and a row group size of 122,880.
+The dataset under consideration is derived from the [TPC-H](https://www.tpc.org/tpch/) benchmark with a scale factor *SF* of 10, specifically the `lineitem` table, comprising 59,986,052 rows. The data was generated using DuckDB's [TPC-H](https://duckdb.org/docs/extensions/tpch) extension and saved as Parquet files with "snappy" compression and a row group size of 122,880.
 
 Given the manageable size of the table, the sorting operation fits in memory, though this might not be the case for larger scale factors. To shed light on different approaches and packages, we compared implementations using various tools:
 - [DuckDB](https://duckdb.org/)
