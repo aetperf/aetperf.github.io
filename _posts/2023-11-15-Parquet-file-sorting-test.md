@@ -19,7 +19,7 @@ tags:
 Some time ago, we came across an intriguing Parquet sorting test shared by Mimoune Djouallah on Twitter [@mim_djo](https://twitter.com/mim_djo). The test involves reading a Parquet file, sorting the table, and writing the sorted data back to a Parquet file on disk. You can find the original post [here](https://x.com/mim_djo/status/1637321688382853120?s=20).
 
 <p align="center">
-  <img width="600" src="/img/2023-11-15_01/Mimoune.png" alt="Mimoune">
+  <img width="400" src="/img/2023-11-15_01/Mimoune.png" alt="Mimoune">
 </p>
 
 The dataset under consideration is derived from the [TPC-H](https://www.tpc.org/tpch/) benchmark with a scale factor (SF) of 10, specifically the `lineitem` table, comprising 59,986,052 rows. The data was generated using DuckDB's [TPC-H](https://duckdb.org/docs/extensions/tpch) extension and saved as Parquet files with "snappy" compression and a row group size of 122,880.
@@ -182,7 +182,7 @@ Unfortunately, attempts to utilize [DataFusion](https://arrow.apache.org/datafus
 ## Results
 
 <p align="center">
-  <img width="1200" src="/img/2023-11-15_01/elapsed_time.png" alt="elapsed_time">
+  <img width="800" src="/img/2023-11-15_01/elapsed_time.png" alt="elapsed_time">
 </p>
 
 In the sorting performance comparison, DuckDB demonstrated the quickest elapsed time, outperforming GlareDB, Polars, CHDB (ClickHouse), and Tableau HyperAPI. 
