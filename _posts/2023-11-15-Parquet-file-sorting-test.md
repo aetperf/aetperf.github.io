@@ -1,5 +1,5 @@
 ---
-title: Parquet file sorting test WIP
+title: Parquet file sorting test
 layout: post
 comments: true
 author: François Pacull
