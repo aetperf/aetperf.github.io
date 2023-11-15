@@ -75,6 +75,7 @@ output_file_path = os.path.join(data_dir_path, "lineitem_sorted.parquet")
 
 ### DuckDB
 
+
 ```python
 duckdb_file_path = os.path.join(data_dir_path, "data.duckdb")
 with duckdb.connect(database=duckdb_file_path, read_only=False) as conn:
@@ -84,6 +85,8 @@ with duckdb.connect(database=duckdb_file_path, read_only=False) as conn:
         TO '{output_file_path}' (FORMAT PARQUET)"""
     )
 ```
+
+*Remark:* here we gave a database file name to the `connect` method, to read or write persistent data, however this is not used in the present case. Similarly, in the next sub-section, we also gave a file path to the Hyper engine.
 
 ### Hyper
 
