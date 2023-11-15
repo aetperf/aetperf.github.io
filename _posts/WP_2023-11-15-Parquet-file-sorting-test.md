@@ -68,7 +68,7 @@ with duckdb.connect(database=duckdb_file_path, read_only=False) as conn:
     )
 ```
 
-*Remark:* here we gave a database file name to the `connect` method, to read or write persistent data, however this is not used in the present case. Similarly, in the next sub-section, we also gave a file path to the Hyper engine.
+**Remark:** here we gave a database file name to the `connect()` method, to read or write persistent data, however this is not used in the present case. Similarly, in the next sub-section, we also gave a file path to the Hyper engine.
 
 ### Hyper
 
