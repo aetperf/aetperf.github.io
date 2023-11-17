@@ -17,7 +17,7 @@ tags:
 - DataFusion
 ---
 
-**Update** Nov 17, 2023 - Added results with the latest DataFusion version.
+**Update** Nov 17, 2023 - Added results using the latest DataFusion version.
 
 
 Some time ago, we came across an intriguing Parquet sorting test shared by Mimoune Djouallah on Twitter [@mim_djo](https://twitter.com/mim_djo). The test involves reading a Parquet file, sorting the table, and writing the sorted data back to a Parquet file on disk. You can find the original post [here](https://x.com/mim_djo/status/1637321688382853120?s=20).
@@ -186,7 +186,7 @@ pq.write_table(table, where=output_file_path)
 
 ### DataFusion
 
-DataFusion is writig several limited size Parquet files located in a common folder. In order to get a single sorted Parquet file, we use a arrow table and use `pyarrow.parquet` to write a single Parquet file.
+DataFusion is writing several limited size Parquet files located in a common folder. We did not find a way to change this file size threshold. In order to get a single sorted Parquet file, we used an arrow table and `pyarrow.parquet` to write a single Parquet file.
 
 ```python
 ctx = SessionContext()
@@ -197,7 +197,7 @@ pq.write_table(sorted_table, output_file_path)
 
 ### Others
 
-Unfortunately, attempts to utilize [Dask](https://docs.dask.org/en/stable/) for the sorting task were unsuccessful, resulting in crashes. It's worth noting that it performed well for a smaller table, with SF1 or SF3.
+Unfortunately, attempts to utilize [Dask](https://docs.dask.org/en/stable/) for the were unsuccessful, resulting in crashes, and we did not investigate much. It's worth noting that it performed well for a smaller table, such as with SF1 or SF3.
 
 ## Results
 
@@ -205,7 +205,7 @@ Unfortunately, attempts to utilize [Dask](https://docs.dask.org/en/stable/) for 
   <img width="800" src="/img/2023-11-15_01/elapsed_time.png" alt="elapsed_time">
 </p>
 
-In the sorting performance comparison, DuckDB demonstrated the quickest elapsed time, outperforming GlareDB, Polars, CHDB (ClickHouse), and Tableau HyperAPI. 
+In the sorting performance comparison, DuckDB demonstrated the quickest elapsed time.
 
 {% if page.comments %}
 <div id="disqus_thread"></div>
