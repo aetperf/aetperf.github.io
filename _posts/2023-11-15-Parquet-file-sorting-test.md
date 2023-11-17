@@ -14,7 +14,11 @@ tags:
 - ClickHouse
 - Polars
 - GlareDB
+- DataFusion
 ---
+
+**Update** Nov 17, 2023 - Added results with the latest DataFusion version.
+
 
 Some time ago, we came across an intriguing Parquet sorting test shared by Mimoune Djouallah on Twitter [@mim_djo](https://twitter.com/mim_djo). The test involves reading a Parquet file, sorting the table, and writing the sorted data back to a Parquet file on disk. You can find the original post [here](https://x.com/mim_djo/status/1637321688382853120?s=20).
 
@@ -31,6 +35,7 @@ Given the manageable size of the table, the sorting operation fits in memory, th
 - [Polars](https://www.pola.rs/)
 - [PyArrow](https://arrow.apache.org/docs/python/index.html)
 - [GlareDB](https://docs.glaredb.com/glaredb/python/)
+- [DataFusion](https://arrow.apache.org/datafusion-python/index.html)
 
 Here are the language and package versions used:
 
@@ -41,6 +46,7 @@ Here are the language and package versions used:
     polars          : 0.19.13
     pyarrow         : 14.0.1
     glaredb         : 0.6.1
+    datafusion      : 33.0.0
 
 The code was executed on a Linux laptop with the following specifications:
 
@@ -59,6 +65,7 @@ Imports:
 import os 
 
 import chdb
+from datafusion import SessionContext
 import duckdb
 import glaredb
 import polars as pl
@@ -74,7 +81,6 @@ output_file_path = os.path.join(data_dir_path, "lineitem_sorted.parquet")
 ```
 
 ### DuckDB
-
 
 ```python
 duckdb_file_path = os.path.join(data_dir_path, "data.duckdb")
@@ -178,9 +184,20 @@ table = con.sql(sql).to_arrow()
 pq.write_table(table, where=output_file_path)
 ```
 
+### DataFusion
+
+DataFusion is writig several limited size Parquet files located in a common folder. In order to get a single sorted Parquet file, we use a arrow table and use `pyarrow.parquet` to write a single Parquet file.
+
+```python
+ctx = SessionContext()
+ctx.register_parquet("lineitem", input_file_path)
+sorted_table = ctx.sql("SELECT * FROM lineitem ORDER BY l_shipdate").to_arrow_table()
+pq.write_table(sorted_table, output_file_path)
+```
+
 ### Others
 
-Unfortunately, attempts to utilize [DataFusion](https://arrow.apache.org/datafusion-python/) and [Dask](https://docs.dask.org/en/stable/) for the sorting task were unsuccessful, resulting in crashes. It's worth noting that these tools performed well for a smaller table, such as SF1.
+Unfortunately, attempts to utilize [Dask](https://docs.dask.org/en/stable/) for the sorting task were unsuccessful, resulting in crashes. It's worth noting that it performed well for a smaller table, with SF1 or SF3.
 
 ## Results
 
