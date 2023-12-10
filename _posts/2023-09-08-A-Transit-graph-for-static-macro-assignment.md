@@ -241,12 +241,11 @@ A few more edges types have been introduced in AequilibraE. We may differentiate
 - the transfer edges connecting lines within the same stop (*inner transfer*) from the ones connecting lines between distinct stops from the same station (*outer transfer*),
 - the *origin* and *destination* nodes
 
-This depends on the following parameters:
-- `with_walking_edges`
-- `with_inner_stop_transfers`
-- `with_outer_stop_transfers`
-- `blocking_centroid_flow`
-
+This might be changed with the following boolean parameters:
+- `with_walking_edges`: create walking edges between the stops of a station
+- `with_inner_stop_transfers`: create transfer edges between lines of a stop
+- `with_outer_stop_transfers`: create transfer edges between lines of different stops of a station
+- `blocking_centroid_flow`: duplicate OD nodes into unconnected origin and destination nodes in order to block centroid flows
 
 This leads to these possible edge types:
 - on-board
@@ -259,7 +258,7 @@ This leads to these possible edge types:
 - outer_transfer
 - walking
 
-If we buit the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges. Here is the distribution of edge types:
+If we buit the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
 
 | Edge type        |   Count |
 |:-----------------|--------:|
