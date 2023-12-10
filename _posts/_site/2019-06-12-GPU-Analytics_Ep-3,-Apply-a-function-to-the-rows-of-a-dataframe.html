@@ -1,0 +1,657 @@
+<p>The goal of this post is to compare the execution time between <a href="https://pandas.pydata.org/">Pandas</a> (CPU) and <a href="https://rapids.ai/">RAPIDS</a> (GPU) dataframes, when applying a simple mathematical function to the rows of a dataframe.</p>
+
+<p>Since the row-wise applied function is a re-projection of geographical cooordinates (WGS84  to Web Mercator), we are also going to compare the different methods with an equivalent native method of <a href="http://geopandas.org/">GeoPandas</a>.</p>
+
+<p>The present post is related to another <a href="https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html">post</a>, in which I compared different ways to loop over Pandas dataframes.</p>
+
+<p>Although I already had an environment running on AWS with RAPIDS cuDF (GPU dataframes) and the other GPU-related libraries ready (see the last <a href="https://aetperf.github.io/2019/05/06/GPU-Analytics-Ep-2,-Load-some-data-from-OmniSci-into-a-GPU-dataframe.html">post</a>), I got into trouble when updating <a href="https://github.com/rapidsai/cudf">cuDF</a> (from 0.6 to 0.7), <a href="https://github.com/omnisci/pymapd">pymapd</a> and some other packages. Because these tools are fairly recent, you get some new releases very frequently! Anyway, I probably did something wrong… But I did not want to waste some time trying to fix this AWS instance. We are going to run the code on two different hardware environments:</p>
+<ul>
+  <li>my laptop</li>
+  <li>Google Collab</li>
+</ul>
+
+<p>My laptop’s GPU is rather weak, and this is why we will switch to Collab in the second part of this post.</p>
+
+<h2 id="pandas-geopandas-and-rapids-on-my-laptop">Pandas, GeoPandas and RAPIDS on my laptop</h2>
+
+<p>My laptop’s technical features:</p>
+<ul>
+  <li>CPU: Intel i7-7700HQ @ 2.80GHz with 8 cores and 16GB of RAM</li>
+  <li>GPU: NVIDIA GEFORCE GTX 1050Ti (Pascal architecture) with 4GB of RAM</li>
+</ul>
+
+<p>The Python and package versions are the following ones:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2019-05-21T13:39:09+02:00
+
+CPython 3.7.3
+IPython 7.5.0
+
+compiler   : GCC 7.3.0
+system     : Linux
+release    : 4.15.0-50-generic
+machine    : x86_64
+processor  : x86_64
+CPU cores  : 8
+interpreter: 64bit
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span> <span class="o">--</span><span class="n">iversions</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>geopandas  0.5.0
+pandas     0.24.2
+cudf       0.7.2+0.g3ebd286.dirty
+numpy      1.16.3
+numba      0.43.1
+matplotlib 3.0.3
+contextily 0.99.0.dev
+</code></pre></div></div>
+
+<p>Note the name of the cuDF version tag! :)</p>
+
+<h3 id="data-creation">Data creation</h3>
+
+<p>First we create some artificial data: we generate <code class="language-plaintext highlighter-rouge">n</code> point coordinates within a given <a href="https://boundingbox.klokantech.com/">bounding box</a> of Lyon, France. These coordinates corresponds to the <em>longitude</em> and <em>latitude</em> of the points, expressed in the World Geodetic System (WGS84).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">create_df</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">lon_min</span><span class="o">=</span><span class="mf">4.771813</span><span class="p">,</span> <span class="n">lon_max</span><span class="o">=</span><span class="mf">4.898377</span><span class="p">,</span> <span class="n">lat_min</span><span class="o">=</span><span class="mf">45.707367</span><span class="p">,</span> <span class="n">lat_max</span><span class="o">=</span><span class="mf">45.808263</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">):</span>
+    <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">coords</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">lon_max</span> <span class="o">-</span> <span class="n">lon_min</span>
+    <span class="n">coords</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">lon_min</span>
+    <span class="n">coords</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">lat_max</span> <span class="o">-</span> <span class="n">lat_min</span>
+    <span class="n">coords</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">lat_min</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span>
+        <span class="sh">'</span><span class="s">lon</span><span class="sh">'</span><span class="p">:</span> <span class="n">coords</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> 
+        <span class="sh">'</span><span class="s">lat</span><span class="sh">'</span><span class="p">:</span> <span class="n">coords</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]})</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="nf">create_df</span><span class="p">()</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>lon</th>
+      <th>lat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>4.859961</td>
+      <td>45.736237</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>4.800524</td>
+      <td>45.762992</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="the-row-wise-user-defined-function--re-projecting-the-coordinates">The row-wise user defined function : re-projecting the coordinates</h3>
+
+<p>From GeoPandas’ <a href="http://geopandas.org/projections.html">documentation</a>:</p>
+<blockquote>
+  <p>Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane are distortions, the projection that is best for your application may be different from the projection associated with the data you import.</p>
+</blockquote>
+
+<p>In our present use case, we are going to change the Coordinates Reference System (CRS) from WGS84 (also called <a href="https://spatialreference.org/ref/epsg/wgs-84/">EPSG4326</a>) to Web Mercator (also called <a href="https://spatialreference.org/ref/sr-org/7483/">EPSG3857</a>), often used in web mapping applications.</p>
+
+<h4 id="the-reference-solution">The Reference solution</h4>
+
+<p>In order to make sure that our User-Defined Function (UDF) is accurate and to have a reference solution, we are first going to perform this re-projection task with GeoPandas, which is an incredibly useful library when dealing with geospatial data. First we create a GeoDataFrame with our point coordinates:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">crs</span> <span class="o">=</span> <span class="p">{</span><span class="sh">'</span><span class="s">init</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">epsg:4326</span><span class="sh">'</span><span class="p">}</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nc">GeoDataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">lat</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">lon</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">gpd</span><span class="p">.</span><span class="nf">points_from_xy</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">lon</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">lat</span><span class="p">))</span>
+<span class="n">gdf</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>POINT (4.859960926006008 45.73623731433915)</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>POINT (4.8005242273689 45.76299245494138)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>As you can see, the longitude and latitude coordinates got transformed into <a href="https://shapely.readthedocs.io/en/latest/">Shapely</a> <code class="language-plaintext highlighter-rouge">Point</code> objects when creating the GeoDataFrame. Now we can change the coordinates referential system:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="sh">'</span><span class="s">3857</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">gdf</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>POINT (541008.3755581942 5738181.345632877)</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>POINT (534391.9125314779 5742449.601410745)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Since we converted the CRS to Web Mercator, we can now plot the points on a map with background tiles provided by <a href="https://stamen.com/">Stamen Design</a>. We add these tiles using the <a href="https://github.com/darribas/contextily">contextily</a> package.The following <code class="language-plaintext highlighter-rouge">add_basemap</code> function is taken from the GeoPandas <a href="http://geopandas.org/gallery/plotting_basemap_background.html">documentation</a>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="sh">'</span><span class="s">http://tile.stamen.com/terrain-background/tileZ/tileX/tileY.png</span><span class="sh">'</span><span class="p">):</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">axis</span><span class="p">()</span>
+    <span class="n">basemap</span><span class="p">,</span> <span class="n">extent</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">.</span><span class="nf">bounds2img</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="n">zoom</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="nf">imshow</span><span class="p">(</span><span class="n">basemap</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="n">extent</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="sh">'</span><span class="s">bilinear</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="nf">axis</span><span class="p">((</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">))</span> <span class="c1"># restore original x/y limits
+</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">12</span><span class="p">),</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="sh">'</span><span class="s">k</span><span class="sh">'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">);</span>
+<span class="nf">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">12</span><span class="p">);</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">axis</span><span class="p">(</span><span class="sh">'</span><span class="s">off</span><span class="sh">'</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p><img src="/img/2019-06-12_01/output_13_0.png" alt="png" /></p>
+
+<p>Of course, in the present case, this is not so usefull to visualize some random points on a map. At least we can check visually that they are in the bounding box…</p>
+
+<h4 id="the-re-projection-function">The re-projection function</h4>
+
+<p>The formulae for the re-projection from EPSG4326 (WGS84) to EPSG3854 (Web Mercator) is taken from a <a href="http://earth-info.nga.mil/GandG/wgs84/web_mercator/(U)%20NGA_SIG_0011_1.0.0_WEBMERC.pdf">pdf</a> found on the web and entitled “Implementation Practice Web Mercator Map Projection”. It is a fairly simple one compared with other re-projections.</p>
+
+<p>The first function <code class="language-plaintext highlighter-rouge">to_EPSG3857_2</code> has two arguments: <code class="language-plaintext highlighter-rouge">lon</code> and <code class="language-plaintext highlighter-rouge">lat</code>, while the second one <code class="language-plaintext highlighter-rouge">to_EPSG3857_4</code> has four. The second one is a non-value returning function, modifying the input arguments. Also, in order to be compatible with <code class="language-plaintext highlighter-rouge">numba</code>, I had to use the <code class="language-plaintext highlighter-rouge">math</code> library instead of <code class="language-plaintext highlighter-rouge">numpy</code> for the <code class="language-plaintext highlighter-rouge">log</code> and <code class="language-plaintext highlighter-rouge">tan</code> functions (from what I understand, the math module has been implemented in Numba, but some numpy functions do not have an implementation that can be inlined by Numba??).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">to_EPSG3857_2</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="mf">6378137.0</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">lon</span> <span class="o">/</span> <span class="mf">180.0</span><span class="p">,</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">tan</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">+</span> <span class="n">lat</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">to_EPSG3857_4</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="mf">6378137.0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">lon</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="mf">180.0</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">math</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">math</span><span class="p">.</span><span class="nf">tan</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">+</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<p>Let’s create 3 other functions:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">to_EPSG3857_vect</code> vectorized with <code class="language-plaintext highlighter-rouge">numpy</code> (single thread)</li>
+  <li><code class="language-plaintext highlighter-rouge">to_EPSG3857_numba</code> optimized with <code class="language-plaintext highlighter-rouge">numba jit</code> (single thread)</li>
+  <li><code class="language-plaintext highlighter-rouge">to_EPSG3857_para</code> optimized with <code class="language-plaintext highlighter-rouge">numba njit</code> (explicit parallel loops, multi-threaded)</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">to_EPSG3857_vect</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">vectorize</span><span class="p">(</span><span class="n">to_EPSG3857_2</span><span class="p">)</span>
+
+<span class="n">to_EPSG3857_numba</span> <span class="o">=</span> <span class="nf">jit</span><span class="p">(</span><span class="n">to_EPSG3857_4</span><span class="p">,</span> <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">to_EPSG3857_para</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="mf">6378137.0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">lon</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">prange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">lon</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="mf">180.0</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">math</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">math</span><span class="p">.</span><span class="nf">tan</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">+</span> <span class="n">lat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<h3 id="a-comparison-of-all-the-approaches">A comparison of all the approaches</h3>
+
+<p>Let’s introduce a Timer helper class used later to collect all the timings (taken from a <a href="https://github.com/rapidsai/notebooks/blob/branch-0.8/cuml/dbscan_demo.ipynb">RAPIDS notebook</a>):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Timer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">_timer</span> <span class="o">=</span> <span class="n">default_timer</span>
+    
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">stop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">Start the timer.</span><span class="sh">"""</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">_timer</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">Stop the timer. Calculate the interval in seconds.</span><span class="sh">"""</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">_timer</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">end</span> <span class="o">-</span> <span class="n">self</span><span class="p">.</span><span class="n">start</span>
+</code></pre></div></div>
+
+<p>And a function comparing all the approaches:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-12</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">vect</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    
+    <span class="n">time</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">n</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+    
+    <span class="c1"># 1 - create a Pandas dataframe
+</span>    <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="nf">create_df</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">1_create_df</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+        <span class="c1"># 2 - convert the dataframe into a geodataframe
+</span>        <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+        <span class="n">crs</span> <span class="o">=</span> <span class="p">{</span><span class="sh">'</span><span class="s">init</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">epsg:4326</span><span class="sh">'</span><span class="p">}</span>
+        <span class="n">geodf</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nc">GeoDataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">lat</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">lon</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">gpd</span><span class="p">.</span><span class="nf">points_from_xy</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">lon</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">lat</span><span class="p">))</span>
+        <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">2_df_to_gdf</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+
+        <span class="c1"># 3 - convert the CRS using GeoPandas to_crs() method
+</span>        <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+        <span class="n">geodf</span> <span class="o">=</span> <span class="n">geodf</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="sh">'</span><span class="s">3857</span><span class="sh">'</span><span class="p">)</span>
+        <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">3_gdf_to_crs</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+  
+    <span class="k">if</span> <span class="n">vect</span><span class="p">:</span>
+        <span class="c1"># 4 - convert the CRS using vfunc
+</span>        <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+        <span class="n">xp</span><span class="p">,</span> <span class="n">yp</span> <span class="o">=</span> <span class="nf">to_EPSG3857_vect</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">4_np_vectorize</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+
+        <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+            <span class="c1"># access the transformed coordinates of the geodataframe
+</span>            <span class="n">x_ref</span> <span class="o">=</span> <span class="n">geodf</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">values</span>
+            <span class="n">y_ref</span> <span class="o">=</span> <span class="n">geodf</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">y</span><span class="p">.</span><span class="n">values</span>
+
+            <span class="c1"># check the results of np.vectorize as compared to geopandas to_crs
+</span>            <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">xp</span><span class="o">-</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">yp</span><span class="o">-</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+        <span class="k">del</span> <span class="n">xp</span><span class="p">,</span> <span class="n">yp</span>
+    
+    <span class="c1"># 5 - convert the CRS using Numba
+</span>    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+    <span class="nf">to_EPSG3857_numba</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">y</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">5_numba</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+
+    <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+        <span class="c1"># access the transformed coordinates values
+</span>        <span class="n">x_1</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">values</span>
+        <span class="n">y_1</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">y</span><span class="p">.</span><span class="n">values</span>
+
+        <span class="c1"># check the results of np.vectorize as compared to geopandas to_crs
+</span>        <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_1</span><span class="o">-</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_1</span><span class="o">-</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+        <span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># 6 - convert the CRS using Numba parallel
+</span>    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+    <span class="nf">to_EPSG3857_para</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">y</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">6_numba_para</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+       
+    <span class="k">if</span> <span class="n">check</span><span class="p">:</span>        
+        <span class="c1"># access the transformed coordinates values
+</span>        <span class="n">x_1</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">values</span>
+        <span class="n">y_1</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">y</span><span class="p">.</span><span class="n">values</span>
+
+        <span class="c1"># check the results of np.vectorize as compared to geopandas to_crs
+</span>        <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_1</span><span class="o">-</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_1</span><span class="o">-</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+    <span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># 7 - create a GPU dataframe from the Pandas dataframe
+</span>    <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+    <span class="n">gpudf</span> <span class="o">=</span> <span class="n">cudf</span><span class="p">.</span><span class="n">DataFrame</span><span class="p">.</span><span class="nf">from_pandas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">7_cudf_from_df</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+    
+    <span class="c1"># 8 - convert the CRS on the GPU using apply_rows and to_EPSG3857_4
+</span>    <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+    <span class="n">gpudf</span> <span class="o">=</span> <span class="n">gpudf</span><span class="p">.</span><span class="nf">apply_rows</span><span class="p">(</span>
+        <span class="n">to_EPSG3857_4</span><span class="p">,</span>
+        <span class="n">incols</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">lon</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">lat</span><span class="sh">'</span><span class="p">],</span>
+        <span class="n">outcols</span><span class="o">=</span><span class="nf">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="n">kwargs</span><span class="o">=</span><span class="nf">dict</span><span class="p">())</span>
+    <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">8_cudf_apply_rows</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+
+    <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+        <span class="c1"># 9 - convert the cudf to a Pandas dataframe
+</span>        <span class="n">timer</span> <span class="o">=</span> <span class="nc">Timer</span><span class="p">();</span> <span class="n">timer</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+        <span class="n">df_2</span> <span class="o">=</span> <span class="n">gpudf</span><span class="p">[[</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">]].</span><span class="nf">to_pandas</span><span class="p">()</span>
+        <span class="n">timer</span><span class="p">.</span><span class="nf">stop</span><span class="p">();</span> <span class="n">time</span><span class="p">[</span><span class="sh">'</span><span class="s">9_cudf_to_df</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer</span><span class="p">.</span><span class="n">interval</span>
+    
+        <span class="c1"># access the transformed coordinates values
+</span>        <span class="n">x_2</span> <span class="o">=</span> <span class="n">df_2</span><span class="p">.</span><span class="n">x</span><span class="p">.</span><span class="n">values</span>
+        <span class="n">y_2</span> <span class="o">=</span> <span class="n">df_2</span><span class="p">.</span><span class="n">y</span><span class="p">.</span><span class="n">values</span>
+
+        <span class="c1"># check the results of to_EPSG3857_4 as compared to geopandas to_crs
+</span>        <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_2</span><span class="o">-</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">x_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_2</span><span class="o">-</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">y_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+        
+        <span class="k">del</span> <span class="n">df_2</span>
+        
+    <span class="k">del</span> <span class="n">df</span><span class="p">,</span> <span class="n">gpudf</span>
+    <span class="n">gc</span><span class="p">.</span><span class="nf">collect</span><span class="p">()</span>
+    
+    <span class="k">return</span> <span class="n">time</span>
+</code></pre></div></div>
+
+<p>Now we loop on different array sizes. For each size we run 3 trials and only keep the smallest elapsed time:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="n">i</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nf">compare</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="sh">'</span><span class="s">trial</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+        <span class="n">res</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">.</span><span class="nf">groupby</span><span class="p">(</span><span class="sh">'</span><span class="s">n</span><span class="sh">'</span><span class="p">).</span><span class="nf">min</span><span class="p">()</span>
+<span class="n">res</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">trial</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We are going to plot these results on two different firgures: the first one is about the dataframe and geodataframe creation, the second one about the different re-projecting methods.</p>
+
+<p><img src="/img/2019-06-12_01/output_23_0.png" alt="png" /></p>
+
+<p><img src="/img/2019-06-12_01/output_24_0.png" alt="png" /></p>
+
+<p>We can see that the conversion from Pandas to GeoPandas is rather expensive. Also, regarding the re-projection, GeoPandas is by far the slowest. GeoPandas is using the <a href="https://github.com/pyproj4/pyproj">pyproj</a> library (which is probably using a sequential Python loop on the Shapely objects??).</p>
+
+<p>Regarding the re-projection process, Numba on the CPU seems to be the most efficient implementation on the small/medium size arrays.</p>
+
+<p>Well now that we validated the approach by comparing the UDF results with GeoPandas transformed coordinates, we are going to create a smaller function without all the assertions of the above function. This allows us to skip the GeoPandas part, which is taking too long when the number of points is above a million. And we are going to run it on Google Colab.</p>
+
+<h2 id="reduced-comparison-on-google-colab">Reduced comparison on Google Colab</h2>
+
+<p>Now let us run the apply row functions on <a href="https://colab.research.google.com/">Google Colab</a>. This section is inspired by this post: <a href="https://medium.com/rapids-ai/run-rapids-on-google-colab-for-free-1617ac6323a8">Run RAPIDS on Google Colab — For Free</a>. Basically you just need to copy the notebook file to your Google drive since we are generating all the data within the notebook.</p>
+
+<p>First we make sure to use a graphics processing unit by setting <em>Edit &gt; Notebook settings &gt; Hardware accelerator to GPU</em>. We can see that the available GPU is actually a recent one: Tesla T4 (Turing) with 15GB of memory:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">nvidia</span><span class="o">-</span><span class="n">smi</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Wed Jun 12 14:22:55 2019       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 418.67       Driver Version: 410.79       CUDA Version: 10.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla T4            Off  | 00000000:00:04.0 Off |                    0 |
+| N/A   71C    P0    30W /  70W |      0MiB / 15079MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+</code></pre></div></div>
+
+<p>However, note that sometimes we get a K80 instead of T4 GPU instance. Then you need to reset it until you get a T4 (<em>Runtime &gt; Reset all runtimes</em>). Also, the CPU is a dual core Intel Xeon @ 2.20GHz (12 GB RAM).</p>
+
+<p>Now we are going to install <a href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a> and the other required packages:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># intall miniconda
+</span><span class="err">!</span><span class="n">wget</span> <span class="o">-</span><span class="n">c</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">repo</span><span class="p">.</span><span class="n">continuum</span><span class="p">.</span><span class="n">io</span><span class="o">/</span><span class="n">miniconda</span><span class="o">/</span><span class="n">Miniconda3</span><span class="o">-</span><span class="mf">4.5</span><span class="p">.</span><span class="mi">4</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="p">.</span><span class="n">sh</span>
+<span class="err">!</span><span class="n">chmod</span> <span class="o">+</span><span class="n">x</span> <span class="n">Miniconda3</span><span class="o">-</span><span class="mf">4.5</span><span class="p">.</span><span class="mi">4</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="p">.</span><span class="n">sh</span>
+<span class="err">!</span><span class="n">bash</span> <span class="p">.</span><span class="o">/</span><span class="n">Miniconda3</span><span class="o">-</span><span class="mf">4.5</span><span class="p">.</span><span class="mi">4</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="p">.</span><span class="n">sh</span> <span class="o">-</span><span class="n">b</span> <span class="o">-</span><span class="n">f</span> <span class="o">-</span><span class="n">p</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span>
+
+<span class="c1"># install RAPIDS packages
+</span><span class="err">!</span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">y</span> <span class="o">--</span><span class="n">prefix</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> \
+  <span class="o">-</span><span class="n">c</span> <span class="n">rapidsai</span><span class="o">-</span><span class="n">nightly</span><span class="o">/</span><span class="n">label</span><span class="o">/</span><span class="n">cuda10</span><span class="p">.</span><span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="n">nvidia</span><span class="o">/</span><span class="n">label</span><span class="o">/</span><span class="n">cuda10</span><span class="p">.</span><span class="mi">0</span> \
+  <span class="n">cudf</span> <span class="n">cuml</span>
+
+<span class="c1"># set environment vars
+</span><span class="kn">import</span> <span class="n">sys</span><span class="p">,</span> <span class="n">os</span><span class="p">,</span> <span class="n">shutil</span>
+<span class="n">sys</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="sh">'</span><span class="s">/usr/local/lib/python3.6/site-packages/</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">[</span><span class="sh">'</span><span class="s">NUMBAPRO_NVVM</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="sh">'</span><span class="s">/usr/local/cuda/nvvm/lib64/libnvvm.so</span><span class="sh">'</span>
+<span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">[</span><span class="sh">'</span><span class="s">NUMBAPRO_LIBDEVICE</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="sh">'</span><span class="s">/usr/local/cuda/nvvm/libdevice/</span><span class="sh">'</span>
+
+<span class="c1"># copy .so files to current working dir
+</span><span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="sh">'</span><span class="s">libcudf.so</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">librmm.so</span><span class="sh">'</span><span class="p">]:</span>
+  <span class="n">shutil</span><span class="p">.</span><span class="nf">copy</span><span class="p">(</span><span class="sh">'</span><span class="s">/usr/local/lib/</span><span class="sh">'</span><span class="o">+</span><span class="n">fn</span><span class="p">,</span> <span class="n">os</span><span class="p">.</span><span class="nf">getcwd</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">watermark</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2019-06-12T14:29:30+00:00
+
+CPython 3.6.7
+IPython 5.5.0
+
+compiler   : GCC 8.2.0
+system     : Linux
+release    : 4.14.79+
+machine    : x86_64
+processor  : x86_64
+CPU cores  : 2
+interpreter: 64bit
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span> <span class="o">--</span><span class="n">iversions</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>numba      0.40.1
+numpy      1.16.4
+cudf       0.8.0a1+701.gbeac92b.dirty
+matplotlib 3.0.3
+IPython    5.5.0
+pandas     0.24.2
+</code></pre></div></div>
+
+<p>Still a “dirty” cuDF realease :)</p>
+
+<h3 id="a-reduced-comparison">A reduced comparison</h3>
+
+<p>This time the reduced <code class="language-plaintext highlighter-rouge">compare</code> function only has the following steps (we keep the step numbers from the previous section):</p>
+<ul>
+  <li>1 - create a Pandas dataframe</li>
+  <li>5 - convert the CRS using Numba</li>
+  <li>6 - convert the CRS using Numba parallel</li>
+  <li>7 - create a GPU dataframe from the Pandas dataframe</li>
+  <li>8 - convert the CRS on the GPU using apply_rows and to_EPSG3857_4</li>
+</ul>
+
+<p>Here are the results:</p>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1_create_df</th>
+      <th>5_numba</th>
+      <th>6_numba_para</th>
+      <th>7_cudf_from_df</th>
+      <th>8_cudf_apply_rows</th>
+    </tr>
+    <tr>
+      <th>n</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>10</th>
+      <td>0.000496</td>
+      <td>0.000228</td>
+      <td>0.000197</td>
+      <td>0.004118</td>
+      <td>0.004346</td>
+    </tr>
+    <tr>
+      <th>100</th>
+      <td>0.000460</td>
+      <td>0.000223</td>
+      <td>0.000195</td>
+      <td>0.003854</td>
+      <td>0.004443</td>
+    </tr>
+    <tr>
+      <th>1_000</th>
+      <td>0.000546</td>
+      <td>0.000288</td>
+      <td>0.000289</td>
+      <td>0.005034</td>
+      <td>0.006692</td>
+    </tr>
+    <tr>
+      <th>10_000</th>
+      <td>0.000749</td>
+      <td>0.000866</td>
+      <td>0.000651</td>
+      <td>0.006025</td>
+      <td>0.007745</td>
+    </tr>
+    <tr>
+      <th>100_000</th>
+      <td>0.003069</td>
+      <td>0.006858</td>
+      <td>0.004497</td>
+      <td>0.007383</td>
+      <td>0.009915</td>
+    </tr>
+    <tr>
+      <th>1_000_000</th>
+      <td>0.026337</td>
+      <td>0.067422</td>
+      <td>0.043061</td>
+      <td>0.019195</td>
+      <td>0.023371</td>
+    </tr>
+    <tr>
+      <th>10_000_000</th>
+      <td>0.296810</td>
+      <td>0.622501</td>
+      <td>0.398296</td>
+      <td>0.120603</td>
+      <td>0.148041</td>
+    </tr>
+    <tr>
+      <th>100_000_000</th>
+      <td>3.047611</td>
+      <td>6.232928</td>
+      <td>3.996533</td>
+      <td>1.125418</td>
+      <td>1.045445</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>On the next figure, we can see the benefit of using cuDFs when dealing with arrays larger than a million. It seems that the cuDF slope is increasing a little bit slower that the CPU Numba ones. However, the CPU is not so powerful: it would be interesting to perform a measurment on a faster CPU with many cores.</p>
+
+<p><img src="/img/2019-06-12_01/output_21_0.png" alt="png" /></p>
+
+<p>Also we measured the cost of moving data from the motherboard to the GPU device:</p>
+
+<p><img src="/img/2019-06-12_01/output_22_0.png" alt="png" /></p>
+
+<p>Conclusion:</p>
+<ul>
+  <li>RAPIDS cuDF ìs very efficient when dealing with large arrays and row-wise operations</li>
+  <li>Numba <code class="language-plaintext highlighter-rouge">njit</code> is also efficient while very easy to use, and for any size of array</li>
+  <li>Google Colab make it easy to test different hardware options</li>
+</ul>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

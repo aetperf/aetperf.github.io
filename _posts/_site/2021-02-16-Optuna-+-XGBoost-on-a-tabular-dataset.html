@@ -1,0 +1,636 @@
+<p align="center">
+  <img width="400" src="/img/2021-02-16_01/logos.png" alt="Optuna + XGBoost logo" />
+</p>
+
+<p><strong>Updated</strong> Sep 16, 2021 following a comment by @k_nzw about XGBoostPruningCallback</p>
+
+<p>The purpose of this Python notebook is to give a simple example of hyperparameter optimization (HPO) using Optuna and XGBoost. We are going to perform a regression on tabular data with single output.</p>
+
+<p><a href="https://github.com/dmlc/xgboost">XGBoost</a> is a well-known gradient boosting library, with some hyperparameters, and <a href="https://github.com/optuna/optuna">Optuna</a> is a powerful hyperparameter optimization framework. Tabular data still are the most common type of data found in a typical business environment.</p>
+
+<p>We are going to use a dataset from Kaggle : <a href="https://www.kaggle.com/c/tabular-playground-series-feb-2021/overview">Tabular Playground Series - Feb 2021</a>. These playground competitions are great for practicing machine learning skills. If you have a kaggle account and installed the <code class="language-plaintext highlighter-rouge">kaggle</code> package, you can download the data by running :</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kaggle competitions download <span class="nt">-c</span> tabular-playground-series-feb-2021
+</code></pre></div></div>
+
+<p>Note that this is not exactly real-world data. As described in the competition page :</p>
+
+<blockquote>
+  <p>The dataset used for this competition is synthetic, but based on a real dataset and generated using a CTGAN. The original dataset deals with predicting the amount of an insurance claim. Although the features are anonymized, they have properties relating to real-world features.</p>
+</blockquote>
+
+<p>An important point is that we are not going to perform an Exploratory Data Analysis (EDA) or any Feature Engineering (FE) besides what is stricly necessary in order to use XGBoost. The only focus of this post is <strong>hyperparameter optimization of XGBoost with Optuna</strong> and it would be too long to describe here the whole process of making a model with a new dataset.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span>
+<span class="kn">import</span> <span class="n">string</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">RepeatedKFold</span>
+<span class="kn">from</span> <span class="n">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_squared_error</span>
+<span class="kn">from</span> <span class="n">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span> <span class="n">sklearn.experimental</span> <span class="kn">import</span> <span class="n">enable_hist_gradient_boosting</span>
+<span class="kn">from</span> <span class="n">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">HistGradientBoostingRegressor</span>
+<span class="kn">from</span> <span class="n">xgboost</span> <span class="kn">import</span> <span class="n">XGBRegressor</span>
+<span class="kn">from</span> <span class="n">optuna</span> <span class="kn">import</span> <span class="n">create_study</span>
+<span class="kn">from</span> <span class="n">optuna.samplers</span> <span class="kn">import</span> <span class="n">TPESampler</span>
+<span class="kn">from</span> <span class="n">optuna.integration</span> <span class="kn">import</span> <span class="n">XGBoostPruningCallback</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>  <span class="c1"># figure size
+</span><span class="n">RS</span> <span class="o">=</span> <span class="mi">124</span>  <span class="c1"># random state
+</span><span class="n">N_JOBS</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c1"># number of parallel threads
+</span>
+<span class="c1"># repeated K-folds
+</span><span class="n">N_SPLITS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">N_REPEATS</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Optuna
+</span><span class="n">N_TRIALS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">MULTIVARIATE</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c1"># XGBoost
+</span><span class="n">EARLY_STOPPING_ROUNDS</span> <span class="o">=</span> <span class="mi">100</span>
+</code></pre></div></div>
+
+<p>The package versions are the following ones :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python    : 3.8.6
+pandas    : 1.2.1
+xgboost   : 1.3.0
+sklearn   : 0.24.1
+optuna    : 2.5.0
+numpy     : 1.19.5
+</code></pre></div></div>
+
+<h2 id="loading-the-data">Loading the data</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">./train.csv</span><span class="sh">"</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">test_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">./test.csv</span><span class="sh">"</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="quick-data-preparation">Quick data preparation</h2>
+
+<p>Let’s have a look at this dataset :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_df</span><span class="p">.</span><span class="n">shape</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(300000, 25)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>cat0</th>
+      <th>cat1</th>
+       <th>...</th>
+      <th>cont13</th>
+      <th>target</th>
+    </tr>
+    <tr>
+      <th>id</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>A</td>
+      <td>B</td>
+      <td>...</td>
+      <td>0.719903</td>
+      <td>6.994023</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>B</td>
+      <td>A</td>
+      <td>...</td>
+      <td>0.808464</td>
+      <td>8.071256</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>A</td>
+      <td>A</td>
+      <td>...</td>
+      <td>0.828352</td>
+      <td>5.760456</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 25 columns</p>
+</div>
+
+<p>We have 24 feature and 1 target columns (10 categorical and 14 continuous features) :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_df</span><span class="p">.</span><span class="n">dtypes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat0       object
+cat1       object
+cat2       object
+cat3       object
+cat4       object
+cat5       object
+cat6       object
+cat7       object
+cat8       object
+cat9       object
+cont0     float64
+cont1     float64
+cont2     float64
+cont3     float64
+cont4     float64
+cont5     float64
+cont6     float64
+cont7     float64
+cont8     float64
+cont9     float64
+cont10    float64
+cont11    float64
+cont12    float64
+cont13    float64
+target    float64
+dtype: object
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cols</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">.</span><span class="n">columns</span>
+<span class="n">cat_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">if</span> <span class="n">c</span><span class="p">.</span><span class="nf">startswith</span><span class="p">(</span><span class="sh">"</span><span class="s">cat</span><span class="sh">"</span><span class="p">)]</span>  <span class="c1"># categorical features
+</span><span class="n">cont_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">if</span> <span class="n">c</span><span class="p">.</span><span class="nf">startswith</span><span class="p">(</span><span class="sh">"</span><span class="s">cont</span><span class="sh">"</span><span class="p">)]</span>  <span class="c1"># continuous features
+</span><span class="n">feature_cols</span> <span class="o">=</span> <span class="n">cat_cols</span> <span class="o">+</span> <span class="n">cont_cols</span>
+<span class="n">target_col</span> <span class="o">=</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<p>Here is the distribution of the target :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Train target distribution</span><span class="sh">"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Target values</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-02-16_01/output_11_0.png" alt="Train target distribution" />
+</p>
+
+<p>There is no missing data (not a very common situation!) :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_df</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">any</span><span class="p">().</span><span class="nf">any</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>False
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">test_df</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">any</span><span class="p">().</span><span class="nf">any</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>False
+</code></pre></div></div>
+
+<h2 id="categorical-feature-encoding">Categorical feature encoding</h2>
+
+<p>We need to transform the categorical features into numerical values. Let’s see the number of distinct values in each categorical feature :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_df</span><span class="p">[</span><span class="n">cat_cols</span><span class="p">].</span><span class="nf">nunique</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat0     2
+cat1     2
+cat2     2
+cat3     4
+cat4     4
+cat5     4
+cat6     8
+cat7     8
+cat8     7
+cat9    15
+dtype: int64
+</code></pre></div></div>
+
+<p>We can also display the distinct values in each categorical feature along with the respective value count :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cat_col</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">cat_cols</span><span class="p">):</span>
+    <span class="n">cat_col</span> <span class="o">=</span> <span class="sh">"</span><span class="s">cat</span><span class="sh">"</span> <span class="o">+</span> <span class="nf">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">cat_col</span><span class="si">}</span><span class="s"> :</span><span class="sh">"</span><span class="p">,</span>
+        <span class="nf">dict</span><span class="p">(</span>
+            <span class="nf">zip</span><span class="p">(</span>
+                <span class="nf">list</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">sort</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="n">cat_col</span><span class="p">].</span><span class="nf">unique</span><span class="p">())),</span>
+                <span class="nf">list</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="n">cat_col</span><span class="p">].</span><span class="nf">value_counts</span><span class="p">().</span><span class="n">values</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat0 : {'A': 281471, 'B': 18529}
+cat1 : {'A': 162678, 'B': 137322}
+cat2 : {'A': 276551, 'B': 23449}
+cat3 : {'A': 183752, 'B': 104464, 'C': 11174, 'D': 610}
+cat4 : {'A': 297373, 'B': 1241, 'C': 767, 'D': 619}
+cat5 : {'A': 149208, 'B': 135151, 'C': 11763, 'D': 3878}
+cat6 : {'A': 292643, 'B': 6344, 'C': 809, 'D': 147, 'E': 24, 'G': 19, 'H': 11, 'I': 3}
+cat7 : {'A': 267631, 'B': 24356, 'C': 5750, 'D': 1961, 'E': 279, 'F': 14, 'G': 6, 'I': 3}
+cat8 : {'A': 121054, 'B': 94616, 'C': 42195, 'D': 37878, 'E': 3694, 'F': 549, 'G': 14}
+cat9 : {'A': 107281, 'B': 50064, 'C': 42200, 'D': 24759, 'E': 20955, 'F': 13408, 'G': 10409, 'H': 9838, 'I': 6981, 'J': 6173, 'K': 4112, 'L': 3435, 'M': 209, 'N': 103, 'O': 73}
+</code></pre></div></div>
+
+<p>We are going to use some basic ordinal encoding :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">alphabet</span> <span class="o">=</span> <span class="n">string</span><span class="p">.</span><span class="n">ascii_uppercase</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="nf">dict</span><span class="p">(</span><span class="nf">zip</span><span class="p">(</span><span class="n">alphabet</span><span class="p">,</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">alphabet</span><span class="p">))))</span>
+<span class="n">train_df</span><span class="p">[</span><span class="n">cat_cols</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">cat_cols</span><span class="p">].</span><span class="nf">replace</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+<span class="n">test_df</span><span class="p">[</span><span class="n">cat_cols</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">cat_cols</span><span class="p">].</span><span class="nf">replace</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+<span class="n">train_df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>cat0</th>
+      <th>cat1</th>
+      <th>...</th>
+      <th>cont13</th>
+      <th>target</th>
+    </tr>
+    <tr>
+      <th>id</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+      <td>1</td>
+      <td>...</td>
+      <td>0.719903</td>
+      <td>6.994023</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1</td>
+      <td>0</td>
+      <td>...</td>
+      <td>0.808464</td>
+      <td>8.071256</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>0.828352</td>
+      <td>5.760456</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 25 columns</p>
+</div>
+
+<p>We are now ready to use XGBoost :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">X_train</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">feature_cols</span><span class="p">]</span>
+<span class="n">y_train</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">target_col</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h1 id="baseline">Baseline</h1>
+
+<p>Here is a little function used to evaluate a given model object that has a scikit-learn interface (<code class="language-plaintext highlighter-rouge">.fit()</code>, <code class="language-plaintext highlighter-rouge">.predict()</code> methods) :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">evaluate_model_rkf</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_df</span><span class="p">,</span> <span class="n">y_df</span><span class="p">,</span> <span class="n">n_splits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">63</span><span class="p">):</span>
+    <span class="n">X_values</span> <span class="o">=</span> <span class="n">X_df</span><span class="p">.</span><span class="n">values</span>
+    <span class="n">y_values</span> <span class="o">=</span> <span class="n">y_df</span><span class="p">.</span><span class="n">values</span>
+    <span class="n">rkf</span> <span class="o">=</span> <span class="nc">RepeatedKFold</span><span class="p">(</span>
+        <span class="n">n_splits</span><span class="o">=</span><span class="n">n_splits</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="n">n_repeats</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span>
+    <span class="p">)</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros_like</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span> <span class="ow">in</span> <span class="n">rkf</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">X_values</span><span class="p">):</span>
+        <span class="n">X_A</span><span class="p">,</span> <span class="n">X_B</span> <span class="o">=</span> <span class="n">X_values</span><span class="p">[</span><span class="n">train_index</span><span class="p">,</span> <span class="p">:],</span> <span class="n">X_values</span><span class="p">[</span><span class="n">test_index</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">y_A</span> <span class="o">=</span> <span class="n">y_values</span><span class="p">[</span><span class="n">train_index</span><span class="p">]</span>
+        <span class="n">model</span><span class="p">.</span><span class="nf">fit</span><span class="p">(</span>
+            <span class="n">X_A</span><span class="p">,</span> <span class="n">y_A</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">y_pred</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">model</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">X_B</span><span class="p">)</span>
+    <span class="n">y_pred</span> <span class="o">/=</span> <span class="n">n_repeats</span>
+    <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">sqrt</span><span class="p">(</span><span class="nf">mean_squared_error</span><span class="p">(</span><span class="n">y_train</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>We use a repeated k-fold cross-validation for model evaluation. Actually, because the dataset is sufficiently large (300000 samples), we do not repeat the k-fold process in the following (n_repeats=1). The collection of all the out-of-fold predictions are being used to compute the model performance, Root Mean Square Error (RMSE), of the full training dataset.</p>
+
+<p>Let’s try some models from scikit-learn, such as <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html"><code class="language-plaintext highlighter-rouge">RandomForestRegressor</code></a> and <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html?highlight=histgradientboostingregressor#sklearn.ensemble.HistGradientBoostingRegressor"><code class="language-plaintext highlighter-rouge">HistGradientBoostingRegressor</code></a> with default settings :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="nc">RandomForestRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="n">RS</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">N_JOBS</span><span class="p">)</span>
+<span class="nf">evaluate_model_rkf</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">n_splits</span><span class="o">=</span><span class="n">N_SPLITS</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="n">N_REPEATS</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">RS</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.8589072366431951
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="nc">HistGradientBoostingRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="n">RS</span><span class="p">)</span>
+<span class="nf">evaluate_model_rkf</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">n_splits</span><span class="o">=</span><span class="n">N_SPLITS</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="n">N_REPEATS</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">RS</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.8465656534244064
+</code></pre></div></div>
+
+<p>Note that <code class="language-plaintext highlighter-rouge">HistGradientBoostingRegressor</code> uses all the default cores by default. We can also evaluate a XGBoost model with default settings :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="nc">XGBRegressor</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">RS</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">N_JOBS</span><span class="p">)</span>
+<span class="nf">evaluate_model_rkf</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">n_splits</span><span class="o">=</span><span class="n">N_SPLITS</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="n">N_REPEATS</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">RS</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.8485711113354382
+</code></pre></div></div>
+
+<p>If we have a look 	at the leaderboard of the competition, we can see that the best RMSE scores are between 0.841 and 0.842 at the the time of writing this post. The 3 algorithms above with default settings leads to scores above 0.846, with <code class="language-plaintext highlighter-rouge">HistGradientBoostingRegressor</code>being by far the most efficient if we also take computational time into account. Anyway, let’s try to tune the parameters of XGBoost in order to decrease this score.</p>
+
+<h1 id="optuna--xgboost">Optuna + XGBoost</h1>
+
+<p>Let’s define an objective function for the optimization process. With Optuna, a <code class="language-plaintext highlighter-rouge">Trial</code> instance represents a process of evaluating an objective function with various suggested values. Optuna can suggest different kind of parameters :</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">suggest_categorical</code></li>
+  <li><code class="language-plaintext highlighter-rouge">suggest_loguniform</code></li>
+  <li><code class="language-plaintext highlighter-rouge">suggest_int</code></li>
+  <li><code class="language-plaintext highlighter-rouge">suggest_discrete_uniform</code></li>
+  <li><code class="language-plaintext highlighter-rouge">suggest_float</code></li>
+  <li><code class="language-plaintext highlighter-rouge">suggest_uniform</code></li>
+</ul>
+
+<p>Even if Optuna  is a great library, we should try to make the optimization problem easier by reducing the search space. XGBoost has at least a dozen of hyperparameters. We are using here the <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn">Scikit-Learn API</a> of XGBoost. Here is a list of some parameters of this interface :</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">n_estimators</code> (int) – Number of gradient boosted trees.</li>
+  <li><code class="language-plaintext highlighter-rouge">max_depth</code> (int) – Maximum tree depth for base learners.</li>
+  <li><code class="language-plaintext highlighter-rouge">learning_rate</code> (float) – Boosting learning rate.</li>
+  <li><code class="language-plaintext highlighter-rouge">booster</code> (string) – Specify which booster to use: gbtree, gblinear or dart.</li>
+  <li><code class="language-plaintext highlighter-rouge">tree_method</code> (string) – Specify which tree method to use.</li>
+  <li><code class="language-plaintext highlighter-rouge">gamma</code> (float) – Minimum loss reduction required to make a further partition on a leaf node of the tree.</li>
+  <li><code class="language-plaintext highlighter-rouge">min_child_weight</code> (float) – Minimum sum of instance weight(hessian) needed in a child.</li>
+  <li><code class="language-plaintext highlighter-rouge">max_delta_step</code> (float) – Maximum delta step we allow each tree’s weight estimation to be.</li>
+  <li><code class="language-plaintext highlighter-rouge">subsample</code> (float) – Subsample ratio of the training instance.</li>
+  <li><code class="language-plaintext highlighter-rouge">colsample_bytree</code> (float) – Subsample ratio of columns when constructing each tree.</li>
+  <li><code class="language-plaintext highlighter-rouge">colsample_bylevel</code> (float) – Subsample ratio of columns for each level.</li>
+  <li><code class="language-plaintext highlighter-rouge">colsample_bynode</code> (float) – Subsample ratio of columns for each split.</li>
+  <li><code class="language-plaintext highlighter-rouge">reg_alpha</code> (float) – L1 regularization term on weights</li>
+  <li><code class="language-plaintext highlighter-rouge">reg_lambda</code> (float) – L2 regularization term on weights</li>
+</ul>
+
+<p>In this post, we are not going into much details about the gradient boosting algorithm and all the different parameters.</p>
+
+<p>A pragmatic approach is to use a large number of <code class="language-plaintext highlighter-rouge">n_estimators</code> and then activates early stopping with <code class="language-plaintext highlighter-rouge">early_stopping_rounds</code> (we use <code class="language-plaintext highlighter-rouge">early_stopping_rounds</code>=100 in this post) in the <code class="language-plaintext highlighter-rouge">fit()</code>method :</p>
+<blockquote>
+  <p>Validation metric needs to improve at least once in every <code class="language-plaintext highlighter-rouge">early_stopping_rounds</code> round(s) to continue training.</p>
+</blockquote>
+
+<p>Then, some of the most important parameters are <code class="language-plaintext highlighter-rouge">learning_rate</code>, <code class="language-plaintext highlighter-rouge">max_depth</code>, <code class="language-plaintext highlighter-rouge">min_child_weight</code>. In maybe a little lower level of importance comes the parameters <code class="language-plaintext highlighter-rouge">subsample</code>, <code class="language-plaintext highlighter-rouge">colsample_bytree</code> and the regularization terms.</p>
+
+<p>So we can imagine to start by tuning the <code class="language-plaintext highlighter-rouge">learning_rate</code> and then adjust sequentially some groups of parameters, by order of importance. But here we are going to optimize most of these parameters all together, to make it shorter.</p>
+
+<p>Also, an important setting is the interval range for each parameter.  That would be kind of very optimistic to set very wide search intervals for each parameter, so we are going to reduce these intervals. This is a really empirical process for me here and I actually looked at other kaggle kernels using XGBoost to limit the search space (<a href="https://www.kaggle.com/tunguz/tps-02-21-feature-importance-with-xgboost-and-shap">this</a> very interesting kernel by Bojan Tunguz for example).</p>
+
+<p>Remarks :</p>
+<ul>
+  <li>Unpromising trials are pruned using <code class="language-plaintext highlighter-rouge">XGBoostPruningCallback</code>, based on the RMSE on the current validation fold.</li>
+  <li>We set n_jobs=8 (the number of cores of my laptop) for XGBoost and 1 for the HPO process.</li>
+</ul>
+
+<p><strong>Update :</strong> Following an insightful comment by @k_nzw, I understood that it is not appropriate to use the pruning callback within k-fold cross validation. It appears that it is meant to be used when there is a single training per trial. As explained by @k_nzw:</p>
+
+<blockquote>
+  <p>This is because at each trial, we can report intermediate value once at each step.</p>
+</blockquote>
+
+<p>So in our case with several trainings per trial, the callback might only be used in the first step of the cross validation loop but not in the following steps… Which is not what I expected. Thanks again @k_nzw for your comment, ありがとう！Although the pruning is kind of useless here, I keep the code as it was first written and hope that someone else might learn from this mistake.</p>
+
+<p>So here is the objective function :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">objective</span><span class="p">(</span>
+    <span class="n">trial</span><span class="p">,</span>
+    <span class="n">X</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">n_splits</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">n_repeats</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="c1"># XGBoost parameters
+</span>    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sh">"</span><span class="s">verbosity</span><span class="sh">"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>  <span class="c1"># 0 (silent) - 3 (debug)
+</span>        <span class="sh">"</span><span class="s">objective</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">reg:squarederror</span><span class="sh">"</span><span class="p">,</span>
+        <span class="sh">"</span><span class="s">n_estimators</span><span class="sh">"</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="sh">"</span><span class="s">max_depth</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_int</span><span class="p">(</span><span class="sh">"</span><span class="s">max_depth</span><span class="sh">"</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">learning_rate</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">learning_rate</span><span class="sh">"</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">colsample_bytree</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">colsample_bytree</span><span class="sh">"</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">subsample</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">subsample</span><span class="sh">"</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">alpha</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">alpha</span><span class="sh">"</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">lambda</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">lambda</span><span class="sh">"</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">gamma</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">lambda</span><span class="sh">"</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">min_child_weight</span><span class="sh">"</span><span class="p">:</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_loguniform</span><span class="p">(</span><span class="sh">"</span><span class="s">min_child_weight</span><span class="sh">"</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">seed</span><span class="sh">"</span><span class="p">:</span> <span class="n">random_state</span><span class="p">,</span>
+        <span class="sh">"</span><span class="s">n_jobs</span><span class="sh">"</span><span class="p">:</span> <span class="n">n_jobs</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="nc">XGBRegressor</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">pruning_callback</span> <span class="o">=</span> <span class="nc">XGBoostPruningCallback</span><span class="p">(</span><span class="n">trial</span><span class="p">,</span> <span class="sh">"</span><span class="s">validation_0-rmse</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">rkf</span> <span class="o">=</span> <span class="nc">RepeatedKFold</span><span class="p">(</span>
+        <span class="n">n_splits</span><span class="o">=</span><span class="n">n_splits</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="n">n_repeats</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span>
+    <span class="p">)</span>
+    <span class="n">X_values</span> <span class="o">=</span> <span class="n">X</span><span class="p">.</span><span class="n">values</span>
+    <span class="n">y_values</span> <span class="o">=</span> <span class="n">y</span><span class="p">.</span><span class="n">values</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros_like</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span> <span class="ow">in</span> <span class="n">rkf</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">X_values</span><span class="p">):</span>
+        <span class="n">X_A</span><span class="p">,</span> <span class="n">X_B</span> <span class="o">=</span> <span class="n">X_values</span><span class="p">[</span><span class="n">train_index</span><span class="p">,</span> <span class="p">:],</span> <span class="n">X_values</span><span class="p">[</span><span class="n">test_index</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">y_A</span><span class="p">,</span> <span class="n">y_B</span> <span class="o">=</span> <span class="n">y_values</span><span class="p">[</span><span class="n">train_index</span><span class="p">],</span> <span class="n">y_values</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span>
+        <span class="n">model</span><span class="p">.</span><span class="nf">fit</span><span class="p">(</span>
+            <span class="n">X_A</span><span class="p">,</span>
+            <span class="n">y_A</span><span class="p">,</span>
+            <span class="n">eval_set</span><span class="o">=</span><span class="p">[(</span><span class="n">X_B</span><span class="p">,</span> <span class="n">y_B</span><span class="p">)],</span>
+            <span class="n">eval_metric</span><span class="o">=</span><span class="sh">"</span><span class="s">rmse</span><span class="sh">"</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">pruning_callback</span><span class="p">],</span>
+            <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="n">early_stopping_rounds</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">y_pred</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">model</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">X_B</span><span class="p">)</span>
+    <span class="n">y_pred</span> <span class="o">/=</span> <span class="n">n_repeats</span>
+    <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">sqrt</span><span class="p">(</span><span class="nf">mean_squared_error</span><span class="p">(</span><span class="n">y_train</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Now let’s define a sampler. Optuna provides a Tree-structured Parzen Estimator (TPE) algorithm with <code class="language-plaintext highlighter-rouge">TPESampler</code> . We also need to create a study with <code class="language-plaintext highlighter-rouge">create_study</code> in order to start the optimization process. <a href="https://arxiv.org/pdf/1907.10902.pdf">Here</a> is a paper with some references about the algorithms found in Optuna. <code class="language-plaintext highlighter-rouge">n_trials</code> is the number of objective evaluations, set to 100 in the following.</p>
+
+<p>Note that we activate the experimantal multivariate option of the TPE sampler.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sampler</span> <span class="o">=</span> <span class="nc">TPESampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">RS</span><span class="p">,</span> <span class="n">multivariate</span><span class="o">=</span><span class="n">MULTIVARIATE</span><span class="p">)</span>
+<span class="n">study</span> <span class="o">=</span> <span class="nf">create_study</span><span class="p">(</span><span class="n">direction</span><span class="o">=</span><span class="sh">"</span><span class="s">minimize</span><span class="sh">"</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+<span class="n">study</span><span class="p">.</span><span class="nf">optimize</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">trial</span><span class="p">:</span> <span class="nf">objective</span><span class="p">(</span>
+        <span class="n">trial</span><span class="p">,</span>
+        <span class="n">X_train</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">RS</span><span class="p">,</span>
+        <span class="n">n_splits</span><span class="o">=</span><span class="n">N_SPLITS</span><span class="p">,</span>
+        <span class="n">n_repeats</span><span class="o">=</span><span class="n">N_REPEATS</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="n">EARLY_STOPPING_ROUNDS</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span><span class="p">,</span>
+    <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># display params
+</span><span class="n">hp</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="n">best_params</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">hp</span><span class="p">.</span><span class="nf">items</span><span class="p">():</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">20</span><span class="n">s</span><span class="si">}</span><span class="s"> : </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="sh">'</span><span class="s">best objective value</span><span class="sh">'</span><span class="si">:</span><span class="o">&gt;</span><span class="mi">20</span><span class="n">s</span><span class="si">}</span><span class="s"> : </span><span class="si">{</span><span class="n">study</span><span class="p">.</span><span class="n">best_value</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We do not display the log here, which is kind of verbose. Here are the final parameter values found by Optuna, and the corresponding objective value :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>           max_depth : 8
+       learning_rate : 0.037288466802750865
+    colsample_bytree : 0.3301265198894751
+           subsample : 0.598344890923238
+               alpha : 0.01320580211991565
+              lambda : 7.527644719697382e-08
+    min_child_weight : 837.0649573787646
+best objective value : 0.8425081635928959
+</code></pre></div></div>
+
+<p>So we should get a score between 0.842 and 0.843 on the test set.</p>
+
+<h1 id="submit-and-evaluate-the-prediction">Submit and evaluate the prediction</h1>
+
+<p>We are going to retrain the model with the optimal parameter dictionary <code class="language-plaintext highlighter-rouge">hp</code>, make a prediction on the test dataset and submit this prediction on the kaggle website :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hp</span><span class="p">[</span><span class="sh">"</span><span class="s">verbosity</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">hp</span><span class="p">[</span><span class="sh">"</span><span class="s">objective</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">reg:squarederror</span><span class="sh">"</span>
+<span class="n">hp</span><span class="p">[</span><span class="sh">"</span><span class="s">n_estimators</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">hp</span><span class="p">[</span><span class="sh">"</span><span class="s">seed</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">RS</span>
+<span class="n">hp</span><span class="p">[</span><span class="sh">"</span><span class="s">n_jobs</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">model</span> <span class="o">=</span> <span class="nc">XGBRegressor</span><span class="p">(</span><span class="o">**</span><span class="n">hp</span><span class="p">)</span>
+<span class="n">rkf</span> <span class="o">=</span> <span class="nc">RepeatedKFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="n">N_SPLITS</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="n">N_REPEATS</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">RS</span><span class="p">)</span>
+<span class="n">X_values</span> <span class="o">=</span> <span class="n">X_train</span><span class="p">.</span><span class="n">values</span>
+<span class="n">y_values</span> <span class="o">=</span> <span class="n">y_train</span><span class="p">.</span><span class="n">values</span>
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros_like</span><span class="p">(</span><span class="n">test_df</span><span class="p">.</span><span class="n">cont0</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span> <span class="ow">in</span> <span class="n">rkf</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">X_values</span><span class="p">):</span>
+    <span class="n">X_A</span><span class="p">,</span> <span class="n">X_B</span> <span class="o">=</span> <span class="n">X_values</span><span class="p">[</span><span class="n">train_index</span><span class="p">,</span> <span class="p">:],</span> <span class="n">X_values</span><span class="p">[</span><span class="n">test_index</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">y_A</span><span class="p">,</span> <span class="n">y_B</span> <span class="o">=</span> <span class="n">y_values</span><span class="p">[</span><span class="n">train_index</span><span class="p">],</span> <span class="n">y_values</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span>
+    <span class="n">model</span><span class="p">.</span><span class="nf">fit</span><span class="p">(</span>
+        <span class="n">X_A</span><span class="p">,</span>
+        <span class="n">y_A</span><span class="p">,</span>
+        <span class="n">eval_set</span><span class="o">=</span><span class="p">[(</span><span class="n">X_B</span><span class="p">,</span> <span class="n">y_B</span><span class="p">)],</span>
+        <span class="n">eval_metric</span><span class="o">=</span><span class="sh">"</span><span class="s">rmse</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="n">EARLY_STOPPING_ROUNDS</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">y_pred</span> <span class="o">+=</span> <span class="n">model</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">y_pred</span> <span class="o">/=</span> <span class="n">N_REPEATS</span> <span class="o">*</span> <span class="n">N_SPLITS</span>
+</code></pre></div></div>
+
+<p>The prediction is made of the average of the different out-of-fold predictions on the test set. We use the same cross-validation strategy as in the HPO process, in order to be consistent and achieve a similar level of error (0.8425081635928959).</p>
+
+<p>In the following we are going to increment the submission file name and write the prediction as a CSV file :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sub_files</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="p">.</span><span class="nf">walk</span><span class="p">(</span><span class="sh">"</span><span class="s">./</span><span class="sh">"</span><span class="p">):</span>
+    <span class="k">for</span> <span class="nb">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">file</span><span class="p">.</span><span class="nf">startswith</span><span class="p">(</span><span class="sh">"</span><span class="s">submission_</span><span class="sh">"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">file</span><span class="p">.</span><span class="nf">endswith</span><span class="p">(</span><span class="sh">"</span><span class="s">.csv</span><span class="sh">"</span><span class="p">):</span>
+            <span class="n">sub_files</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="nb">file</span><span class="p">)</span>
+<span class="n">sub_files</span>
+<span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">sub_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">sub_files</span> <span class="o">=</span> <span class="p">[</span><span class="sh">"</span><span class="s">submission_00.csv</span><span class="sh">"</span><span class="p">]</span>
+<span class="n">sub_files</span><span class="p">.</span><span class="nf">sort</span><span class="p">()</span>
+<span class="n">last_sub_file</span> <span class="o">=</span> <span class="n">sub_files</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">last_id</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">last_sub_file</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">_</span><span class="sh">"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">curr_id</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">last_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">curr_sub_fn</span> <span class="o">=</span> <span class="sh">"</span><span class="s">submission_</span><span class="sh">"</span> <span class="o">+</span> <span class="n">curr_id</span> <span class="o">+</span> <span class="sh">"</span><span class="s">.csv</span><span class="sh">"</span>  <span class="c1"># file name
+</span><span class="n">test_df</span><span class="p">[</span><span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_pred</span>
+<span class="n">test_df</span><span class="p">[[</span><span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]].</span><span class="nf">to_csv</span><span class="p">(</span><span class="n">curr_sub_fn</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Now let’s submit :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">kaggle</span> <span class="n">competitions</span> <span class="n">submit</span> <span class="o">-</span><span class="n">c</span> <span class="n">tabular</span><span class="o">-</span><span class="n">playground</span><span class="o">-</span><span class="n">series</span><span class="o">-</span><span class="n">feb</span><span class="o">-</span><span class="mi">2021</span> <span class="o">-</span><span class="n">f</span> <span class="p">{</span><span class="n">curr_sub_fn</span><span class="p">}</span> <span class="o">-</span><span class="n">m</span> <span class="p">{</span><span class="n">curr_sub_fn</span><span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>100%|██████████████████████████████████████| 4.73M/4.73M [00:04&lt;00:00, 1.04MB/s]
+Successfully submitted to Tabular Playground Series - Feb 2021
+</code></pre></div></div>
+
+<p>Here is a capture of the leaderboard web page :</p>
+
+<p align="center">
+  <img width="400" src="/img/2021-02-16_01/leaderboard.png" alt="leaderboard" />
+</p>
+
+<p>Not so bad, the public leaderboard score of the submission is 0.84244 (rank 142 / 826). Of course there would be a lot of work to do to improve this score (EDA, FE, other algorithms, stacking, magic tricks, …).</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

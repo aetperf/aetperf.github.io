@@ -1,0 +1,494 @@
+<p>Daily deaths data are provided by INSEE (the national institute of statistics and economic studies). <a href="https://www.insee.fr/fr/statistiques/4487988?sommaire=4487854">Here</a> is the link of the page displaying these data, and here is a short description:</p>
+
+<blockquote>
+  <p>During the Covid-19 pandemic, INSEE is reporting the number of deaths per day per department on a weekly basis. Deaths are recorded in the commune in which they occur (and not in the place of residence of the deceased).</p>
+</blockquote>
+
+<p>We downloaded the smallest CSV <a href="https://www.insee.fr/en/statistiques/fichier/4493808/2020-05-29_deces_quotidiens_departement_csv.zip">file</a>:</p>
+
+<blockquote>
+  <p>The two downloadable files below were uploaded on 29 May 2020 and relate to the cumulative number of daily deaths from 1 March to 18 May 2018, 2019 and 2020 and the number of daily deaths reported electronically up to 22 May.</p>
+</blockquote>
+
+<p>Now let’s try to visualize these data.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">geopandas</span> <span class="k">as</span> <span class="n">gpd</span>
+<span class="kn">import</span> <span class="n">matplotlib.dates</span> <span class="k">as</span> <span class="n">mdates</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">colorcet</span> <span class="k">as</span> <span class="n">cc</span>
+
+<span class="n">color_list</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">glasbey_category10</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">rcParams</span><span class="p">[</span><span class="sh">"</span><span class="s">axes.prop_cycle</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">cycler</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">color_list</span><span class="p">)</span>
+
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">lab_black</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+
+<span class="n">csv_file_path</span> <span class="o">=</span> <span class="sh">"</span><span class="s">./data/INSEE/2020-05-29_deces_quotidiens_departement_csv.csv</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<h2 id="load-the-csv-file">Load the CSV file</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="n">csv_file_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sh">"</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">info</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+RangeIndex: 9384 entries, 0 to 9383
+Data columns (total 8 columns):
+ #   Column                                    Non-Null Count  Dtype  
+---  ------                                    --------------  -----  
+ 0   Date_evenement                            9384 non-null   object 
+ 1   Zone                                      9384 non-null   object 
+ 2   Communes_a_envoi_dematerialise_Deces2020  8466 non-null   float64
+ 3   Total_deces_2020                          8058 non-null   float64
+ 4   Communes_a_envoi_dematerialise_Deces2019  9384 non-null   int64  
+ 5   Total_deces_2019                          9384 non-null   int64  
+ 6   Communes_a_envoi_dematerialise_Deces2018  9384 non-null   int64  
+ 7   Total_deces_2018                          9384 non-null   int64  
+dtypes: float64(2), int64(4), object(2)
+memory usage: 586.6+ KB
+</code></pre></div></div>
+
+<p>The different values of <code class="language-plaintext highlighter-rouge">Zone</code> are the different french department zones, or the whole country:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">Zone</span><span class="p">.</span><span class="nf">unique</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array(['France', 'Dept_01', 'Dept_02', 'Dept_03', 'Dept_04', 'Dept_05',
+       'Dept_06', 'Dept_07', 'Dept_08', 'Dept_09', 'Dept_10', 'Dept_11',
+       'Dept_12', 'Dept_13', 'Dept_14', 'Dept_15', 'Dept_16', 'Dept_17',
+       'Dept_18', 'Dept_19', 'Dept_21', 'Dept_22', 'Dept_23', 'Dept_24',
+       'Dept_25', 'Dept_26', 'Dept_27', 'Dept_28', 'Dept_29', 'Dept_2A',
+       'Dept_2B', 'Dept_30', 'Dept_31', 'Dept_32', 'Dept_33', 'Dept_34',
+       'Dept_35', 'Dept_36', 'Dept_37', 'Dept_38', 'Dept_39', 'Dept_40',
+       'Dept_41', 'Dept_42', 'Dept_43', 'Dept_44', 'Dept_45', 'Dept_46',
+       'Dept_47', 'Dept_48', 'Dept_49', 'Dept_50', 'Dept_51', 'Dept_52',
+       'Dept_53', 'Dept_54', 'Dept_55', 'Dept_56', 'Dept_57', 'Dept_58',
+       'Dept_59', 'Dept_60', 'Dept_61', 'Dept_62', 'Dept_63', 'Dept_64',
+       'Dept_65', 'Dept_66', 'Dept_67', 'Dept_68', 'Dept_69', 'Dept_70',
+       'Dept_71', 'Dept_72', 'Dept_73', 'Dept_74', 'Dept_75', 'Dept_76',
+       'Dept_77', 'Dept_78', 'Dept_79', 'Dept_80', 'Dept_81', 'Dept_82',
+       'Dept_83', 'Dept_84', 'Dept_85', 'Dept_86', 'Dept_87', 'Dept_88',
+       'Dept_89', 'Dept_90', 'Dept_91', 'Dept_92', 'Dept_93', 'Dept_94',
+       'Dept_95', 'Dept_971', 'Dept_972', 'Dept_973', 'Dept_974',
+       'Dept_976'], dtype=object)
+</code></pre></div></div>
+
+<p>We start by creating a <code class="language-plaintext highlighter-rouge">DatetimeIndex</code> based on the 2020 year:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">Date_evenement</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">s</span><span class="p">).</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">month_name</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">Date_evenement</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nf">str</span><span class="p">(</span><span class="n">s</span><span class="p">).</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">Date_evenement</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">month_name</span><span class="p">.</span><span class="nf">replace</span><span class="p">({</span><span class="sh">"</span><span class="s">mars</span><span class="sh">"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="sh">"</span><span class="s">avr.</span><span class="sh">"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="sh">"</span><span class="s">mai</span><span class="sh">"</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">month_name</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">year</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2020</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="sh">"</span><span class="s">year</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">]])</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">year</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">info</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+DatetimeIndex: 9384 entries, 2020-03-01 to 2020-05-31
+Data columns (total 7 columns):
+ #   Column                                    Non-Null Count  Dtype  
+---  ------                                    --------------  -----  
+ 0   Zone                                      9384 non-null   object 
+ 1   Communes_a_envoi_dematerialise_Deces2020  8466 non-null   float64
+ 2   Total_deces_2020                          8058 non-null   float64
+ 3   Communes_a_envoi_dematerialise_Deces2019  9384 non-null   int64  
+ 4   Total_deces_2019                          9384 non-null   int64  
+ 5   Communes_a_envoi_dematerialise_Deces2018  9384 non-null   int64  
+ 6   Total_deces_2018                          9384 non-null   int64  
+dtypes: float64(2), int64(4), object(1)
+memory usage: 586.5+ KB
+</code></pre></div></div>
+
+<p>Note that 2020 is a leap year, but the earliest date here is in march anyway.</p>
+
+<p>We start by plotting the daily deaths over the whole country.</p>
+
+<h2 id="france">France</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">zone</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">Zone</span> <span class="o">==</span> <span class="sh">"</span><span class="s">France</span><span class="sh">"</span><span class="p">][</span>
+    <span class="p">[</span><span class="sh">"</span><span class="s">Total_deces_2018</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2019</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2020</span><span class="sh">"</span><span class="p">]</span>
+<span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="sh">"</span><span class="s">Int64</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">zone</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Total_deces_2018</th>
+      <th>Total_deces_2019</th>
+      <th>Total_deces_2020</th>
+    </tr>
+    <tr>
+      <th>date</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-03-01</th>
+      <td>2136</td>
+      <td>1872</td>
+      <td>1778</td>
+    </tr>
+    <tr>
+      <th>2020-03-02</th>
+      <td>4327</td>
+      <td>3782</td>
+      <td>3557</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">zone</span><span class="p">[[</span><span class="sh">"</span><span class="s">Total_deces_2018</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2019</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2020</span><span class="sh">"</span><span class="p">]]</span>
+    <span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">diff</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">mean</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Daily deaths in France (rolling 7-day average)</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Daily death count</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">monthdayFmt</span> <span class="o">=</span> <span class="n">mdates</span><span class="p">.</span><span class="nc">DateFormatter</span><span class="p">(</span><span class="sh">"</span><span class="s">%B</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="nf">set_major_formatter</span><span class="p">(</span><span class="n">monthdayFmt</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sh">"</span><span class="s">major</span><span class="sh">"</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">23</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">([</span><span class="sh">"</span><span class="s">2018</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">2019</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">2020</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">xticks</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="nf">get_major_ticks</span><span class="p">()</span>
+<span class="n">xticks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">label1</span><span class="p">.</span><span class="nf">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_13_0.png" alt="png" /></p>
+
+<p>Now we are going to create a function for plotting the daily deaths in a department zone, and try it on the Rhône department.</p>
+
+<h2 id="rhône-department-zone">Rhône (department zone)</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_dep</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">dep</span><span class="p">):</span>
+    <span class="n">zone</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">Zone</span> <span class="o">==</span> <span class="n">dep</span><span class="p">][</span>
+        <span class="p">[</span><span class="sh">"</span><span class="s">Total_deces_2018</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2019</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2020</span><span class="sh">"</span><span class="p">]</span>
+    <span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="sh">"</span><span class="s">Int64</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">zone</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">zone</span><span class="p">[[</span><span class="sh">"</span><span class="s">Total_deces_2018</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2019</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2020</span><span class="sh">"</span><span class="p">]]</span>
+        <span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">diff</span><span class="p">()</span>
+        <span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">mean</span><span class="p">()</span>
+        <span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="sh">"</span><span class="s">Daily deaths in dep. </span><span class="si">{</span><span class="n">dep</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="s">_</span><span class="sh">'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s"> (rolling 7-day average)</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Daily death count</span><span class="sh">"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">monthdayFmt</span> <span class="o">=</span> <span class="n">mdates</span><span class="p">.</span><span class="nc">DateFormatter</span><span class="p">(</span><span class="sh">"</span><span class="s">%B</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="nf">set_major_formatter</span><span class="p">(</span><span class="n">monthdayFmt</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="nf">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sh">"</span><span class="s">major</span><span class="sh">"</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">23</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">([</span><span class="sh">"</span><span class="s">2018</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">2019</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">2020</span><span class="sh">"</span><span class="p">])</span>
+    <span class="n">xticks</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="nf">get_major_ticks</span><span class="p">()</span>
+    <span class="n">xticks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">label1</span><span class="p">.</span><span class="nf">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_dep</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="sh">"</span><span class="s">Dept_69</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_16_0.png" alt="png" /></p>
+
+<p>Let’s try to find out which departments have been the most affected by COVID-19, with the relative and absolute differences between 2020 and the previous years. We first need to pivot the tables.</p>
+
+<h2 id="pivot">Pivot</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dep_2018</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">Zone</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">France</span><span class="sh">"</span><span class="p">][[</span><span class="sh">"</span><span class="s">Zone</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2018</span><span class="sh">"</span><span class="p">]]</span>
+<span class="n">dep_2019</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">Zone</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">France</span><span class="sh">"</span><span class="p">][[</span><span class="sh">"</span><span class="s">Zone</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2019</span><span class="sh">"</span><span class="p">]]</span>
+<span class="n">dep_2020</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">Zone</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">France</span><span class="sh">"</span><span class="p">][[</span><span class="sh">"</span><span class="s">Zone</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Total_deces_2020</span><span class="sh">"</span><span class="p">]]</span>
+<span class="n">dep_2018</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">dep_2018</span><span class="p">.</span><span class="nf">pivot</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="sh">"</span><span class="s">Zone</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">diff</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">all</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">"</span><span class="s">Int64</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">droplevel</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">dep_2019</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">dep_2019</span><span class="p">.</span><span class="nf">pivot</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="sh">"</span><span class="s">Zone</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">diff</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">all</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">"</span><span class="s">Int64</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">droplevel</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">dep_2020</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">dep_2020</span><span class="p">.</span><span class="nf">pivot</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="sh">"</span><span class="s">Zone</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">diff</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">all</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="sh">"</span><span class="s">Int64</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">droplevel</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">dep_2020</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">min</span><span class="p">().</span><span class="nf">date</span><span class="p">()</span><span class="si">}</span><span class="s"> / </span><span class="si">{</span><span class="n">dep_2020</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">max</span><span class="p">().</span><span class="nf">date</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2020-03-02 / 2020-05-18
+</code></pre></div></div>
+
+<h2 id="department-zones-with-largest-relative-excess-death">Department zones with largest relative excess death</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dep_avg</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">dep_2018</span> <span class="o">+</span> <span class="n">dep_2019</span><span class="p">).</span><span class="n">loc</span><span class="p">[</span><span class="n">dep_2020</span><span class="p">.</span><span class="n">index</span><span class="p">]</span>
+<span class="n">dep_diff_rel</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">dep_2020</span> <span class="o">-</span> <span class="n">dep_avg</span><span class="p">).</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dep_avg</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">dep_diff_rel_rank</span> <span class="o">=</span> <span class="n">dep_diff_rel</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">dep_diff_rel_rank</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">dep_diff_rel_rank</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">_</span><span class="sh">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">dep_diff_rel_rank</span><span class="p">[:</span><span class="mi">15</span><span class="p">].</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">blue</span><span class="sh">"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Departments with largest relative excess death</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Department code</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Exces death (%)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_21_0.png" alt="png" /></p>
+
+<p>Here is the data for dep. 93 (Seine-Saint-Denis):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_dep</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="sh">"</span><span class="s">Dept_93</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_23_0.png" alt="png" /></p>
+
+<h2 id="departments-with-largest-absolute-excess-death">Departments with largest absolute excess death</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dep_diff_abs</span> <span class="o">=</span> <span class="p">(</span><span class="n">dep_2020</span> <span class="o">-</span> <span class="n">dep_avg</span><span class="p">).</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">dep_diff_abs_rank</span> <span class="o">=</span> <span class="n">dep_diff_abs</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">dep_diff_abs_rank</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">dep_diff_abs_rank</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">_</span><span class="sh">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">dep_diff_abs_rank</span><span class="p">[:</span><span class="mi">15</span><span class="p">].</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">blue</span><span class="sh">"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Departments with largest absolute excess death</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Department code</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Exces death (%)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_25_0.png" alt="png" /></p>
+
+<p>Here is the data for dep. 75 (Paris):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_dep</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="sh">"</span><span class="s">Dept_75</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_27_0.png" alt="png" /></p>
+
+<p>Now let’s plot a choropleth map and color the department zones with relative and absolute excess death.</p>
+
+<h2 id="choropleth-maps">Choropleth Maps</h2>
+
+<p>We focus on metropolitan France (mainland France and Corsica). We first need the contour line of the department zones, which can be found as a GeoJSON file on the french open data portal. We open this file with <a href="https://geopandas.org/">GeoPandas</a>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dep</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">read_file</span><span class="p">(</span>
+    <span class="sh">"</span><span class="s">https://static.data.gouv.fr/resources/carte-des-departements-2-1/20191202-212236/contour-des-departements.geojson</span><span class="sh">"</span>
+<span class="p">)</span>
+<span class="n">dep</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>code</th>
+      <th>nom</th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>01</td>
+      <td>Ain</td>
+      <td>POLYGON ((4.78021 46.17668, 4.78024 46.18905, ...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>02</td>
+      <td>Aisne</td>
+      <td>POLYGON ((3.17296 50.01131, 3.17382 50.01186, ...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>We merge these geometries with the previous relative and absolute difference data:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dep_diff_rel</span> <span class="o">=</span> <span class="n">dep_diff_rel</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(</span><span class="sh">"</span><span class="s">diff_rel</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">dep_diff_abs</span> <span class="o">=</span> <span class="n">dep_diff_abs</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(</span><span class="sh">"</span><span class="s">diff_abs</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">dep_diff_rel</span><span class="p">[</span><span class="sh">"</span><span class="s">code</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_diff_rel</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">_</span><span class="sh">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">dep_diff_abs</span><span class="p">[</span><span class="sh">"</span><span class="s">code</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dep_diff_abs</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">_</span><span class="sh">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">dep</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">dep_diff_rel</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="sh">"</span><span class="s">code</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">dep_diff_abs</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="sh">"</span><span class="s">code</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">gdf</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>code</th>
+      <th>nom</th>
+      <th>geometry</th>
+      <th>diff_rel</th>
+      <th>diff_abs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>01</td>
+      <td>Ain</td>
+      <td>POLYGON ((4.78021 46.17668, 4.78024 46.18905, ...</td>
+      <td>14.108527</td>
+      <td>136.5</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>02</td>
+      <td>Aisne</td>
+      <td>POLYGON ((3.17296 50.01131, 3.17382 50.01186, ...</td>
+      <td>31.902834</td>
+      <td>394.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>and use a different projection than lat-lon, so that the shapes are not distorted: <a href="https://epsg.io/2154">EPSG:2154</a></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:2154</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">diff_rel</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">Blues</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">scheme</span><span class="o">=</span><span class="sh">"</span><span class="s">quantiles</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">lightgrey</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">get_legend</span><span class="p">().</span><span class="nf">set_bbox_to_anchor</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_axis_off</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"""</span><span class="s">Percentage of excess death per dep. 
+    in 2020 (03-02 to 05-18) vs 2 previous years</span><span class="sh">"""</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_34_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">diff_abs</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">Blues</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">scheme</span><span class="o">=</span><span class="sh">"</span><span class="s">quantiles</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">lightgrey</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">get_legend</span><span class="p">().</span><span class="nf">set_bbox_to_anchor</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_axis_off</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"""</span><span class="s">Number of excess deaths per dep. 
+    in 2020 (03-02 to 05-18) vs 2 previous years</span><span class="sh">"""</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-06-01_01/output_35_0.png" alt="png" /></p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

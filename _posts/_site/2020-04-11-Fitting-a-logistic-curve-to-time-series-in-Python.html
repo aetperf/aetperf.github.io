@@ -1,0 +1,351 @@
+<p>In this notebook we are going to fit a logistic curve to time series stored in <a href="https://pandas.pydata.org/">Pandas</a>, using a simple linear regression from <a href="https://scikit-learn.org/stable/">scikit-learn</a> to find the coefficients of the logistic curve.</p>
+
+<p><strong>Disclaimer:</strong> although we are going to use some COVID-19 data in this notebook, I want the reader to know that I have ABSOLUTELY no knowledge in epidemiology or any medicine-related subject, and clearly state that the result of fitting logistic curve to these data is an incredibly simplistic and naive approach. The point of this post is not the COVID-19 at all but only to show an application of the Python data stack.</p>
+
+<p><strong>Edit:</strong> here is an interesting post about the difficulty of time series forecasting with logistic curves: <a href="https://constancecrozier.com/2020/04/16/forecasting-s-curves-is-hard/">Forecasting s-curves is hard</a> by Constance Crozier.</p>
+
+<p>Let’s start by decribing the logistic curve.</p>
+
+<h2 id="the-logistic-curve">The Logistic curve</h2>
+
+<p>A logistic curve is a common S-shaped curve (sigmoid curve). It can be usefull for modelling many different phenomena, such as (from <a href="https://en.wikipedia.org/wiki/Logistic_function">wikipedia</a>):</p>
+<ul>
+  <li>population growth</li>
+  <li>tumor growth</li>
+  <li>concentration of reactants and products in autocatalytic reactions</li>
+</ul>
+
+<p>The equation is the following:</p>
+
+\[D(t) = \frac{L}{1 + e^{-k (t - t_0)}}\]
+
+<p>where</p>
+<ul>
+  <li>$t_{0}$ is the sigmoid’s midpoint,</li>
+  <li>$L$ is the curve’s maximum value,</li>
+  <li>$k$ is the logistic growth rate.</li>
+</ul>
+
+<p>Here is an example of a logistic curve fitted to data of AIDS cases in the US:</p>
+
+<p><img src="/img/2020-04-11_01/aids_usa.jpg" alt="New cases of AIDS in The United States" title="Source: http://www.nlreg.com/aids.htm" /></p>
+
+<p>Source: <a href="http://www.nlreg.com/aids.htm">http://www.nlreg.com/aids.htm</a></p>
+
+<p>Let’s start by importing the libraries.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">itertools</span>
+<span class="kn">from</span> <span class="n">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">use</span><span class="p">(</span><span class="sh">"</span><span class="s">seaborn</span><span class="sh">"</span><span class="p">)</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">LinearRegression</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>  <span class="c1"># figure size
+</span></code></pre></div></div>
+
+<h2 id="the-parameters">The Parameters</h2>
+
+<p>We have 3 parameters in the logistic curve: $k$, $t_0$ and $L$. In the following we are going to vary each parameter in order to see their respective influence.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">18</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">t0</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span> <span class="mf">10000.</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">]:</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)))</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="sh">'</span><span class="s">k=</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">L</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="mf">10000.</span><span class="p">,</span> <span class="mi">2</span>
+<span class="k">for</span> <span class="n">t0</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span> <span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">]:</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)))</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="sh">'</span><span class="s">t0=</span><span class="si">{</span><span class="n">t0</span><span class="si">}</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">t0</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span> <span class="mi">2</span>
+<span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+    <span class="n">L</span> <span class="o">*=</span> <span class="mi">2000</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)))</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="sh">'</span><span class="s">L=</span><span class="si">{</span><span class="n">L</span><span class="si">}</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_5_0.png" alt="png" /></p>
+
+<p>So how are we going to fit these paramters? We are going to use a linear regression to find some values for $k$ and $L$, and then estimate $t_0$ manually.</p>
+
+<p>In order to get a linear equation, we need to describe the logistic differential equation.</p>
+
+<h2 id="the-logistic-differential-equation">The logistic differential equation</h2>
+
+<p>If we differentiate $D$, we get the following differential relationship, for a given value of $t_0$ (each step broken down):</p>
+
+\[\frac{dD}{dt} = L (-1) (-k) e^{-k (t - t_0)} \left(1 + e^{-k(t-t_0)} \right)^{-2}\]
+
+\[= k \frac{L}{1 + e^{-k(t-t_0)}} \left( \frac{ e^{-k(t-t_0)}}{1 + e^{-k(t-t_0)}} \right)\]
+
+\[= k D \left( \frac{ 1+ e^{-k(t-t_0)} - 1}{1 + e^{-k(t-t_0)}} \right) = k D \left( 1 - \frac{D}{L} \right)\]
+
+<p>As you can infer from this equation, the proportional growth rate $\frac{dD / dt}{D}$ is a linear function of $D$:</p>
+
+<p>\begin{equation}
+\frac{dD / dt}{D} = k \left( 1 - \frac{D}{L}  \right)
+\end{equation}</p>
+
+<p>So the basic idea for fitting a logistic curve is the following:</p>
+<ul>
+  <li>plot the proportional growth rate as a function of $D$</li>
+  <li>try to find a range where this curve is close to linear</li>
+</ul>
+
+<p>If we actually find a “large” interval of data for which the proportional growth rate is a linear function of $D$:</p>
+<ul>
+  <li>find the coefficients of the linear function $y=ax+b$ using a linear regression</li>
+  <li>compute $L$ and $k$ from these coefficient ($k=b$, $L=-k/a$)</li>
+  <li>find a value of $t_0$ such that the logistic curve is as close as possible to the data on the interval of data (for which the proportional growth rate is a linear function of $D$)</li>
+</ul>
+
+<p>Note that this process is very subjective! When applied to real data, we rarely find a strictly linear proportional growth rate and can very different sigmoid shapes just by choosing different intervals on which we apply the linear regression. Just because we can technically fit a line to a point cloud does not mean that it is appropriate.</p>
+
+<p><img src="https://imgs.xkcd.com/comics/linear_regression.png" alt="png" title="source: https://xkcd.com/1725/" /></p>
+
+<p>source: <a href="https://xkcd.com/1725/">https://xkcd.com/1725/</a></p>
+
+<h2 id="data">Data</h2>
+
+<p>The data comes from the 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE on <a href="https://github.com/CSSEGISandData/COVID-19">github</a>. We are going to look at the deaths-by-country time series.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">url</span> <span class="o">=</span> <span class="sh">'</span><span class="s">https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv</span><span class="sh">'</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="n">total</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">Province/State</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Lat</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Long</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">).</span><span class="nf">groupby</span><span class="p">(</span><span class="sh">'</span><span class="s">Country/Region</span><span class="sh">'</span><span class="p">).</span><span class="nf">sum</span><span class="p">().</span><span class="nf">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">).</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">countries</span> <span class="o">=</span> <span class="n">total</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">to_list</span><span class="p">()</span>
+<span class="n">deaths</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">country</span> <span class="ow">in</span> <span class="n">countries</span><span class="p">:</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">Country/Region</span><span class="sh">'</span><span class="p">]</span> <span class="o">==</span> <span class="n">country</span><span class="p">][</span><span class="n">df</span><span class="p">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">4</span><span class="p">:]].</span><span class="n">T</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">temp</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">temp</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(</span><span class="n">country</span><span class="p">)</span>
+    <span class="n">deaths</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">deaths</span><span class="p">,</span> <span class="n">temp</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">start</span> <span class="o">=</span> <span class="sh">'</span><span class="s">2020-03</span><span class="sh">'</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">deaths</span><span class="p">[[</span><span class="sh">'</span><span class="s">Italy</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Spain</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">France</span><span class="sh">'</span><span class="p">]][</span><span class="n">start</span><span class="p">:].</span><span class="nf">plot</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="n">markers</span> <span class="o">=</span> <span class="n">itertools</span><span class="p">.</span><span class="nf">cycle</span><span class="p">((</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">v</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">^</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">&lt;</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">&gt;</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">s</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">p</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">P</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">*</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">X</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">D</span><span class="sh">"</span><span class="p">,</span> <span class="sh">'</span><span class="s">.</span><span class="sh">'</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">.</span><span class="nf">get_lines</span><span class="p">()):</span>
+    <span class="n">marker</span> <span class="o">=</span> <span class="nf">next</span><span class="p">(</span><span class="n">markers</span><span class="p">)</span>
+    <span class="n">line</span><span class="p">.</span><span class="nf">set_marker</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_title</span><span class="p">(</span><span class="sh">"</span><span class="s">Number of COVID-19 deaths per country</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_8_0.png" alt="png" /></p>
+
+<h2 id="functions">Functions</h2>
+
+<p>For each of these 3 countries we are going to try to fit a logistic curve, using the following 4 functions:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">death_max</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s"> Plot the proportional growth rate with respect to D, 
+        on the interval (death_min, death_max).
+    </span><span class="sh">"""</span>
+    <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">[</span><span class="n">country</span> <span class="o">&gt;</span> <span class="n">death_min</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">death_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">[</span><span class="n">country</span> <span class="o">&lt;</span> <span class="n">death_max</span><span class="p">]</span>
+    <span class="n">slopes</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">country</span><span class="p">.</span><span class="nf">diff</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">country</span><span class="p">.</span><span class="nf">diff</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">ratios</span> <span class="o">=</span> <span class="n">slopes</span> <span class="o">/</span> <span class="n">country</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">country</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">ratios</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="sh">'</span><span class="s">o</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">D(t)</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Ratios of slopes to function values</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s"> Find the coefficients of the linear function  y=ax + b,  
+        using a linear regression.
+    </span><span class="sh">"""</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> 
+    <span class="n">reg</span> <span class="o">=</span> <span class="nc">LinearRegression</span><span class="p">(</span><span class="n">fit_intercept</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">reg</span><span class="p">.</span><span class="nf">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">reg</span><span class="p">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">reg</span><span class="p">.</span><span class="n">intercept_</span>
+    <span class="n">y_hat</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">b</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="sh">'</span><span class="s">o</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">,</span> <span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Linear regression</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">D(t)</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Ratios of slopes to function values</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_t0</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">death_max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s"> Find a value of t0 such that the logistic curve is as close 
+        as possible to the data on the given interval.
+    </span><span class="sh">"""</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">b</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="n">a</span>
+    <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">[</span><span class="n">country</span> <span class="o">&gt;</span> <span class="n">death_min</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">death_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">[</span><span class="n">country</span> <span class="o">&lt;</span> <span class="n">death_max</span><span class="p">]</span>
+    <span class="n">logis</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">country</span><span class="p">))</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)))</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">logis</span><span class="p">,</span> <span class="sh">'</span><span class="s">o</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">country</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="sh">'</span><span class="s">d</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">L</span><span class="p">,</span> <span class="n">k</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">extended_plot</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">days_before</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">days_after</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">)):</span>
+    <span class="sh">"""</span><span class="s"> Plot the logistic curve on an extended interval, 
+        against the real data.
+    </span><span class="sh">"""</span>
+    <span class="n">country_original</span> <span class="o">=</span> <span class="n">country</span><span class="p">.</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">[</span><span class="n">country</span> <span class="o">&gt;</span> <span class="n">death_min</span><span class="p">]</span>
+    <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(</span><span class="sh">'</span><span class="s">Deaths</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">country_start</span> <span class="o">=</span> <span class="n">country</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">min</span><span class="p">()</span>
+    <span class="n">country_end</span> <span class="o">=</span> <span class="n">country</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span>
+    <span class="n">start</span><span class="o">=</span><span class="n">country_start</span> <span class="o">-</span> <span class="nf">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_before</span><span class="p">)</span>
+    <span class="n">end</span><span class="o">=</span><span class="n">country_end</span> <span class="o">+</span> <span class="nf">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_after</span><span class="p">)</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="sh">'</span><span class="s">D</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="p">.</span><span class="nf">reindex</span><span class="p">(</span><span class="n">ix</span><span class="p">)</span>
+    <span class="n">country</span><span class="p">[</span><span class="sh">'</span><span class="s">idx</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">country</span><span class="p">))</span>
+    <span class="n">country</span><span class="p">[</span><span class="sh">'</span><span class="s">idx</span><span class="sh">'</span><span class="p">]</span> <span class="o">-=</span> <span class="n">country</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">country_start</span><span class="p">,</span> <span class="sh">'</span><span class="s">idx</span><span class="sh">'</span><span class="p">]</span>
+    <span class="n">country</span><span class="p">[</span><span class="sh">'</span><span class="s">logistic</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">country</span><span class="p">[</span><span class="sh">'</span><span class="s">idx</span><span class="sh">'</span><span class="p">].</span><span class="n">values</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">country</span><span class="p">[</span><span class="sh">'</span><span class="s">logistic</span><span class="sh">'</span><span class="p">].</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span><span class="n">logy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">country_original</span><span class="p">[</span><span class="n">start</span><span class="p">:].</span><span class="nf">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">'</span><span class="s">o</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="italy">Italy</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">country_name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">Italy</span><span class="sh">'</span>
+<span class="n">country</span> <span class="o">=</span> <span class="n">deaths</span><span class="p">[</span><span class="n">country_name</span><span class="p">]</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_15_0.png" alt="png" /></p>
+
+<p>It looks like the slope is changing several times. Let’s focus on the last part of the curve.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">death_min</span> <span class="o">=</span> <span class="mi">11000</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_16_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_17_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">t0</span> <span class="o">=</span> <span class="mf">1.5</span>
+<span class="n">L</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="nf">plot_t0</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="n">t0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_18_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">extended_plot</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_19_0.png" alt="png" /></p>
+
+<h2 id="spain">Spain</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">country_name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">Spain</span><span class="sh">'</span>
+<span class="n">country</span> <span class="o">=</span> <span class="n">deaths</span><span class="p">[</span><span class="n">country_name</span><span class="p">]</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_21_0.png" alt="png" /></p>
+
+<p>Again, it looks like a piecewise linear curve and we are going to focus on the last part of the curve.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">death_min</span> <span class="o">=</span> <span class="mi">11000</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_22_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_23_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">t0</span> <span class="o">=</span> <span class="mf">1.5</span>
+<span class="n">L</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="nf">plot_t0</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="n">t0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_24_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">extended_plot</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_25_0.png" alt="png" /></p>
+
+<h2 id="france">France</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">country_name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">France</span><span class="sh">'</span>
+<span class="n">country</span> <span class="o">=</span> <span class="n">deaths</span><span class="p">[</span><span class="n">country_name</span><span class="p">]</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_27_0.png" alt="png" /></p>
+
+<p>It does not look linear at all, but let’s proceed with the regression anyway.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">death_min</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">plot_ratios</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_28_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_29_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">t0</span> <span class="o">=</span> <span class="mf">17.5</span>
+<span class="n">L</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="nf">plot_t0</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="n">t0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_30_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">extended_plot</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">death_min</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-04-11_01/output_31_0.png" alt="png" /></p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

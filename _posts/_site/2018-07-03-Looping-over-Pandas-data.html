@@ -1,0 +1,448 @@
+<p>I recently stumbled on this interesting post on <a href="https://realpython.com/">RealPython</a> (excellent website by the way!):</p>
+
+<p><a href="https://realpython.com/fast-flexible-pandas/"><strong>Fast, Flexible, Easy and Intuitive: How to Speed Up Your Pandas Projects</strong></a></p>
+
+<p>This post has different subjects related to Pandas:</p>
+<ul>
+  <li>creating a <code class="language-plaintext highlighter-rouge">datetime</code> column</li>
+  <li>looping over Pandas data</li>
+  <li>saving/loading HDF data stores</li>
+  <li>…</li>
+</ul>
+
+<p>I focused on the <em>looping over Pandas data</em> part. They compare different approaches for looping over a dataframe and applying a basic (piecewise linear) function:</p>
+<ul>
+  <li>a “crappy” loop with <code class="language-plaintext highlighter-rouge">.iloc</code> to access the data</li>
+  <li><code class="language-plaintext highlighter-rouge">iterrows()</code></li>
+  <li><code class="language-plaintext highlighter-rouge">apply()</code> with a lambda function</li>
+</ul>
+
+<p>But I was a little bit disapointed to see that they did not actually implement the following other approaches:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">itertuples()</code>
+    <blockquote>
+      <p>While <code class="language-plaintext highlighter-rouge">.itertuples()</code> tends to be a bit faster, let’s stay in Pandas and use <code class="language-plaintext highlighter-rouge">.iterrows()</code> in this example, because some readers might not have run across <code class="language-plaintext highlighter-rouge">nametuple</code>.</p>
+    </blockquote>
+  </li>
+  <li>Numpy vectorize</li>
+  <li>Numpy (just a loop over Numpy vectors)</li>
+  <li>Cython</li>
+  <li>Numba</li>
+</ul>
+
+<p>So I just wanted to complete their post by adding the latter approaches to the performance comparison, using the same <code class="language-plaintext highlighter-rouge">.csv</code> file. In order to compare all the different implementations on the same computer, I also copied and re-ran their code.</p>
+
+<p>Note: my laptop CPU is an <code class="language-plaintext highlighter-rouge">Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz</code>  (with some DDDR4-2400 RAM).</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">sys</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Python version: </span><span class="si">{</span><span class="n">sys</span><span class="p">.</span><span class="n">version</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Numpy version: </span><span class="si">{</span><span class="n">np</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Pandas version: </span><span class="si">{</span><span class="n">pd</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">Cython</span>
+<span class="kn">import</span> <span class="n">cython</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Cython version: </span><span class="si">{</span><span class="n">cython</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="n">numba</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Numba version: </span><span class="si">{</span><span class="n">numba</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="kn">from</span> <span class="n">numba</span> <span class="kn">import</span> <span class="n">jit</span>
+
+<span class="kn">import</span> <span class="n">matplotlib</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">use</span><span class="p">(</span><span class="sh">'</span><span class="s">ggplot</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python version: 3.7.0 (default, Jun 28 2018, 13:15:42) 
+[GCC 7.2.0]
+Numpy version: 1.15.0
+Pandas version: 0.23.3
+Cython version: 0.28.4
+Numba version: 0.39.0
+</code></pre></div></div>
+
+<h2 id="load-the-csv-file">Load the csv file</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">.csv</code> file is located <a href="https://github.com/realpython/materials/blob/master/pandas-fast-flexible-intuitive/tutorial/demand_profile.csv">here</a>. It has been saved in a local <code class="language-plaintext highlighter-rouge">data/</code> directory. The <code class="language-plaintext highlighter-rouge">datetime</code> column is created at the import with the <code class="language-plaintext highlighter-rouge">parse_dates</code> argument.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">'</span><span class="s">./data/demand_profile.csv</span><span class="sh">'</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">date_time</span><span class="sh">'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">info</span><span class="p">()</span>  <span class="c1"># inspect the dataframe
+</span></code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+RangeIndex: 8760 entries, 0 to 8759
+Data columns (total 2 columns):
+date_time     8760 non-null datetime64[ns]
+energy_kwh    8760 non-null float64
+dtypes: datetime64[ns](1), float64(1)
+memory usage: 137.0 KB
+</code></pre></div></div>
+
+<p>So we only have two columns in this dataframe: one for the <code class="language-plaintext highlighter-rouge">datetime</code> and one for the energy usage:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>date_time</th>
+      <th>energy_kwh</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2013-01-01 00:00:00</td>
+      <td>0.586</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2013-01-01 01:00:00</td>
+      <td>0.580</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<blockquote>
+  <p>The goal of this example will be to apply time-of-use energy tariffs to find the total cost of energy consumption for one year. That is, at different hours of the day, the price for electricity varies, so the task is to multiply the electricity consumed for each hour by the correct price for the hour in which it was consumed.</p>
+</blockquote>
+
+<h1 id="performance-comparison">Performance comparison</h1>
+
+<h2 id="1-the-crappy-loop">1. The “Crappy” loop</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_tariff</span><span class="p">(</span><span class="n">kwh</span><span class="p">,</span> <span class="n">hour</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s"> Calculates cost of electricity for given hour.
+    </span><span class="sh">"""</span>
+
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="k">elif</span> <span class="mi">7</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">17</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="k">elif</span> <span class="mi">17</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">24</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">28</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Invalid hour: </span><span class="si">{</span><span class="n">hour</span><span class="si">}</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">kwh</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_tariff_loop</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s"> Calculate costs in loop.  Modifies `df` inplace.
+    </span><span class="sh">"""</span>
+
+    <span class="n">energy_cost_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
+        <span class="c1"># Get electricity used and hour of day
+</span>        <span class="n">energy_used</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="sh">'</span><span class="s">energy_kwh</span><span class="sh">'</span><span class="p">]</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="sh">'</span><span class="s">date_time</span><span class="sh">'</span><span class="p">].</span><span class="n">hour</span>
+        <span class="n">energy_cost</span> <span class="o">=</span> <span class="nf">apply_tariff</span><span class="p">(</span><span class="n">energy_used</span><span class="p">,</span> <span class="n">hour</span><span class="p">)</span>
+        <span class="n">energy_cost_list</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">energy_cost</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">energy_cost_list</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">timeit</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># initialization of the timing measures
+</span><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">1</span> <span class="o">-</span><span class="n">n</span> <span class="mi">1</span> <span class="o">-</span><span class="n">o</span> <span class="nf">apply_tariff_loop</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">"</span><span class="s">Crappy Loop</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.85 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
+</code></pre></div></div>
+
+<p>Next we save the result of the computation in order to later check that we get the same result with the different implementations…</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">cost_cents_ref</span><span class="sh">'</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="2-looping-with-iterrows">2. Looping with <code class="language-plaintext highlighter-rouge">.iterrows()</code></h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_tariff_iterrows</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">energy_cost_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">iterrows</span><span class="p">():</span>
+        <span class="c1"># Get electricity used and hour of day
+</span>        <span class="n">energy_used</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="sh">'</span><span class="s">energy_kwh</span><span class="sh">'</span><span class="p">]</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="sh">'</span><span class="s">date_time</span><span class="sh">'</span><span class="p">].</span><span class="n">hour</span>
+        <span class="c1"># Append cost list
+</span>        <span class="n">energy_cost</span> <span class="o">=</span> <span class="nf">apply_tariff</span><span class="p">(</span><span class="n">energy_used</span><span class="p">,</span> <span class="n">hour</span><span class="p">)</span>
+        <span class="n">energy_cost_list</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">energy_cost</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">energy_cost_list</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10</span> <span class="o">-</span><span class="n">o</span> <span class="nf">apply_tariff_iterrows</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Iterrows</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>439 ms ± 12.5 ms per loop (mean ± std. dev. of 3 runs, 10 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="3-pandas-apply">3. Pandas’ <code class="language-plaintext highlighter-rouge">apply()</code></h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_tariff_withapply</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="nf">apply_tariff</span><span class="p">(</span>
+            <span class="n">kwh</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="sh">'</span><span class="s">energy_kwh</span><span class="sh">'</span><span class="p">],</span>
+            <span class="n">hour</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="sh">'</span><span class="s">date_time</span><span class="sh">'</span><span class="p">].</span><span class="n">hour</span><span class="p">),</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10</span> <span class="o">-</span><span class="n">o</span> <span class="nf">apply_tariff_withapply</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Apply</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>145 ms ± 6.89 ms per loop (mean ± std. dev. of 3 runs, 10 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="4-looping-with-itertuples">4. Looping with <code class="language-plaintext highlighter-rouge">.itertuples()</code></h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_tariff_itertuples</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">energy_cost_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">itertuples</span><span class="p">():</span>
+        <span class="c1"># Get electricity used and hour of day
+</span>        <span class="n">energy_used</span> <span class="o">=</span> <span class="n">row</span><span class="p">.</span><span class="n">energy_kwh</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">row</span><span class="p">.</span><span class="n">date_time</span><span class="p">.</span><span class="n">hour</span>
+        <span class="c1"># Append cost list
+</span>        <span class="n">energy_cost</span> <span class="o">=</span> <span class="nf">apply_tariff</span><span class="p">(</span><span class="n">energy_used</span><span class="p">,</span> <span class="n">hour</span><span class="p">)</span>
+        <span class="n">energy_cost_list</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">energy_cost</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">energy_cost_list</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10</span> <span class="o">-</span><span class="n">o</span> <span class="nf">apply_tariff_itertuples</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Itertuples</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>30.8 ms ± 1.07 ms per loop (mean ± std. dev. of 3 runs, 10 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="5-numpys-vectorize">5. Numpy’s <code class="language-plaintext highlighter-rouge">vectorize()</code></h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_tariff_vect</span><span class="p">(</span><span class="n">hour</span><span class="p">,</span> <span class="n">kwh</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="k">elif</span> <span class="mi">7</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">17</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="mi">28</span>
+
+    <span class="k">return</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">kwh</span>
+
+<span class="n">vfunc</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">vectorize</span><span class="p">(</span><span class="n">apply_tariff_vect</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">compute_cost_vect</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">hour_array</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">date_time</span><span class="p">.</span><span class="n">dt</span><span class="p">.</span><span class="n">hour</span><span class="p">.</span><span class="n">values</span>
+    <span class="nf">if </span><span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nf">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">23</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Invalid hour values</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span> <span class="o">=</span> <span class="nf">vfunc</span><span class="p">(</span><span class="n">hour_array</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">energy_kwh</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10</span> <span class="o">-</span><span class="n">o</span> <span class="nf">compute_cost_vect</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Numpy vectorize</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2.99 ms ± 166 µs per loop (mean ± std. dev. of 3 runs, 10 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="6-the-numpy-loop">6. The Numpy loop</h2>
+
+<p>Before testing Cython and Numba, let’s create a loop function <code class="language-plaintext highlighter-rouge">loop_tariff</code> with Numpy array arguments, on which we are going to apply the different methods.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">loop_tariff</span><span class="p">(</span><span class="n">hour_array</span><span class="p">,</span> <span class="n">energy_kwh_array</span><span class="p">,</span> <span class="n">cost_cents_array</span><span class="p">):</span>
+
+    <span class="n">df_len</span> <span class="o">=</span> <span class="n">hour_array</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">df_len</span><span class="p">):</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">hour_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="k">elif</span> <span class="mi">7</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">17</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">28</span>
+        <span class="n">cost_cents_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">energy_kwh_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        
+<span class="k">def</span> <span class="nf">compute_cost</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">hour_array</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">date_time</span><span class="p">.</span><span class="n">dt</span><span class="p">.</span><span class="n">hour</span><span class="p">.</span><span class="n">values</span>
+    <span class="nf">if </span><span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nf">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">23</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Invalid hour values</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="nf">loop_tariff</span><span class="p">(</span><span class="n">hour_array</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">energy_kwh</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">10</span> <span class="o">-</span><span class="n">o</span> <span class="nf">compute_cost</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Numpy loop</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>6.94 ms ± 437 µs per loop (mean ± std. dev. of 3 runs, 10 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="7-cython">7. Cython</h2>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span>
+
+<span class="kn">cimport</span> <span class="nn">cython</span>
+
+<span class="nd">@cython.boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.initializedcheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span> 
+<span class="k">cdef</span> <span class="nf">loop_tariff_cython</span><span class="p">(</span><span class="kt">long</span><span class="p">[:]</span> <span class="n">hour_array</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">energy_kwh_array</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">cost_cents_array</span><span class="p">):</span>
+
+    <span class="k">cdef</span><span class="p">:</span> 
+        <span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="n">rate</span>
+        <span class="kt">long</span> <span class="n">hour</span>
+        <span class="kt">int</span> <span class="n">df_len</span> <span class="o">=</span> <span class="n">hour_array</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">df_len</span><span class="p">):</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">hour_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="k">elif</span> <span class="mi">7</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">17</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">28</span>
+        <span class="n">cost_cents_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">energy_kwh_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        
+        
+<span class="k">cpdef</span> <span class="nf">compute_cost_cython</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">hour_array</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">date_time</span><span class="p">.</span><span class="n">dt</span><span class="p">.</span><span class="n">hour</span><span class="p">.</span><span class="n">values</span>
+    <span class="nf">if </span><span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nb">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">23</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nb">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Invalid hour values</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="nf">loop_tariff_cython</span><span class="p">(</span><span class="n">hour_array</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">energy_kwh</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">100</span> <span class="o">-</span><span class="n">o</span> <span class="nf">compute_cost_cython</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Cython</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>560 µs ± 56.1 µs per loop (mean ± std. dev. of 3 runs, 100 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Run time is too short to try multithreading the Cython loop with openMP. However that would be very interesting to try on a larger dataframe with heavier computations performed inside the loop.</p>
+
+<h2 id="8-numba">8. Numba</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">loop_tariff_numba</span><span class="p">(</span><span class="n">hour_array</span><span class="p">,</span> <span class="n">energy_kwh_array</span><span class="p">,</span> <span class="n">cost_cents_array</span><span class="p">):</span>
+
+    <span class="n">df_len</span> <span class="o">=</span> <span class="n">hour_array</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">df_len</span><span class="p">):</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="n">hour_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="k">elif</span> <span class="mi">7</span> <span class="o">&lt;=</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">17</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">28</span>
+        <span class="n">cost_cents_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">energy_kwh_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<span class="n">loop_tariff_numba</span> <span class="o">=</span> <span class="nf">jit</span><span class="p">(</span><span class="n">loop_tariff_numba</span><span class="p">)</span>
+        
+<span class="k">def</span> <span class="nf">compute_cost_numba</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">hour_array</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">date_time</span><span class="p">.</span><span class="n">dt</span><span class="p">.</span><span class="n">hour</span><span class="p">.</span><span class="n">values</span>
+    <span class="nf">if </span><span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nf">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">hour_array</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">23</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Invalid hour values</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="nf">loop_tariff_numba</span><span class="p">(</span><span class="n">hour_array</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">energy_kwh</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">r</span> <span class="mi">3</span> <span class="o">-</span><span class="n">n</span> <span class="mi">100</span> <span class="o">-</span><span class="n">o</span> <span class="nf">compute_cost_numba</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">timeit</span><span class="p">[</span><span class="sh">'</span><span class="s">Numba</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">best</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>816 µs ± 413 µs per loop (mean ± std. dev. of 3 runs, 100 loops each)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">cost_cents</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">cost_cents_ref</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">cost_cents</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Well we have many options to loop over Pandas data (we did not try them all!) and a large range of performance results: from 0.0005s to 2s for some very simple computations.</p>
+
+<p>At first I would use Pandas’ <code class="language-plaintext highlighter-rouge">.itertuples()</code> when prototyping a code. This is rather intuitive and efficient. Then, if I notice that a huge amount of time is spent on the loop part, I would start dealing directly with Numpy arrays from the dataframe’s columns. I am surprised to see how efficient is the <code class="language-plaintext highlighter-rouge">vectorize()</code> method.</p>
+
+<p>Remember that the dataframe that we are using in the present case is really small. The discrepancy observed here could correspond to many minutes on large dataframes!! However, optimizing can also take a long time or lead to complex issues…</p>
+
+<p>I am really pleased to see that Numba and Cython exhibit equivalent performance! I am used to profile my code and cythonize the slow parts (using memory views to update the dataframes and openMP to multithread). But this is really more work than using Numba, for a similar reward! However, I do not know yet if you can address all kinds of problems with Numba with the same efficiency? Numba is definitely the best option when dealing with standard array-based operations. I am not sure that it can be as efficient as Cython on other data structures such as heaps for example.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">matplotlib</span><span class="p">.</span><span class="n">rcParams</span><span class="p">.</span><span class="nf">update</span><span class="p">({</span><span class="sh">'</span><span class="s">font.size</span><span class="sh">'</span><span class="p">:</span> <span class="mi">20</span><span class="p">})</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">semilogx</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">timeit</span><span class="p">.</span><span class="nf">values</span><span class="p">()),</span> <span class="nf">list</span><span class="p">(</span><span class="n">timeit</span><span class="p">.</span><span class="nf">keys</span><span class="p">()),</span> <span class="sh">'</span><span class="s">ko</span><span class="sh">'</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">xlabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-07-03_01/output_46_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">timeit</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'Crappy Loop': 1.8504301450011553,
+ 'Iterrows': 0.4271442763001687,
+ 'Apply': 0.13913396169991757,
+ 'Itertuples': 0.02964207869990787,
+ 'Numpy vectorize': 0.0028313495000475085,
+ 'Numpy loop': 0.006625487999917823,
+ 'Cython': 0.0005189561900260742,
+ 'Numba': 0.0005024597499868833}
+</code></pre></div></div>
+

@@ -1,0 +1,400 @@
+<p>A simple yet powerful use case of sentence embeddings is computing the similarity between different sentences. By representing sentences as numerical vectors, we can leverage mathematical operations to determine the degree of similarity.</p>
+
+<p>For the purpose of this demonstration, we’ll be using a recent text embedding model provided by the Beijing Academy of Artificial Intelligence (BAAI): <a href="https://huggingface.co/BAAI/bge-base-en"><code class="language-plaintext highlighter-rouge">BAAI/bge-base-en</code></a>. BGE stands for BAAI General Embedding, and appears to be a BERT-like family of models, with a MIT licence. This particular model exhibits an embedding dimension of 768 and an input sequence length of 512 tokens. Keep in mind that longer sequences are truncated to fit within this limit. To put things into perspective, let’s compare it to OpenAI’s well-known model: <a href="https://platform.openai.com/docs/guides/embeddings/second-generation-models"><code class="language-plaintext highlighter-rouge">text-embedding-ada-002</code></a>, which features an embedding dimension of 1536 and an input sequence length of 8191 tokens. While the latter model offers some impressive capabilities, it’s worth noting that it cannot be run locally. Here’s a quick comparison of these two embedding models:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Model</th>
+      <th style="text-align: right">Can Run Locally</th>
+      <th style="text-align: right">Multilingual</th>
+      <th style="text-align: right">Input Sequence Length</th>
+      <th style="text-align: right">Embedding Dimension</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BAAI/bge-base-en</code></td>
+      <td style="text-align: right">Yes</td>
+      <td style="text-align: right">No</td>
+      <td style="text-align: right">512</td>
+      <td style="text-align: right">768</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">text-embedding-ada-002</code></td>
+      <td style="text-align: right">No</td>
+      <td style="text-align: right">Yes</td>
+      <td style="text-align: right">8191</td>
+      <td style="text-align: right">1536</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>While a larger instance of BAAI/bge - <code class="language-plaintext highlighter-rouge">BAAI/bge-large-en</code> - is available, we’ve opted for BAAI/bge-base-en for its relatively smaller size of 0.44GB, making it fast and suitable for regular machines. It’s also worth mentioning that despite its compact nature, <code class="language-plaintext highlighter-rouge">BAAI/bge-base-en</code> boasts a second-place rank on the Massive Text Embedding Benchmark leaderboard MTEB at the time of writing this post, which you can check out here: <a href="https://huggingface.co/spaces/mteb/leaderboard">https://huggingface.co/spaces/mteb/leaderboard</a>.</p>
+
+<p>For the purpose of running this embedding model, we’ll be utilizing the neat Python library <a href="https://www.sbert.net/"><code class="language-plaintext highlighter-rouge">sentence_transformers</code></a>. Alternatively, there are other Python libraries that provide access to this model, such as <a href="https://github.com/FlagOpen/FlagEmbedding/tree/master">FlagEmbedding</a> or <a href="https://python.langchain.com/docs/integrations/text_embedding/bge_huggingface">LangChain</a>.</p>
+
+<p>Now, let’s get started by importing the necessary libraries.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+<span class="kn">from</span> <span class="n">sentence_transformers</span> <span class="kn">import</span> <span class="n">SentenceTransformer</span>
+</code></pre></div></div>
+
+<p>System information and package versions:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python version       : 3.11.4
+OS                   : Linux
+Machine              : x86_64
+matplotlib           : 3.7.1
+numpy                : 1.24.4
+pandas               : 2.0.3
+seaborn              : 0.12.2
+sentence_transformers: 2.2.2
+</code></pre></div></div>
+
+<h2 id="download-and-load-the-embedding-model">Download and load the embedding model</h2>
+
+<p>To get started with sentence embeddings, we’ll need to download and load the <code class="language-plaintext highlighter-rouge">BAAI/bge-base-en</code> model using the <code class="language-plaintext highlighter-rouge">SentenceTransformer</code> library. If it’s the first time you’re using this model, executing the following code will trigger the download of various files:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="nc">SentenceTransformer</span><span class="p">(</span><span class="sh">'</span><span class="s">BAAI/bge-base-en</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1000" src="/img/2023-08-16_01/Selection_103.png" alt="Selection_103" />
+</p>
+
+<p>The model’s artifacts are cached in a hidden home directory:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>tree ~/.cache/torch/sentence_transformers/BAAI_bge-base-en
+.cache/torch/sentence_transformers/BAAI_bge-base-en
+├── 1_Pooling
+│   └── config.json
+├── config.json
+├── config_sentence_transformers.json
+├── model.safetensors
+├── modules.json
+├── pytorch_model.bin
+├── README.md
+├── sentence_bert_config.json
+├── special_tokens_map.json
+├── tokenizer_config.json
+├── tokenizer.json
+└── vocab.txt
+
+1 directory, 12 files
+</code></pre></div></div>
+
+<p>With the model loaded, we’re now ready to encode our first sentence. The resulting embedding vector is an array of floating-point values:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">emb</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="sh">"</span><span class="s">It’s not an easy thing to meet your maker</span><span class="sh">"</span><span class="p">,</span> <span class="n">normalize_embeddings</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">emb</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([-0.01139987,  0.00527102, -0.00226131, -0.01054202,  0.04873622],
+      dtype=float32)
+</code></pre></div></div>
+
+<p>We can check the dimensions of the embedding and confirm that the vector has been normalized:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">emb</span><span class="p">.</span><span class="n">shape</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(768,)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.99999994
+</code></pre></div></div>
+
+<p>Next we’ll compute embeddings for two sentences and then measure their cosine similarity.</p>
+
+<h2 id="cosine-similarity">Cosine similarity</h2>
+
+<p>In order to compute an embedding, we’ll use a helper function that can be expanded upon in the future to clean the input text. For now, it only removes any carriage returns and line feeds from the input text:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="se">\r</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">normalize_embeddings</span><span class="o">=</span><span class="n">normalize</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Let’s start by creating an empty list to store the resulting embeddings:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">embs</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div></div>
+
+<p>Now we compute two embeddings:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># first sentence
+</span><span class="n">sen_1</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Berlin is the capital of Germany</span><span class="sh">"</span>
+<span class="n">emb_1</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">sen_1</span><span class="p">)</span>
+<span class="n">embs</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">sen_1</span><span class="p">,</span> <span class="n">emb_1</span><span class="p">))</span>
+
+<span class="c1"># second sentence 
+</span><span class="n">sen_2</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Yaoundé is the capital of Cameroon</span><span class="sh">"</span>
+<span class="n">emb_2</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">sen_2</span><span class="p">)</span>
+<span class="n">embs</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">sen_2</span><span class="p">,</span> <span class="n">emb_2</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>With the embeddings computed, we can now move on to calculating their cosine similarity. The cosine similarity $S(u,v)$ between two vectors $u$ and $v$ is defined as:</p>
+
+\[S(u, v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}\]
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">vec1</span><span class="p">,</span> <span class="n">vec2</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">normalized</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">vec1</span><span class="p">,</span> <span class="n">vec2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">vec1</span><span class="p">,</span> <span class="n">vec2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">vec1</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">linalg</span><span class="p">.</span><span class="nf">norm</span><span class="p">(</span><span class="n">vec2</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="p">)</span>
+</code></pre></div></div>
+
+<p>Cosine similarity values range between -1 and 1. When applied to the same vector, the result is 1:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">emb_1</span><span class="p">,</span> <span class="n">emb_1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000001
+</code></pre></div></div>
+
+<p>When applied to opposite vectors, the result is -1:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cosine_similarity</span><span class="p">(</span><span class="o">-</span><span class="n">emb_1</span><span class="p">,</span> <span class="n">emb_1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-1.0000001
+</code></pre></div></div>
+
+<p>If the result is close to zero, it indicates that the vectors are nearly orthogonal:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">emb_1</span><span class="p">,</span> <span class="n">emb_2</span> <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">emb_1</span><span class="p">,</span> <span class="n">emb_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">emb_1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-4.4703484e-08
+</code></pre></div></div>
+
+<p>Remember that the concept of cosine similarity is tied to angles. Even when vectors have different magnitudes, collinear vectors are perceived as similar. It’s important to note that $S(u,v) = 1$ indicates that $u = v$, only when working with vectors of same magnitude. Another related measure is cosine distance: $d(u,v) = 1 - S(u,v)$. However, it’s worth mentioning that cosine distance doesn’t qualify as a metric due to its failure to meet the triangle inequality requirement: $d(u, v) \leq d(u, w) + d(w, v)$ for any $w$.</p>
+
+<p>And here is the cosine similarity between the embeddings of the two sentences computed above:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">emb_1</span><span class="p">,</span> <span class="n">emb_2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.8196905
+</code></pre></div></div>
+
+<p>This seems to be a rather large similarity value.</p>
+
+<h2 id="cosine-similarity-heatmaps">Cosine similarity heatmaps</h2>
+
+<p>Let’s take this a step further by generating a cosine similarity heatmap. To begin, we’ll compute embeddings for three additional sentences:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sen_3</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Esplanade MRT station is an underground Mass Rapid Transit station on the Circle line in Singapore</span><span class="sh">"</span>
+<span class="n">emb_3</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">sen_3</span><span class="p">)</span>
+<span class="n">embs</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">sen_3</span><span class="p">,</span> <span class="n">emb_3</span><span class="p">))</span>
+<span class="n">sen_4</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Remove jalapeños from surface and stir in the additional chili powder, ground cumin and onion powder.</span><span class="sh">"</span>
+<span class="n">emb_4</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">sen_4</span><span class="p">)</span>
+<span class="n">embs</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">sen_4</span><span class="p">,</span> <span class="n">emb_4</span><span class="p">))</span>
+<span class="n">sen_5</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Fideua is a traditional dish, similar in style to paella but made with short spaghetti-like pasta.</span><span class="sh">"</span>
+<span class="n">emb_5</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">sen_5</span><span class="p">)</span>
+<span class="n">embs</span><span class="p">.</span><span class="nf">append</span><span class="p">((</span><span class="n">sen_5</span><span class="p">,</span> <span class="n">emb_5</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>With the embeddings computed, we can now proceed to calculate a 5-by-5 similarity matrix that compares the embeddings of all the stored sentences. Here’s how we can do it:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">compute_cosine_similarity_matrix</span><span class="p">(</span><span class="n">embs</span><span class="p">,</span> <span class="n">label_size</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">embs</span><span class="p">)</span>
+    <span class="n">cds</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">emb</span><span class="p">)</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">embs</span><span class="p">):</span>
+        <span class="n">cds</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
+            <span class="n">cs</span> <span class="o">=</span> <span class="nf">cosine_similarity</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">embs</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">normalized</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">cds</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">cs</span>
+    <span class="c1"># The matrix is symmetric with unit diagonal
+</span>    <span class="n">cds</span> <span class="o">+=</span> <span class="n">np</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="n">cds</span><span class="p">)</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="n">label_size</span><span class="p">]</span> <span class="o">+</span> <span class="sh">"</span><span class="s">...</span><span class="sh">"</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">embs</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">cds</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+
+<span class="n">df</span> <span class="o">=</span> <span class="nf">compute_cosine_similarity_matrix</span><span class="p">(</span><span class="n">embs</span><span class="p">)</span>
+<span class="n">df</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Berlin is the capital of Germa...</th>
+      <th>Yaoundé is the capital of Came...</th>
+      <th>Esplanade MRT station is an un...</th>
+      <th>Remove jalapeños from surface ...</th>
+      <th>Fideua is a traditional dish, ...</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Berlin is the capital of Germa...</th>
+      <td>1.000000</td>
+      <td>0.819691</td>
+      <td>0.711520</td>
+      <td>0.685216</td>
+      <td>0.701959</td>
+    </tr>
+    <tr>
+      <th>Yaoundé is the capital of Came...</th>
+      <td>0.819691</td>
+      <td>1.000000</td>
+      <td>0.702962</td>
+      <td>0.673310</td>
+      <td>0.714926</td>
+    </tr>
+    <tr>
+      <th>Esplanade MRT station is an un...</th>
+      <td>0.711520</td>
+      <td>0.702962</td>
+      <td>1.000000</td>
+      <td>0.655668</td>
+      <td>0.625339</td>
+    </tr>
+    <tr>
+      <th>Remove jalapeños from surface ...</th>
+      <td>0.685216</td>
+      <td>0.673310</td>
+      <td>0.655668</td>
+      <td>1.000000</td>
+      <td>0.757284</td>
+    </tr>
+    <tr>
+      <th>Fideua is a traditional dish, ...</th>
+      <td>0.701959</td>
+      <td>0.714926</td>
+      <td>0.625339</td>
+      <td>0.757284</td>
+      <td>1.000000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>To visualize this information, we create a heatmap using Seaborn:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="p">.</span><span class="nf">heatmap</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">YlGnBu</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="nf">tick_top</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">.</span><span class="nf">get_xticklabels</span><span class="p">():</span>
+    <span class="n">label</span><span class="p">.</span><span class="nf">set_rotation</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2023-08-16_01/output_24_0.png" alt="output_24_0" />
+</p>
+
+<p>Darker shades indicate higher cosine similarity values, highlighting sentences that are more semantically similar to each other. Sentences related to country capitals or food exhibit a larger cross similarity than others.</p>
+
+<p>Let’s further illustrate the concept of cosine similarity by applying it to a different set of sentences centered around the message: “I love pizza”. We’ll start by creating embeddings for the following set of sentences:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sentences</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="sh">"</span><span class="s">I love pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">i love Pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">i have a passion for Pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I like pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Pizza is my favorite food</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I think pizza is yummy!</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I love eating pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I love to eat pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I like eating pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I am obsessed with pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I am addicted to pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Uranium-235 has a half-life of 703.8 million years</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">I HATE pizza</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Pizza is disgusting!</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Pizza is a horrible food</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<p>After encoding these sentences, we’ll compute the cosine similarity matrix and visualize it with a heatmap:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">embeddings</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">sentences</span><span class="p">,</span> <span class="n">normalize_embeddings</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="nf">compute_cosine_similarity_matrix</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="nf">zip</span><span class="p">(</span><span class="n">sentences</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="p">.</span><span class="nf">heatmap</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">YlGnBu</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="nf">tick_top</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">.</span><span class="nf">get_xticklabels</span><span class="p">():</span>
+    <span class="n">label</span><span class="p">.</span><span class="nf">set_rotation</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1000" src="/img/2023-08-16_01/Selection_105.png" alt="Selection_105" />
+</p>
+
+<p>Sentences expressing positive sentiments about pizza cluster together, forming regions of higher cosine similarity, while negative sentiments are distinctly separated. It’s worth mentioning that one of the applications of sentence embedding models is sentiment analysis. We can also observe that the “Uranium-235” sentence is not related to the other sentences.</p>
+
+<h2 id="encoding-processing-time">Encoding processing time</h2>
+
+<p>Performance is a crucial consideration when working with real-world datasets. Let’s take a moment to evaluate the encoding processing time of the sentence embedding model on a regular GPU. For this purpose, we’ll encode a list of 100,000 identical sentences. While this might seem repetitive, and the chosen sentence is kind of short, this will provide us with a very <em>rough</em> estimate of the time it takes to encode a larger list of sentences.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sentences</span> <span class="o">=</span> <span class="mi">100_000</span> <span class="o">*</span> <span class="p">[</span><span class="sh">"</span><span class="s">All work and no play makes Jack a dull boy</span><span class="sh">"</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">embeddings</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">sentences</span><span class="p">,</span> <span class="n">normalize_embeddings</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 46.7 s, sys: 3.48 s, total: 50.2 s
+Wall time: 37 s
+</code></pre></div></div>
+
+<p>The GPU is a NVIDIA GeForce RTX 3070 Ti Laptop with 8GB of memory:</p>
+
+<p align="center">
+  <img width="600" src="/img/2023-08-16_01/Selection_104.png" alt="Selection_104" />
+</p>
+
+<p>So it takes 37s to encode these 100,000  short sentences.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>In this very short exploration of sentence embeddings, we’ve delved into the world of transforming textual information into meaningful numerical representations. One standout feature that makes this technology truly accessible is the ability to run open-source models locally, putting the power of sentence embeddings right at your fingertips.</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

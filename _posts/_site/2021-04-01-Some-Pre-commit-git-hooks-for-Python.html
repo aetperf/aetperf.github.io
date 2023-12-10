@@ -1,0 +1,246 @@
+<p align="center">
+  <img width="400" src="/img/2021-04-01_01/pre-commit.png" alt="Pre-commit" />
+</p>
+
+<p>Pre-commit hooks are a great way to automatically check and clean the code. They are executed when committing changes to git . This can be useful when several people are working on the same package with different code styles, but also to help finding some typos, mistakes, etc…</p>
+
+<p>In this post we are dealing with git pre-commit hooks for Python code, with the <a href="https://github.com/pre-commit/pre-commit"><code class="language-plaintext highlighter-rouge">pre-commit</code></a> package. We will not go into much details regarding the different configurations of all the possible hooks. <a href="https://pre-commit.com/hooks.html">Here</a> is a list of some supported hooks. What we want is basically to format the code, remove unused imports and sort and classify these imports (standard library &lt; external libraries &lt; local imports).</p>
+
+<p>First we need to install <a href="https://github.com/pre-commit/pre-commit"><code class="language-plaintext highlighter-rouge">pre-commit</code></a>, which is a framework for managing and maintaining multi-language pre-commit hooks:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">pre</span><span class="o">-</span><span class="n">commit</span>
+<span class="err">$</span> <span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="o">--</span><span class="n">version</span> 
+<span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="mf">2.11</span><span class="p">.</span><span class="mi">1</span>
+</code></pre></div></div>
+
+<p>Next we need to go to our git repository of interest and create a config file for <code class="language-plaintext highlighter-rouge">pre-commit</code>. Here is the initial YAML config file that we are going to complete later:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+</code></pre></div></div>
+
+<p>It is called <code class="language-plaintext highlighter-rouge">.pre-commit-config.yaml</code>. So far, it deals with trailing white spaces and end of files. What we want to use as pre-commit hooks, in this post, are the following tools:</p>
+
+<ul>
+  <li><a href="https://github.com/psf/black">black</a>: a Python code formatter</li>
+</ul>
+
+<p align="center">
+  <img width="250" src="/img/2021-04-01_01/black.png" alt="Black" />
+</p>
+
+<ul>
+  <li><a href="https://github.com/hadialqattan/pycln">pycln</a>: a formatter for finding and removing unused import statements</li>
+</ul>
+
+<p align="center">
+  <img width="250" src="/img/2021-04-01_01/pycln.png" alt="Pycln" />
+</p>
+
+<ul>
+  <li><a href="https://github.com/PyCQA/isort">isort</a>: a Python utility / library to sort imports alphabetically, and automatically separated into sections and by type</li>
+</ul>
+
+<p align="center">
+  <img width="250" src="/img/2021-04-01_01/isort.png" alt="Isort" />
+</p>
+
+<p>So we need to add the following lines to the pre-commit config file:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span>   <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/psf/black</span>
+    <span class="na">rev</span><span class="pi">:</span> <span class="s">20.8b1</span>
+    <span class="na">hooks</span><span class="pi">:</span>
+    <span class="pi">-</span>   <span class="na">id</span><span class="pi">:</span> <span class="s">black</span>
+        <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">--config=pyproject.toml</span><span class="pi">]</span>
+<span class="pi">-</span>   <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/hadialqattan/pycln</span>
+    <span class="na">rev</span><span class="pi">:</span> <span class="s">v0.0.1-beta.3</span>
+    <span class="na">hooks</span><span class="pi">:</span>
+    <span class="pi">-</span>   <span class="na">id</span><span class="pi">:</span> <span class="s">pycln</span>
+        <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">--config=pyproject.toml</span><span class="pi">]</span>
+<span class="pi">-</span>   <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/pycqa/isort</span>
+    <span class="na">rev</span><span class="pi">:</span> <span class="s">5.5.4</span>
+    <span class="na">hooks</span><span class="pi">:</span>
+    <span class="pi">-</span>   <span class="na">id</span><span class="pi">:</span> <span class="s">isort</span>
+        <span class="na">files</span><span class="pi">:</span> <span class="s2">"</span><span class="se">\\</span><span class="s">.(py)$"</span>
+        <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">--settings-path=pyproject.toml</span><span class="pi">]</span>
+</code></pre></div></div>
+
+<p>Also, we need to create a TOML settings file for theses tools, named <code class="language-plaintext highlighter-rouge">pyproject.toml</code>:</p>
+
+<div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nn">[tool.black]</span>
+<span class="py">line-length</span> <span class="p">=</span> <span class="mi">79</span>
+
+<span class="nn">[tool.pycln]</span>
+<span class="py">all</span> <span class="p">=</span> <span class="kc">true</span>
+
+<span class="nn">[tool.isort]</span>
+<span class="py">line_length</span> <span class="p">=</span> <span class="mi">79</span>
+<span class="py">multi_line_output</span> <span class="p">=</span> <span class="mi">3</span>
+<span class="py">include_trailing_comma</span> <span class="p">=</span> <span class="kc">true</span>
+<span class="py">force_grid_wrap</span> <span class="p">=</span> <span class="mi">0</span>
+<span class="py">use_parentheses</span> <span class="p">=</span> <span class="kc">true</span>
+<span class="py">ensure_newline_before_comments</span> <span class="p">=</span> <span class="kc">true</span>
+</code></pre></div></div>
+
+<p>A lot of settings can be specified… A concern might be the line length and to make Black compatible with isort. Now we add <code class="language-plaintext highlighter-rouge">pre-commit</code> and the different formatting tools to the <code class="language-plaintext highlighter-rouge">requirements-dev.txt</code> file:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">cat</span> <span class="n">requirements</span><span class="o">-</span><span class="n">dev</span><span class="p">.</span><span class="n">txt</span>
+<span class="n">pre</span><span class="o">-</span><span class="n">commit</span>
+<span class="n">black</span>
+<span class="n">pycln</span>
+<span class="n">isort</span>
+<span class="err">$</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">-</span><span class="n">dev</span><span class="p">.</span><span class="n">txt</span>
+</code></pre></div></div>
+
+<p>Also we need to “register” <code class="language-plaintext highlighter-rouge">pre-commit</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="n">install</span>
+<span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="n">installed</span> <span class="n">at</span> <span class="p">.</span><span class="n">git</span><span class="o">/</span><span class="n">hooks</span><span class="o">/</span><span class="n">pre</span><span class="o">-</span><span class="n">commit</span>
+</code></pre></div></div>
+
+<p>We can run the hooks manually in order to check that everything is working and to initialize the whole process:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>pre-commit run <span class="nt">--all-files</span>
+<span class="o">[</span>INFO] Initializing environment <span class="k">for </span>https://github.com/pre-commit/pre-commit-hooks.
+<span class="o">[</span>INFO] Initializing environment <span class="k">for </span>https://github.com/psf/black.
+<span class="o">[</span>INFO] Initializing environment <span class="k">for </span>https://github.com/hadialqattan/pycln.
+<span class="o">[</span>INFO] Initializing environment <span class="k">for </span>https://github.com/pycqa/isort.
+<span class="o">[</span>INFO] Installing environment <span class="k">for </span>https://github.com/pre-commit/pre-commit-hooks.
+<span class="o">[</span>INFO] Once installed this environment will be reused.
+<span class="o">[</span>INFO] This may take a few minutes...
+<span class="o">[</span>INFO] Installing environment <span class="k">for </span>https://github.com/psf/black.
+<span class="o">[</span>INFO] Once installed this environment will be reused.
+<span class="o">[</span>INFO] This may take a few minutes...
+<span class="o">[</span>INFO] Installing environment <span class="k">for </span>https://github.com/hadialqattan/pycln.
+<span class="o">[</span>INFO] Once installed this environment will be reused.
+<span class="o">[</span>INFO] This may take a few minutes...
+<span class="o">[</span>INFO] Installing environment <span class="k">for </span>https://github.com/pycqa/isort.
+<span class="o">[</span>INFO] Once installed this environment will be reused.
+<span class="o">[</span>INFO] This may take a few minutes...
+Trim Trailing Whitespace.................................................Passed
+Fix End of Files.........................................................Failed
+- hook <span class="nb">id</span>: end-of-file-fixer
+- <span class="nb">exit </span>code: 1
+- files were modified by this hook
+
+Fixing README.md
+Fixing requirements.txt
+
+black....................................................................Passed
+pycln....................................................................Passed
+isort....................................................................Failed
+- hook <span class="nb">id</span>: isort
+- files were modified by this hook
+
+Fixing /home/francois/Workspace/PCH/src/model_tls.py
+Fixing /home/francois/Workspace/PCH/src/train.py
+</code></pre></div></div>
+
+<p>Now everything runs smoothly when we commit some changes:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"pre-commit hook test"</span>
+Trim Trailing Whitespace.................................................Passed
+Fix End of Files.........................................................Passed
+black....................................................................Passed
+pycln....................................................................Passed
+isort....................................................................Passed
+</code></pre></div></div>
+
+<p>We can test these hooks with a “dirty” piece of code. Here we are just looking at some imports part:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">sklearn.metrics</span> <span class="kn">import</span> <span class="n">max_error</span><span class="p">,</span> <span class="n">mean_absolute_error</span><span class="p">,</span> <span class="n">mean_absolute_percentage_error</span><span class="p">,</span> <span class="n">mean_squared_error</span><span class="p">,</span> <span class="n">r2_score</span>
+<span class="kn">import</span> <span class="n">os</span><span class="p">,</span> <span class="n">sys</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">model_cfg</span><span class="p">,</span> <span class="n">model_tls</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span> <span class="n">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">LinearRegression</span>
+<span class="kn">from</span> <span class="n">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">KFold</span>
+</code></pre></div></div>
+
+<p>These imports are a little bit messy. Also, the <code class="language-plaintext highlighter-rouge">sys</code> and <code class="language-plaintext highlighter-rouge">sklearn.linear.LinearRegression</code> imports are not used later in the code. After committing this source code, it looks quite better:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span> <span class="n">sklearn.metrics</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">max_error</span><span class="p">,</span>
+    <span class="n">mean_absolute_error</span><span class="p">,</span>
+    <span class="n">mean_absolute_percentage_error</span><span class="p">,</span>
+    <span class="n">mean_squared_error</span><span class="p">,</span>
+    <span class="n">r2_score</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="n">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">KFold</span>
+
+<span class="kn">import</span> <span class="n">model_cfg</span>
+<span class="kn">import</span> <span class="n">model_tls</span>
+</code></pre></div></div>
+
+<p>What if we want to add a hook and update the process? Let’s say we want to add this tool:</p>
+
+<ul>
+  <li><a href="https://github.com/python/mypy">Mypy</a>: optional static type checker for Python</li>
+</ul>
+
+<p>We just update the YAML pre-commit config file <code class="language-plaintext highlighter-rouge">.pre-commit-config.yaml</code> by adding the Mypy hook:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span>   <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/pre-commit/mirrors-mypy</span>
+    <span class="na">rev</span><span class="pi">:</span> <span class="s">v0.812</span>
+    <span class="na">hooks</span><span class="pi">:</span>
+    <span class="pi">-</span>   <span class="na">id</span><span class="pi">:</span> <span class="s">mypy</span>
+</code></pre></div></div>
+
+<p>Then we add <code class="language-plaintext highlighter-rouge">mypy</code> to the <code class="language-plaintext highlighter-rouge">requirements-dev.txt</code> file. We do not specify any specific setting for Mypy in the  <code class="language-plaintext highlighter-rouge">pyproject.toml</code>. Let’s run the pre-commit hooks:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>pre-commit run <span class="nt">--all-files</span>
+<span class="o">[</span>INFO] Initializing environment <span class="k">for </span>https://github.com/pre-commit/mirrors-mypy.
+<span class="o">[</span>INFO] Installing environment <span class="k">for </span>https://github.com/pre-commit/mirrors-mypy.
+<span class="o">[</span>INFO] Once installed this environment will be reused.
+<span class="o">[</span>INFO] This may take a few minutes...
+Trim Trailing Whitespace.................................................Passed
+Fix End of Files.........................................................Passed
+black....................................................................Passed
+pycln....................................................................Passed
+isort....................................................................Passed
+mypy.....................................................................Passed
+</code></pre></div></div>
+
+<p>This seems to be OK! Let’s not forget to commit the YAML file change:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add .pre-commit-config.yaml
+<span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"added the mypy hook "</span>
+Trim Trailing Whitespace.................................................Passed
+Fix End of Files.........................................................Passed
+black....................................................................Passed
+pycln....................................................................Passed
+isort....................................................................Passed
+mypy.....................................................................Passed
+</code></pre></div></div>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

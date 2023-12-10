@@ -1,0 +1,238 @@
+<p><strong>Updated</strong> July 11, 2023 data update</p>
+
+<p>Data source : <a href="https://climatereanalyzer.org/clim/sst_daily/json/oisst2.1_natlan1_sst_day.json">https://climatereanalyzer.org</a> (NOAA Optimum Interpolation SST (OISST) dataset version 2.1)</p>
+
+<p>From the NOAA <a href="https://www.ncei.noaa.gov/products/optimum-interpolation-sst">website</a>:</p>
+
+<blockquote>
+  <p>The NOAA 1/4° Daily Optimum Interpolation Sea Surface Temperature (OISST) is a long term Climate Data Record that incorporates observations from different platforms (satellites, ships, buoys and Argo floats) into a regular global grid. The dataset is interpolated to fill gaps on the grid and create a spatially complete map of sea surface temperature. Satellite and ship observations are referenced to buoys to compensate for platform differences and sensor biases.</p>
+</blockquote>
+
+<p>In the present dataset, the surface temperature is averaged over the whole north Atlantic surface and over the daily time period. The data starts in 1981, and is avalaible until now (with maybe a few days lag).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">use</span><span class="p">(</span><span class="sh">"</span><span class="s">fivethirtyeight</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>  <span class="c1"># figure size
+</span></code></pre></div></div>
+
+<h2 id="load-the-data">Load the Data</h2>
+
+<p>The Data is given as a JSON file that we load with Pandas:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_json</span><span class="p">(</span>
+    <span class="n">path_or_buf</span><span class="o">=</span><span class="sh">"</span><span class="s">https://climatereanalyzer.org/clim/sst_daily/json/oisst2.1_natlan1_sst_day.json</span><span class="sh">"</span>
+<span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">name</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>data</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1981</th>
+      <td>[None, None, None, None, None, None, None, Non...</td>
+    </tr>
+    <tr>
+      <th>1982</th>
+      <td>[20.13, 20.06, 20.0, 20.01, 19.99, 19.98, 19.9...</td>
+    </tr>
+    <tr>
+      <th>1983</th>
+      <td>[19.76, 19.77, 19.77, 19.75, 19.7, 19.68, 19.6...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Each year has 366 records with potentially a missing value at the end on non-leap years:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">data</span><span class="sh">"</span><span class="p">].</span><span class="nf">map</span><span class="p">(</span><span class="nb">len</span><span class="p">).</span><span class="nf">unique</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([366])
+</code></pre></div></div>
+
+<p>We “explode” the lists and transpose the table in order to have 366 rows and years as columns:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">data</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_list</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="nf">list</span><span class="p">(</span><span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">367</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">T</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>name</th>
+      <th>1981</th>
+      <th>1982</th>
+      <th>...</th>
+      <th>2023</th>
+      <th>1982-2011 mean</th>
+      <th>plus 2σ</th>
+      <th>minus 2σ</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>20.13</td>
+      <td>...</td>
+      <td>20.78</td>
+      <td>20.09</td>
+      <td>20.66</td>
+      <td>19.53</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NaN</td>
+      <td>20.06</td>
+      <td>...</td>
+      <td>20.76</td>
+      <td>20.07</td>
+      <td>20.63</td>
+      <td>19.51</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>NaN</td>
+      <td>20.00</td>
+      <td>...</td>
+      <td>20.73</td>
+      <td>20.05</td>
+      <td>20.62</td>
+      <td>19.49</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 46 columns</p>
+</div>
+
+<h2 id="1982-2012-mean">1982-2012 mean</h2>
+
+<p>We compute the mean over the different years of the daily values:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">year_start</span> <span class="o">=</span> <span class="mi">1982</span>
+<span class="n">year_end</span> <span class="o">=</span> <span class="mi">2012</span>
+<span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span>
+    <span class="p">[</span><span class="nf">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">year_start</span><span class="p">,</span> <span class="n">year_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="p">].</span><span class="nf">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="figure">Figure</h2>
+
+<p>Now let’s plot the temperature anomaly:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">year_start</span> <span class="o">=</span> <span class="mi">1982</span>
+<span class="n">year_end</span> <span class="o">=</span> <span class="mi">2012</span>
+<span class="n">current_year</span> <span class="o">=</span> <span class="mi">2023</span>
+<span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span>
+    <span class="p">[</span><span class="nf">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">year_start</span><span class="p">,</span> <span class="n">year_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="p">].</span><span class="nf">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">alpha_1</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">color_1</span> <span class="o">=</span> <span class="sh">"</span><span class="s">silver</span><span class="sh">"</span>
+<span class="n">alpha_2</span> <span class="o">=</span> <span class="mf">0.4</span>
+<span class="n">color_2</span> <span class="o">=</span> <span class="sh">"</span><span class="s">grey</span><span class="sh">"</span>
+<span class="n">color_3</span> <span class="o">=</span> <span class="sh">"</span><span class="s">black</span><span class="sh">"</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="sh">"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_1</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="p">[</span><span class="nf">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">year_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">year_end</span><span class="p">)]:</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_1</span>
+    <span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="sh">"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="sh">"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_1</span>
+<span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_end</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="sh">"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_2</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="p">[</span><span class="nf">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">year_end</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]:</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_2</span>
+    <span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">current_year</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="sh">"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_end</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">current_year</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="sh">"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_2</span>
+<span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">current_year</span><span class="si">}</span><span class="sh">"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">year_start</span><span class="si">}</span><span class="s">-</span><span class="si">{</span><span class="n">year_end</span><span class="si">}</span><span class="s"> mean</span><span class="sh">"</span><span class="p">]).</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">current_year</span><span class="si">}</span><span class="sh">"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">+</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">North Atlantic daily water surface temperature anomaly</span><span class="se">\n</span><span class="s"> w.r.t. 1982-2012 mean</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Day of year</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Tempetature anomaly (°C)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1000" src="/img/2023-06-13_01/output_9_0.png" alt="output_9_0" />
+</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

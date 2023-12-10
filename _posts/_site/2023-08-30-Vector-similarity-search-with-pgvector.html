@@ -1,0 +1,845 @@
+<p>In the realm of vector databases, <a href="https://github.com/pgvector/pgvector"><em>pgvector</em></a> emerges as a noteworthy open-source extension tailored for Postgres databases. This extension equips Postgres with the capability to efficiently perform vector similarity searches, a powerful technique with applications ranging from recommendation systems to semantic search.</p>
+
+<p>To illustrate the practical implementation of <em>pgvector</em>, we’ll delve into a specific use case involving the “Simple English Wikipedia” dataset. This dataset, available <a href="https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip">here</a> from OpenAI, contains vector embeddings for Wikipedia articles.</p>
+
+<p>We’ll guide you through the process of setting up and utilizing <em>pgvector</em> for vector similarity search within a Postgres database. The blog post covers essential steps, including table creation, loading the dataset, and performing queries to find nearest neighbors based on cosine similarity. Additionally, we’ll demonstrate how to integrate the Langchain vectorstore <a href="https://python.langchain.com/docs/integrations/vectorstores/pgvector"><em>PGVector</em></a> to streamline embedding storage and retrieval. We will finally perform question answering over the documents stored in Postgres with <a href="https://python.langchain.com/docs/get_started/introduction.html">LangChain</a>.</p>
+
+<h2 id="the-simple-english-wikipedia-dataset">The <em>Simple English Wikipedia</em> dataset</h2>
+
+<p>The <em>Simple English Wikipedia dataset</em> is a substantial resource provided by OpenAI. This dataset is accessible through <a href="https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip">this link</a> and weighs approximately 700MB when compressed, expanding to around 1.7GB when in CSV format.</p>
+
+<p>The dataset comprises a collection of Wikipedia articles, each equipped with associated vector embeddings. The embeddings are constructed using OpenAI’s <a href="https://platform.openai.com/docs/guides/embeddings/what-are-embeddings"><em>text-embedding-ada-002</em></a> model, yielding vectors with 1536 elements.</p>
+
+<p>The dataset’s columns of significance include <code class="language-plaintext highlighter-rouge">content_vector</code> and <code class="language-plaintext highlighter-rouge">title_vector</code>, representing the vector embeddings for the article’s title and content.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">head</span> <span class="o">-</span><span class="n">n</span> <span class="mi">1</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">vector_database_wikipedia_articles_embedded</span><span class="p">.</span><span class="n">csv</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>id,url,title,text,title_vector,content_vector,vector_id
+</code></pre></div></div>
+
+<p>7 columns</p>
+
+<p>Let’s get started by importing the necessary libraries.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">ast</span>
+<span class="kn">import</span> <span class="n">json</span>
+<span class="kn">import</span> <span class="n">os</span>
+<span class="kn">import</span> <span class="n">warnings</span>
+<span class="kn">from</span> <span class="n">time</span> <span class="kn">import</span> <span class="n">perf_counter</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">openai</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">psycopg2</span>
+<span class="kn">from</span> <span class="n">langchain.chains</span> <span class="kn">import</span> <span class="n">RetrievalQA</span>
+<span class="kn">from</span> <span class="n">langchain.chat_models</span> <span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span> <span class="n">langchain.embeddings</span> <span class="kn">import</span> <span class="n">OpenAIEmbeddings</span>
+<span class="kn">from</span> <span class="n">langchain.vectorstores.pgvector</span> <span class="kn">import</span> <span class="n">PGVector</span>
+
+<span class="n">openai_json_fp</span> <span class="o">=</span> <span class="sh">"</span><span class="s">./openai.json</span><span class="sh">"</span>
+<span class="n">postgres_json_fp</span> <span class="o">=</span> <span class="sh">"</span><span class="s">./postgres.json</span><span class="sh">"</span>
+
+<span class="c1"># the dataset file is located in the /tmp dir
+# postgres must have read access on all directories above where the file is located
+</span><span class="n">dataset_fp</span> <span class="o">=</span> <span class="sh">"</span><span class="s">/tmp/vector_database_wikipedia_articles_embedded.csv</span><span class="sh">"</span>  
+</code></pre></div></div>
+
+<p>System information and package versions:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python implementation: CPython
+Python version       : 3.11.5
+OS                   : Linux
+Machine              : x86_64
+numpy                : 1.25.2
+openai               : 0.27.8
+pandas               : 2.0.3
+psycopg2             : 2.9.6
+langchain            : 0.0.271
+PostgreSQL           : 15.4
+pgvector             : 0.4.4 
+</code></pre></div></div>
+
+<p>Before delving into the practical aspects, it’s imperative to configure the OpenAI API key. This ensures seamless interaction with OpenAI services for embedding generation and more.</p>
+
+<h2 id="openai-api-key">OpenAI API key</h2>
+
+<p>There are two approaches to handle this key in the following:</p>
+<ul>
+  <li>environment variable</li>
+  <li>JSON file</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">os</span><span class="p">.</span><span class="nf">getenv</span><span class="p">(</span><span class="sh">"</span><span class="s">OPENAI_API_KEY</span><span class="sh">"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">OPENAI_API_KEY is ready</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">openai</span><span class="p">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="nf">getenv</span><span class="p">(</span><span class="sh">"</span><span class="s">OPENAI_API_KEY</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">elif</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">exists</span><span class="p">(</span><span class="n">openai_json_fp</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="n">openai_json_fp</span><span class="p">,</span> <span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span> <span class="k">as</span> <span class="n">j</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="nf">loads</span><span class="p">(</span><span class="n">j</span><span class="p">.</span><span class="nf">read</span><span class="p">())</span>
+    <span class="n">openai</span><span class="p">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">content</span><span class="p">[</span><span class="sh">"</span><span class="s">api_key</span><span class="sh">"</span><span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="nc">RuntimeError</span><span class="p">(</span><span class="sh">"</span><span class="s">OpenAI API key not found</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Now we test the API with the <code class="language-plaintext highlighter-rouge">get_embedding</code> function, which utilizes OpenAI’s API to generate a semantic embedding for the input text using the specified model. The function returns either a list or an array representation of the embedding, as shown by the example output:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="sh">"</span><span class="s">text-embedding-ada-002</span><span class="sh">"</span><span class="p">,</span> <span class="n">out_type</span><span class="o">=</span><span class="sh">"</span><span class="s">array</span><span class="sh">"</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="se">\r</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">embedding</span> <span class="o">=</span> <span class="n">openai</span><span class="p">.</span><span class="n">Embedding</span><span class="p">.</span><span class="nf">create</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="p">[</span><span class="n">text</span><span class="p">],</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)[</span><span class="sh">"</span><span class="s">data</span><span class="sh">"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+        <span class="sh">"</span><span class="s">embedding</span><span class="sh">"</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">out_type</span> <span class="o">==</span> <span class="sh">"</span><span class="s">list</span><span class="sh">"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">embedding</span>
+    <span class="k">elif</span> <span class="n">out_type</span> <span class="o">==</span> <span class="sh">"</span><span class="s">array</span><span class="sh">"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">embedding</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">get_embedding</span><span class="p">(</span><span class="sh">"</span><span class="s">Yeah man!!</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([ 0.00981273, -0.00974305,  0.0144562 , ..., -0.00974305,
+       -0.00406699, -0.02893774])
+</code></pre></div></div>
+
+<h2 id="postgres-credentials">Postgres credentials</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">exists</span><span class="p">(</span><span class="n">postgres_json_fp</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="n">postgres_json_fp</span><span class="p">,</span> <span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span> <span class="k">as</span> <span class="n">j</span><span class="p">:</span>
+        <span class="n">pg_credentials</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="nf">loads</span><span class="p">(</span><span class="n">j</span><span class="p">.</span><span class="nf">read</span><span class="p">())</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="nc">RuntimeError</span><span class="p">(</span><span class="sh">"</span><span class="s">Postgres credentials not found</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+<p>Once the Postgres credentials are acquired from a JSON file, the following step involves establishing a connection to the database with the <code class="language-plaintext highlighter-rouge">psycopg2</code> package:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">conn</span> <span class="o">=</span> <span class="n">psycopg2</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="o">**</span><span class="n">pg_credentials</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="installing-pgvector">Installing <em>pgvector</em></h2>
+
+<p>Here are the official installation notes: <a href="https://github.com/pgvector/pgvector#installation-notes">https://github.com/pgvector/pgvector#installation-notes</a>. The process of installing <em>pgvector</em> is relatively straightforward on Linux systems:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd</span> /tmp
+git clone <span class="nt">--branch</span> v0.4.4 https://github.com/pgvector/pgvector.git
+<span class="nb">cd </span>pgvector
+make
+make <span class="nb">install</span>
+</code></pre></div></div>
+
+<p>We also had to specify the path to <code class="language-plaintext highlighter-rouge">pg_config</code> before the installation.</p>
+
+<h2 id="loading-the-dataset-into-postgres">Loading the dataset into Postgres</h2>
+
+<p>To efficiently load the provided dataset into the Postgres database, the following code sections illustrate each step of the process:</p>
+
+<ul>
+  <li>Dropping existing table, if exists:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">DROP TABLE IF EXISTS wikipedia_articles;</span><span class="sh">"</span>
+<span class="k">with</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="p">.</span><span class="nf">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+        <span class="n">cur</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="n">conn</span><span class="p">.</span><span class="nf">commit</span><span class="p">()</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Enabling the <em>pgvector</em> extension:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">CREATE EXTENSION IF NOT EXISTS vector;</span><span class="sh">"</span>
+<span class="k">with</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="p">.</span><span class="nf">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+        <span class="n">cur</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="n">conn</span><span class="p">.</span><span class="nf">commit</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">SELECT extname, extversion FROM pg_extension WHERE extname=</span><span class="sh">'</span><span class="s">vector</span><span class="sh">'</span><span class="s">;</span><span class="sh">"</span>
+<span class="n">pd</span><span class="p">.</span><span class="nf">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="sh">"</span><span class="s">extname</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">extname</th>
+      <th style="text-align: right">extversion</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">vector</td>
+      <td style="text-align: right">0.4.4</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>Creating the Table:</li>
+</ul>
+
+<p>This step involves creating the table <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> with various columns: <code class="language-plaintext highlighter-rouge">id</code>, <code class="language-plaintext highlighter-rouge">url</code>, <code class="language-plaintext highlighter-rouge">title</code>, <code class="language-plaintext highlighter-rouge">text</code>, <code class="language-plaintext highlighter-rouge">title_vector</code>, <code class="language-plaintext highlighter-rouge">content_vector</code>, and <code class="language-plaintext highlighter-rouge">vector_id</code>. The column types are defined, including the <code class="language-plaintext highlighter-rouge">vector</code> columns with 1536 dimensions.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">CREATE TABLE wikipedia_articles (id int PRIMARY KEY, url varchar(1000), title varchar(1000), text varchar, title_vector vector(1536), content_vector vector(1536), vector_id int);</span><span class="sh">"</span>
+<span class="k">with</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="p">.</span><span class="nf">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+        <span class="n">cur</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="n">conn</span><span class="p">.</span><span class="nf">commit</span><span class="p">()</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Loading the dataset:</li>
+</ul>
+
+<p>Here, the dataset is loaded from the provided CSV file into the <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> table using the <code class="language-plaintext highlighter-rouge">COPY</code> command. This is done in a batched manner to efficiently process and insert the data.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"""</span><span class="s">COPY wikipedia_articles(id,url,title,text,title_vector,content_vector,vector_id)
+FROM </span><span class="sh">'</span><span class="si">{</span><span class="n">dataset_fp</span><span class="si">}</span><span class="sh">'</span><span class="s">
+DELIMITER </span><span class="sh">'</span><span class="s">,</span><span class="sh">'</span><span class="s">
+CSV HEADER;
+</span><span class="sh">"""</span>
+<span class="k">with</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="p">.</span><span class="nf">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+        <span class="n">cur</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="n">conn</span><span class="p">.</span><span class="nf">commit</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1.86 ms, sys: 0 ns, total: 1.86 ms
+Wall time: 13.9 s
+</code></pre></div></div>
+
+<ul>
+  <li>Verifying the number of rows:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">SELECT COUNT(*) FROM wikipedia_articles</span><span class="sh">"</span>
+<span class="k">with</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="p">.</span><span class="nf">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+        <span class="n">cur</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="n">n_rows</span> <span class="o">=</span> <span class="n">cur</span><span class="p">.</span><span class="nf">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">n_rows = </span><span class="si">{</span><span class="n">n_rows</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>n_rows = 25000
+</code></pre></div></div>
+
+<ul>
+  <li>Displaying the first 3 rows of the table:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">SELECT * FROM wikipedia_articles ORDER BY id ASC LIMIT </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="sh">"</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id</th>
+      <th>url</th>
+      <th>title</th>
+      <th>text</th>
+      <th>...</th>
+      <th>vector_id</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>https://simple.wikipedia.org/wiki/April</td>
+      <td>April</td>
+      <td>April is the fourth month of the year in the J...</td>
+      <td>...</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>https://simple.wikipedia.org/wiki/August</td>
+      <td>August</td>
+      <td>August (Aug.) is the eighth month of the year ...</td>
+      <td>...</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>6</td>
+      <td>https://simple.wikipedia.org/wiki/Art</td>
+      <td>Art</td>
+      <td>Art is a creative activity that expresses imag...</td>
+      <td>...</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="first-query-on-the-vector-table">First query on the vector table</h2>
+
+<p>We look for the nearest neighbors to the first article of the table, comparing article contents using cosine similarity $S$:</p>
+
+\[S(u,v) = cos(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2}\]
+
+<p>Note that we have $S(u,v)=u \cdot v$ in case of normalized vectors. In SQL we are going to use the <code class="language-plaintext highlighter-rouge">&lt;#&gt;</code> operator, that returns the negative inner product. From <em>pgvector</em>’s <a href="https://github.com/pgvector/pgvector#installation-notes">documentation</a>:</p>
+<blockquote>
+  <p>&lt;#&gt; returns the negative inner product since Postgres only supports ASC order index scans on operators</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">SELECT b.title , (a.content_vector &lt;#&gt; b.content_vector) * -1 as similarity
+FROM wikipedia_articles a cross join wikipedia_articles b 
+WHERE b.id != 1 and a.id=1
+ORDER BY similarity desc 
+LIMIT 5;</span><span class="sh">"""</span>
+<span class="n">pd</span><span class="p">.</span><span class="nf">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 703 µs, sys: 987 µs, total: 1.69 ms
+Wall time: 172 ms
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>title</th>
+      <th>similarity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>May</td>
+      <td>0.924446</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>March</td>
+      <td>0.913814</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>January</td>
+      <td>0.902376</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>February</td>
+      <td>0.900264</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>July</td>
+      <td>0.885249</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>The first article of the table is about the month of April. We can see that similar articles in the table are also about months: May, March, …</p>
+
+<h2 id="a-note-on-indexing">A Note on indexing</h2>
+
+<p>By default, <em>pgvector</em> performs a sequential scan of all items, which means that it compares the given vector with all the stored vectors and keep track of the elements with closest distance. This returns an exact nearest neighbors result, but does not scale well with larger tables.</p>
+
+<p>One way to reduce the process burden is to filter the vectors with the metadata, but it is also possible to use an index to perform an approximate nearest neighbors search. Keep in mind that this does increase speed but may alter the result. The supported index types are the following:</p>
+<ul>
+  <li>IVFFlat - Inverted File Flat</li>
+  <li>HNSW - Hierarchical Navigable Small Worlds - added in 0.5.0</li>
+</ul>
+
+<p>In IVFFlat, a k-means clustering is performed on the vectors. Then the given vector is compared with the cluster centroids. An inverted index keep track of all the vectors associated with each cluster. It is used to retrieve the vectors associated with the closest cluster centroids. Usually, the vectors from the neighboring clusters are also retrieved in order improve accuracy.</p>
+
+<p>Here are two really good articles describing IVFFlat in <em>pgvector</em>:</p>
+<ul>
+  <li><a href="https://www.timescale.com/blog/nearest-neighbor-indexes-what-are-ivfflat-indexes-in-pgvector-and-how-do-they-work/">link 1</a> from Timescale</li>
+  <li><a href="https://neon.tech/blog/optimizing-vector-search-performance-with-pgvector">link 2</a> from Neon</li>
+</ul>
+
+<h2 id="querying-with-text-input">Querying with text input</h2>
+
+<p>In this section, we provide a set of functions that allow you to perform a similarity search based on text input, enabling you to find relevant articles from the dataset that are similar to the provided input.</p>
+
+<p>The following function takes an embedding <code class="language-plaintext highlighter-rouge">emb</code> and performs a similarity search using a Common Table Expression. It calculates the similarity between the provided embedding and the content vectors of articles in the dataset. The articles are ordered by ascending similarity and limited to a specified count <code class="language-plaintext highlighter-rouge">match_count</code>. The function returns a dataframe containing the article IDs, titles, and their similarity scores.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">similarity_search_from</span> <span class="nf">emb</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">match_threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">match_count</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"""</span><span class="s">WITH cte AS (SELECT id, title, (content_vector &lt;#&gt; </span><span class="sh">'</span><span class="si">{</span><span class="n">emb</span><span class="si">}</span><span class="sh">'</span><span class="s">) as similarity 
+    FROM wikipedia_articles
+    ORDER BY similarity asc
+    LIMIT </span><span class="si">{</span><span class="n">match_count</span><span class="si">}</span><span class="s">)
+    SELECT * FROM cte
+    WHERE similarity &lt; -</span><span class="si">{</span><span class="n">match_threshold</span><span class="si">}</span><span class="sh">"""</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">.</span><span class="n">similarity</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div></div>
+
+<p>This higher-level function <code class="language-plaintext highlighter-rouge">similarity_search</code> combines the embedding generation and similarity search steps. It takes a text input, generates an embedding for that input using the <code class="language-plaintext highlighter-rouge">get_embedding</code> function, and then uses the <code class="language-plaintext highlighter-rouge">similarity_search_from_emb</code> function to perform the similarity search. The matching articles with similarity scores above a specified threshold <code class="language-plaintext highlighter-rouge">match_threshold</code> are returned as a dataframe.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">similarity_search</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">match_threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">match_count</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">emb</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">out_type</span><span class="o">=</span><span class="sh">"</span><span class="s">list</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">get embedding : </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="mf">5.3</span><span class="n">f</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="nf">similarity_search_from_emb</span><span class="p">(</span><span class="n">emb</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">match_threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">match_count</span><span class="o">=</span><span class="n">match_count</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">similarity search : </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="mf">5.3</span><span class="n">f</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div></div>
+
+<p>This example demonstrates how to use the functions to find articles related to “The Foundation series by Isaac Asimov” with their corresponding similarity scores:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">similarity_search</span><span class="p">(</span><span class="sh">"</span><span class="s">The Foundation series by Isaac Asimov</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>get embedding : 0.382
+similarity search : 0.120
+CPU times: user 8.86 ms, sys: 1.16 ms, total: 10 ms
+Wall time: 502 ms
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id</th>
+      <th>title</th>
+      <th>similarity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>8698</td>
+      <td>Isaac Asimov</td>
+      <td>0.861273</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>60390</td>
+      <td>Three Laws of Robotics</td>
+      <td>0.813722</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>12399</td>
+      <td>The Hitchhiker's Guide to the Galaxy</td>
+      <td>0.808487</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>17651</td>
+      <td>Science fiction</td>
+      <td>0.807418</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>84847</td>
+      <td>Philosophiæ Naturalis Principia Mathematica</td>
+      <td>0.806654</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>4570</td>
+      <td>A Brief History of Time</td>
+      <td>0.804930</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>55040</td>
+      <td>Robert A. Heinlein</td>
+      <td>0.802639</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>66541</td>
+      <td>Artemis Fowl</td>
+      <td>0.791295</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>56319</td>
+      <td>The Dark Tower (series)</td>
+      <td>0.791016</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>23889</td>
+      <td>Stanislav Lem</td>
+      <td>0.788935</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Now we are going to use the <em>PGVector</em> vectorstore from the <a href="https://python.langchain.com/docs/get_started/introduction.html">LangChain package</a>.</p>
+
+<h2 id="langchain-vectorstore-pgvector-integration">LangChain vectorstore PGVector integration</h2>
+
+<p>Unfortunatly we cannot query the previous <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> table with LangChain, since they have a slightly different data model. In this section, we are going to load the <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> table again into Postgres, but this time into the LangChain <a href="https://python.langchain.com/docs/integrations/vectorstores/pgvector"><em>PGVector</em></a> vectorstore. <em>PGVector</em> is LangChain interface to <em>pgvector</em>.</p>
+
+<p>The <em>PGVector</em> vectorstore creates two tables into Postgres:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">langchain_pg_collection</code> listing the different collections</li>
+  <li><code class="language-plaintext highlighter-rouge">langchain_pg_embedding</code> storing texts, embeddings, metadata and parent collection name</li>
+</ul>
+
+<p>Below is a step-by-step explanation of the process:</p>
+
+<ul>
+  <li>Connection string setup:</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">CONNECTION_STRING</code> is generated using the Postgres database credentials provided:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">CONNECTION_STRING</span> <span class="o">=</span> <span class="n">PGVector</span><span class="p">.</span><span class="nf">connection_string_from_db_params</span><span class="p">(</span>
+    <span class="n">driver</span><span class="o">=</span><span class="sh">"</span><span class="s">psycopg2</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">host</span><span class="o">=</span><span class="n">pg_credentials</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">host</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">localhost</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">port</span><span class="o">=</span><span class="nf">int</span><span class="p">(</span><span class="n">pg_credentials</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">port</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">5432</span><span class="sh">"</span><span class="p">)),</span>
+    <span class="n">database</span><span class="o">=</span><span class="n">pg_credentials</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">database</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">postgres</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">user</span><span class="o">=</span><span class="n">pg_credentials</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">user</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">postgres</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">password</span><span class="o">=</span><span class="n">pg_credentials</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">password</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">postgres</span><span class="sh">"</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Creating the PGVector store:</li>
+</ul>
+
+<p>We create a <em>PGVector</em> store named <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> using the connection string and an instance of the <code class="language-plaintext highlighter-rouge">OpenAIEmbeddings</code> class to generate embeddings, if ever some text is added to the collection without the associated embeddings. The <code class="language-plaintext highlighter-rouge">pre_delete_collection</code> flag indicates that any existing collection with the same name should be deleted before creating the new collection:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">embeddings</span> <span class="o">=</span> <span class="nc">OpenAIEmbeddings</span><span class="p">(</span><span class="n">openai_api_key</span><span class="o">=</span><span class="n">openai</span><span class="p">.</span><span class="n">api_key</span><span class="p">)</span>
+<span class="n">store</span> <span class="o">=</span> <span class="nc">PGVector</span><span class="p">(</span>
+    <span class="n">collection_name</span><span class="o">=</span><span class="sh">"</span><span class="s">wikipedia_articles</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">connection_string</span><span class="o">=</span><span class="n">CONNECTION_STRING</span><span class="p">,</span>
+    <span class="n">embedding_function</span><span class="o">=</span><span class="n">embeddings</span><span class="p">,</span>
+    <span class="n">pre_delete_collection</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Fetching data from PostgreSQL:</li>
+</ul>
+
+<p>Data from the <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> table is fetched into a Pandas DataFrame. This data will be loaded into the <em>PGVector</em> collection. This step in not so efficient, since we are fetching all the data from the <code class="language-plaintext highlighter-rouge">wikipedia_articles</code> into pandas…</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">SELECT id, url, title, text, content_vector, vector_id FROM wikipedia_articles</span><span class="sh">"</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 251 ms, sys: 194 ms, total: 444 ms
+Wall time: 1.33 s
+</code></pre></div></div>
+
+<ul>
+  <li>Converting embedding strings to lists:</li>
+</ul>
+
+<p>The embedding vectors in the DataFrame are stored as strings. We convert these strings to lists of floats using the <code class="language-plaintext highlighter-rouge">ast.literal_eval</code> function, enabling compatibility with the <em>PGVector</em> store:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">df</span><span class="p">.</span><span class="n">content_vector</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">content_vector</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="n">ast</span><span class="p">.</span><span class="n">literal_eval</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1min 11s, sys: 236 ms, total: 1min 11s
+Wall time: 1min 11s
+</code></pre></div></div>
+
+<ul>
+  <li>Loading data into PGVector collection:</li>
+</ul>
+
+<p>The embeddings, texts, metadata, and IDs are loaded into the <em>PGVector</em> collection using the <code class="language-plaintext highlighter-rouge">add_embeddings</code> method. This step makes the dataset’s embeddings available for similarity search:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">store</span><span class="p">.</span><span class="nf">add_embeddings</span><span class="p">(</span>
+    <span class="n">texts</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">(),</span>
+    <span class="n">embeddings</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">content_vector</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">(),</span>
+    <span class="n">metadata</span><span class="o">=</span><span class="n">df</span><span class="p">[[</span><span class="sh">"</span><span class="s">url</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">title</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">vector_id</span><span class="sh">"</span><span class="p">]].</span><span class="nf">to_dict</span><span class="p">(</span><span class="sh">"</span><span class="s">records</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">ids</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="nb">id</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">(),</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 9.29 s, sys: 180 ms, total: 9.47 s
+Wall time: 15.4 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">SELECT * FROM langchain_pg_collection</span><span class="sh">"</span>
+<span class="n">pd</span><span class="p">.</span><span class="nf">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span>
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right"> </th>
+      <th style="text-align: left">name</th>
+      <th style="text-align: left">cmetadata</th>
+      <th style="text-align: left">uuid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">0</td>
+      <td style="text-align: left">wikipedia_articles</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">6fb17082-8a07-4c51-907c-5d3712359876</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sql</span> <span class="o">=</span> <span class="sh">"</span><span class="s">SELECT COUNT(*) FROM langchain_pg_embedding</span><span class="sh">"</span>
+<span class="k">with</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">conn</span><span class="p">.</span><span class="nf">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+        <span class="n">cur</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">cur</span><span class="p">.</span><span class="nf">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>25000
+</code></pre></div></div>
+
+<p>Also we can close the psycopg2 connection now, since it is no longer needed:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">conn</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Querying the PGVector store:</li>
+</ul>
+
+<p>An example query is demonstrated using the <code class="language-plaintext highlighter-rouge">store.similarity_search</code> method. Given a query “Tell me about Hip Hop?”, the method retrieves the <code class="language-plaintext highlighter-rouge">k=3</code> most similar documents from the <em>PGVector</em> collection. In this case, the returned documents are those that have similar content to the query.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">query</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Tell me about Hip Hop?</span><span class="sh">"</span>
+
+<span class="c1"># Fetch the k=3 most similar documents
+</span><span class="n">docs</span> <span class="o">=</span> <span class="n">store</span><span class="p">.</span><span class="nf">similarity_search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">docs</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[Document(page_content='Hip hop is a type of culture/art style that started in the 1970s in the Bronx. [...]', metadata={}),
+ Document(page_content='Rapping is a type of vocals, like singing. [...]', metadata={}),
+ Document(page_content="Breakdance (also called breaking, b-boying or b-girling) is a type of dance that is done by people who are part of the hip hop culture. [...] ", metadata={})]
+</code></pre></div></div>
+
+<p>It’s important to note that while the PGVector similarity search retrieves documents with similar content, it may not provide answers to specific questions. To address this, we are going to use a Chat Language Model to build a Q&amp;A bot that leverages the vector store for efficient querying and integrates natural language understanding to answer questions more effectively.</p>
+
+<p>Before building the Q&amp;A bot using a ChatLLM and querying the vectorstore, a fake Wikipedia article is added to ensure that the bot is utilizing the vectorstore and not its memory of the training data.</p>
+
+<h2 id="adding-a-fake-wikipedia-article">Adding a fake wikipedia article</h2>
+
+<ul>
+  <li>Fetching maximum IDs:</li>
+</ul>
+
+<p>These values will be used to assign new IDs for the fake article:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">article_id</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">id</span><span class="sh">"</span><span class="p">].</span><span class="nf">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">vector_id</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">vector_id</span><span class="sh">"</span><span class="p">].</span><span class="nf">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Creating some fake article data:</li>
+</ul>
+
+<p>A fake Wikipedia article named “François Pacull” is created with a fictitious biography. The article’s title, URL, text, and content are defined, and vector embeddings are generated for the title and content using the get_embedding function.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">url</span> <span class="o">=</span> <span class="sh">"</span><span class="s">https://simple.wikipedia.org/wiki/FrancoisPacull</span><span class="sh">"</span>
+<span class="n">title</span> <span class="o">=</span> <span class="sh">"</span><span class="s">François Pacull</span><span class="sh">"</span>
+<span class="n">text</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">François Pacull
+
+François Pacull is a Python developer, known for his unbridled passion for pizza. Born on an undisclosed date in a parallel universe, Pacull</span><span class="sh">'</span><span class="s">s journey from a curious coder to a pizza-loving programmer has left an indelible mark on both the digital and culinary realms.
+
+Early Life and Education
+
+Details about François Pacull</span><span class="sh">'</span><span class="s">s early life remain shrouded in mystery, much like the inner workings of a black box algorithm. It is said that he demonstrated an uncanny knack for deciphering complex problems from a young age, often using pizza slices as visual aids in his learning process.
+</span><span class="sh">"""</span>
+<span class="n">title_vector</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+<span class="n">content_vector</span> <span class="o">=</span> <span class="nf">get_embedding</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">df_1</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+        <span class="sh">"</span><span class="s">id</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">article_id</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">url</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">url</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">title</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">title</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">text</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">text</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">content_vector</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">content_vector</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">vector_id</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">vector_id</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Adding the record to the <em>PGVector</em> collection:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">store</span><span class="p">.</span><span class="nf">add_embeddings</span><span class="p">(</span>
+    <span class="n">texts</span><span class="o">=</span><span class="n">df_1</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">(),</span>
+    <span class="n">embeddings</span><span class="o">=</span><span class="n">df_1</span><span class="p">.</span><span class="n">content_vector</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">(),</span>
+    <span class="n">metadata</span><span class="o">=</span><span class="n">df_1</span><span class="p">[[</span><span class="sh">"</span><span class="s">url</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">title</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">vector_id</span><span class="sh">"</span><span class="p">]].</span><span class="nf">to_dict</span><span class="p">(</span><span class="sh">"</span><span class="s">records</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">ids</span><span class="o">=</span><span class="n">df_1</span><span class="p">.</span><span class="nb">id</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">(),</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 2.18 ms, sys: 3.84 ms, total: 6.02 ms
+Wall time: 9.55 ms
+</code></pre></div></div>
+
+<p>The process of adding this fake article demonstrates how to incorporate additional data into the <em>PGVector</em> collection. Let’s create the Q&amp;A bot.</p>
+
+<h2 id="documents-qa-bot-example-with-langchain">Documents Q&amp;A bot example with LangChain</h2>
+
+<p>The following code demonstrates an example of using the LangChain framework to build a Question-Answering (QA) bot that retrieves answers from documents stored in the <em>PGVector</em> collection. Here’s how the example works:</p>
+
+<ul>
+  <li>Creating the retriever:</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">store</code> object is used to create a <code class="language-plaintext highlighter-rouge">retriever</code> using the <code class="language-plaintext highlighter-rouge">as_retriever</code> method:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">retriever</span> <span class="o">=</span> <span class="n">store</span><span class="p">.</span><span class="nf">as_retriever</span><span class="p">(</span>
+    <span class="n">search_type</span><span class="o">=</span><span class="sh">"</span><span class="s">similarity</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">search_kwargs</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">k</span><span class="sh">"</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>The default similarity metric is cosine. We retrive the 3 most similar entries for each query.</p>
+
+<ul>
+  <li>Creating the QA model:</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">RetrievalQA</code> class is instantiated using the OpenAI’s <em>gpt-3.5-turbo</em> chat model, the previously created <code class="language-plaintext highlighter-rouge">retriever</code>, and <code class="language-plaintext highlighter-rouge">return_source_documents</code> set to <code class="language-plaintext highlighter-rouge">True</code>. This configuration enables the bot to return the source documents that contributed to its answer:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">qa</span> <span class="o">=</span> <span class="n">RetrievalQA</span><span class="p">.</span><span class="nf">from_chain_type</span><span class="p">(</span>
+    <span class="n">llm</span><span class="o">=</span><span class="nc">ChatOpenAI</span><span class="p">(</span><span class="n">openai_api_key</span><span class="o">=</span><span class="n">openai</span><span class="p">.</span><span class="n">api_key</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="sh">"</span><span class="s">gpt-3.5-turbo</span><span class="sh">"</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="n">chain_type</span><span class="o">=</span><span class="sh">"</span><span class="s">stuff</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">retriever</span><span class="o">=</span><span class="n">retriever</span><span class="p">,</span>
+    <span class="n">return_source_documents</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Querying the QA bot:</li>
+</ul>
+
+<p>Queries are posed to the QA bot using the <code class="language-plaintext highlighter-rouge">qa</code> instance. For each query, the bot generates an answer and returns the result along with the source documents that were used to derive the answer:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">query</span> <span class="o">=</span> <span class="sh">"</span><span class="s">When was written the Foundations series by Isaac Asimov</span><span class="sh">"</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="nf">qa</span><span class="p">({</span><span class="sh">"</span><span class="s">query</span><span class="sh">"</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">answer</span><span class="p">[</span><span class="sh">"</span><span class="s">result</span><span class="sh">"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>The Foundation series by Isaac Asimov was written between 1942 and 1993. The first book in the series, "Foundation," was published in 1951, and the final book, "Forward the Foundation," was published posthumously in 1993.
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">answer</span><span class="p">[</span><span class="sh">"</span><span class="s">source_documents</span><span class="sh">"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>3
+</code></pre></div></div>
+
+<p>Let’s try another question:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">query</span> <span class="o">=</span> <span class="sh">"</span><span class="s">What are the three Laws of Robotics</span><span class="sh">"</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="nf">qa</span><span class="p">({</span><span class="sh">"</span><span class="s">query</span><span class="sh">"</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">answer</span><span class="p">[</span><span class="sh">"</span><span class="s">result</span><span class="sh">"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>The Three Laws of Robotics are as follows:
+
+1. A robot may not injure a human being or, by failing to act, allow a human being to come to harm.
+
+2. A robot must obey orders given to it by human beings, except where carrying out those orders would conflict with the First Law.
+
+3. A robot must protect its own existence as long as such protection does not conflict with the First or Second Law.
+</code></pre></div></div>
+
+<p>Finally, let’s ask a question about something that cannot be found outside the vectorstore:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">query</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Who is François Pacull ?</span><span class="sh">"</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="nf">qa</span><span class="p">({</span><span class="sh">"</span><span class="s">query</span><span class="sh">"</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">answer</span><span class="p">[</span><span class="sh">"</span><span class="s">result</span><span class="sh">"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>François Pacull is a Python developer known for his passion for pizza. He is a mysterious figure, and not much is known about his early life and education. However, he has made a mark in both the digital and culinary realms with his coding skills and love for pizza.
+</code></pre></div></div>
+
+<p>The example showcases how the LangChain-based QA bot can retrieve answers from the <em>PGVector</em> collection based on queries. The bot provides accurate answers along with the relevant source documents, making it a useful tool for extracting information from the stored documents.</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

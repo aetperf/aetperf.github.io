@@ -1,0 +1,516 @@
+<p><a href="https://en.wikipedia.org/wiki/Data_integration">Data integration</a> involves combining data residing in different sources, and providing users with a unified view of them. In this post, we are interested in detecting <strong>performance drift</strong> of large and complex daily data integration processes performed through ETL pipelines, which usually take from several minutes to several hours to complete.</p>
+
+<p>The data correspond to more than 3 years of time performance measurements provided by a single organization, for around 50 distinct data integration processes performed with <a href="https://www.sap.com/products/data-services.html">SAP Data Services</a>, yielding the same number of time series after pre-processing.</p>
+
+<p>Each time serie is assumed to be independent from the others, although there might be some interactions that could be studied with some causal discovery algorithms for example. However our choice is to deal sequentially with univariate time serie problems. These series have a daily frequency and are always strictly positive, due to the fact that they store some elapsed time.</p>
+
+<p>The aim of this post is to detect a potential decay in the time-wise performance of a complex and heavy process. The difficulty is that the underlying data, stored in databases, is evolving during the time span of the study. So does the pipeline that may be adapted and improved from time to time. Also, the background load of database servers or networks may vary.</p>
+
+<p>Here are the steps of the analysis:</p>
+<ul>
+  <li>clean/prepare the data</li>
+  <li>detect and remove outliers</li>
+  <li>detect change points</li>
+  <li>extract features on homogeneous time intervals</li>
+</ul>
+
+<p>As a result, we expect to get a single indicator of performance drift per data integration process.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">pantab</span>
+<span class="kn">from</span> <span class="n">tableauhyperapi</span> <span class="kn">import</span> <span class="n">TableName</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="n">numba</span> <span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">import</span> <span class="n">ruptures</span> <span class="k">as</span> <span class="n">rpt</span>
+<span class="kn">from</span> <span class="n">ruptures</span> <span class="kn">import</span> <span class="n">display</span>
+<span class="kn">from</span> <span class="n">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">LinearRegression</span>
+<span class="kn">import</span> <span class="n">missingno</span> <span class="k">as</span> <span class="n">msno</span>
+<span class="kn">import</span> <span class="n">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">lab_black</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="loading-the-data-from-tableau-and-prepareclean-the-data">Loading the data from Tableau and prepare/clean the data</h2>
+
+<p>The data is stored as a Tableau Hyper Extract. The <a href="https://github.com/innobi/pantab">pantab</a> package is used to read the Hyper file.</p>
+
+<h3 id="tableau-hyper-extract">Tableau hyper extract</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">HYPER_PATH</span> <span class="o">=</span> <span class="sh">"</span><span class="s">./data/ADM_CHARGEMENT_HISTO.hyper</span><span class="sh">"</span>
+
+<span class="n">MIN_LENGTH_RATIO</span> <span class="o">=</span> <span class="mf">0.8</span>  <span class="c1"># 1.0 complete, 0.0 empty
+</span><span class="n">MIN_VAL</span> <span class="o">=</span> <span class="mi">30</span>  <span class="c1"># values below MIN_VAL are removed
+</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pantab</span><span class="p">.</span><span class="nf">frame_from_hyper</span><span class="p">(</span><span class="n">HYPER_PATH</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="nc">TableName</span><span class="p">(</span><span class="sh">"</span><span class="s">Extract</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Extract</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop_duplicates</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="sh">"</span><span class="s">first</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">CD_RETOUR</span> <span class="o">==</span> <span class="sh">"</span><span class="s">SUCCES</span><span class="sh">"</span><span class="p">]</span>  <span class="c1"># only keep tasks that succeeded
+</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">ET</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">df</span><span class="p">.</span><span class="n">DT_FIN_EXEC</span> <span class="o">-</span> <span class="n">df</span><span class="p">.</span><span class="n">DT_DEB_DONNEES</span>
+<span class="p">).</span><span class="n">dt</span><span class="p">.</span><span class="nf">total_seconds</span><span class="p">()</span>  <span class="c1"># compute the elapsed time in seconds
+</span>
+<span class="c1"># set the index
+</span><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">start</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">DT_DEB_DONNEES</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">start</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># pivot, resample the time series
+</span><span class="n">traces</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">CD_JOB</span> <span class="ow">in</span> <span class="nf">sorted</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">CD_JOB</span><span class="p">.</span><span class="nf">unique</span><span class="p">()):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">CD_JOB</span> <span class="o">==</span> <span class="n">CD_JOB</span><span class="p">].</span><span class="n">ET</span><span class="p">.</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">s</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="nf">resample</span><span class="p">(</span><span class="sh">"</span><span class="s">D</span><span class="sh">"</span><span class="p">).</span><span class="nf">mean</span><span class="p">()</span>
+    <span class="n">traces</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">traces</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(</span><span class="n">CD_JOB</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">traces</span><span class="p">.</span><span class="nf">sort_index</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="n">traces</span><span class="p">[</span><span class="n">traces</span> <span class="o">&lt;</span> <span class="n">MIN_VAL</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">NaN</span>  <span class="c1"># remove very small values
+</span>
+<span class="c1"># remove columns with too many NaN values
+</span><span class="n">length</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">traces</span><span class="p">)</span>
+<span class="n">nan_count</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">cols</span> <span class="o">=</span> <span class="nf">sorted</span><span class="p">(</span><span class="n">nan_count</span><span class="p">[</span><span class="n">nan_count</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">MIN_LENGTH_RATIO</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span><span class="p">].</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">traces</span> <span class="o">=</span> <span class="n">traces</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span>
+
+<span class="c1"># rename the columns, due to confidentiality reasons
+</span><span class="n">traces</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">'</span><span class="s">c_</span><span class="sh">'</span> <span class="o">+</span> <span class="nf">str</span><span class="p">(</span><span class="n">i</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">traces</span><span class="p">.</span><span class="n">columns</span><span class="p">))]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">traces</span><span class="p">.</span><span class="nf">tail</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>c_00</th>
+      <th>c_01</th>
+      <th>c_02</th>
+      <th>...</th>
+      <th>c_51</th>
+      <th>c_52</th>
+      <th>c_53</th>
+    </tr>
+    <tr>
+      <th>start</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2019-06-05</th>
+      <td>314.0</td>
+      <td>231.0</td>
+      <td>322.0</td>
+      <td>...</td>
+      <td>2062.0</td>
+      <td>1631.0</td>
+      <td>75.0</td>
+    </tr>
+    <tr>
+      <th>2019-06-06</th>
+      <td>311.0</td>
+      <td>239.0</td>
+      <td>170.0</td>
+      <td>...</td>
+      <td>2157.0</td>
+      <td>1387.0</td>
+      <td>74.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 54 columns</p>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">start: </span><span class="si">{</span><span class="n">traces</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">min</span><span class="p">().</span><span class="nf">date</span><span class="p">()</span><span class="si">}</span><span class="s">, end: </span><span class="si">{</span><span class="n">traces</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">max</span><span class="p">().</span><span class="nf">date</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start: 2015-10-05, end: 2019-06-06
+</code></pre></div></div>
+
+<h3 id="missing-values">Missing values</h3>
+
+<p>Let’s visualize the data completion with the handy <a href="https://github.com/ResidentMario/missingno">missingno</a> package.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">msno</span><span class="p">.</span><span class="nf">matrix</span><span class="p">(</span><span class="n">traces</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Data Completion</span><span class="sh">"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Columns</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Rows</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_9_0.png" alt="png" /></p>
+
+<p>We are going to keep the missing values, so we need to use some methods that can handle <code class="language-plaintext highlighter-rouge">NaN</code> values.</p>
+
+<h3 id="data-distribution">Data distribution</h3>
+
+<p>Now we look at the data distribution. Let’s plot the skewness of each serie. For normally distributed data, the skewness should be about zero. We can see here that skewness is rather disparate and that the data is sometimes highly concentrated on the left (small elapsed time) of the distribution:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="nf">skew</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">).</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Skewness of each time serie</span><span class="sh">"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Columns</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Unbiased skew</span><span class="sh">"</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_12_0.png" alt="png" /></p>
+
+<p>Actually, we can observe that these time series are fairly heterogeneous by plotting all the kernel density estimations:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">traces</span><span class="p">:</span>
+    <span class="n">sns</span><span class="p">.</span><span class="nf">kdeplot</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">log10</span><span class="p">(</span><span class="n">traces</span><span class="p">[</span><span class="n">col</span><span class="p">].</span><span class="n">values</span><span class="p">),</span> <span class="n">shade</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xticklabels</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1_000</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">,</span> <span class="mi">100_000</span><span class="p">,</span> <span class="mi">1_000_000</span><span class="p">],</span> <span class="n">minor</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s) - Log10 scale</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Kernel density estimate of each time serie</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_14_0.png" alt="png" /></p>
+
+<p>Also, they do exhibit a lot of noise, jumps and more general changes of distribution. We can look at 2 examples using this plotting function:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_ts</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">tss</span><span class="p">,</span> <span class="n">logy</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">):</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">tss</span><span class="p">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">col</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">logy</span><span class="o">=</span><span class="n">logy</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">col</span><span class="p">.</span><span class="n">name</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_ts</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">traces</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_17_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_ts</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="n">traces</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_18_0.png" alt="png" /></p>
+
+<p>We are interested at the global trend. Let’s start by removing outliers.</p>
+
+<h2 id="outlier-detection">Outlier detection</h2>
+
+<p>We are looking for an outlier detection method that does not depend on the number of observations, but also that is not much affected by outliers. We are going to use a rolling-window method, on which we compute the median, and the Median Absolute Deviation (MAD). If we have a size $n$ window:</p>
+
+\[y = \left\{ y_i \right\}\]
+
+<p>The median and MAD are denoted as follows:</p>
+
+\[\tilde{y} = median \left\{ y_i \right\}\]
+
+\[MAD(y) = median \left\{ | y_i - \tilde{y} | \right\}\]
+
+<p>Then we can define the <a href="https://stats.stackexchange.com/questions/123895/mad-formula-for-outlier-detection/274944#274944">modified Z-score</a>:</p>
+
+\[M_i = \frac{0.6745 \left( y_i - \tilde{y} \right)}{MAD(y)}\]
+
+<p>Note that 0.6745 is the 0.75th quantile of the standard normal distribution. So we are going to flag each point as outlier if $M_i &lt; -T$ or $M_i &gt; T$. $T$ is a theshold value that has a default value of 3.5 as a rule of thumb. See [1] for more details.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># modified Z-score based method, implemented with Numba
+</span>
+
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_mad_lo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="n">x_tilde</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">mad</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">median</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">fabs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_tilde</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">x_tilde</span> <span class="o">-</span> <span class="mf">1.4825796886582654</span> <span class="o">*</span> <span class="n">threshold</span> <span class="o">*</span> <span class="n">mad</span>  <span class="c1"># 1.0 / 0.6745
+</span>
+
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_mad_up</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="n">x_tilde</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">mad</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">median</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">fabs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_tilde</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">x_tilde</span> <span class="o">+</span> <span class="mf">1.4825796886582654</span> <span class="o">*</span> <span class="n">threshold</span> <span class="o">*</span> <span class="n">mad</span>  <span class="c1"># 1.0 / 0.6745
+</span>
+
+<span class="k">def</span> <span class="nf">detect_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">3.5</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">pd</span><span class="p">.</span><span class="n">core</span><span class="p">.</span><span class="n">series</span><span class="p">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nc">TypeError</span><span class="p">(</span><span class="sh">"</span><span class="s">ts must be a Pandas Series</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">ts</span><span class="p">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="p">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="nc">TypeError</span><span class="p">(</span><span class="sh">"</span><span class="s">ts must have a DatetimeIndex</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ts</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">freq</span> <span class="o">==</span> <span class="sh">"</span><span class="s">D</span><span class="sh">"</span><span class="p">:</span>
+        <span class="n">freq_str</span> <span class="o">=</span> <span class="sh">"</span><span class="s">D</span><span class="sh">"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Wrong time series frequency</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">window_str</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">window_size</span><span class="p">)</span> <span class="o">+</span> <span class="n">freq_str</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(</span><span class="sh">"</span><span class="s">val</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">mad_lo</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="p">.</span><span class="n">val</span><span class="p">.</span><span class="nf">dropna</span><span class="p">()</span>
+        <span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="n">window_str</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">apply</span><span class="p">(</span><span class="n">compute_mad_lo</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">threshold</span><span class="p">,),</span> <span class="n">raw</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">mad_up</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="p">.</span><span class="n">val</span><span class="p">.</span><span class="nf">dropna</span><span class="p">()</span>
+        <span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="n">window_str</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">apply</span><span class="p">(</span><span class="n">compute_mad_up</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">threshold</span><span class="p">,),</span> <span class="n">raw</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">outlier</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">df</span><span class="p">.</span><span class="n">val</span> <span class="o">&lt;</span> <span class="n">df</span><span class="p">.</span><span class="n">mad_lo</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">val</span> <span class="o">&gt;</span> <span class="n">df</span><span class="p">.</span><span class="n">mad_up</span><span class="p">),</span> <span class="sh">"</span><span class="s">outlier</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">.</span><span class="n">outlier</span>
+</code></pre></div></div>
+
+<p>Let’s plot these suspected outliers on given series:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">outliers</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">ts</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">outliers</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">outliers</span><span class="p">].</span><span class="nf">plot</span><span class="p">(</span>
+            <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="sh">"</span><span class="s">#F3CAA7</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span>
+        <span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="sh">"</span><span class="s">#325160</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+        <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">ts</span><span class="p">.</span><span class="n">name</span> <span class="o">+</span> <span class="sh">"</span><span class="s"> with outliers</span><span class="sh">"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">[</span><span class="n">traces</span><span class="p">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span>
+<span class="n">outliers</span> <span class="o">=</span> <span class="nf">detect_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+<span class="nf">plot_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">outliers</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_24_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">[</span><span class="n">traces</span><span class="p">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">21</span><span class="p">]]</span>
+<span class="n">outliers</span> <span class="o">=</span> <span class="nf">detect_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+<span class="nf">plot_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">outliers</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_25_0.png" alt="png" /></p>
+
+<p>Now we actually remove all suspected outliers in each serie:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">traces</span><span class="p">.</span><span class="n">columns</span><span class="p">:</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+    <span class="n">outliers</span> <span class="o">=</span> <span class="nf">detect_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+    <span class="n">traces</span><span class="p">[</span><span class="n">col</span><span class="p">].</span><span class="n">loc</span><span class="p">[</span><span class="n">outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">NaN</span>
+</code></pre></div></div>
+
+<h2 id="remove-incomplete-traces">Remove incomplete traces</h2>
+
+<p>Removing outliers may result in series with too many missing values. So again, we check if each serie as enough data (at least 80% valid):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">nan_count</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">cols</span> <span class="o">=</span> <span class="nf">sorted</span><span class="p">(</span><span class="n">nan_count</span><span class="p">[</span><span class="n">nan_count</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">MIN_LENGTH_RATIO</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span><span class="p">].</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">traces</span> <span class="o">=</span> <span class="n">traces</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span>
+<span class="nf">print</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">traces</span><span class="p">.</span><span class="n">columns</span><span class="p">))</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>48
+</code></pre></div></div>
+
+<h2 id="change-point-detection">Change point detection</h2>
+
+<p>Now we can focus on the change point detection problem. We are going to use <a href="https://github.com/deepcharles/ruptures">ruptures</a>, a nice library for off-line change point detection. <a href="http://www.laurentoudre.fr/publis/TOG-SP-19.pdf">Here</a> is a link to the paper associated with the library. As defined in [2]:</p>
+
+<blockquote>
+  <p>Change point detection is the task of finding changes in the underlying model of a signal or time series</p>
+</blockquote>
+
+<p>Here we are dealing with an unknown number of break points, so a penalty is added to the change point problem with a fixed number of change points $K$. Although <code class="language-plaintext highlighter-rouge">ruptures</code> can deal with multivariate signals, we apply the detection algorithms to each time serie separately.</p>
+
+<p>The selected search method is the Pruned Exact Linear Time (PELT) method which is optimal. The cost function is a Gaussian kernel-based mapping. The default penalty function in <code class="language-plaintext highlighter-rouge">ruptures</code> is linear, from what we understand. Here is the function that computes and return the breakpoint indices:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">detect_change_points</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="sh">"</span><span class="s">rbf</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">jump</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">pen</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">algo</span> <span class="o">=</span> <span class="n">rpt</span><span class="p">.</span><span class="nc">Pelt</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="n">min_size</span><span class="p">,</span> <span class="n">jump</span><span class="o">=</span><span class="n">jump</span><span class="p">).</span><span class="nf">fit</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+    <span class="n">bkps</span> <span class="o">=</span> <span class="n">algo</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">pen</span><span class="o">=</span><span class="n">pen</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bkps</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="n">c_03</span>
+<span class="n">signal</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">dropna</span><span class="p">().</span><span class="n">values</span>
+<span class="n">bkps</span> <span class="o">=</span> <span class="nf">detect_change_points</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axarr</span> <span class="o">=</span> <span class="nf">display</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">bkps</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">title</span><span class="p">(</span><span class="n">ts</span><span class="p">.</span><span class="n">name</span> <span class="o">+</span> <span class="sh">"</span><span class="s"> with break points</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_33_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="n">c_21</span>
+<span class="n">signal</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">dropna</span><span class="p">().</span><span class="n">values</span>
+<span class="n">bkps</span> <span class="o">=</span> <span class="nf">detect_change_points</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+<span class="nf">display</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">bkps</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">title</span><span class="p">(</span><span class="n">ts</span><span class="p">.</span><span class="n">name</span> <span class="o">+</span> <span class="sh">"</span><span class="s"> with break points</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_34_0.png" alt="png" /></p>
+
+<h2 id="feature-extraction-on-homogeneous-time-intervals">Feature extraction on homogeneous time intervals</h2>
+
+<p>Now that we have removed some outliers and segmented the serie, we are interested computing the slope of each homegeneous segment, to finally compute a slope coefficient, which would indicate if the elapsed time is reather increasing or not. Let’s start with the slope exctraction:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">ts_in</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">ts_in</span><span class="p">.</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">outliers</span> <span class="o">=</span> <span class="nf">detect_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+    <span class="n">ts</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">NaN</span>
+    <span class="n">signal</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">dropna</span><span class="p">().</span><span class="n">values</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="n">name</span>
+    <span class="n">bkps</span> <span class="o">=</span> <span class="nf">detect_change_points</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">dropna</span><span class="p">().</span><span class="nf">to_frame</span><span class="p">()</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">segment</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">bkps</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]].</span><span class="n">index</span><span class="p">,</span> <span class="sh">"</span><span class="s">segment</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">df</span><span class="p">.</span><span class="n">segment</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">segment</span><span class="p">.</span><span class="nf">cumsum</span><span class="p">()</span>
+
+    <span class="n">slopes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seg_lengths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">piecelin</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">slope</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="n">segment</span><span class="p">.</span><span class="nf">unique</span><span class="p">():</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">segment</span> <span class="o">==</span> <span class="n">i</span><span class="p">].</span><span class="nf">asfreq</span><span class="p">(</span><span class="sh">"</span><span class="s">D</span><span class="sh">"</span><span class="p">)[</span><span class="n">name</span><span class="p">].</span><span class="nf">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">dropna</span><span class="p">()</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">seg</span><span class="p">.</span><span class="n">values</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">seg</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="nc">LinearRegression</span><span class="p">(</span><span class="n">fit_intercept</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">df</span><span class="p">.</span><span class="n">segment</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">].</span><span class="nf">isna</span><span class="p">(),</span> <span class="sh">"</span><span class="s">piecelin</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reg</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">df</span><span class="p">.</span><span class="n">segment</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">].</span><span class="nf">isna</span><span class="p">(),</span> <span class="sh">"</span><span class="s">slope</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reg</span><span class="p">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">outliers</span> <span class="o">=</span> <span class="nf">detect_outliers</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="sh">"</span><span class="s">#F1D05E</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">piecelin</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="sh">"</span><span class="s">#325160</span><span class="sh">"</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+            <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span> 
+            <span class="n">title</span><span class="o">=</span><span class="n">name</span> <span class="o">+</span> <span class="sh">"</span><span class="s"> with piecewise linear approx.</span><span class="sh">"</span><span class="p">,</span> 
+            <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">),</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="n">c_03</span>
+<span class="n">_</span> <span class="o">=</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_37_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">.</span><span class="n">c_21</span>
+<span class="n">_</span> <span class="o">=</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_38_0.png" alt="png" /></p>
+
+<p>So we would like to detect if a process has been recently taking more and more time to complete. We start by computing a monthly-averaged value of the slope for the last 6 months, and then compute another average of these slope values with non-uniform weights that increase with time (the older, the smaller the weight). We finally get a unique value representing the increase of elapsed time during the most recent months, without taking account outliers and jumps. This slope coefficient is computed for each time serie with <code class="language-plaintext highlighter-rouge">compute_slope_coefs</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">weighted_average</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">alph</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
+        <span class="n">alph</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">alph</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">alph</span> <span class="o">/=</span> <span class="n">np</span><span class="p">.</span><span class="nf">sum</span><span class="p">(</span><span class="n">alph</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">alph</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compute_slope_coefs</span><span class="p">(</span><span class="n">tss</span><span class="p">,</span> <span class="n">n_days</span><span class="o">=</span><span class="mi">180</span><span class="p">):</span>
+    <span class="n">slope_coefs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">tss</span><span class="p">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">tss</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">-</span><span class="n">n_days</span><span class="p">:].</span><span class="n">slope</span><span class="p">.</span><span class="nf">resample</span><span class="p">(</span><span class="sh">"</span><span class="s">M</span><span class="sh">"</span><span class="p">).</span><span class="nf">mean</span><span class="p">()</span>
+        <span class="n">coef</span> <span class="o">=</span> <span class="nf">weighted_average</span><span class="p">(</span><span class="n">months</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">slope_coefs</span><span class="p">.</span><span class="nf">append</span><span class="p">({</span><span class="sh">"</span><span class="s">column</span><span class="sh">"</span><span class="p">:</span> <span class="n">col</span><span class="p">,</span> <span class="sh">"</span><span class="s">slope_coef</span><span class="sh">"</span><span class="p">:</span> <span class="n">coef</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">slope_coefs</span><span class="p">).</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">column</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sc</span> <span class="o">=</span> <span class="nf">compute_slope_coefs</span><span class="p">(</span><span class="n">traces</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Let’s plot the 20 largest slope coefficients:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">slope_coef</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="mi">20</span><span class="p">].</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">False</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Processes with largest slope coefficient in the last 6 months</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Process</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Time delta per day (s/day)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_43_0.png" alt="png" /></p>
+
+<p>Well we already plotted <code class="language-plaintext highlighter-rouge">c_21</code> and could notice that it was increasing in the last part.</p>
+
+<p>Let’s study the slope coefficients of the months preceding “2018-07”:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sc</span> <span class="o">=</span> <span class="nf">compute_slope_coefs</span><span class="p">(</span><span class="n">traces</span><span class="p">[:</span><span class="sh">"</span><span class="s">2018-07</span><span class="sh">"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">slope_coef</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="mi">20</span><span class="p">].</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">False</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Processes with largest slope coefficient in the last 6 months</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Process</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Time delta per day (s/day)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_46_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">traces</span><span class="p">[:</span><span class="sh">"</span><span class="s">2018-07</span><span class="sh">"</span><span class="p">].</span><span class="n">c_03</span>
+<span class="n">df</span> <span class="o">=</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-07-03_01/output_47_0.png" alt="png" /></p>
+
+<h2 id="final-remarks">Final remarks</h2>
+
+<p>This aim of this post was to quickly explore ways to detect performance drift in the execution time of large and complex data integration processes. The approach was to remove noise and jumps in the time series data using outlier detection, change point detection and piecewise linear approximation. Then a weighted average of the slope is computed on the last 6 months to result in a single coefficient for each time serie. We could imagine to track this coefficient on a monthly basis.</p>
+
+<p>However this approach strongly depends on two parameters:</p>
+<ul>
+  <li>the threshold value for the outlier detection method,</li>
+  <li>the penalty coefficient fot the change point detection method.</li>
+</ul>
+
+<p>[1] B. Iglewicz and D. Hoaglin, <em>Volume 16: How to Detect and Handle Outliers</em>, The ASQC Basic References in Quality Control: Statistical Techniques, Edward F. Mykytka, Ph.D., Editor, 1993.</p>
+
+<p>[2] C. Truong, L. Oudre and N. Vayatis, <em>Selective review of offline change point detection methods</em>, Signal Processing, 167:107299, 2020.</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

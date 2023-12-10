@@ -1,0 +1,187 @@
+<p>What is an attractor? Definition from <a href="https://en.wikipedia.org/wiki/Attractor#Strange_attractor">wikipedia</a>:</p>
+<blockquote>
+  <p>In the mathematical field of dynamical systems, an attractor is a set of numerical values toward which a system tends to evolve, for a wide variety of starting conditions of the system. System values that get close enough to the attractor values remain close even if slightly disturbed.
+An attractor is called strange if it has a fractal structure.</p>
+</blockquote>
+
+<p>Most of the following code comes from James Bednar’s <a href="https://anaconda.org/jbednar/clifford_attractor/notebook">notebook</a> about 2D strange attractor plotting with <a href="http://datashader.org/">Datashader</a>, which was inspired by an <a href="https://nbviewer.jupyter.org/github/lazarusA/CodeSnippets/blob/master/CodeSnippetsPython/ScientificPlotBasic2DDensityEj3.ipynb">entry</a> from <a href="https://lazarusa.github.io/Webpage/index.html">Lazaro Alonso</a>, I think.</p>
+
+<p><a href="http://datashader.org/">Datashader</a> is a great Python library that allows to create beautiful images from large amout of spatial data, e.g. census data. <a href="http://numba.pydata.org/">Numba</a> is an open-source NumPy-aware optimizing compiler for Python, used here to quickly compute the trajectories.</p>
+
+<p>Here I focus on Hopalong attractor, introduced by Barry Martin. You can see the definition <a href="https://www.maplesoft.com/support/help/maple/view.aspx?path=MathApps/HopalongAttractor">here</a> (<code class="language-plaintext highlighter-rouge">hopalong_1</code>). I also found another slight different definition <a href="https://softologyblog.wordpress.com/2017/03/04/2d-strange-attractors/">here</a> (<code class="language-plaintext highlighter-rouge">hopalong_2</code>) along with some sets of parameter values. Some other parameter values were taken from <a href="http://www.lantersoft.ch/experiments/hopalong/">here</a>. Finally, I stumbled on this nice (but rather hypnotic) webgl Hopalong Orbits <a href="http://iacopoapps.appspot.com/hopalongwebgl/">Visualizer</a>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">datashader</span> <span class="k">as</span> <span class="n">ds</span>
+<span class="kn">from</span> <span class="n">datashader</span> <span class="kn">import</span> <span class="n">transfer_functions</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">import</span> <span class="n">numba</span>
+<span class="kn">from</span> <span class="n">numba</span> <span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">import</span> <span class="n">matplotlib</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">warnings</span>
+<span class="n">warnings</span><span class="p">.</span><span class="nf">filterwarnings</span><span class="p">(</span><span class="sh">"</span><span class="s">ignore</span><span class="sh">"</span><span class="p">)</span>
+<span class="kn">import</span> <span class="n">sys</span>
+
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Python version: </span><span class="si">{</span><span class="n">sys</span><span class="p">.</span><span class="n">version</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Numpy version: </span><span class="si">{</span><span class="n">np</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Pandas version: </span><span class="si">{</span><span class="n">pd</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Datashader version: </span><span class="si">{</span><span class="n">ds</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Matplotlib version: </span><span class="si">{</span><span class="n">matplotlib</span><span class="p">.</span><span class="n">__version__</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python version: 3.7.0 (default, Jun 28 2018, 13:15:42) 
+[GCC 7.2.0]
+Numpy version: 1.15.1
+Pandas version: 0.23.4
+Datashader version: 0.6.6
+Matplotlib version: 2.2.3
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># image size
+</span><span class="n">width</span> <span class="o">=</span> <span class="mi">800</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">800</span>
+
+<span class="c1"># number of steps
+</span><span class="n">n</span> <span class="o">=</span> <span class="mi">10000000</span>
+
+<span class="c1"># colormap
+</span><span class="n">purples</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">get_cmap</span><span class="p">(</span><span class="sh">'</span><span class="s">Purples</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="martin-map-functions">Martin map functions</h3>
+
+<p>These 2D maps have three fixed parameters: <code class="language-plaintext highlighter-rouge">a</code>, <code class="language-plaintext highlighter-rouge">b</code> and <code class="language-plaintext highlighter-rouge">c</code>. For a given set of (<code class="language-plaintext highlighter-rouge">x</code>, <code class="language-plaintext highlighter-rouge">y</code>) values, it returns a new one. This corresponds to a single iteration.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">hopalong_1</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">y</span> <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">sqrt</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">fabs</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="n">c</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">sign</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> \
+           <span class="n">a</span> <span class="o">-</span> <span class="n">x</span>
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">hopalong_2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">y</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">sqrt</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">fabs</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">c</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">sign</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">),</span> \
+           <span class="n">a</span> <span class="o">-</span> <span class="n">x</span> <span class="o">-</span> <span class="mf">1.0</span>
+</code></pre></div></div>
+
+<h3 id="trajectory-function">Trajectory function</h3>
+
+<p>We take <code class="language-plaintext highlighter-rouge">x, y = 0, 0</code> as initial condition and then apply a Martin map <code class="language-plaintext highlighter-rouge">n-1</code> times.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">trajectory</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nf">fn</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h3 id="visualization-function">Visualization function</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">trajectory</code> function returns a dataframe with <code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">y</code> coordinates (a vector of <code class="language-plaintext highlighter-rouge">n</code> points). Next we aggregate these points into a 2D grid in order to count the number of points per grid cell, which is in turn transfomed into a color.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="nf">trajectory</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+    <span class="n">agg</span> <span class="o">=</span> <span class="n">cvs</span><span class="p">.</span><span class="nf">points</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">y</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="p">.</span><span class="nc">Images</span><span class="p">(</span><span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">purples</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h2 id="resulting-images">Resulting images</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1.62 s, sys: 149 ms, total: 1.77 s
+Wall time: 1.06 s
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_10_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_1</span><span class="p">,</span> <span class="o">-</span><span class="mf">11.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 721 ms, sys: 161 ms, total: 882 ms
+Wall time: 379 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_11_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 861 ms, sys: 167 ms, total: 1.03 s
+Wall time: 434 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_12_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 678 ms, sys: 164 ms, total: 842 ms
+Wall time: 364 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_13_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 782 ms, sys: 132 ms, total: 914 ms
+Wall time: 381 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_14_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_2</span><span class="p">,</span> <span class="mf">7.16878197155893</span><span class="p">,</span> <span class="mf">8.43659746693447</span><span class="p">,</span> <span class="mf">2.55983412731439</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 884 ms, sys: 140 ms, total: 1.02 s
+Wall time: 620 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_15_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_2</span><span class="p">,</span> <span class="mf">7.7867514709942</span><span class="p">,</span> <span class="mf">0.132189802825451</span><span class="p">,</span> <span class="mf">8.14610984409228</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 756 ms, sys: 299 ms, total: 1.05 s
+Wall time: 470 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_16_1.png" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">compute_and_plot</span><span class="p">(</span><span class="n">hopalong_2</span><span class="p">,</span> <span class="mf">9.74546888144687</span><span class="p">,</span> <span class="mf">1.56320227775723</span><span class="p">,</span> <span class="mf">7.86818214459345</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 703 ms, sys: 152 ms, total: 855 ms
+Wall time: 378 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img src="/img/2018-08-29_01/output_17_1.png" />
+</p>

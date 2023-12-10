@@ -1,0 +1,303 @@
+<p align="center">
+  <img width="750" src="/img/2020-02-13_01/accidents_black.png" alt="Main" />
+</p>
+
+<p>Well I love the <a href="https://datashader.org/">datashader</a> Python package and I am always happy to use it on some interesting datasets. I recently came across a <a href="https://www.data.gouv.fr/fr/datasets/base-de-donnees-accidents-corporels-de-la-circulation/#_">traffic injury database</a> for french roads, which happens to have some geographical coordinates. This comes from the open platform for french public data. So in this notebook, we are going to plot all the georeferenced collisions that ocurred over 13 years in mainland France.</p>
+
+<p>Disclaimer: this notebook was written during lunch break (Q&amp;D style).</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">subprocess</span>
+
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">datashader</span> <span class="k">as</span> <span class="n">ds</span>
+<span class="kn">from</span> <span class="n">datashader</span> <span class="kn">import</span> <span class="n">transfer_functions</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">from</span> <span class="n">colorcet</span> <span class="kn">import</span> <span class="n">palette</span>
+<span class="kn">import</span> <span class="n">matplotlib</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">use</span><span class="p">(</span><span class="sh">'</span><span class="s">seaborn</span><span class="sh">'</span><span class="p">)</span>
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">watermark</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span> <span class="o">-</span><span class="n">v</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPython 3.8.1
+IPython 7.11.1
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span> <span class="o">--</span><span class="n">iversions</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>matplotlib 3.1.2
+pandas     1.0.0
+datashader 0.10.0
+</code></pre></div></div>
+
+<h2 id="collect-the-csv-files">Collect the CSV files</h2>
+
+<p>The coordinates can be found in the <code class="language-plaintext highlighter-rouge">caracteristiques_20??.csv</code> files. I did not try to scrap the web page but just gathered the urls for each year into a list:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">files</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/6eee0852-cbd7-447e-bd70-37c433029405</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2018</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/9a7d408b-dd72-4959-ae7d-c854ec505354</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2017</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/96aadc9f-0b55-4e9a-a70e-c627ed97e6f7</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2016</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/185fbdc7-d4c5-4522-888e-ac9550718f71</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2015</span><span class="p">],</span>    
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/85dfe8c6-589f-4e76-8a07-9f59e49ec10d</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2014</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/18b1a57a-57bf-4bf1-b9ee-dfa5a3154225</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2013</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/b2518ec1-6529-47bc-9d55-40e2effeb0e7</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2012</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/37991267-8a15-4a9d-9b1c-ff3e6bea3625</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2011</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/decdfe8c-38ff-4a06-b7fc-615785f2914d</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2010</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/fdfacdb9-f48e-4759-bae5-48d063216acb</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2009</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/722ebb99-c8b2-4635-bf8d-125dd280ee42</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2008</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/6fc7b169-4dfe-442c-8c28-8bd773aeddf8</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2007</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/fafa33cf-50cb-4092-a819-d5209f684089</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2006</span><span class="p">],</span>
+    <span class="p">[</span><span class="sh">'</span><span class="s">https://www.data.gouv.fr/fr/datasets/r/a47866f7-ece1-4de8-8d31-3a1b4f477e08</span><span class="sh">'</span><span class="p">,</span> <span class="mi">2005</span><span class="p">],</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<p>Let’s download these files:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">file_paths</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">./data/caracteristiques-</span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s">.csv</span><span class="sh">'</span>
+    <span class="n">file_paths</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">wget --output-document </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s"> </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="sh">'</span>
+    <span class="n">subprocess</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 322 µs, sys: 100 ms, total: 100 ms
+Wall time: 20.4 s
+</code></pre></div></div>
+
+<h2 id="load-the-csvs-into-a-dataframe">Load the CSVs into a dataframe</h2>
+
+<p>If we look at the encoding of each file, we get a little surprise:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">file_paths</span><span class="p">:</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">uchardet </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="sh">'</span>
+    <span class="n">encoding</span> <span class="o">=</span> <span class="n">subprocess</span><span class="p">.</span><span class="nf">check_output</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">decode</span><span class="p">(</span><span class="sh">"</span><span class="s">utf-8</span><span class="sh">"</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">encoding</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+ISO-8859-1
+UTF-8
+WINDOWS-1252
+WINDOWS-1252
+WINDOWS-1252
+WINDOWS-1252
+</code></pre></div></div>
+
+<p>Also, the separator may vary, and is not always detected by <code class="language-plaintext highlighter-rouge">pandas</code> (<code class="language-plaintext highlighter-rouge">csv.Sniffer</code>?), so the seperator is hard-coded for each file. Fortunately, all the loaded dataframes have the same column names, so we concantenate them all:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">file_paths</span><span class="p">:</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">uchardet </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="sh">'</span>
+    <span class="n">encoding</span> <span class="o">=</span> <span class="n">subprocess</span><span class="p">.</span><span class="nf">check_output</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">decode</span><span class="p">(</span><span class="sh">"</span><span class="s">utf-8</span><span class="sh">"</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">file_path</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="s">.</span><span class="sh">'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sh">'</span><span class="s">2009</span><span class="sh">'</span><span class="p">:</span>
+        <span class="n">sep</span><span class="o">=</span> <span class="sh">'</span><span class="se">\t</span><span class="sh">'</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sep</span> <span class="o">=</span> <span class="sh">'</span><span class="s">,</span><span class="sh">'</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">info</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+Int64Index: 958469 entries, 0 to 87025
+Data columns (total 16 columns):
+ #   Column   Non-Null Count   Dtype  
+---  ------   --------------   -----  
+ 0   Num_Acc  958469 non-null  int64  
+ 1   an       958469 non-null  int64  
+ 2   mois     958469 non-null  int64  
+ 3   jour     958469 non-null  int64  
+ 4   hrmn     958469 non-null  int64  
+ 5   lum      958469 non-null  int64  
+ 6   agg      958469 non-null  int64  
+ 7   int      958469 non-null  int64  
+ 8   atm      958396 non-null  float64
+ 9   col      958450 non-null  float64
+ 10  com      958467 non-null  float64
+ 11  adr      816550 non-null  object 
+ 12  gps      480052 non-null  object 
+ 13  lat      471401 non-null  float64
+ 14  long     471397 non-null  object 
+ 15  dep      958469 non-null  int64  
+dtypes: float64(4), int64(9), object(3)
+memory usage: 124.3+ MB
+</code></pre></div></div>
+
+<p>Now we create a <code class="language-plaintext highlighter-rouge">datetime</code> index:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">'</span><span class="s">an</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mois</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">jour</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="n">year</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">year</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="sh">'</span><span class="s">20</span><span class="sh">'</span> <span class="o">+</span> <span class="nf">str</span><span class="p">(</span><span class="n">x</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">hour</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">hrmn</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">x</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">4</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]))</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">minute</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">hrmn</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">x</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">4</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]))</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">'</span><span class="s">hrmn</span><span class="sh">'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">'</span><span class="s">dt</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">hour</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">minute</span><span class="sh">'</span><span class="p">]])</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">'</span><span class="s">dt</span><span class="sh">'</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>And we can plot the daily count of traffic injuries:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">().</span><span class="nf">resample</span><span class="p">(</span><span class="sh">'</span><span class="s">D</span><span class="sh">'</span><span class="p">).</span><span class="nf">count</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">);</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">Daily count</span><span class="sh">'</span><span class="p">);</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_title</span><span class="p">(</span><span class="sh">'</span><span class="s">Daily count of traffic injuries</span><span class="sh">'</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-02-13_01/output_17_0.png" alt="Daily count" />
+</p>
+
+<h2 id="map-of-traffic-injuries">Map of traffic injuries</h2>
+
+<p>Now we focus on the coordinate columns <code class="language-plaintext highlighter-rouge">lat</code> and <code class="language-plaintext highlighter-rouge">long</code>. Also we select only the mainland france area (<code class="language-plaintext highlighter-rouge">gps = M</code>):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coords</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">gps</span> <span class="o">==</span> <span class="sh">'</span><span class="s">M</span><span class="sh">'</span><span class="p">][[</span><span class="sh">'</span><span class="s">lat</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">long</span><span class="sh">'</span><span class="p">]].</span><span class="nf">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="sh">'</span><span class="s">any</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coords</span><span class="p">.</span><span class="nf">info</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+DatetimeIndex: 456090 entries, 2018-01-24 15:05:00 to 2005-12-11 12:55:00
+Data columns (total 2 columns):
+ #   Column  Non-Null Count   Dtype  
+---  ------  --------------   -----  
+ 0   lat     456090 non-null  float64
+ 1   long    456090 non-null  object 
+dtypes: float64(1), object(1)
+memory usage: 10.4+ MB
+</code></pre></div></div>
+
+<p>It appears that the <code class="language-plaintext highlighter-rouge">long</code> column contain some numbers (a lot of zeros actually!) and some <code class="language-plaintext highlighter-rouge">str</code> values:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coords</span><span class="p">.</span><span class="nb">long</span><span class="p">.</span><span class="nf">value_counts</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.0         97426
+0           28975
+-            3209
+345699.0      162
+228547.0      131
+            ...  
+247394.0        1
+441588.0        1
+247392.0        1
+441590.0        1
+241601.0        1
+Name: long, Length: 205130, dtype: int64
+</code></pre></div></div>
+
+<p>So we remove the <code class="language-plaintext highlighter-rouge">str</code> values and convert the <code class="language-plaintext highlighter-rouge">long</code> column to <code class="language-plaintext highlighter-rouge">float</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">coords</span><span class="p">.</span><span class="nb">long</span> <span class="o">!=</span> <span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">].</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">coords</span><span class="p">[</span><span class="sh">'</span><span class="s">long</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span>  <span class="n">coords</span><span class="p">[</span><span class="sh">'</span><span class="s">long</span><span class="sh">'</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">coords</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>lat</th>
+      <th>long</th>
+    </tr>
+    <tr>
+      <th>dt</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2018-01-24 15:05:00</th>
+      <td>5055737.0</td>
+      <td>294992.0</td>
+    </tr>
+    <tr>
+      <th>2018-02-12 10:15:00</th>
+      <td>5052936.0</td>
+      <td>293151.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>The coordinates are expressed in “decimal degrees”… We convert them to WGS84 by dividing by 100000:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coords</span> <span class="o">/=</span> <span class="mi">100000</span>
+</code></pre></div></div>
+
+<p>Also, we filter the points with a bounding box of mainland france:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">bbox</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="p">,</span> <span class="mf">39.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">,</span> <span class="mf">54.</span><span class="p">)</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[(</span><span class="n">coords</span><span class="p">.</span><span class="nb">long</span> <span class="o">&gt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">coords</span><span class="p">.</span><span class="n">lat</span> <span class="o">&gt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">coords</span><span class="p">.</span><span class="nb">long</span> <span class="o">&lt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">coords</span><span class="p">.</span><span class="n">lat</span> <span class="o">&lt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">])]</span>
+</code></pre></div></div>
+
+<p>And that’s it! We can eventually call datashader:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cmap</span> <span class="o">=</span> <span class="n">palette</span><span class="p">[</span><span class="sh">'</span><span class="s">CET_L19</span><span class="sh">'</span><span class="p">]</span>
+<span class="n">bg_col</span> <span class="o">=</span> <span class="sh">'</span><span class="s">white</span><span class="sh">'</span>
+<span class="n">size</span> <span class="o">=</span> <span class="mi">1200</span>
+<span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+<span class="n">agg</span> <span class="o">=</span> <span class="n">cvs</span><span class="p">.</span><span class="nf">points</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="sh">'</span><span class="s">long</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">lat</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">set_background</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bg_col</span><span class="p">)</span>
+<span class="n">img</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1000" src="/img/2020-02-13_01/output_30_0.png" alt="White map" />
+</p>
+
+<p>This confirms my intuition that driving in Paris is dangerous :)</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

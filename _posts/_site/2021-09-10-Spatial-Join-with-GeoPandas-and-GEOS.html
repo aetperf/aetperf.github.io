@@ -1,0 +1,930 @@
+<p><strong>Updated</strong> Sep 13, 2021</p>
+
+<p align="center">
+  <img width="500" src="https://geopandas.readthedocs.io/en/latest/_images/geopandas_logo.png" alt="GeoPandas" />
+</p>
+
+<p>The purpose of this post is to perform an “efficient” spatial join in Python. What is a spatial join? Here is the definition from <a href="http://wiki.gis.com/wiki/index.php/Spatial_Join">wiki.gis.com</a>:</p>
+
+<blockquote>
+  <p>A Spatial join is a GIS operation that affixes data from one feature layer’s attribute table to another from a spatial perspective.</p>
+</blockquote>
+
+<p>For example, in the following, we are going to perform a spatial join between a point layer and a polygon layer. One of the attributes of the polygon layer is a string code that we want to attach to the points located within each polygon.</p>
+
+<p>Warning: the time measurements given in the following correspond to different Jupyter sessions with various other jobs running alongside, so they would vary if run again. They are only presented to provide an order of magnitude.</p>
+
+<h2 id="the-datasets">The Datasets</h2>
+
+<h3 id="point-layer">Point layer</h3>
+
+<p>The point dataset deals with real estate price. Its called DVF and is provided by the french open data. Here is a description from <a href="https://www.data.gouv.fr/fr/datasets/5c4ae55a634f4117716d5656/">data.gouv.fr</a>:</p>
+<blockquote>
+  <p>The “Requests for real estate values” database, or DVF, lists all the sales of real estate made over the last five years, in mainland France and in the overseas departments and territories - except in Mayotte and Alsace-Moselle. The goods concerned can be built (apartment and house) or not built (land lot, fields).</p>
+</blockquote>
+
+<p>The locations of most of these real estate transfers have been geocoded, so they exhibit some <code class="language-plaintext highlighter-rouge">longitude</code> and <code class="language-plaintext highlighter-rouge">latitude</code> attributes. The data can be downloaded from <a href="https://files.data.gouv.fr/geo-dvf/latest/csv/">here</a> as yearly CSVs. For a given year, different files correspond to different levels of administrative divisions (communes, departements):</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Index of /geo-dvf/latest/csv/2020/
+../
+communes/                                          01-Jun-2021 15:30                   -
+departements/                                      01-Jun-2021 15:30                   -
+full.csv.gz                                        01-Jun-2021 12:48            71045047
+</code></pre></div></div>
+<p>However, here we are going to use the “full” data files corresponding to the whole territory: <code class="language-plaintext highlighter-rouge">full2016.csv.gz</code>, <code class="language-plaintext highlighter-rouge">full2017.csv.gz</code>, …, <code class="language-plaintext highlighter-rouge">full2020.csv.gz</code>. Although data is only available for the last five years, we also included 2 previously collected files: <code class="language-plaintext highlighter-rouge">full2014.csv.gz</code> and <code class="language-plaintext highlighter-rouge">full2015.csv.gz</code>, for a total 7 years time span. This results in a dataframe with 19 895 888 rows (note that a property transfer can hold several distinct rows).</p>
+
+<p>The csv files have been previously loaded with Pandas, concatenated and saved as a Parquet file. Here is the snippet used (<code class="language-plaintext highlighter-rouge">dfv_fps</code> is a list with the gzipped CSV file paths):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">fp</span> <span class="ow">in</span> <span class="n">dfv_fps</span><span class="p">:</span>
+    <span class="n">df_tmp</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">df_tmp</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="n">date_mutation</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">date_mutation</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">date_mutation</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="sh">"</span><span class="s">lot1_numero</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">lot2_numero</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">lot3_numero</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">lot4_numero</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">lot5_numero</span><span class="sh">"</span><span class="p">]:</span>
+    <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">to_parquet</span><span class="p">(</span><span class="sh">"</span><span class="s">dvf.parquet</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="polygon-layer">Polygon layer</h3>
+
+<p>For the polygon layer, we are going to use the IRIS zones. Here is a definition of these zones from INSEE (National Institute of Statistics and Economic Studies) <a href="https://www.insee.fr/en/metadonnees/definition/c1523">website</a>:</p>
+
+<blockquote>
+  <p>In order to prepare for the dissemination of the 1999 population census, INSEE developed a system for dividing the country into units of equal size, known as IRIS2000. In French, IRIS is an acronym of ‘aggregated units for statistical information’, and the 2000 refers to the target size of 2000 residents per basic unit.
+Since that time IRIS (the term which has replaced IRIS2000) has represented the fundamental unit for dissemination of infra-municipal data. These units must respect geographic and demographic criteria and have borders which are clearly identifiable and stable in the long term.
+Towns with more than 10,000 inhabitants, and a large proportion of towns with between 5,000 and 10,000 inhabitants, are divided into several IRIS units. This separation represents a division of the territory.</p>
+</blockquote>
+
+<p>Data can be downloaded from <a href="https://professionnels.ign.fr/contoursiris">here</a>. We used the 2021 version from this ftp link:</p>
+
+<p><code class="language-plaintext highlighter-rouge">ftp://Contours_IRIS_ext:ao6Phu5ohJ4jaeji@ftp3.ign.fr/CONTOURS-IRIS_2-1__SHP__FRA_2021-01-01.7z</code>.</p>
+
+<p>There are 48589 zones that forms a partition without overlap of mainland France and Corsica.</p>
+
+<h2 id="geopandas-and-pygeos">GeoPandas and PyGeos</h2>
+
+<p>Most of the treatments in the following are made with the great <a href="https://github.com/geopandas/geopandas">GeoPandas</a> library, installed with conda:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>conda <span class="nb">install</span> <span class="nt">-c</span> conda-forge geopandas
+</code></pre></div></div>
+<p>GeoPandas may use GEOS as an “booster”, using the PyGeos interface. Here is a presentation of PyGeos from its <a href="https://pygeos.readthedocs.io/en/stable/#pygeos">documentation</a>:</p>
+
+<blockquote>
+  <p>PyGEOS is a C/Python library with vectorized geometry functions. The geometry operations are done in the open-source geometry library GEOS. PyGEOS wraps these operations in NumPy ufuncs providing a performance improvement when operating on arrays of geometries.</p>
+</blockquote>
+
+<p><a href="https://trac.osgeo.org/geos">GEOS</a> (Geometry Engine - Open Source) is a C++ port of the ​Java Topology Suite (JTS).</p>
+
+<p>As explained in the GeoPandas <a href="https://geopandas.org/getting_started/install.html?highlight=pygeos#using-the-optional-pygeos-dependency">documentation</a>:</p>
+
+<blockquote>
+  <p>whether the speedups are used or not is determined by:</p>
+  <ul>
+    <li>If PyGEOS &gt;= 0.8 is installed, it will be used by default (but installing GeoPandas will not yet automatically install PyGEOS as dependency, you need to do this manually).</li>
+    <li>You can still toggle the use of PyGEOS when it is available, by […] setting an option: geopandas.options.use_pygeos = True/False. Note, although this variable can be set during an interactive session, it will only work if the GeoDataFrames you use are created (e.g. reading a file with read_file) after changing this value.</li>
+  </ul>
+</blockquote>
+
+<p>Here we installed pygeos version 0.10.2, which uses libgeos 3.9.1:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>conda <span class="nb">install </span>pygeos <span class="nt">--channel</span> conda-forge
+</code></pre></div></div>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">contextily</span> <span class="k">as</span> <span class="n">ctx</span>
+<span class="kn">from</span> <span class="n">colorcet</span> <span class="kn">import</span> <span class="n">palette</span>
+<span class="kn">import</span> <span class="n">datashader</span> <span class="k">as</span> <span class="n">ds</span>
+<span class="kn">from</span> <span class="n">datashader.mpl_ext</span> <span class="kn">import</span> <span class="n">dsshow</span>
+<span class="kn">import</span> <span class="n">geopandas</span> <span class="k">as</span> <span class="n">gpd</span>
+<span class="kn">from</span> <span class="n">geopandas.tools</span> <span class="kn">import</span> <span class="n">sjoin</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">pygeos</span> <span class="kn">import</span> <span class="n">Geometry</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">MultiPolygon</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gpd</span><span class="p">.</span><span class="n">options</span><span class="p">.</span><span class="n">use_pygeos</span> <span class="o">=</span> <span class="bp">True</span>
+</code></pre></div></div>
+
+<h2 id="loadprepare-the-point-data">Load/prepare the point data</h2>
+
+<p>In order to perform the spatial join, we only load 3 columns:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">id_parcelle</code> is a string identification for plots of land, that we are going to use later to join with the full dataset (attribute join).</li>
+  <li><code class="language-plaintext highlighter-rouge">longitude</code> and <code class="language-plaintext highlighter-rouge">latitude</code> are the geographical coordinates (WGS 84 - EPSG:4326)</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_parquet</span><span class="p">(</span><span class="sh">'</span><span class="s">dvf.parquet</span><span class="sh">'</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">id_parcelle</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">longitude</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">latitude</span><span class="sh">'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 6.03 s, sys: 1.43 s, total: 7.46 s
+Wall time: 6.38 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">dvf_df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>19895888
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_df</span><span class="p">.</span><span class="n">dtypes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>id_parcelle     object
+longitude      float64
+latitude       float64
+dtype: object
+</code></pre></div></div>
+
+<p>Drop rows with missing coordinates:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_df</span><span class="p">.</span><span class="nf">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">any</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Only keep mainland France and Corsica:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">bbox</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">5.06</span><span class="p">,</span> <span class="mf">41.04</span><span class="p">,</span> <span class="mf">9.91</span><span class="p">,</span> <span class="mf">51.27</span><span class="p">)</span>
+<span class="n">dvf_df</span> <span class="o">=</span> <span class="n">dvf_df</span><span class="p">[</span>
+    <span class="p">(</span><span class="n">dvf_df</span><span class="p">.</span><span class="n">longitude</span> <span class="o">&gt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="o">&amp;</span> <span class="p">(</span><span class="n">dvf_df</span><span class="p">.</span><span class="n">latitude</span> <span class="o">&gt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="o">&amp;</span> <span class="p">(</span><span class="n">dvf_df</span><span class="p">.</span><span class="n">longitude</span> <span class="o">&lt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="o">&amp;</span> <span class="p">(</span><span class="n">dvf_df</span><span class="p">.</span><span class="n">latitude</span> <span class="o">&lt;</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">dvf_df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>19118424
+</code></pre></div></div>
+
+<h3 id="plot-the-points">Plot the points</h3>
+
+<p>Let’s plot thes points with <a href="https://datashader.org/">datashader</a> using its <a href="https://datashader.org/getting_started/Interactivity.html#native-support-for-matplotlib">native support for matplotlib</a>. We start by loading the french border geometry as a geodataframe, after downloading the shapefile from the <a href="https://www.naturalearthdata.com/downloads/">naturalearth website</a>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">read_file</span><span class="p">(</span><span class="sh">"</span><span class="s">./admin_countries/ne_10m_admin_0_countries.shp</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">france</span> <span class="o">=</span> <span class="n">world</span><span class="p">[(</span><span class="n">world</span><span class="p">.</span><span class="n">SOVEREIGNT</span> <span class="o">==</span> <span class="sh">"</span><span class="s">France</span><span class="sh">"</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">world</span><span class="p">.</span><span class="n">TYPE</span> <span class="o">==</span> <span class="sh">"</span><span class="s">Country</span><span class="sh">"</span><span class="p">)][</span><span class="sh">"</span><span class="s">geometry</span><span class="sh">"</span><span class="p">]</span>
+<span class="n">france</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nc">MultiPolygon</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">france</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">france</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">11</span><span class="p">]]</span>  <span class="c1"># extract mainland France and Corsica
+</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We also make sure to use the same CRS (Coordinate Reference Systems) as for the points from the DVF dataset (EPSG:4326):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">france</span><span class="p">.</span><span class="n">crs</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Geographic 2D CRS: EPSG:4326&gt;
+Name: WGS 84
+Axis Info [ellipsoidal]:
+- Lat[north]: Geodetic latitude (degree)
+- Lon[east]: Geodetic longitude (degree)
+Area of Use:
+- name: World.
+- bounds: (-180.0, -90.0, 180.0, 90.0)
+Datum: World Geodetic System 1984 ensemble
+- Ellipsoid: WGS 84
+- Prime Meridian: Greenwich
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="n">palette</span><span class="p">[</span><span class="sh">"</span><span class="s">dimgray</span><span class="sh">"</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">15</span><span class="p">))</span>
+<span class="n">_</span> <span class="o">=</span> <span class="nf">dsshow</span><span class="p">(</span>
+    <span class="n">dvf_df</span><span class="p">,</span>
+    <span class="n">ds</span><span class="p">.</span><span class="nc">Point</span><span class="p">(</span><span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="p">),</span>
+    <span class="n">norm</span><span class="o">=</span><span class="sh">"</span><span class="s">eq_hist</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_facecolor</span><span class="p">(</span><span class="sh">"</span><span class="s">white</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">DVF points</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">france</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">none</span><span class="sh">"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">black</span><span class="sh">"</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_axis_off</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1.61 s, sys: 447 ms, total: 2.05 s
+Wall time: 1.4 s
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-09-10_01/output_19_1.png" alt="Points" />
+</p>
+
+<p>We can see that data for Alsace and Moselle are missing (top right) because they have a specific legal status.</p>
+
+<p>We want to assign a single zone code (from a polygon) to each <code class="language-plaintext highlighter-rouge">id_parcelle</code>. So let’s keep a single geographical point per <code class="language-plaintext highlighter-rouge">id_parcelle</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_df</span><span class="p">.</span><span class="nf">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="sh">"</span><span class="s">id_parcelle</span><span class="sh">"</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="sh">"</span><span class="s">first</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 8.85 s, sys: 557 ms, total: 9.41 s
+Wall time: 9.44 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">dvf_df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10256266
+</code></pre></div></div>
+
+<p>This reduces the size of the point dataset significantly! Let’s transform the dataframe into a geodataframe:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nc">GeoDataFrame</span><span class="p">(</span>
+    <span class="n">dvf_df</span><span class="p">[[</span><span class="sh">'</span><span class="s">id_parcelle</span><span class="sh">'</span><span class="p">]],</span> <span class="n">geometry</span><span class="o">=</span><span class="n">gpd</span><span class="p">.</span><span class="nf">points_from_xy</span><span class="p">(</span><span class="n">dvf_df</span><span class="p">.</span><span class="n">longitude</span><span class="p">,</span> <span class="n">dvf_df</span><span class="p">.</span><span class="n">latitude</span><span class="p">),</span> <span class="n">crs</span><span class="o">=</span><span class="sh">"</span><span class="s">EPSG:4326</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">del</span> <span class="n">dvf_df</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1.86 s, sys: 649 ms, total: 2.51 s
+Wall time: 1.98 s
+</code></pre></div></div>
+
+<p>This is where the GEOS library starts to make a significant difference regarding the elapsed time:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">With GEOS</th>
+      <th style="text-align: right">Without GEOS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1.98s</td>
+      <td style="text-align: right">4m 14s</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id_parcelle</th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>16002000ZM0106</td>
+      <td>POINT (0.20973 46.06524)</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>830930000A2119</td>
+      <td>POINT (5.71065 43.32764)</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>830930000A2120</td>
+      <td>POINT (5.71082 43.32771)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>id_parcelle    0
+geometry       0
+dtype: int64
+</code></pre></div></div>
+
+<h2 id="loadprepare-the-polygon-data">Load/prepare the polygon data</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">iris_gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">read_file</span><span class="p">(</span>
+    <span class="sh">"</span><span class="s">CONTOURS-IRIS_2-1__SHP__FRA_2021-01-01/CONTOURS-IRIS/1_DONNEES_LIVRAISON_2021-06-00217/CONTOURS-IRIS_2-1_SHP_LAMB93_FXX-2021/CONTOURS-IRIS.shp</span><span class="sh">"</span>
+<span class="p">)[[</span><span class="sh">'</span><span class="s">CODE_IRIS</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">geometry</span><span class="sh">'</span><span class="p">]]</span>
+<span class="n">iris_gdf</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 4.5 s, sys: 220 ms, total: 4.72 s
+Wall time: 3.19 s
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CODE_IRIS</th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>721910000</td>
+      <td>POLYGON ((498083.500 6747517.400, 498128.000 6...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>772480000</td>
+      <td>POLYGON ((685753.100 6868612.900, 685757.700 6...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>514260000</td>
+      <td>POLYGON ((759067.200 6849592.700, 758778.600 6...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>There is no significant difference regarding the elapsed time with or without GEOS for this loading operation:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">With GEOS</th>
+      <th style="text-align: right">Without GEOS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">3.19s</td>
+      <td style="text-align: right">3.94s</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">iris_gdf</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>48589
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">iris_gdf</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="n">g</span><span class="p">.</span><span class="n">geom_type</span><span class="p">).</span><span class="nf">value_counts</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Polygon         48333
+MultiPolygon      256
+Name: geometry, dtype: int64
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">iris_gdf</span><span class="p">.</span><span class="n">crs</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Projected CRS: EPSG:2154&gt;
+Name: RGF93 / Lambert-93
+Axis Info [cartesian]:
+- X[east]: Easting (metre)
+- Y[north]: Northing (metre)
+Area of Use:
+- name: France - onshore and offshore, mainland and Corsica.
+- bounds: (-9.86, 41.15, 10.38, 51.56)
+Coordinate Operation:
+- name: Lambert-93
+- method: Lambert Conic Conformal (2SP)
+Datum: Reseau Geodesique Francais 1993
+- Ellipsoid: GRS 1980
+- Prime Meridian: Greenwich
+</code></pre></div></div>
+
+<p>We need to use the same CRS between the point and polygon layers. So let’s convert the the polygon layer to EPSG4326:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">iris_gdf</span> <span class="o">=</span> <span class="n">iris_gdf</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:4326</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 4.68 s, sys: 68.3 ms, total: 4.75 s
+Wall time: 4.48 s
+</code></pre></div></div>
+
+<p>Again we observe an improvement with GEOS:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">With GEOS</th>
+      <th style="text-align: right">Without GEOS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">4.48s</td>
+      <td style="text-align: right">10.6s</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="plot-the-polygons">Plot the polygons</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">iris_gdf</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">white</span><span class="sh">"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">black</span><span class="sh">"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_axis_off</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 17.8 s, sys: 228 ms, total: 18.1 s
+Wall time: 18 s
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-09-10_01/output_37_1.png" alt="Polygones" />
+</p>
+
+<h2 id="spatial-indexing">Spatial indexing</h2>
+
+<p>In order to perform the spatial join between 10256266 points and 48589 Poygons/MultiPolygons, we need some spatial indexing. What is it? Here is a definition from <a href="https://gistbok.ucgis.org/bok-topics/spatial-indexing">ucgis.org</a>:</p>
+
+<blockquote>
+  <p>A spatial index is a data structure that allows for accessing a spatial object efficiently. It is a common technique used by spatial databases.  Without indexing, any search for a feature would require a “sequential scan” of every record in the database, resulting in much longer processing time. In a spatial index construction process, the minimum bounding rectangle serves as an object approximation. Various types of spatial indices across commercial and open-source databases yield measurable performance differences. Spatial indexing techniques are playing a central role in time-critical applications and the manipulation of spatial big data.</p>
+</blockquote>
+
+<p>From GeoPandas <a href="https://geopandas.org/docs/reference/sindex.html#spatial-index">documentation</a>:</p>
+
+<blockquote>
+  <p>GeoPandas offers built-in support for spatial indexing using an R-Tree algorithm. Depending on the ability to import <code class="language-plaintext highlighter-rouge">pygeos</code>, <code class="language-plaintext highlighter-rouge">GeoPandas</code> will either use <code class="language-plaintext highlighter-rouge">pygeos.STRtree</code> or <code class="language-plaintext highlighter-rouge">rtree.index.Index</code>.</p>
+</blockquote>
+
+<p>So we won’t use the same piece of code with or without GEOS, but it will use some kind of R-trees in both cases. Here is the definition of R-trees from <a href="https://en.wikipedia.org/wiki/R-tree">wikipedia</a>:</p>
+
+<blockquote>
+  <p>R-trees are tree data structures used for spatial access methods, i.e., for indexing multi-dimensional information such as geographical coordinates, rectangles or polygons. The R-tree was proposed by Antonin Guttman in 1984 and has found significant use in both theoretical and applied contexts. A common real-world usage for an R-tree might be to store spatial objects such as restaurant locations or the polygons that typical maps are made of: streets, buildings, outlines of lakes, coastlines, etc. and then find answers quickly to queries such as “Find all museums within 2 km of my current location”, “retrieve all road segments within 2 km of my location” (to display them in a navigation system) or “find the nearest gas station” (although not taking roads into account).</p>
+</blockquote>
+
+<p>Simple example of a R-tree for 2D rectangles from <a href="https://en.wikipedia.org/wiki/R-tree">wikipedia</a>:</p>
+
+<p align="center">
+  <img width="800" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/R-tree.svg/1280px-R-tree.svg.png" alt="R-trees" />
+</p>
+
+<p>The implementation in GEOS is a Sort-Tile-Recursive (STR) algorithm.</p>
+
+<p>Let’s build the index.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf</span><span class="p">.</span><span class="n">has_sindex</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>False
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_gdf</span><span class="p">.</span><span class="n">sindex</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 7.38 s, sys: 855 ms, total: 8.23 s
+Wall time: 8.24 s
+
+&lt;geopandas.sindex.PyGEOSSTRTreeIndex at 0x7fa8b3e2c0a0&gt;
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">With GEOS</th>
+      <th style="text-align: right">Without GEOS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">8.24s</td>
+      <td style="text-align: right">6min 15s</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>With PyGeos we get a <code class="language-plaintext highlighter-rouge">geopandas.sindex.PyGEOSSTRTreeIndex</code> index object, otherwise we get a <code class="language-plaintext highlighter-rouge">rtree.index.Index(bounds=[-5.059852, 41.363063, 9.557005, 51.082069], size=10256266)</code>.</p>
+
+<h2 id="spatial-join">Spatial join</h2>
+
+<p>Now we are going to perform a left join with a <code class="language-plaintext highlighter-rouge">within</code> operator (point-in-polygon). It seems that the <code class="language-plaintext highlighter-rouge">intersects</code> operator takes really more time in the current case.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_gdf_sjoin</span> <span class="o">=</span> <span class="nf">sjoin</span><span class="p">(</span>
+        <span class="n">dvf_gdf</span><span class="p">,</span>
+        <span class="n">iris_gdf</span><span class="p">[[</span><span class="sh">'</span><span class="s">CODE_IRIS</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">geometry</span><span class="sh">'</span><span class="p">]],</span>
+        <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">left</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">op</span><span class="o">=</span><span class="sh">"</span><span class="s">within</span><span class="sh">"</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="n">dvf_gdf_sjoin</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">index_right</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 19.8 s, sys: 2.69 s, total: 22.5 s
+Wall time: 17.7 s
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">With GEOS</th>
+      <th style="text-align: right">Without GEOS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">17.7s</td>
+      <td style="text-align: right">3min 1s</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf_sjoin</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id_parcelle</th>
+      <th>geometry</th>
+      <th>CODE_IRIS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>16002000ZM0106</td>
+      <td>POINT (0.20973 46.06524)</td>
+      <td>160020000</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>830930000A2119</td>
+      <td>POINT (5.71065 43.32764)</td>
+      <td>830930000</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>830930000A2120</td>
+      <td>POINT (5.71082 43.32771)</td>
+      <td>830930000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf_sjoin</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>id_parcelle       0
+geometry          0
+CODE_IRIS      2559
+dtype: int64
+</code></pre></div></div>
+
+<p>So unfortunately 2559 points (over 10256266) did not match any zone.</p>
+
+<h2 id="orphan-points">Orphan points</h2>
+
+<p>Let’s isolate them:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">orphans_gdf</span> <span class="o">=</span> <span class="n">dvf_gdf_sjoin</span><span class="p">[</span><span class="n">dvf_gdf_sjoin</span><span class="p">.</span><span class="n">CODE_IRIS</span><span class="p">.</span><span class="nf">isna</span><span class="p">()].</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">CODE_IRIS</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 833 ms, sys: 3.6 ms, total: 836 ms
+Wall time: 842 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">orphans_gdf</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2559
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">orphans_gdf</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id_parcelle</th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2315</th>
+      <td>83019000BZ0030</td>
+      <td>POINT (6.36461 43.12122)</td>
+    </tr>
+    <tr>
+      <th>7559</th>
+      <td>11202000DX0019</td>
+      <td>POINT (3.03670 42.86225)</td>
+    </tr>
+    <tr>
+      <th>10843</th>
+      <td>34003000OK0003</td>
+      <td>POINT (3.50888 43.27685)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="plot-the-orphan-points">Plot the orphan points</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">orphans_gdf</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">france</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">none</span><span class="sh">"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">black</span><span class="sh">"</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-09-10_01/output_53_0.png" alt="Orphan points" />
+</p>
+
+<p>We can see that the orphans are all located at the outside border of the IRIS polygons. Let’s zoom in to see an area where a lot of points are orphans:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Plouguerneau
+</span><span class="n">bb</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">4.618113</span><span class="p">,</span> <span class="mf">48.555804</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.397013</span><span class="p">,</span> <span class="mf">48.658866</span><span class="p">)</span>
+<span class="n">bb_polygon</span> <span class="o">=</span> <span class="nc">Polygon</span><span class="p">([(</span><span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+<span class="n">bbox</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nc">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="p">[</span><span class="n">bb_polygon</span><span class="p">],</span> <span class="n">crs</span><span class="o">=</span><span class="sh">"</span><span class="s">EPSG:4326</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">iris_zoom</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">overlay</span><span class="p">(</span><span class="n">iris_gdf</span><span class="p">,</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">intersection</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">orphans_zoom</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">overlay</span><span class="p">(</span><span class="n">orphans_gdf</span><span class="p">,</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">intersection</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Convert the data to Web Mercator to display some tiles
+</span><span class="n">ax</span> <span class="o">=</span> <span class="n">orphans_zoom</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:3857</span><span class="sh">"</span><span class="p">).</span><span class="nf">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">iris_zoom</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:3857</span><span class="sh">"</span><span class="p">).</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">facecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">none</span><span class="sh">"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">"</span><span class="s">k</span><span class="sh">"</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span>
+<span class="p">)</span>
+<span class="n">ctx</span><span class="p">.</span><span class="nf">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">ctx</span><span class="p">.</span><span class="n">providers</span><span class="p">.</span><span class="n">Stamen</span><span class="p">.</span><span class="n">Terrain</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set_axis_off</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-09-10_01/output_56_0.png" alt="Plouguerneau" />
+</p>
+
+<p>The poins may be orphans because they are located on a small island or because the IRIS contour is simplified and do not match exactly the actual land contour. So let’s perform a nearest query using the spatial index, in order to match each orphan point with the nearest IRIS polygon.</p>
+
+<h2 id="nearest-query">Nearest query</h2>
+
+<p>Although it is not mandatory here, we switch to a projected CRS before looking for the nearest zones. As explained <a href="https://www.earthdatascience.org/courses/use-data-open-source-python/intro-vector-data-python/spatial-data-vector-shapefiles/geographic-vs-projected-coordinate-reference-systems-python/">here</a>, this allows to minimize visual distortion in a particular region. Basically distances can be accurately measured in a projected CRS.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">orphans_gpd</span> <span class="o">=</span> <span class="n">orphans_gdf</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:2154</span><span class="sh">"</span><span class="p">)</span>  <span class="c1"># RGF93 / Lambert-93 -- France
+</span><span class="n">iris_gdf</span> <span class="o">=</span> <span class="n">iris_gdf</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:2154</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 2.79 s, sys: 103 ms, total: 2.89 s
+Wall time: 2.9 s
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">With GEOS</th>
+      <th style="text-align: right">Without GEOS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">2.9s</td>
+      <td style="text-align: right">9.29 s</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">iris_gdf</span><span class="p">.</span><span class="n">has_sindex</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>False
+</code></pre></div></div>
+
+<p>We see that the <code class="language-plaintext highlighter-rouge">iris_gdf</code> does not have an index, let’s do that with GEOS (very quick process):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">iris_gdf</span><span class="p">.</span><span class="n">sindex</span>
+</code></pre></div></div>
+
+<p>Note that the required indices are built automatically if needed when performing the spatial join. It is not required to call the index contructor by hand.</p>
+
+<p>Now we create an array of pygeos.Geometry objects:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">points_str</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">orphans_gdf</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="nb">str</span><span class="p">).</span><span class="n">values</span><span class="p">)</span>
+<span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">vectorize</span><span class="p">(</span><span class="n">Geometry</span><span class="p">)(</span><span class="n">points_str</span><span class="p">)</span>
+<span class="n">points</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 186 ms, sys: 560 µs, total: 186 ms
+Wall time: 177 ms
+
+
+array([&lt;pygeos.Geometry POINT (6.36 43.1)&gt;,
+       &lt;pygeos.Geometry POINT (3.04 42.9)&gt;,
+       &lt;pygeos.Geometry POINT (3.51 43.3)&gt;, ...,
+       &lt;pygeos.Geometry POINT (-3.15 47.3)&gt;,
+       &lt;pygeos.Geometry POINT (-2.79 47.5)&gt;,
+       &lt;pygeos.Geometry POINT (3.78 50.4)&gt;], dtype=object)
+</code></pre></div></div>
+
+<p>Also, we need a function returning the nearest Polygon:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">find_nearest_idx</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">iris_gdf</span><span class="p">.</span><span class="n">sindex</span><span class="p">.</span><span class="nf">nearest</span><span class="p">(</span><span class="n">point</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>The following vectorization actually only works with GEOS. Otherwise we get the following error message:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TypeError: Bounds must be a sequence
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">vectorize</span><span class="p">(</span><span class="n">find_nearest_idx</span><span class="p">)(</span><span class="n">points</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 459 ms, sys: 3.47 ms, total: 463 ms
+Wall time: 459 ms
+</code></pre></div></div>
+
+<p>Here is for example the index of the nearest zone for the first orphan point:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>18258
+</code></pre></div></div>
+
+<p>We can actually check is the <code class="language-plaintext highlighter-rouge">distance</code> method of GeoPandas returns the same index:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">iris_gdf</span><span class="p">.</span><span class="nf">distance</span><span class="p">(</span><span class="n">orphans_gdf</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]).</span><span class="nf">sort_values</span><span class="p">().</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 252 ms, sys: 0 ns, total: 252 ms
+Wall time: 250 ms
+
+18258
+</code></pre></div></div>
+
+<h2 id="attribute-join">Attribute join</h2>
+
+<p>Now let’s put everything together:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">orphans_gdf</span><span class="p">[</span><span class="sh">"</span><span class="s">CODE_IRIS</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">iris_gdf</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">indices</span><span class="p">].</span><span class="n">CODE_IRIS</span><span class="p">.</span><span class="n">values</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">orphans_gpd</span> <span class="o">=</span> <span class="n">orphans_gpd</span><span class="p">.</span><span class="nf">to_crs</span><span class="p">(</span><span class="sh">"</span><span class="s">EPSG:4326</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">dvf_gdf_sjoin</span><span class="p">.</span><span class="nf">dropna</span><span class="p">(),</span> <span class="n">orphans_gdf</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_gdf</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>id_parcelle    0
+geometry       0
+CODE_IRIS      0
+dtype: int64
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_parquet</span><span class="p">(</span><span class="sh">"</span><span class="s">dvf.parquet</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 57.8 s, sys: 9.53 s, total: 1min 7s
+Wall time: 29.6 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">dvf_df</span><span class="p">,</span> <span class="n">dvf_gdf</span><span class="p">[[</span><span class="sh">"</span><span class="s">id_parcelle</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">CODE_IRIS</span><span class="sh">"</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="sh">"</span><span class="s">id_parcelle</span><span class="sh">"</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">left</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1min 44s, sys: 28.3 s, total: 2min 12s
+Wall time: 2min 12s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dvf_df</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>id_mutation                            0
+date_mutation                          0
+numero_disposition                     0
+nature_mutation                        0
+valeur_fonciere                   262966
+adresse_numero                   8401364
+adresse_suffixe                 19058836
+adresse_nom_voie                  200632
+adresse_code_voie                 185574
+code_postal                       197452
+code_commune                           0
+nom_commune                            0
+code_departement                       0
+ancien_code_commune             19435502
+ancien_nom_commune              19435502
+id_parcelle                            0
+ancien_id_parcelle              19781277
+numero_volume                   19839247
+lot1_numero                            0
+lot1_surface_carrez             18251916
+lot2_numero                            0
+lot2_surface_carrez             19488477
+lot3_numero                            0
+lot3_surface_carrez             19855820
+lot4_numero                            0
+lot4_surface_carrez             19885521
+lot5_numero                            0
+lot5_surface_carrez             19891330
+nombre_lots                            0
+code_type_local                  9199398
+type_local                       9199398
+surface_reelle_bati             11885358
+nombre_pieces_principales        9215887
+code_nature_culture              6133795
+nature_culture                   6133795
+code_nature_culture_speciale    18972456
+nature_culture_speciale         18972456
+surface_terrain                  6134186
+longitude                         610533
+latitude                          610533
+CODE_IRIS                         752239
+dtype: int64
+</code></pre></div></div>
+
+<p>Remaining missing values for the <code class="language-plaintext highlighter-rouge">CODE_IRIS</code> column corresponds to rows with missing coordinates or locations outside mainland France or Corsica.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">dvf_df</span><span class="p">.</span><span class="nf">to_parquet</span><span class="p">(</span><span class="sh">"</span><span class="s">dvf_iris.parquet</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

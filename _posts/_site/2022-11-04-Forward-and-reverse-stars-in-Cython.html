@@ -1,0 +1,928 @@
+<p>This notebook is the following of a previous one, where we looked at the forward and reverse star representations of a sparse directed graph in pure Python:<br />
+<a href="https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html">Forward and reverse star representation of a digraph</a>.</p>
+
+<p>The motivation is to access the outgoing or incoming edges of graph nodes, as well as the associated edge attributes, in an efficient manner. The type of networks that we are interested in are road networks, which usually have a rather low mean degree. The use case that we have in mind are shortest path algorithms. In the present case, we only deal with a single edge attribute: a weight with float type. 
+However we could use more attributes, such as in some shortest hyperpath algorithms:</p>
+<ul>
+  <li>link travel time</li>
+  <li>maximum link delay</li>
+  <li>probability that the link is used in the hyperpath</li>
+</ul>
+
+<p>In the following, we implement some code in Cython. What is Cython? Here is the description from the <a href="https://cython.org/">Cython</a> web site:</p>
+
+<blockquote>
+  <p>Cython is an optimising static compiler for both the Python programming language and the extended Cython programming language (based on Pyrex). It makes writing C extensions for Python as easy as Python itself.</p>
+</blockquote>
+
+<p>We refer to the <a href="https://cython.readthedocs.io/en/latest/">Cython documentation</a> for an in-depth presentation of the language.</p>
+
+<p>In this note book, we are going to implement three different graph representations in Cython:</p>
+
+<ul>
+  <li>Forward and reverse stars with NumPy 1D arrays</li>
+  <li>Forward star with a NumPy structured array</li>
+  <li>Adjacency list with pointers and C structs</li>
+</ul>
+
+<p align="center">
+  <img width="800" src="/img/2022-11-04_01/graph_representations.jpg" alt="graph_representations" />
+</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">scipy.sparse</span> <span class="kn">import</span> <span class="n">coo_array</span>
+
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">cython</span>
+
+<span class="n">RS</span> <span class="o">=</span> <span class="mi">124</span>  <span class="c1"># random seed
+</span></code></pre></div></div>
+
+<p>Package versions:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python version       : 3.10.6
+cython               : 0.29.32
+jupyterlab           : 3.5.0
+numpy                : 1.23.4
+pandas               : 1.5.1
+scipy                : 1.9.3
+</code></pre></div></div>
+
+<p>We start by creating a very small network for testing purpose.</p>
+
+<h2 id="create-a-small-network">Create a small network</h2>
+
+<p>This is a network already used in the <a href="https://aetperf.github.io/2022/10/21/Forward-and-reverse-star-representation-of-a-digraph.html">previous post</a>. Note that this graph has some parallel edges, a loop and an isolated vertex.</p>
+
+<p align="center">
+  <img width="300" src="/img/2022-10-21_01/small_graph.jpg" alt="query_1" />
+</p>
+
+<p>We store the network as an edge dataframe called <code class="language-plaintext highlighter-rouge">edges_df_S</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tail_verts_S</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+<span class="n">head_verts_S</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+<span class="n">edge_weights_S</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">edges_df_S</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+        <span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">:</span> <span class="n">tail_verts_S</span><span class="p">,</span>
+        <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">:</span> <span class="n">head_verts_S</span><span class="p">,</span>
+        <span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">:</span> <span class="n">edge_weights_S</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">vertex_count_S</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">edges_df_S</span><span class="p">[[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]].</span><span class="nf">max</span><span class="p">().</span><span class="nf">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">edge_count_S</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">edges_df_S</span><span class="p">))</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">edge_count_S</span><span class="si">}</span><span class="s"> edges and </span><span class="si">{</span><span class="n">vertex_count_S</span><span class="si">}</span><span class="s"> vertices</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="n">edges_df_S</span><span class="p">[[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">edges_df_S</span><span class="p">[[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]].</span><span class="nf">astype</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+<span class="n">edges_df_S</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>4 edges and 4 vertices
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>source</th>
+      <th>target</th>
+      <th>weight</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>1</td>
+      <td>2.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+      <td>1</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1</td>
+      <td>3</td>
+      <td>2.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>3</td>
+      <td>3.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>This dataframe describing the graph edges has 3 columns. Each row represents an edge with associated source node, target node and edge weight.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">edges_df_S</span><span class="p">.</span><span class="n">dtypes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>source     uint32
+target     uint32
+weight    float64
+dtype: object
+</code></pre></div></div>
+
+<h2 id="load-a-larger-network">Load a larger network</h2>
+
+<p>We are going to load the USA road network, with 57708624 edges, from the 9th DIMACS implementation challenge. We saved it into an Apache Parquet file in a <a href="https://aetperf.github.io/2022/09/22/Download-some-benchmark-road-networks-for-Shortest-Paths-algorithms.html">previous post</a>. We load this Parquet file into a Pandas dataframe named <code class="language-plaintext highlighter-rouge">edges_df_L</code>.</p>
+
+<p>An important feature of this network is that duplicated edges have been removed. This is why we can compare the CSR or CSC sparse formats implemented later in Cython with the one produced by <code class="language-plaintext highlighter-rouge">SciPy.sparse.coo_array</code> methods: <code class="language-plaintext highlighter-rouge">.tocsr</code> and <code class="language-plaintext highlighter-rouge">.tocsc</code>. Since the SciPy module has been designed for matrices and not graphs, it handles duplicate entries by summing them. Parallel edges correspond to multiple matrix entries at the same row-column location when considering the node-node adjacency matrix. So duplicated edges would be “merged into a single one” by these methods, with a larger edge weight, which is not what we want here.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="sh">"</span><span class="s">/home/francois/Data/Disk_1/</span><span class="sh">"</span>
+<span class="n">reg</span> <span class="o">=</span> <span class="sh">"</span><span class="s">USA</span><span class="sh">"</span>
+<span class="n">network_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span>
+    <span class="n">DATA_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="sh">"</span><span class="s">DIMACS_road_networks/</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s">/USA-road-t.</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s">.gr.parquet</span><span class="sh">"</span>
+<span class="p">)</span>
+
+<span class="n">edges_df_L</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_parquet</span><span class="p">(</span><span class="n">network_file_path</span><span class="p">)</span>
+<span class="n">edges_df_L</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">id_from</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">id_to</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">tt</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span>
+<span class="n">edges_df_L</span><span class="p">[[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">edges_df_L</span><span class="p">[[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]].</span><span class="nf">astype</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+<span class="n">vertex_count_L</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">edges_df_L</span><span class="p">[[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">]].</span><span class="nf">max</span><span class="p">().</span><span class="nf">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">edge_count_L</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">edges_df_L</span><span class="p">))</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">edge_count_L</span><span class="si">}</span><span class="s"> edges and </span><span class="si">{</span><span class="n">vertex_count_L</span><span class="si">}</span><span class="s"> vertices</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>57708624 edges and 23947347 vertices
+CPU times: user 6.15 s, sys: 2.84 s, total: 8.99 s
+Wall time: 4.16 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">edges_df_L</span><span class="p">.</span><span class="n">dtypes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>source     uint32
+target     uint32
+weight    float64
+dtype: object
+</code></pre></div></div>
+
+<p>Also, later we are going to walk randomly though each node of this USA network and use the forward/reverse stars to access all outgoing or incoming edges. So let’s create a random vector with a random perlmutation of all the node indices:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">default_rng</span><span class="p">(</span><span class="n">RS</span><span class="p">)</span>
+<span class="n">node_randseq_L</span> <span class="o">=</span> <span class="n">rng</span><span class="p">.</span><span class="nf">permutation</span><span class="p">(</span><span class="n">vertex_count_L</span><span class="p">).</span><span class="nf">astype</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">node_randseq_L</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[16377060 22703014 16671266 ... 10845119 17193243 18514748]
+CPU times: user 790 ms, sys: 23.8 ms, total: 814 ms
+Wall time: 811 ms
+</code></pre></div></div>
+
+<h3 id="convert-to-scipy-coo-format-for-validation-purpose">Convert to SciPy COO format for validation purpose</h3>
+
+<p>Next we convert this large graph into <code class="language-plaintext highlighter-rouge">scipy.sparse</code> Coordinate list (COO) format. We will later use it to check the result of our Cython Forward and Reverse star functions. Again, we do not convert the small graph because of the parallel edges.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">sp_coo_L</span> <span class="o">=</span> <span class="nf">coo_array</span><span class="p">(</span>
+    <span class="p">(</span>
+        <span class="n">edges_df_L</span><span class="p">[</span><span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">edges_df_L</span><span class="p">[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span> <span class="n">edges_df_L</span><span class="p">[</span><span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">,</span>
+    <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">vertex_count_L</span><span class="p">,</span> <span class="n">vertex_count_L</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 127 ms, sys: 43.9 ms, total: 171 ms
+Wall time: 169 ms
+</code></pre></div></div>
+
+<h2 id="forward-star-in-cython">Forward star in Cython</h2>
+
+<p>This code is adapted from the <code class="language-plaintext highlighter-rouge">scipy.sparse</code> source code <code class="language-plaintext highlighter-rouge">coo_tocsr</code> that can be found <a href="https://github.com/scipy/scipy/blob/main/scipy/sparse/sparsetools/coo.h">here</a> on github, written in C++. Some important features are listed in the file header:</p>
+
+<pre><code class="language-C++"> *   Input:  row and column indices *are not* assumed to be ordered
+ *           
+ *   Note: duplicate entries are carried over to the CSR represention
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
+</code></pre>
+
+<p>So this algorithm saves us from sorting the source node indices, which is rather expensive. Also, it handles duplicated entries, which might be a little bit confusing because the <code class="language-plaintext highlighter-rouge">scipy.sparse.coo_array</code> methods <code class="language-plaintext highlighter-rouge">tocsr</code> and <code class="language-plaintext highlighter-rouge">tocsc</code> do not. This means that duplicate entries are probably removed, by adding them together, downstream from this function in SciPy. Finally, the algorithm complexity is given. In our case, that would be:</p>
+
+\[O(|E| + |V|)\]
+
+<p>where $|E|$ is the edge count, and $|V|$ the vertex count. A similar approach is described in [1].</p>
+
+<p>In the following the <code class="language-plaintext highlighter-rouge">cpdef</code> function can be accessed from the Python level, while the <code class="language-plaintext highlighter-rouge">cdef</code> can only be seen in the Cython level.</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">Ofast</span>
+<span class="c1"># cython: language_level=3, boundscheck=False, wraparound=False, embedsignature=False, initializedcheck=False
+</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="kn">cimport</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">cnp</span>
+
+
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">coo_tocsr</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Ai</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Aj</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Ax</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bp</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bj</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bx</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">dest</span>
+        <span class="kt">ssize_t</span> <span class="n">n_vert</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Bp</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="kt">ssize_t</span> <span class="n">n_edge</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Bj</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">temp</span><span class="p">,</span> <span class="n">cumsum</span><span class="p">,</span> <span class="n">last</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_edge</span><span class="p">):</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Ai</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumsum</span>
+        <span class="n">cumsum</span> <span class="o">+=</span> <span class="n">temp</span>
+    <span class="n">Bp</span><span class="p">[</span><span class="n">n_vert</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="o">&gt;</span><span class="n">n_edge</span> 
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_edge</span><span class="p">):</span>
+        <span class="n">row</span>  <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Ai</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Bp</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+        <span class="n">Bj</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">Aj</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bx</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">row</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">last</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">last</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="n">temp</span>
+        
+<span class="k">cpdef</span> <span class="nf">create_forward_star</span><span class="p">(</span><span class="n">edges_df</span><span class="p">,</span> <span class="n">vertex_count</span><span class="p">,</span> <span class="n">edge_count</span><span class="p">):</span>
+
+    <span class="n">fs_indptr</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">vertex_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>  <span class="c1"># make sure it is filled with zeros
+</span>    <span class="n">fs_indices</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">edge_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+    <span class="n">fs_data</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">edge_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="nf">coo_tocsr</span><span class="p">(</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">fs_indptr</span><span class="p">,</span>
+        <span class="n">fs_indices</span><span class="p">,</span>
+        <span class="n">fs_data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fs_indptr</span><span class="p">,</span> <span class="n">fs_indices</span><span class="p">,</span> <span class="n">fs_data</span>
+</code></pre></div></div>
+
+<p>Here are a few remarks about this piece of code:</p>
+
+<ul>
+  <li>a few <a href="https://cython.readthedocs.io/en/stable/src/userguide/source_files_and_compilation.html#compiler-directives">compiler directives</a> are invoked to speed up the code: <code class="language-plaintext highlighter-rouge">language_level</code>, <code class="language-plaintext highlighter-rouge">boundscheck</code>, <code class="language-plaintext highlighter-rouge">wraparound</code>, <code class="language-plaintext highlighter-rouge">embedsignature</code>, <code class="language-plaintext highlighter-rouge">initializedcheck</code></li>
+  <li><a href="https://cython.readthedocs.io/en/stable/src/userguide/memoryviews.html?highlight=typed%20memory%20views">typed memoryviews</a> are used to directly access NumPy arrays:
+    <blockquote>
+      <p>Typed memoryviews allow efficient access to memory buffers, such as those underlying NumPy array</p>
+    </blockquote>
+  </li>
+</ul>
+
+<p>This is why NumPy arrays are created before calling the <code class="language-plaintext highlighter-rouge">coo_tocsr</code> function</p>
+<ul>
+  <li>input NumPy arrays of the <code class="language-plaintext highlighter-rouge">coo_tocsr</code> function are declared as contiguous with the <code class="language-plaintext highlighter-rouge">[::1]</code> notation</li>
+  <li>the GIL is released with <code class="language-plaintext highlighter-rouge">nogil</code> for the <code class="language-plaintext highlighter-rouge">coo_tocsr</code> function</li>
+  <li>array indices are declared as <code class="language-plaintext highlighter-rouge">ssize_t</code> type</li>
+</ul>
+
+<p>Now we create a function that loops over an array of node indices and go though each node’s outgoing edges:</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">Ofast</span>
+<span class="c1"># cython: language_level=3, boundscheck=False, wraparound=False, embedsignature=False, initializedcheck=False
+</span>
+<span class="kn">cimport</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">cnp</span>
+
+
+<span class="k">cpdef</span> <span class="nf">loop_over_forward_star</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">node_seq</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">fs_indptr</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">fs_indices</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">fs_data</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">int8_t</span> <span class="n">print_edges</span>
+<span class="p">):</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span>
+        <span class="kt">ssize_t</span> <span class="n">n_vert</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">fs_indptr</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">tail_vert_idx</span><span class="p">,</span> <span class="n">head_vert_idx</span><span class="p">,</span> <span class="n">indptr</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span> <span class="n">edge_data</span>
+        
+    <span class="k">if</span> <span class="n">print_edges</span><span class="p">:</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+            <span class="n">tail_vert_idx</span> <span class="o">=</span> <span class="n">node_seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">indptr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="kt">fs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">tail_vert_idx</span><span class="p">],</span> <span class="kt">fs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">tail_vert_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]):</span>
+                <span class="n">head_vert_idx</span> <span class="o">=</span> <span class="n">fs_indices</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+                <span class="n">edge_data</span> <span class="o">=</span> <span class="n">fs_data</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+                <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">(</span><span class="si">{</span><span class="n">tail_vert_idx</span><span class="si">}</span><span class="s">,</span><span class="si">{</span><span class="n">head_vert_idx</span><span class="si">}</span><span class="s">) : </span><span class="si">{</span><span class="n">edge_data</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">with</span> <span class="k">nogil</span><span class="p">:</span>
+    
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+                <span class="n">tail_vert_idx</span> <span class="o">=</span> <span class="n">node_seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">indptr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="kt">fs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">tail_vert_idx</span><span class="p">],</span> <span class="kt">fs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">tail_vert_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]):</span>
+                    <span class="n">head_vert_idx</span> <span class="o">=</span> <span class="n">fs_indices</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+                    <span class="n">edge_data</span> <span class="o">=</span> <span class="n">fs_data</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>This function has a <code class="language-plaintext highlighter-rouge">print_edges</code> boolean argument. If False, there is no print and the GIL is released.</p>
+
+<h3 id="small-network-example">Small network example</h3>
+
+<p>Let’s try this <code class="language-plaintext highlighter-rouge">create_forward_star</code> function with the small network:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">fs_indptr_S</span><span class="p">,</span> <span class="n">fs_indices_S</span><span class="p">,</span> <span class="n">fs_data_S</span> <span class="o">=</span> <span class="nf">create_forward_star</span><span class="p">(</span>
+    <span class="n">edges_df_S</span><span class="p">,</span> <span class="n">vertex_count_S</span><span class="p">,</span> <span class="n">edge_count_S</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 378 µs, sys: 132 µs, total: 510 µs
+Wall time: 524 µs
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fs_indptr_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([0, 2, 3, 3, 4], dtype=uint32)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fs_indices_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([1, 1, 3, 3], dtype=uint32)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fs_data_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([2., 1., 2., 3.])
+</code></pre></div></div>
+
+<p>Everything seems to be OK. Let’s loop over each node’s outgoing edges:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">loop_over_forward_star</span><span class="p">(</span>
+    <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="n">vertex_count_S</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">),</span>
+    <span class="n">fs_indptr_S</span><span class="p">,</span>
+    <span class="n">fs_indices_S</span><span class="p">,</span>
+    <span class="n">fs_data_S</span><span class="p">,</span>
+    <span class="n">print_edges</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(0,1) : 2.0
+(0,1) : 1.0
+(1,3) : 2.0
+(3,3) : 3.0
+</code></pre></div></div>
+
+<h3 id="larger-network">Larger network</h3>
+
+<p>Now we run the <code class="language-plaintext highlighter-rouge">create_forward_star</code> function on the larger network:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">fs_indptr_L</span><span class="p">,</span> <span class="n">fs_indices_L</span><span class="p">,</span> <span class="n">fs_data_L</span> <span class="o">=</span> <span class="nf">create_forward_star</span><span class="p">(</span>
+    <span class="n">edges_df_L</span><span class="p">,</span> <span class="n">vertex_count_L</span><span class="p">,</span> <span class="n">edge_count_L</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 253 ms, sys: 100 ms, total: 353 ms
+Wall time: 351 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">sp_csr_L</span> <span class="o">=</span> <span class="n">sp_coo_L</span><span class="p">.</span><span class="nf">tocsr</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 496 ms, sys: 113 ms, total: 609 ms
+Wall time: 610 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">fs_indptr_L</span><span class="p">,</span> <span class="n">sp_csr_L</span><span class="p">.</span><span class="n">indptr</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">fs_indices_L</span><span class="p">,</span> <span class="n">sp_csr_L</span><span class="p">.</span><span class="n">indices</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">fs_data_L</span><span class="p">,</span> <span class="n">sp_csr_L</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="cython-loop-over-the-forward-star">Cython loop over the forward star</h4>
+
+<p>We are going to use the random node sequence created earlier to go over all the nodes of the graph, and get the outgoing edge information, head vertex index and edge weight, for each node.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">loop_over_forward_star</span><span class="p">(</span>
+    <span class="n">node_randseq_L</span><span class="p">,</span> <span class="n">fs_indptr_L</span><span class="p">,</span> <span class="n">fs_indices_L</span><span class="p">,</span> <span class="n">fs_data_L</span><span class="p">,</span> <span class="n">print_edges</span><span class="o">=</span><span class="bp">False</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 46 µs, sys: 5 µs, total: 51 µs
+Wall time: 65.3 µs
+</code></pre></div></div>
+
+<p>Quite fast!??</p>
+
+<h2 id="reverse-star-in-cython">Reverse star in Cython</h2>
+
+<p>We do the same thing as with the forward star, but with the reverse star…</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">Ofast</span>
+<span class="c1"># cython: language_level=3, boundscheck=False, wraparound=False, embedsignature=False, cdivision=True, initializedcheck=False
+</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="kn">cimport</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">cnp</span>
+
+
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">coo_tocsc</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Ai</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Aj</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Ax</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bp</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bi</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bx</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">dest</span>
+        <span class="kt">ssize_t</span> <span class="n">n_vert</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Bp</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="kt">ssize_t</span> <span class="n">n_edge</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Bi</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">temp</span><span class="p">,</span> <span class="n">cumsum</span><span class="p">,</span> <span class="n">last</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_edge</span><span class="p">):</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Aj</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumsum</span>
+        <span class="n">cumsum</span> <span class="o">+=</span> <span class="n">temp</span>
+    <span class="n">Bp</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">n_vert</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="o">&gt;</span><span class="n">n_edge</span> 
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_edge</span><span class="p">):</span>
+        <span class="n">col</span>  <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Aj</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Bp</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+        <span class="n">Bi</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ai</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bx</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">last</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">last</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="n">temp</span>
+        
+<span class="k">cpdef</span> <span class="nf">create_reverse_star</span><span class="p">(</span><span class="n">edges_df</span><span class="p">,</span> <span class="n">vertex_count</span><span class="p">,</span> <span class="n">edge_count</span><span class="p">):</span>
+
+    <span class="n">rs_indptr</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">vertex_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>  <span class="c1"># make sure it is filled with zeros
+</span>    <span class="n">rs_indices</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">edge_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>
+    <span class="n">rs_data</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">edge_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="nf">coo_tocsc</span><span class="p">(</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">rs_indptr</span><span class="p">,</span>
+        <span class="n">rs_indices</span><span class="p">,</span>
+        <span class="n">rs_data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rs_indptr</span><span class="p">,</span> <span class="n">rs_indices</span><span class="p">,</span> <span class="n">rs_data</span>
+</code></pre></div></div>
+
+<p>And here is a function that loops over a list of node indices and go though each node’s incoming edges:</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">Ofast</span>
+<span class="c1"># cython: language_level=3, boundscheck=False, wraparound=False, embedsignature=False, initializedcheck=False
+</span>
+<span class="kn">cimport</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">cnp</span>
+
+
+<span class="k">cpdef</span> <span class="nf">loop_over_reverse_star</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">node_seq</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">rs_indptr</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">rs_indices</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">rs_data</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">int8_t</span> <span class="n">print_edges</span>
+<span class="p">):</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span>
+        <span class="kt">ssize_t</span> <span class="n">n_vert</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">rs_indptr</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">tail_vert_idx</span><span class="p">,</span> <span class="n">head_vert_idx</span><span class="p">,</span> <span class="n">indptr</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span> <span class="n">edge_data</span>
+      
+    <span class="k">if</span> <span class="n">print_edges</span><span class="p">:</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+            <span class="n">head_vert_idx</span> <span class="o">=</span> <span class="n">node_seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">indptr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="kt">rs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">head_vert_idx</span><span class="p">],</span> <span class="kt">rs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">head_vert_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]):</span>
+                <span class="n">tail_vert_idx</span> <span class="o">=</span> <span class="n">rs_indices</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+                <span class="n">edge_data</span> <span class="o">=</span> <span class="n">rs_data</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+                <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">(</span><span class="si">{</span><span class="n">tail_vert_idx</span><span class="si">}</span><span class="s">,</span><span class="si">{</span><span class="n">head_vert_idx</span><span class="si">}</span><span class="s">) : </span><span class="si">{</span><span class="n">edge_data</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        
+        <span class="k">with</span> <span class="k">nogil</span><span class="p">:</span>
+    
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+                <span class="n">head_vert_idx</span> <span class="o">=</span> <span class="n">node_seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">indptr</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="kt">rs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">head_vert_idx</span><span class="p">],</span> <span class="kt">rs_indptr</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">head_vert_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]):</span>
+                    <span class="n">tail_vert_idx</span> <span class="o">=</span> <span class="n">rs_indices</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+                    <span class="n">edge_data</span> <span class="o">=</span> <span class="n">rs_data</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">indptr</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="small-network-example-1">Small network example</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">rs_indptr_S</span><span class="p">,</span> <span class="n">rs_indices_S</span><span class="p">,</span> <span class="n">rs_data_S</span> <span class="o">=</span> <span class="nf">create_reverse_star</span><span class="p">(</span>
+    <span class="n">edges_df_S</span><span class="p">,</span> <span class="n">vertex_count_S</span><span class="p">,</span> <span class="n">edge_count_S</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 186 µs, sys: 21 µs, total: 207 µs
+Wall time: 219 µs
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">rs_indptr_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([0, 0, 2, 2, 4], dtype=uint32)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">rs_indices_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([0, 0, 1, 3], dtype=uint32)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">rs_data_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([2., 1., 2., 3.])
+</code></pre></div></div>
+
+<p>Again, everything seems to be OK. Let’s loop over each node’s incoming edges:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">loop_over_reverse_star</span><span class="p">(</span>
+    <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="n">vertex_count_S</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">),</span>
+    <span class="n">rs_indptr_S</span><span class="p">,</span>
+    <span class="n">rs_indices_S</span><span class="p">,</span>
+    <span class="n">rs_data_S</span><span class="p">,</span>
+    <span class="n">print_edges</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(0,1) : 2.0
+(0,1) : 1.0
+(1,3) : 2.0
+(3,3) : 3.0
+</code></pre></div></div>
+
+<h3 id="larger-network-1">Larger network</h3>
+
+<p>We run the <code class="language-plaintext highlighter-rouge">create_reverse_star</code> function on the larger network:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">rs_indptr_L</span><span class="p">,</span> <span class="n">rs_indices_L</span><span class="p">,</span> <span class="n">rs_data_L</span> <span class="o">=</span> <span class="nf">create_reverse_star</span><span class="p">(</span>
+    <span class="n">edges_df_L</span><span class="p">,</span> <span class="n">vertex_count_L</span><span class="p">,</span> <span class="n">edge_count_L</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 479 ms, sys: 105 ms, total: 585 ms
+Wall time: 577 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">sp_csc_L</span> <span class="o">=</span> <span class="n">sp_coo_L</span><span class="p">.</span><span class="nf">tocsc</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 629 ms, sys: 75.7 ms, total: 705 ms
+Wall time: 701 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">rs_indptr_L</span><span class="p">,</span> <span class="n">sp_csc_L</span><span class="p">.</span><span class="n">indptr</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">rs_indices_L</span><span class="p">,</span> <span class="n">sp_csc_L</span><span class="p">.</span><span class="n">indices</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="p">.</span><span class="nf">allclose</span><span class="p">(</span><span class="n">rs_data_L</span><span class="p">,</span> <span class="n">sp_csc_L</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="cython-loop-over-the-reverse-star">Cython loop over the reverse star</h4>
+
+<p>This time, we are going to use the random node sequence created earlier to go through all the nodes of the graph, and get the incoming edge information, tail vertex index and edge weight, for each node.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="nf">loop_over_reverse_star</span><span class="p">(</span>
+    <span class="n">node_randseq_L</span><span class="p">,</span> <span class="n">rs_indptr_L</span><span class="p">,</span> <span class="n">rs_indices_L</span><span class="p">,</span> <span class="n">rs_data_L</span><span class="p">,</span> <span class="n">print_edges</span><span class="o">=</span><span class="bp">False</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 54 µs, sys: 5 µs, total: 59 µs
+Wall time: 74.1 µs
+</code></pre></div></div>
+
+<h2 id="forward-star-with-a-structured-array">Forward star with a structured array</h2>
+
+<p>We now focus on the forward star Cython code. What if instead of having two distinct arrays of size $|E|$: <code class="language-plaintext highlighter-rouge">fs_indices</code> of type <code class="language-plaintext highlighter-rouge">np.uint32</code> and <code class="language-plaintext highlighter-rouge">fs_data</code> of <code class="language-plaintext highlighter-rouge">type np.float</code>, we use a single array with size $(|E|, 2)$ and heterogeneous column types? This can be done using NumPy <a href="https://numpy.org/doc/stable/user/basics.rec.html">structured arrays</a>. However, the tricky part is to access this structured array from Cython with a heterogoneaous dtype memoryview. Fortunately, there is a simple example in the <a href="https://cython.readthedocs.io/en/latest/src/userguide/memoryviews.html#syntax">Cython documentation</a> that we used in the following.</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">Ofast</span>
+<span class="c1"># cython: language_level=3, boundscheck=False, wraparound=False, embedsignature=False, initializedcheck=False
+</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="kn">cimport</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">cnp</span>
+
+<span class="n">CSR_EDGE_DTYPE</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">dtype</span><span class="p">([</span>
+    <span class="p">(</span><span class="sh">'</span><span class="s">head</span><span class="sh">'</span><span class="p">,</span> <span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">),</span>
+    <span class="p">(</span><span class="sh">'</span><span class="s">weight</span><span class="sh">'</span><span class="p">,</span> <span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="k">cdef</span> <span class="kt">packed</span> <span class="k">struct</span> <span class="nc">csr_edge_dtype_struct</span><span class="p">:</span>
+    <span class="c1"># The struct needs to be packed since by default numpy dtypes aren't aligned
+</span>    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">head</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span> <span class="n">weight</span> 
+
+<span class="k">cpdef</span> <span class="nf">coo_tocsr_struct</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Ai</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Aj</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Ax</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bp</span><span class="p">,</span>
+    <span class="kt">csr_edge_dtype_struct</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">Bx</span><span class="p">):</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">dest</span>
+        <span class="kt">ssize_t</span> <span class="n">n_vert</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Bp</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="kt">ssize_t</span> <span class="n">n_edge</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Bx</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">temp</span><span class="p">,</span> <span class="n">cumsum</span><span class="p">,</span> <span class="n">last</span>
+    
+    <span class="k">with</span> <span class="k">nogil</span><span class="p">:</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_edge</span><span class="p">):</span>
+            <span class="n">Bp</span><span class="p">[</span><span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Ai</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">cumsum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cumsum</span>
+            <span class="n">cumsum</span> <span class="o">+=</span> <span class="n">temp</span>
+        <span class="n">Bp</span><span class="p">[</span><span class="n">n_vert</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="o">&gt;</span><span class="n">n_edge</span> 
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_edge</span><span class="p">):</span>
+            <span class="n">row</span>  <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Ai</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">dest</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">Bp</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+            <span class="n">Bx</span><span class="p">[</span><span class="n">dest</span><span class="p">].</span><span class="n">head</span> <span class="o">=</span> <span class="n">Aj</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Bx</span><span class="p">[</span><span class="n">dest</span><span class="p">].</span><span class="n">weight</span> <span class="o">=</span> <span class="n">Ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Bp</span><span class="p">[</span><span class="n">row</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">last</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Bp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">last</span>
+            <span class="n">last</span> <span class="o">=</span> <span class="n">temp</span>
+
+<span class="k">cpdef</span> <span class="nf">create_forward_star_struct</span><span class="p">(</span><span class="n">edges_df</span><span class="p">,</span> <span class="n">vertex_count</span><span class="p">,</span> <span class="n">edge_count</span><span class="p">):</span>
+
+    <span class="n">fs_indptr</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">vertex_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint32</span><span class="p">)</span>  <span class="c1"># make sure it is filled with zeros
+</span>    <span class="n">fs_edges</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">edge_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CSR_EDGE_DTYPE</span><span class="p">)</span>
+
+    <span class="nf">coo_tocsr_struct</span><span class="p">(</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">source</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">target</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">edges_df</span><span class="p">[</span><span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">].</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">fs_indptr</span><span class="p">,</span>
+        <span class="n">fs_edges</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fs_indptr</span><span class="p">,</span> <span class="n">fs_edges</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">fs_indptr_struct_S</span><span class="p">,</span> <span class="n">fs_edges_struct_S</span> <span class="o">=</span> <span class="nf">create_forward_star_struct</span><span class="p">(</span>
+    <span class="n">edges_df_S</span><span class="p">,</span> <span class="n">vertex_count_S</span><span class="p">,</span> <span class="n">edge_count_S</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 84 µs, sys: 8 µs, total: 92 µs
+Wall time: 97 µs
+</code></pre></div></div>
+
+<p>As explained in [2] by Jake VanderPlas, the data is now arranged together in one convenient block of memory. We can now access each edge attribute with a dictionary key:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">fs_edges[i]["head"]</code></li>
+  <li><code class="language-plaintext highlighter-rouge">fs_edges[i]["weight"]</code></li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fs_edges_struct_S</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([(1, 2.), (1, 1.), (3, 2.), (3, 3.)],
+      dtype=[('head', '&lt;u4'), ('weight', '&lt;f8')])
+</code></pre></div></div>
+
+<p>Here is the code to loop over each node’s outgoing edges:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">tail_vert_idx</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">vertex_count_S</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">indptr</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span>
+        <span class="n">fs_indptr_struct_S</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">],</span> <span class="n">fs_indptr_struct_S</span><span class="p">[</span><span class="n">tail_vert_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="n">head_vert_idx</span> <span class="o">=</span> <span class="n">fs_edges_struct_S</span><span class="p">[</span><span class="n">indptr</span><span class="p">][</span><span class="sh">"</span><span class="s">head</span><span class="sh">"</span><span class="p">]</span>
+        <span class="n">edge_data</span> <span class="o">=</span> <span class="n">fs_edges_struct_S</span><span class="p">[</span><span class="n">indptr</span><span class="p">][</span><span class="sh">"</span><span class="s">weight</span><span class="sh">"</span><span class="p">]</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">(</span><span class="si">{</span><span class="n">tail_vert_idx</span><span class="si">}</span><span class="s">,</span><span class="si">{</span><span class="n">head_vert_idx</span><span class="si">}</span><span class="s">) : </span><span class="si">{</span><span class="n">edge_data</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(0,1) : 2.0
+(0,1) : 1.0
+(1,3) : 2.0
+(3,3) : 3.0
+</code></pre></div></div>
+
+<h2 id="adjacency-lists">Adjacency Lists</h2>
+
+<p>Finally, we are going to use another data representation: the adjacency list. For each node, we store a list of outgoing edges with head node vertices and edge weights. These lists have a variable size depending on the number of outgoing edges. An adjacency list is usually implemented with a doubly linked list, which requires a lot of memory. Here we are going to implement it with pointers and structs, which is sometimes referred to as adjacency vectors.</p>
+
+<p>The issue is that this data structure cannot persist in the Python level, it can only live within the Cython level. This is why we wrote a global function <code class="language-plaintext highlighter-rouge">loop_AL</code> to perfomer the adjacency initialization, the loop over each node’s outgoing edges, and the memory release.</p>
+
+<p>The memory allocation step for adjacency list approach is rather slow, as compare to the forward/reverse star data structure. As described in [3], the adjacency vector and the forward/reverse star representations have similar efficiency when used in graph algorithms, but the setup time and used memory is larger for the adjacency list approach.</p>
+
+<p>Note that we use the CSR representation of the graph as input to create the adjacency lists.</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">Ofast</span>
+<span class="c1"># cython: language_level=3, boundscheck=False, wraparound=False, embedsignature=False, initializedcheck=False
+</span>
+<span class="kn">from</span> <span class="n">time</span> <span class="kn">import</span> <span class="n">perf_counter</span>
+
+<span class="kn">cimport</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">cnp</span>
+<span class="kn">from</span> <span class="nn">libc.stdlib</span> <span class="kn">cimport</span> <span class="n">free</span><span class="p">,</span> <span class="n">malloc</span>
+
+
+<span class="k">cdef</span> <span class="kr">struct</span> <span class="nc">AdjacencyList</span><span class="p">:</span>
+    <span class="kt">ssize_t</span> <span class="n">size</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="o">*</span> <span class="n">vertices</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="o">*</span> <span class="n">weights</span>
+
+<span class="k">cdef</span> <span class="kr">struct</span> <span class="nc">AdjacencyLists</span><span class="p">:</span>
+    <span class="kt">ssize_t</span> <span class="n">vertex_count</span>
+    <span class="kt">AdjacencyList</span><span class="o">*</span> <span class="n">neighbors</span>
+
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">init_AL</span><span class="p">(</span><span class="kt">AdjacencyLists</span><span class="o">*</span> <span class="n">adj</span><span class="p">,</span> <span class="kt">ssize_t</span> <span class="n">vertex_count</span><span class="p">):</span>
+    <span class="n">adj</span><span class="p">.</span><span class="n">vertex_count</span> <span class="o">=</span> <span class="n">vertex_count</span>
+    <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">AdjacencyList</span><span class="o">*&gt;</span> <span class="nf">malloc</span><span class="p">(</span><span class="n">vertex_count</span> <span class="o">*</span> <span class="nf">sizeof</span><span class="p">(</span><span class="n">AdjacencyList</span><span class="p">))</span>
+
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">create_AL</span><span class="p">(</span>
+    <span class="kt">AdjacencyLists</span><span class="o">*</span> <span class="n">adj</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">csr_indptr</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">csr_indices</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">csr_data</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">tail_vert_idx</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">ptr</span>
+
+    <span class="k">for</span> <span class="n">tail_vert_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">adj</span><span class="p">.</span><span class="n">vertex_count</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">csr_indptr</span><span class="p">[</span><span class="n">tail_vert_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">csr_indptr</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">])</span>
+        <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">vertices</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="o">*&gt;</span> <span class="nf">malloc</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="nf">sizeof</span><span class="p">(</span><span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="p">))</span>
+        <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">weights</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="o">*&gt;</span> <span class="nf">malloc</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="nf">sizeof</span><span class="p">(</span><span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">ptr</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">csr_indptr</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">])</span> <span class="o">+</span> <span class="n">i</span>
+            <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">csr_indices</span><span class="p">[</span><span class="n">ptr</span><span class="p">]</span>
+            <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">csr_data</span><span class="p">[</span><span class="n">ptr</span><span class="p">]</span>
+
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">loop_AL_inner</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">node_seq</span><span class="p">,</span> 
+    <span class="kt">AdjacencyLists</span><span class="o">*</span> <span class="n">adj</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+    
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">ssize_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">tail_vert_idx</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="n">head_vert_idx</span>
+        <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span> <span class="n">edge_weight</span>
+        <span class="kt">ssize_t</span> <span class="n">n_vert</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">node_seq</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vert</span><span class="p">):</span>
+        <span class="n">tail_vert_idx</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">ssize_t</span><span class="o">&gt;</span><span class="n">node_seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">head_vert_idx</span> <span class="o">=</span> <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">edge_weight</span> <span class="o">=</span> <span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">free_AL</span><span class="p">(</span><span class="kt">AdjacencyLists</span><span class="o">*</span> <span class="n">adj</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+
+    <span class="k">cdef</span><span class="p">:</span> 
+        <span class="kt">ssize_t</span> <span class="n">tail_vert_idx</span>
+
+    <span class="k">for</span> <span class="n">tail_vert_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">adj</span><span class="p">.</span><span class="n">vertex_count</span><span class="p">):</span>
+        <span class="nf">free</span><span class="p">(</span><span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">vertices</span><span class="p">)</span>
+        <span class="nf">free</span><span class="p">(</span><span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">tail_vert_idx</span><span class="p">].</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="nf">free</span><span class="p">(</span><span class="n">adj</span><span class="p">.</span><span class="n">neighbors</span><span class="p">)</span>
+    
+<span class="k">cpdef</span> <span class="kt">void</span> <span class="nf">loop_AL</span><span class="p">(</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span> <span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">node_seq</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">csr_indptr</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">uint32_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">csr_indices</span><span class="p">,</span>
+    <span class="n">cnp</span><span class="p">.</span><span class="n">float64_t</span><span class="p">[::</span><span class="mi">1</span><span class="p">]</span> <span class="n">csr_data</span><span class="p">,</span>
+    <span class="kt">int</span> <span class="n">vertex_count</span><span class="p">):</span>
+
+    <span class="k">cdef</span><span class="p">:</span>
+        <span class="kt">AdjacencyLists</span> <span class="n">adj</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="nf">init_AL</span><span class="p">(</span><span class="o">&amp;</span><span class="n">adj</span><span class="p">,</span> <span class="n">vertex_count</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">AL init    - Elapsed time: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="mf">12.8</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="nf">create_AL</span><span class="p">(</span><span class="o">&amp;</span><span class="n">adj</span><span class="p">,</span> <span class="n">csr_indptr</span><span class="p">,</span> <span class="n">csr_indices</span><span class="p">,</span> <span class="n">csr_data</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">AL create  - Elapsed time: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="mf">12.8</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="nf">loop_AL_inner</span><span class="p">(</span><span class="n">node_seq</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">adj</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">AL loop    - Elapsed time: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="mf">12.8</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="nf">free_AL</span><span class="p">(</span><span class="o">&amp;</span><span class="n">adj</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">AL free    - Elapsed time: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="mf">12.8</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">loop_AL</span><span class="p">(</span><span class="n">node_randseq_L</span><span class="p">,</span> <span class="n">fs_indptr_L</span><span class="p">,</span> <span class="n">fs_indices_L</span><span class="p">,</span> <span class="n">fs_data_L</span><span class="p">,</span> <span class="n">vertex_count_L</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>AL init    - Elapsed time:   0.00004646 s
+AL create  - Elapsed time:   3.23047482 s
+AL loop    - Elapsed time:   0.00000054 s
+AL free    - Elapsed time:   0.97683480 s
+</code></pre></div></div>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Forward and reverse stars appear to be the most efficient approach in our case, where:</p>
+<ul>
+  <li>we do not want to edit the network topology,</li>
+  <li>the networks are relatively sparse  and small, as compared to some social networks for example.</li>
+</ul>
+
+<p>As stated in [1]:</p>
+
+<blockquote>
+  <p>Compressed sparse row is typically the best format for sparse graphs, provided that new edges aren’t added and relatively few edges are deleted. CSR is compact, avoiding the memory waste of adjacency lists and vectors, and its memory footprint can be calculated directly from V and E. CSR is furthermore contiguous in memory, eliminating the time overhead of pointer chasing. It’s easy to persist CSR in memory-mapped files, and CSR is convenient once you become accustomed to it. The two-pass construction approach implemented above is asymptotically faster than sorting an edge list.</p>
+</blockquote>
+
+<h2 id="references">References</h2>
+
+<p>[1] Terence Kelly, <em>Programming Workbench: Compressed Sparse Row Format for Representing Graphs</em>. Usenix Mag. 45(4) [2020]. <a href="https://www.usenix.org/system/files/login/articles/login_winter20_16_kelly.pdf">pdf</a> <br />
+[2] Jake VanderPlas, <em>Python data science handbook : essential tools for working with data</em>. Sebastopol, CA: O’Reilly Media Inc. [2016] ISBN: 978-1491912058 <a href="https://jakevdp.github.io/PythonDataScienceHandbook/">online</a><br />
+[3] Mahammad Valiyev, <em>Graph Storage : How good is CSR really?</em> [2017] <a href="https://db.in.tum.de/teaching/ws1718/seminarHauptspeicherdbs/paper/valiyev.pdf">pdf</a></p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+

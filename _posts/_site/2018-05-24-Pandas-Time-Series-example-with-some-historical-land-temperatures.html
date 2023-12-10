@@ -1,0 +1,872 @@
+<h2 id="monthly-averaged-historical-temperatures-in-france-and-over-the-global-land-surface">Monthly averaged historical temperatures in France and over the global land surface</h2>
+
+<p>The aim of this notebook is just to play with time series along with a couple of statistical and plotting libraries.</p>
+
+<h3 id="imports">Imports</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>  <span class="c1"># 0.23.0
+</span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>  <span class="c1"># 2.2.2
+</span><span class="kn">import</span> <span class="n">seaborn</span> <span class="k">as</span> <span class="n">sns</span>  <span class="c1"># 0.8.1
+</span><span class="kn">from</span> <span class="n">statsmodels.tsa.stattools</span> <span class="kn">import</span> <span class="n">adfuller</span>  <span class="c1"># 0.9.0
+</span><span class="kn">import</span> <span class="n">statsmodels.api</span> <span class="k">as</span> <span class="n">sm</span>
+</code></pre></div></div>
+
+<h3 id="loading-the-data">Loading the data</h3>
+
+<p>Historical monthly average temperature in France from the <a href="http://sdwebx.worldbank.org/climateportal/index.cfm">World Bank Group</a>.</p>
+
+<blockquote>
+  <p>Historical data to understand the seasonal CYCLE: This gridded historical dataset is derived from observational data, and provides quality controlled temperature and rainfall values from thousands of weather stations worldwide, as well as derivative products including monthly climatologies and long term historical climatologies. The dataset is produced by the Climatic Research Unit (CRU) of University of East Anglia (UEA), and reformatted by International Water Management Institute (IWMI). CRU-(Gridded Product). CRU data can be mapped to show the baseline climate and seasonality by month, for specific years, and for rainfall and temperature.</p>
+</blockquote>
+
+<p>The data was loaded into a spreadsheet and then exported as a csv file, after changing decimal separator from comma to point and removing useless columns (country code).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temperature</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">'</span><span class="s">data/tas_1901_2015_France.csv</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">temperature</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>tas</th>
+      <th>Year</th>
+      <th>Month</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>3.25950</td>
+      <td>1901</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.32148</td>
+      <td>1901</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>4.82373</td>
+      <td>1901</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>9.38568</td>
+      <td>1901</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>12.69960</td>
+      <td>1901</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">temperature</span><span class="p">),</span> <span class="sh">"</span><span class="s">rows</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">column types :</span><span class="se">\n</span><span class="sh">"</span><span class="p">,</span> <span class="n">temperature</span><span class="p">.</span><span class="n">dtypes</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1380 rows
+column types :
+ tas      float64
+Year       int64
+Month      int64
+dtype: object
+</code></pre></div></div>
+
+<h3 id="creating-a-datetimeindex">Creating a DatetimeIndex</h3>
+
+<p>Pandas’<code class="language-plaintext highlighter-rouge">to_datetime()</code> method requires at least the <code class="language-plaintext highlighter-rouge">year</code>, <code class="language-plaintext highlighter-rouge">month</code> and <code class="language-plaintext highlighter-rouge">day</code> columns (in lower case). So we rename the <code class="language-plaintext highlighter-rouge">Year</code> and <code class="language-plaintext highlighter-rouge">Month</code> columns and create a <code class="language-plaintext highlighter-rouge">day</code> column arbitrarily set to the 15th of each month.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temperature</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">'</span><span class="s">Year</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Month</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">temperature</span><span class="p">[</span><span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">temperature</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>tas</th>
+      <th>year</th>
+      <th>month</th>
+      <th>day</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>3.25950</td>
+      <td>1901</td>
+      <td>1</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.32148</td>
+      <td>1901</td>
+      <td>2</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>4.82373</td>
+      <td>1901</td>
+      <td>3</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>9.38568</td>
+      <td>1901</td>
+      <td>4</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>12.69960</td>
+      <td>1901</td>
+      <td>5</td>
+      <td>15</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Now we can apply the <code class="language-plaintext highlighter-rouge">to_datetime()</code> method, change the index and clean the dataframe.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temperature</span><span class="p">[</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">temperature</span><span class="p">[[</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">]])</span>
+<span class="n">temperature</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">temperature</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">temperature</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>tas</th>
+    </tr>
+    <tr>
+      <th>Date</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1901-01-15</th>
+      <td>3.25950</td>
+    </tr>
+    <tr>
+      <th>1901-02-15</th>
+      <td>0.32148</td>
+    </tr>
+    <tr>
+      <th>1901-03-15</th>
+      <td>4.82373</td>
+    </tr>
+    <tr>
+      <th>1901-04-15</th>
+      <td>9.38568</td>
+    </tr>
+    <tr>
+      <th>1901-05-15</th>
+      <td>12.69960</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Plotting these monthly averaged temperatures is rather messy because of seasonal fluctuations.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temperature</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_10_1.png" alt="png" /></p>
+
+<p>Note that we could also have created a <code class="language-plaintext highlighter-rouge">PeriodIndex</code> with a monthy frequency:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span><span class="p">.</span><span class="nf">to_period</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="sh">'</span><span class="s">M</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>However this seems to be less handy for resampling operations.</p>
+
+<h3 id="resampling">Resampling</h3>
+
+<p>First thing we can do is to compute the annual <code class="language-plaintext highlighter-rouge">mean</code>, <code class="language-plaintext highlighter-rouge">min</code> and <code class="language-plaintext highlighter-rouge">max</code>. The <code class="language-plaintext highlighter-rouge">resample()</code> method is used with the ‘AS’ offset, which corresponds to the year start frequency (see <a href="http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases">this</a> following documentation for the whole list of rules).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temp_annual</span> <span class="o">=</span> <span class="n">temperature</span><span class="p">.</span><span class="nf">resample</span><span class="p">(</span><span class="sh">"</span><span class="s">AS</span><span class="sh">"</span><span class="p">).</span><span class="nf">agg</span><span class="p">([</span><span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">min</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">max</span><span class="sh">'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temp_annual</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+
+    .dataframe thead tr:last-of-type th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th></th>
+      <th colspan="3" halign="left">tas</th>
+    </tr>
+    <tr>
+      <th></th>
+      <th>mean</th>
+      <th>min</th>
+      <th>max</th>
+    </tr>
+    <tr>
+      <th>Date</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1901-01-01</th>
+      <td>10.177163</td>
+      <td>0.32148</td>
+      <td>20.1921</td>
+    </tr>
+    <tr>
+      <th>1902-01-01</th>
+      <td>9.991733</td>
+      <td>2.26860</td>
+      <td>18.1870</td>
+    </tr>
+    <tr>
+      <th>1903-01-01</th>
+      <td>10.070277</td>
+      <td>2.95230</td>
+      <td>17.7461</td>
+    </tr>
+    <tr>
+      <th>1904-01-01</th>
+      <td>10.307586</td>
+      <td>2.31437</td>
+      <td>18.9831</td>
+    </tr>
+    <tr>
+      <th>1905-01-01</th>
+      <td>9.982693</td>
+      <td>0.49251</td>
+      <td>18.8757</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temp_annual</span><span class="p">.</span><span class="n">tas</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_15_0.png" alt="png" /></p>
+
+<h3 id="rolling-window-mean">Rolling window mean</h3>
+
+<p>Next we compute a centered rolling window mean with 10 years windows and an exponentially-weighted moving average with a 2 years half life.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temp_annual</span><span class="p">[(</span><span class="sh">'</span><span class="s">tas</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">yearly temperature</span><span class="sh">'</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">temp_annual</span><span class="p">[(</span><span class="sh">'</span><span class="s">tas</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">rolling</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">mean</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">10 years rolling window mean</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">temp_annual</span><span class="p">[(</span><span class="sh">'</span><span class="s">tas</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">ewm</span><span class="p">(</span><span class="n">halflife</span><span class="o">=</span><span class="mi">2</span><span class="p">).</span><span class="nf">mean</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">EWMA(halflife=2)</span><span class="sh">'</span><span class="p">)</span>  <span class="c1"># Exponentially-weighted moving average
+</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_17_0.png" alt="png" /></p>
+
+<p>We can also compute and plot the standard deviation of the data over the rolling window.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">m</span> <span class="o">=</span> <span class="n">temp_annual</span><span class="p">[(</span><span class="sh">'</span><span class="s">tas</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">rolling</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">agg</span><span class="p">([</span><span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">std</span><span class="sh">'</span><span class="p">])</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">].</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">10 years rolling window mean</span><span class="sh">'</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">fill_between</span><span class="p">(</span><span class="n">m</span><span class="p">.</span><span class="n">index</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">]</span> <span class="o">-</span> <span class="n">m</span><span class="p">[</span><span class="sh">'</span><span class="s">std</span><span class="sh">'</span><span class="p">],</span> <span class="n">m</span><span class="p">[</span><span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="sh">'</span><span class="s">std</span><span class="sh">'</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="p">.</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_19_0.png" alt="png" /></p>
+
+<h3 id="checking-for-stationarity">Checking for Stationarity</h3>
+
+<p>Well I am not very familiar with Statistics related with time series, so I just grabbed something that looks fancy on <a href="https://www.analyticsvidhya.com/blog/2016/02/time-series-forecasting-codes-python/">this</a> page :) This is the <a href="https://en.wikipedia.org/wiki/Dickey%E2%80%93Fuller_test">Dickey-Fuller test</a> from <a href="https://www.statsmodels.org/stable/index.html">StatsModels</a>.</p>
+
+<p>Let us apply this test to the original monthly temperature dataframe. First we convert it into a time <code class="language-plaintext highlighter-rouge">Series</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">temperature</span><span class="p">.</span><span class="n">tas</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">temperature</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+<span class="n">ts</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Date
+1901-01-15     3.25950
+1901-02-15     0.32148
+1901-03-15     4.82373
+1901-04-15     9.38568
+1901-05-15    12.69960
+Name: tas, dtype: float64
+</code></pre></div></div>
+
+<p>Then we perform the test:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dftest</span> <span class="o">=</span> <span class="nf">adfuller</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="sh">'</span><span class="s">AIC</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">dfoutput</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">dftest</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">Test Statistic</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">p-value</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">#Lags Used</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">Number of Observations Used</span><span class="sh">'</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dftest</span><span class="p">[</span><span class="mi">4</span><span class="p">].</span><span class="nf">items</span><span class="p">():</span>
+    <span class="n">dfoutput</span><span class="p">[</span><span class="sh">'</span><span class="s">Critical Value (%s)</span><span class="sh">'</span><span class="o">%</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">dfoutput</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Test Statistic                   -1.651531
+p-value                           0.456242
+#Lags Used                       24.000000
+Number of Observations Used    1355.000000
+Critical Value (1%)              -3.435185
+Critical Value (5%)              -2.863675
+Critical Value (10%)             -2.567907
+dtype: float64
+</code></pre></div></div>
+
+<p>We already saw that the mean is clearly increasing starting in the 80s while standard deviation seems to be uniform. Now we can observe that the Test Statistic is significantly greater than the critical values and that the p-value is not so small, which also seems to indicate that the data is not stationary.</p>
+
+<p>Let us try to make this time series artificially stationary by removing the rolling mean from the data and run the test again. We start by computing the mean on a 120 months rolling window.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts_mean</span> <span class="o">=</span> <span class="n">ts</span><span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">120</span><span class="p">).</span><span class="nf">mean</span><span class="p">().</span><span class="nf">rename</span><span class="p">(</span><span class="sh">"</span><span class="s">t_mean</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ts_mean</span><span class="p">.</span><span class="nf">plot</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_25_1.png" alt="png" /></p>
+
+<p>Note that there are <code class="language-plaintext highlighter-rouge">NaN</code> values at the begining of the serie because the there is not enough data in the rolling window.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts_mean</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Date
+1901-01-15   NaN
+1901-02-15   NaN
+1901-03-15   NaN
+1901-04-15   NaN
+1901-05-15   NaN
+Name: t_mean, dtype: float64
+</code></pre></div></div>
+
+<p>Now we merge the mean temperature with the original monthly temperature and compute the “corrected” temperature <code class="language-plaintext highlighter-rouge">t_modified</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">stat_temp</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span> <span class="n">ts_mean</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">(),</span> 
+                     <span class="n">left_index</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="sh">'</span><span class="s">inner</span><span class="sh">'</span><span class="p">).</span><span class="nf">dropna</span><span class="p">()</span>
+<span class="n">stat_temp</span><span class="p">[</span><span class="sh">"</span><span class="s">t_modified</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat_temp</span><span class="p">[</span><span class="sh">"</span><span class="s">tas</span><span class="sh">"</span><span class="p">]</span><span class="o">-</span><span class="n">stat_temp</span><span class="p">[</span><span class="sh">"</span><span class="s">t_mean</span><span class="sh">"</span><span class="p">]</span><span class="o">+</span><span class="n">stat_temp</span><span class="p">[</span><span class="sh">"</span><span class="s">t_mean</span><span class="sh">"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>Let us re-compute the rolling mean for original and modified data.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">stat_temp</span><span class="p">.</span><span class="n">tas</span><span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">120</span><span class="p">).</span><span class="nf">mean</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">original</span><span class="sh">'</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">stat_temp</span><span class="p">.</span><span class="n">t_modified</span><span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">120</span><span class="p">).</span><span class="nf">mean</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">modified</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_31_0.png" alt="png" /></p>
+
+<p>Now we run the Dickey–Fuller test again, on the modified data.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ts2</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">stat_temp</span><span class="p">.</span><span class="n">t_modified</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">stat_temp</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+<span class="n">ts2</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Date
+1910-12-15    4.385380
+1911-01-15    2.021325
+1911-02-15    3.879265
+1911-03-15    6.911458
+1911-04-15    8.259301
+Name: t_modified, dtype: float64
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dftest</span> <span class="o">=</span> <span class="nf">adfuller</span><span class="p">(</span><span class="n">ts2</span><span class="p">,</span> <span class="n">autolag</span><span class="o">=</span><span class="sh">'</span><span class="s">AIC</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">dfoutput</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">dftest</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">Test Statistic</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">p-value</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">#Lags Used</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">Number of Observations Used</span><span class="sh">'</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dftest</span><span class="p">[</span><span class="mi">4</span><span class="p">].</span><span class="nf">items</span><span class="p">():</span>
+    <span class="n">dfoutput</span><span class="p">[</span><span class="sh">'</span><span class="s">Critical Value (%s)</span><span class="sh">'</span><span class="o">%</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">dfoutput</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Test Statistic                -5.913709e+00
+p-value                        2.602534e-07
+#Lags Used                     2.300000e+01
+Number of Observations Used    1.237000e+03
+Critical Value (1%)           -3.435647e+00
+Critical Value (5%)           -2.863879e+00
+Critical Value (10%)          -2.568015e+00
+dtype: float64
+</code></pre></div></div>
+
+<p>This time the data is found to be stationary (Test Statistic is lower than the critical values and small p_value), which is not a big surprise…</p>
+
+<p>We should probably consider a longer time span when testing for the unstationarity of temperature.</p>
+
+<h3 id="comparison-with-global-land-temperature">Comparison with global land temperature</h3>
+
+<p>We are now going to compare France against global land’s temperatures, taken from Berkeley Earth’s <a href="http://berkeleyearth.lbl.gov/auto/Global/Complete_TAVG_complete.txt">website</a>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glt</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">'</span><span class="s">data/Complete_TAVG_complete.txt</span><span class="sh">'</span><span class="p">,</span> <span class="n">delim_whitespace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">33</span><span class="p">).</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+<span class="n">glt</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Anomaly</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Unc</span><span class="sh">'</span><span class="p">]</span> 
+<span class="n">glt</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>year</th>
+      <th>month</th>
+      <th>Anomaly</th>
+      <th>Unc</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1750</td>
+      <td>1</td>
+      <td>0.382</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1750</td>
+      <td>2</td>
+      <td>0.539</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1750</td>
+      <td>3</td>
+      <td>0.574</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>1750</td>
+      <td>4</td>
+      <td>0.382</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>1750</td>
+      <td>5</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Let us list the years with <code class="language-plaintext highlighter-rouge">NaN</code> values in the Anomaly column.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gby</span> <span class="o">=</span> <span class="n">glt</span><span class="p">[[</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">Anomaly</span><span class="sh">'</span><span class="p">]].</span><span class="nf">groupby</span><span class="p">(</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">).</span><span class="nf">count</span><span class="p">()</span>
+<span class="n">gby</span><span class="p">[</span><span class="n">gby</span><span class="p">.</span><span class="n">Anomaly</span><span class="o">&lt;</span><span class="mi">12</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Anomaly</th>
+    </tr>
+    <tr>
+      <th>year</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1750</th>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>1751</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1752</th>
+      <td>6</td>
+    </tr>
+    <tr>
+      <th>2017</th>
+      <td>7</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>As we can see monthly Anomaly data are complete between 1753 and 2016.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glt</span> <span class="o">=</span> <span class="n">glt</span><span class="p">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">glt</span><span class="p">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">1753</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">glt</span><span class="p">.</span><span class="n">year</span> <span class="o">&lt;=</span> <span class="mi">2016</span><span class="p">)]</span>
+</code></pre></div></div>
+
+<p>Estimated Jan 1951-Dec 1980 monthly absolute temperature, copied from the file header:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mat</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">({</span>
+    <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span>
+    <span class="sh">'</span><span class="s">t_abs</span><span class="sh">'</span><span class="p">:</span> <span class="p">[</span><span class="mf">2.62</span><span class="p">,</span> <span class="mf">3.23</span><span class="p">,</span> <span class="mf">5.33</span><span class="p">,</span> <span class="mf">8.36</span><span class="p">,</span> <span class="mf">11.37</span><span class="p">,</span> <span class="mf">13.53</span><span class="p">,</span> <span class="mf">14.41</span><span class="p">,</span> <span class="mf">13.93</span><span class="p">,</span> <span class="mf">12.12</span><span class="p">,</span> <span class="mf">9.26</span><span class="p">,</span> <span class="mf">6.12</span><span class="p">,</span> <span class="mf">3.67</span><span class="p">]})</span>
+<span class="c1">#    'unc': [0.08, 0.07, 0.06, 0.07, 0.07, 0.07, 0.07, 0.07, 0.07, 0.06, 0.07, 0.08]})
+</span></code></pre></div></div>
+
+<p>Let us merge the absolute temperature with the Anomaly.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glt</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">glt</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="sh">'</span><span class="s">left</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">glt</span><span class="p">[</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">glt</span><span class="p">.</span><span class="n">t_abs</span> <span class="o">+</span> <span class="n">glt</span><span class="p">.</span><span class="n">Anomaly</span>
+</code></pre></div></div>
+
+<p>And create a <code class="language-plaintext highlighter-rouge">DatetimeIndex</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glt</span><span class="p">[</span><span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">glt</span><span class="p">[</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">glt</span><span class="p">[[</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">]])</span>
+<span class="n">glt</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">glt</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">'</span><span class="s">year</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">month</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">day</span><span class="sh">'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">glt</span><span class="p">.</span><span class="nf">head</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Anomaly</th>
+      <th>Unc</th>
+      <th>t_abs</th>
+      <th>t</th>
+    </tr>
+    <tr>
+      <th>Date</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1753-01-15</th>
+      <td>-1.108</td>
+      <td>3.646</td>
+      <td>2.62</td>
+      <td>1.512</td>
+    </tr>
+    <tr>
+      <th>1753-02-15</th>
+      <td>-1.652</td>
+      <td>4.461</td>
+      <td>3.23</td>
+      <td>1.578</td>
+    </tr>
+    <tr>
+      <th>1753-03-15</th>
+      <td>1.020</td>
+      <td>3.623</td>
+      <td>5.33</td>
+      <td>6.350</td>
+    </tr>
+    <tr>
+      <th>1753-04-15</th>
+      <td>-0.557</td>
+      <td>3.898</td>
+      <td>8.36</td>
+      <td>7.803</td>
+    </tr>
+    <tr>
+      <th>1753-05-15</th>
+      <td>0.399</td>
+      <td>1.652</td>
+      <td>11.37</td>
+      <td>11.769</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glt</span><span class="p">.</span><span class="n">t</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_48_0.png" alt="png" /></p>
+
+<p>Now we resample the data to a yearly frequency.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glty</span> <span class="o">=</span> <span class="n">glt</span><span class="p">.</span><span class="nf">resample</span><span class="p">(</span><span class="sh">"</span><span class="s">AS</span><span class="sh">"</span><span class="p">).</span><span class="nf">agg</span><span class="p">([</span><span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">min</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">max</span><span class="sh">'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>Let us plot these yearly averaged temperature along with the 95% confidence interval.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">glty</span><span class="p">[(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Yearly mean</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">fill_between</span><span class="p">(</span><span class="n">glty</span><span class="p">.</span><span class="n">index</span><span class="p">,</span> <span class="n">glty</span><span class="p">[(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)]</span> <span class="o">-</span> <span class="mf">0.95</span><span class="o">*</span><span class="n">glty</span><span class="p">[(</span><span class="sh">'</span><span class="s">Unc</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)],</span> 
+                            <span class="n">glty</span><span class="p">[(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)]</span> <span class="o">+</span>  <span class="mf">0.95</span><span class="o">*</span><span class="n">glty</span><span class="p">[(</span><span class="sh">'</span><span class="s">Unc</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)],</span> <span class="n">alpha</span><span class="o">=</span><span class="p">.</span><span class="mi">25</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">95% confidence interval</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">title</span><span class="p">(</span><span class="sh">'</span><span class="s">Global land temperature</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_52_0.png" alt="png" /></p>
+
+<p>Now we plot both France’s and global land’s yearly mean.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temp_annual</span><span class="p">[(</span><span class="sh">'</span><span class="s">tas</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">France</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">glty</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">glty</span><span class="p">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">temp_annual</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="p">(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Global land</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_54_0.png" alt="png" /></p>
+
+<p>Well it seems like France is getting warmer faster than the average land surface.</p>
+
+<h3 id="average-increasing-rates">Average increasing rates</h3>
+
+<p>Now let’s try to perform a linear regression on both temperature data between 1975 and 2015-2016.
+In order to use OLS from statsmodels, we need to convert the <code class="language-plaintext highlighter-rouge">datetime</code> objects into real numbers. We do so using the <code class="language-plaintext highlighter-rouge">to_julian_date</code> tool. We also add a constant term since we need an intercept.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df_france</span> <span class="o">=</span> <span class="n">temp_annual</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">temp_annual</span><span class="p">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Timestamp</span><span class="p">(</span><span class="sh">'</span><span class="s">1975-01-01</span><span class="sh">'</span><span class="p">),</span> <span class="p">(</span><span class="sh">'</span><span class="s">tas</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">reset_index</span><span class="p">()</span>
+<span class="n">df_france</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">]</span>
+<span class="n">df_france</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_france</span><span class="p">[</span><span class="sh">'</span><span class="s">jDate</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_france</span><span class="p">[</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">].</span><span class="nf">map</span><span class="p">(</span><span class="n">pd</span><span class="p">.</span><span class="n">Timestamp</span><span class="p">.</span><span class="n">to_julian_date</span><span class="p">)</span>
+<span class="n">df_france</span><span class="p">[</span><span class="sh">'</span><span class="s">const</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="c1">#epoch = pd.to_datetime(0, unit='d').to_julian_date()
+#df_france['Date2'] = pd.to_datetime(df_france['jDate']- epoch, unit='D')
+</span>
+<span class="n">df_land</span> <span class="o">=</span> <span class="n">glty</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">glty</span><span class="p">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Timestamp</span><span class="p">(</span><span class="sh">'</span><span class="s">1975-01-01</span><span class="sh">'</span><span class="p">),</span> <span class="p">(</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">mean</span><span class="sh">'</span><span class="p">)].</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">reset_index</span><span class="p">()</span>
+<span class="n">df_land</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">]</span>
+<span class="n">df_land</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_land</span><span class="p">[</span><span class="sh">'</span><span class="s">jDate</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_land</span><span class="p">[</span><span class="sh">'</span><span class="s">Date</span><span class="sh">'</span><span class="p">].</span><span class="nf">map</span><span class="p">(</span><span class="n">pd</span><span class="p">.</span><span class="n">Timestamp</span><span class="p">.</span><span class="n">to_julian_date</span><span class="p">)</span>
+<span class="n">df_land</span><span class="p">[</span><span class="sh">'</span><span class="s">const</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mod</span> <span class="o">=</span> <span class="n">sm</span><span class="p">.</span><span class="nc">OLS</span><span class="p">(</span><span class="n">df_france</span><span class="p">[</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">],</span> <span class="n">df_france</span><span class="p">[[</span><span class="sh">'</span><span class="s">jDate</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">const</span><span class="sh">'</span><span class="p">]])</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">mod</span><span class="p">.</span><span class="nf">fit</span><span class="p">()</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">res</span><span class="p">.</span><span class="nf">summary</span><span class="p">())</span>
+<span class="n">df_france</span><span class="p">[</span><span class="sh">'</span><span class="s">pred</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">df_france</span><span class="p">[[</span><span class="sh">'</span><span class="s">jDate</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">const</span><span class="sh">'</span><span class="p">]])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                      t   R-squared:                       0.761
+Model:                            OLS   Adj. R-squared:                  0.755
+Method:                 Least Squares   F-statistic:                     124.4
+Date:                Thu, 24 May 2018   Prob (F-statistic):           1.07e-13
+Time:                        16:31:45   Log-Likelihood:                -24.189
+No. Observations:                  41   AIC:                             52.38
+Df Residuals:                      39   BIC:                             55.81
+Df Model:                           1                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P&gt;|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+jDate          0.0002   1.62e-05     11.152      0.000       0.000       0.000
+const       -430.3375     39.620    -10.861      0.000    -510.477    -350.198
+==============================================================================
+Omnibus:                        3.133   Durbin-Watson:                   1.971
+Prob(Omnibus):                  0.209   Jarque-Bera (JB):                1.820
+Skew:                          -0.254   Prob(JB):                        0.403
+Kurtosis:                       2.101   Cond. No.                     1.39e+09
+==============================================================================
+
+Warnings:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 1.39e+09. This might indicate that there are
+strong multicollinearity or other numerical problems.
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="sh">'</span><span class="s">Temperature change per year: </span><span class="sh">'</span><span class="p">,</span> <span class="n">res</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mf">365.0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Temperature change per year:  0.06583231229893599
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mod</span> <span class="o">=</span> <span class="n">sm</span><span class="p">.</span><span class="nc">OLS</span><span class="p">(</span><span class="n">df_land</span><span class="p">[</span><span class="sh">'</span><span class="s">t</span><span class="sh">'</span><span class="p">],</span> <span class="n">df_land</span><span class="p">[[</span><span class="sh">'</span><span class="s">jDate</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">const</span><span class="sh">'</span><span class="p">]])</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">mod</span><span class="p">.</span><span class="nf">fit</span><span class="p">()</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">res</span><span class="p">.</span><span class="nf">summary</span><span class="p">())</span>
+<span class="n">df_land</span><span class="p">[</span><span class="sh">'</span><span class="s">pred</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span><span class="p">.</span><span class="nf">predict</span><span class="p">(</span><span class="n">df_land</span><span class="p">[[</span><span class="sh">'</span><span class="s">jDate</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">const</span><span class="sh">'</span><span class="p">]])</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                      t   R-squared:                       0.793
+Model:                            OLS   Adj. R-squared:                  0.788
+Method:                 Least Squares   F-statistic:                     153.0
+Date:                Thu, 24 May 2018   Prob (F-statistic):           3.00e-15
+Time:                        16:31:45   Log-Likelihood:                 14.544
+No. Observations:                  42   AIC:                            -25.09
+Df Residuals:                      40   BIC:                            -21.61
+Df Model:                           1                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P&gt;|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+jDate        7.56e-05   6.11e-06     12.368      0.000    6.32e-05     8.8e-05
+const       -176.0015     14.975    -11.753      0.000    -206.267    -145.736
+==============================================================================
+Omnibus:                        4.505   Durbin-Watson:                   2.032
+Prob(Omnibus):                  0.105   Jarque-Bera (JB):                1.852
+Skew:                           0.062   Prob(JB):                        0.396
+Kurtosis:                       1.979   Cond. No.                     1.36e+09
+==============================================================================
+
+Warnings:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 1.36e+09. This might indicate that there are
+strong multicollinearity or other numerical problems.
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="sh">'</span><span class="s">Temperature change per year: </span><span class="sh">'</span><span class="p">,</span> <span class="n">res</span><span class="p">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mf">365.0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Temperature change per year:  0.027594017104916324
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df_france</span><span class="p">.</span><span class="n">t</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">France</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">df_france</span><span class="p">.</span><span class="n">pred</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">France linear regression</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">df_land</span><span class="p">.</span><span class="n">t</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Land</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">df_land</span><span class="p">.</span><span class="n">pred</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Land linear regression</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="sh">'</span><span class="s">--</span><span class="sh">'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Temperature (°C)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">sns</span><span class="p">.</span><span class="nf">despine</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_files/2018-05-24-Pandas-Time-Series-example-with-some-historical-land-temperatures_61_0.png" alt="png" /></p>
+
+<p>So over the last 40 years, France is getter hotter by 0.06583 degree per year in average, against 0.02759 degree for the global land.</p>

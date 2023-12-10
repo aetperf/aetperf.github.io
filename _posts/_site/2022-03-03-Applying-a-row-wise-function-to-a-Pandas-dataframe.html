@@ -1,0 +1,1516 @@
+<p>More than 3 years ago, we posted a comparative study about <a href="https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html">Looping over Pandas data</a> using a CPU. Because a lot of things evolved since 2018, this post is kind of an update. For example Pandas tag version was <code class="language-plaintext highlighter-rouge">0.23.3</code> at that time, it is now <code class="language-plaintext highlighter-rouge">1.4.0</code>. Also, we added some more options.</p>
+
+<p>Here is a list of all the options tested in the following:</p>
+<ul>
+  <li>Pandas built-in vectorization</li>
+  <li>pandas.DataFrame.iterrows</li>
+  <li>pandas.DataFrame.apply</li>
+  <li>pandas.DataFrame.itertuples</li>
+  <li>numpy.apply_along_axis</li>
+  <li>numpy.vectorize</li>
+  <li>map</li>
+  <li>swifter</li>
+  <li>dask.dataframe.map_partitions</li>
+  <li>polars.DataFrame.apply</li>
+  <li>polars built-in vectorization</li>
+  <li>Numba</li>
+  <li>Numba parallel</li>
+  <li>Cython</li>
+  <li>Cython parallel</li>
+</ul>
+
+<h2 id="introduction">Introduction</h2>
+
+<h3 id="motivation">Motivation</h3>
+
+<p align="center">
+  <img width="600" src="/img/2022-03-03_01/rowwise_func.png" alt="Row-wise function" />
+</p>
+
+<p>The focus is on looping over the rows of a Pandas dataframe holding some numerical data. All the elements of the dataframe are of <code class="language-plaintext highlighter-rouge">np.float64</code> data type. A function is applied to each row, taking the row elements as input, either as distinct scalar arguments, as an array, or as a Pandas Series. The computation returns a scalar value per row, so that the process eventually returns a numeric Pandas series with same index as the original dataframe. For this post, a toy function computing the determinant of a 3-by-3 symmetric real matrix is used:</p>
+
+\[\begin{equation*}
+M = 
+\begin{pmatrix}
+m_{1,1} &amp; m_{1,2} &amp; m_{1,3} \\
+m_{1,2} &amp; m_{2,2} &amp; m_{2,3} \\
+m_{1,3} &amp; m_{2,3} &amp; m_{3,3}
+\end{pmatrix}
+\end{equation*}\]
+
+\[|M| = m_{1,1} (m_{2,2} \, m_{3,3} - m_{2,3}^2) + m_{1,2} \, (2 \,  m_{2,3} \, m_{1,3} - m_{1,2} \, m_{3,3}) - m_{2,2} \, m_{1,3}^2\]
+
+<p>Here is a pure python implementation of the row-wise function:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">det_sym33</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">,</span> <span class="n">m13</span><span class="p">,</span> <span class="n">m22</span><span class="p">,</span> <span class="n">m23</span><span class="p">,</span> <span class="n">m33</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s">Compute the determinant of a real symmetric 3x3 matrix 
+    given its 6 upper triangular coefficients.
+    </span><span class="sh">"""</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="n">m11</span> <span class="o">*</span> <span class="p">(</span><span class="n">m22</span> <span class="o">*</span> <span class="n">m33</span> <span class="o">-</span> <span class="n">m23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">m12</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">m23</span> <span class="o">*</span> <span class="n">m13</span> <span class="o">-</span> <span class="n">m12</span> <span class="o">*</span> <span class="n">m33</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">m22</span> <span class="o">*</span> <span class="n">m13</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="imports">Imports</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">itertools</span> <span class="kn">import</span> <span class="n">cycle</span>
+<span class="kn">from</span> <span class="n">time</span> <span class="kn">import</span> <span class="n">perf_counter</span>
+
+<span class="kn">import</span> <span class="n">cython</span>
+<span class="kn">import</span> <span class="n">dask.dataframe</span> <span class="k">as</span> <span class="n">dd</span>
+<span class="kn">from</span> <span class="n">numba</span> <span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">perfplot</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">polars</span> <span class="k">as</span> <span class="n">pl</span>
+<span class="kn">import</span> <span class="n">swifter</span>
+
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">Cython</span>
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">line_profiler</span>
+
+<span class="n">SD</span> <span class="o">=</span> <span class="mi">124</span>  <span class="c1"># random seed
+</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">default_rng</span><span class="p">(</span><span class="n">SD</span><span class="p">)</span>  <span class="c1"># random number generator
+</span></code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python version       : 3.9.10
+IPython version      : 8.0.1
+polars    : 0.12.19
+numpy     : 1.21.5
+swifter   : 1.0.9
+pandas    : 1.4.1
+cython    : 0.29.28
+numba     : 0.55.1
+perfplot  : 0.10.1
+dask      : 2022.2.1
+</code></pre></div></div>
+
+<p>Computations are performed on a laptop with an 8 cores Intel i7-7700HQ CPU @ 2.80GHz, running Linux.</p>
+
+<h3 id="timing-function">Timing function</h3>
+
+<p>This function is returning the best elapsed time over <code class="language-plaintext highlighter-rouge">r</code> trials, and the result of the computation:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">timing</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">timings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nf">func</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="nf">perf_counter</span><span class="p">()</span>
+        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+        <span class="n">timings</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="n">np</span><span class="p">.</span><span class="nf">amin</span><span class="p">(</span><span class="n">timings</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="create-a-dataframe-with-random-floats">Create a dataframe with random floats</h3>
+
+<p>We start by creating a medium-sized dataframe to perform a first comparison. We will later compare the most efficient methods with longer dataframes.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">100_000</span>  <span class="c1"># dataframe length
+</span><span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="sh">'</span><span class="s">m11</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">m12</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">m13</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">m22</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">m23</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">m33</span><span class="sh">'</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">rng</span><span class="p">.</span><span class="nf">random</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">6</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 10.2 ms, sys: 143 µs, total: 10.4 ms
+Wall time: 7.99 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>m11</th>
+      <th>m12</th>
+      <th>m13</th>
+      <th>m22</th>
+      <th>m23</th>
+      <th>m33</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.785253</td>
+      <td>0.785859</td>
+      <td>0.969136</td>
+      <td>0.748060</td>
+      <td>0.655551</td>
+      <td>0.938885</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.178614</td>
+      <td>0.588647</td>
+      <td>0.442799</td>
+      <td>0.348847</td>
+      <td>0.330929</td>
+      <td>0.159369</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.989463</td>
+      <td>0.257111</td>
+      <td>0.715765</td>
+      <td>0.505885</td>
+      <td>0.664111</td>
+      <td>0.702342</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="row-wise-functions">Row-wise functions</h3>
+
+<p>We now create 3 different row-wise functions, with different argument types for the input row values:</p>
+<ul>
+  <li>distinct scalar arguments</li>
+  <li>an array</li>
+  <li>a Pandas Series</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">det_sym33_scalars</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">,</span> <span class="n">m13</span><span class="p">,</span> <span class="n">m22</span><span class="p">,</span> <span class="n">m23</span><span class="p">,</span> <span class="n">m33</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="n">m11</span> <span class="o">*</span> <span class="p">(</span><span class="n">m22</span> <span class="o">*</span> <span class="n">m33</span> <span class="o">-</span> <span class="n">m23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">m12</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">m23</span> <span class="o">*</span> <span class="n">m13</span> <span class="o">-</span> <span class="n">m12</span> <span class="o">*</span> <span class="n">m33</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">m22</span> <span class="o">*</span> <span class="n">m13</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">det_sym33_array</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="n">m</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+        <span class="o">-</span> <span class="n">m</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">det_sym33_series</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">m11</span> <span class="o">*</span> <span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">m22</span> <span class="o">*</span> <span class="n">s</span><span class="p">.</span><span class="n">m33</span> <span class="o">-</span> <span class="n">s</span><span class="p">.</span><span class="n">m23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">s</span><span class="p">.</span><span class="n">m12</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">s</span><span class="p">.</span><span class="n">m23</span> <span class="o">*</span> <span class="n">s</span><span class="p">.</span><span class="n">m13</span> <span class="o">-</span> <span class="n">s</span><span class="p">.</span><span class="n">m12</span> <span class="o">*</span> <span class="n">s</span><span class="p">.</span><span class="n">m33</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">s</span><span class="p">.</span><span class="n">m22</span> <span class="o">*</span> <span class="n">s</span><span class="p">.</span><span class="n">m13</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>In the following, we may try several of these row-wise functions for a given dataframe looping method, depending on how the dataframe rows are returned by the method.</p>
+
+<h2 id="pandas-built-in-vectorization">Pandas built-in vectorization</h2>
+
+<p>First we are going to use the built-in vectorization operations from Pandas. In the present case the row-wise computation is straightforward and can be performed with basic universal functions applied to the entire columns. This does not make use of any row-wise function, but allows us to have a reference timing.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">pandas_vectorize</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="n">df</span><span class="p">.</span><span class="n">m11</span> <span class="o">*</span> <span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">m22</span> <span class="o">*</span> <span class="n">df</span><span class="p">.</span><span class="n">m33</span> <span class="o">-</span> <span class="n">df</span><span class="p">.</span><span class="n">m23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">df</span><span class="p">.</span><span class="n">m12</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">df</span><span class="p">.</span><span class="n">m23</span> <span class="o">*</span> <span class="n">df</span><span class="p">.</span><span class="n">m13</span> <span class="o">-</span> <span class="n">df</span><span class="p">.</span><span class="n">m12</span> <span class="o">*</span> <span class="n">df</span><span class="p">.</span><span class="n">m33</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">df</span><span class="p">.</span><span class="n">m22</span> <span class="o">*</span> <span class="n">df</span><span class="p">.</span><span class="n">m13</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>We store the resulting Pandas Series into the <code class="language-plaintext highlighter-rouge">det_ref</code> variable, in order to check that the later computations lead to the same result:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det_ref</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">pandas_vectorize</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0044875 s
+</code></pre></div></div>
+
+<h2 id="pandasdataframeiterrows">pandas.DataFrame.iterrows</h2>
+
+<p>We know that the <code class="language-plaintext highlighter-rouge">iterrows</code> method is kind of slow (see the previous <a href="https://aetperf.github.io/2018/07/03/Looping-over-Pandas-data.html">post</a> for example). It loops over dataframe rows as (index, Series) pairs. Here, we are going to compare the 3 different argument types of the row-wise function, given that the row returned by <code class="language-plaintext highlighter-rouge">iterrows</code> is a Pandas Series:</p>
+<ul>
+  <li>scalar values</li>
+  <li>a Numpy array</li>
+  <li>a Pandas Series</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>iterrows_scalars</td>
+      <td>pd.DataFrame.iterrows</td>
+      <td>pd.Series</td>
+      <td>df_iterrows_scalars</td>
+      <td>float64</td>
+    </tr>
+    <tr>
+      <td>iterrows_array</td>
+      <td>pd.DataFrame.iterrows</td>
+      <td>pd.Series</td>
+      <td>df_iterrows_array</td>
+      <td>array</td>
+    </tr>
+    <tr>
+      <td>iterrows_series</td>
+      <td>pd.DataFrame.iterrows</td>
+      <td>pd.Series</td>
+      <td>df_iterrows_series</td>
+      <td>pd.Series</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="scalar-arguments">Scalar arguments</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">iterrows_scalars</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">iterrows</span><span class="p">():</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_scalars</span><span class="p">(</span><span class="n">row</span><span class="p">.</span><span class="n">m11</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m12</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m13</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m22</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m23</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m33</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_scalars</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">iterrows_scalars</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_scalars</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 5.6840575 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="numpyndarray-argument">numpy.ndarray argument</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">iterrows_array</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">iterrows</span><span class="p">():</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_array</span><span class="p">(</span><span class="n">row</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_array</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">iterrows_array</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_array</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 2.4847183 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="pandasseries-argument">pandas.Series argument</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">iterrows_series</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">iterrows</span><span class="p">():</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_series</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_series</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">iterrows_series</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_series</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 7.8285359 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="comparison">Comparison</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">[{</span><span class="sh">"</span><span class="s">scalars</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_scalars</span><span class="p">,</span> <span class="sh">"</span><span class="s">array</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_array</span><span class="p">,</span> <span class="sh">"</span><span class="s">Series</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_series</span><span class="p">}],</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="p">.</span><span class="n">T</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">iterrows() with 3 different argument types</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Argument type</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2022-03-03_01/output_36_0.png" alt="iterrows" />
+</p>
+
+<p>We observe that using the array of values from the pandas.Series as argument of the row-wise function, and accessing the data with indices is the fastest method when using <code class="language-plaintext highlighter-rouge">.iterrows()</code>. However, all three <code class="language-plaintext highlighter-rouge">iterrows</code> methods are very slow.</p>
+
+<h2 id="pandasdataframeapply">pandas.DataFrame.apply</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">apply</code> method also iterates over dataframe rows (with the <code class="language-plaintext highlighter-rouge">axis=1</code> argument), returning either a Series (default) or an array (with <code class="language-plaintext highlighter-rouge">raw=True</code>). Here is what Pandas’ <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.apply.html">documentation</a> says about it:</p>
+<blockquote>
+  <p>the passed function will receive ndarray objects instead. If you are just applying a NumPy reduction function this will achieve much better performance.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>apply_series</td>
+      <td>pd.DataFrame.apply</td>
+      <td>pd.Series</td>
+      <td>det_sym33_series</td>
+      <td>pd.Series</td>
+    </tr>
+    <tr>
+      <td>apply_array</td>
+      <td>pd.DataFrame.apply</td>
+      <td>np.ndarray</td>
+      <td>det_sym33_array</td>
+      <td>array</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="pandasseries-argument-1">pandas.Series argument</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_series</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">.</span><span class="nf">apply</span><span class="p">(</span><span class="n">det_sym33_series</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_series</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">apply_series</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_series</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 5.1164269 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="numpyndarray-argument-1">numpy.ndarray argument</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">apply_array</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">.</span><span class="nf">apply</span><span class="p">(</span><span class="n">det_sym33_array</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_array</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">apply_array</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_array</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.2638231 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="comparison-1">Comparison</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">[{</span><span class="sh">"</span><span class="s">array</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_array</span><span class="p">,</span> <span class="sh">"</span><span class="s">Series</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_series</span><span class="p">}],</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="p">.</span><span class="n">T</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">apply() with 2 different argument types</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Argument type</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2022-03-03_01/output_48_0.png" alt="apply" />
+</p>
+
+<p>Indeed using arrays instead of Series is way faster! But still a lot slower than pandas built-in vectorization.</p>
+
+<h2 id="pandasdataframeitertuples">pandas.DataFrame.itertuples</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">itertuples</code> method allows the iteratation over dataframe rows, returning them as namedtuples. Thus, the row values can either be accessed by name or by index. The function <code class="language-plaintext highlighter-rouge">det_sym33_scalars</code> and <code class="language-plaintext highlighter-rouge">det_sym33_series</code> are used in the former case, and <code class="language-plaintext highlighter-rouge">det_sym33_array</code> in the latter.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>itertuples_scalars</td>
+      <td>pd.DataFrame.itertuples</td>
+      <td>namedtuple</td>
+      <td>det_sym33_scalars</td>
+      <td>float64</td>
+    </tr>
+    <tr>
+      <td>itertuples_array</td>
+      <td>pd.DataFrame.itertuples</td>
+      <td>namedtuple</td>
+      <td>det_sym33_array</td>
+      <td>array</td>
+    </tr>
+    <tr>
+      <td>itertuples_series</td>
+      <td>pd.DataFrame.itertuples</td>
+      <td>namedtuple</td>
+      <td>det_sym33_series</td>
+      <td>pd.Series</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="scalar-arguments-1">Scalar arguments</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">itertuples_scalars</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">itertuples</span><span class="p">():</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_scalars</span><span class="p">(</span><span class="n">row</span><span class="p">.</span><span class="n">m11</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m12</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m13</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m22</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m23</span><span class="p">,</span> <span class="n">row</span><span class="p">.</span><span class="n">m33</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_scalars</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">itertuples_scalars</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_scalars</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.1051879 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="numpyarray-argument">numpy.array argument</h3>
+
+<p>When row values are accessed by index, we need to account for the dataframe index, which is indexed by 0.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">itertuples_array</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">itertuples</span><span class="p">():</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_array</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_array</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">itertuples_array</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_array</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.1136810 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="pandasseries-argument-2">pandas.Series argument</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">itertuples_series</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="p">.</span><span class="nf">itertuples</span><span class="p">():</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_series</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_series</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">itertuples_series</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_series</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.1084384 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="comparison-2">Comparison</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">[{</span><span class="sh">"</span><span class="s">scalars</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_scalars</span><span class="p">,</span> <span class="sh">"</span><span class="s">array</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_array</span><span class="p">,</span> <span class="sh">"</span><span class="s">Series</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_series</span><span class="p">}],</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="p">.</span><span class="n">T</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">itertuples() with 3 different argument types</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Argument type</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2022-03-03_01/output_64_0.png" alt="itertuples" />
+</p>
+
+<p>We get kind of similar results with the 3 different argument types. Once again, we can say than <code class="language-plaintext highlighter-rouge">itertuples</code> is to be prefered over <code class="language-plaintext highlighter-rouge">iterrows</code> and <code class="language-plaintext highlighter-rouge">apply</code>.</p>
+
+<h2 id="numpyapply_along_axis">numpy.apply_along_axis</h2>
+
+<p>Let’s try out this method allowing to apply a function to a 1D slice along a given axis (rows of a 2D array in our case).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>np_apply_along_axis</td>
+      <td>np.apply_along_axis</td>
+      <td>np.ndarray</td>
+      <td>det_sym33_array</td>
+      <td>array</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">np_apply_along_axis</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span>
+        <span class="n">np</span><span class="p">.</span><span class="nf">apply_along_axis</span><span class="p">(</span><span class="n">func1d</span><span class="o">=</span><span class="n">det_sym33_array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">arr</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">values</span><span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">np_apply_along_axis</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.2435897 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Well this is rather slow and disapointing…</p>
+
+<h2 id="numpyvectorize">numpy.vectorize</h2>
+
+<p>Numpy vectorize evaluates the row-wise function over each element of the input numpy array(s). However, note the warning on the <a href="https://numpy.org/doc/stable/reference/generated/numpy.vectorize.html">NumPy documentation</a>:</p>
+<blockquote>
+  <p>The vectorize function is provided primarily for convenience, not for performance. The implementation is essentially a for loop.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>np_vectorize_scalars</td>
+      <td>np.vectorize</td>
+      <td>float64</td>
+      <td>det_sym33_scalars</td>
+      <td>float64</td>
+    </tr>
+    <tr>
+      <td>np_vectorize_array</td>
+      <td>np.vectorize</td>
+      <td>np.ndarray</td>
+      <td>det_sym33_array</td>
+      <td>array</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="scalar-arguments-2">Scalar arguments</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">np_vectorize_scalars</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span>
+        <span class="n">np</span><span class="p">.</span><span class="nf">vectorize</span><span class="p">(</span><span class="n">det_sym33_scalars</span><span class="p">)(</span><span class="n">df</span><span class="p">.</span><span class="n">m11</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m12</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m13</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m22</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m23</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m33</span><span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_scalars</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">np_vectorize_scalars</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_scalars</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0498839 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="numpyndarray-argument-2">numpy.ndarray argument</h3>
+
+<p>In this case we need to add a <code class="language-plaintext highlighter-rouge">signature</code> argument in order to specify the input shape of the row-wise function.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">np_vectorize_array</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span>
+        <span class="n">np</span><span class="p">.</span><span class="nf">vectorize</span><span class="p">(</span><span class="n">det_sym33_array</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="sh">"</span><span class="s">(n)-&gt;()</span><span class="sh">"</span><span class="p">)(</span>
+            <span class="n">df</span><span class="p">[[</span><span class="sh">"</span><span class="s">m11</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m12</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m13</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m22</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m23</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m33</span><span class="sh">"</span><span class="p">]].</span><span class="n">values</span>
+        <span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t_array</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">np_vectorize_array</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t_array</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.2720111 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="comparison-3">Comparison</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">[{</span><span class="sh">"</span><span class="s">scalars</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_scalars</span><span class="p">,</span> <span class="sh">"</span><span class="s">array</span><span class="sh">"</span><span class="p">:</span> <span class="n">t_array</span><span class="p">}],</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="p">.</span><span class="n">T</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">elapsed_time</span><span class="sh">"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">numpy.vectorize() with 2 different argument types</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Argument type</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed time (s)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2022-03-03_01/output_81_0.png" alt="np.vectorize" />
+</p>
+
+<p>The version with scalar arguments is quite interesting, faster than <code class="language-plaintext highlighter-rouge">itertuples</code>.</p>
+
+<h2 id="map">map</h2>
+
+<p>Let’s use the standard <code class="language-plaintext highlighter-rouge">map()</code> Python method.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>map_scalars</td>
+      <td>map</td>
+      <td>float64</td>
+      <td>det_sym33_scalars</td>
+      <td>float64</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">map_scalars</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span>
+        <span class="nf">map</span><span class="p">(</span><span class="n">det_sym33_scalars</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m11</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m12</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m13</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m22</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m23</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m33</span><span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">map_scalars</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0679905 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Performance seems to be similar between <code class="language-plaintext highlighter-rouge">map_scalars</code> and <code class="language-plaintext highlighter-rouge">np_vectorize_scalars.</code></p>
+
+<h2 id="swifter">Swifter</h2>
+
+<p><a href="https://github.com/jmcarpenter2/swifter">Swifter</a> is a “package which efficiently applies any function to a pandas dataframe or series in the fastest available manner”. we use the <code class="language-plaintext highlighter-rouge">raw=True</code> argument. Here is a quote from the <a href="https://github.com/jmcarpenter2/swifter/blob/master/docs/documentation.md">documentation </a>:</p>
+
+<blockquote>
+  <p>raw : bool, default False <br />
+False : passes each row or column as a Series to the function. <br />
+True : the passed function will receive ndarray objects instead. If you are just applying a NumPy reduction function this will achieve much better performance.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>swifter_apply</td>
+      <td>swifter.apply</td>
+      <td>np.ndarray</td>
+      <td>det_sym33_array</td>
+      <td>array</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">swifter_apply</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">.</span><span class="n">swifter</span><span class="p">.</span><span class="nf">progress_bar</span><span class="p">(</span><span class="bp">False</span><span class="p">).</span><span class="nf">apply</span><span class="p">(</span><span class="n">det_sym33_array</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">swifter_apply</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.2725223 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The computation is rather slow, we are probably missing something here and did not use this package correctly?</p>
+
+<h2 id="daskdataframemap_partitions">dask.dataframe.map_partitions</h2>
+
+<p>We tried to use the great <a href="https://github.com/dask/dask">dask</a> library with the <code class="language-plaintext highlighter-rouge">map_partitions</code> method. Unfortunately, we did not completely figure out how to handle the <code class="language-plaintext highlighter-rouge">meta</code> argument. Here is the description from the <a href="https://docs.dask.org/en/stable/generated/dask.dataframe.DataFrame.map_partitions.html">documentation</a>:</p>
+
+<blockquote>
+  <p>meta : pd.DataFrame, pd.Series, dict, iterable, tuple, optional
+   An empty pd.DataFrame or pd.Series that matches the dtypes and column names of the output. This metadata is necessary for many algorithms in dask dataframe to work. For ease of use, some alternative inputs are also available. Instead of a DataFrame, a dict of {name: dtype} or iterable of (name, dtype) can be provided (note that the order of the names should match the order of the columns). Instead of a series, a tuple of (name, dtype) can be used. If not provided, dask will try to infer the metadata. This may lead to unexpected results, so providing meta is recommended. For more information, see dask.dataframe.utils.make_meta.</p>
+</blockquote>
+
+<p>The following implementation does work but there might be more efficient ways to do it…</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>dask_df_map_partitions</td>
+      <td>dd.map_partitions</td>
+      <td>pd.Series</td>
+      <td>det_sym33_series</td>
+      <td>pd.Series</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">dask_df_map_partitions</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+    <span class="n">ddf</span> <span class="o">=</span> <span class="n">dd</span><span class="p">.</span><span class="nf">from_pandas</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">npartitions</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span>
+        <span class="n">ddf</span><span class="p">.</span><span class="nf">map_partitions</span><span class="p">(</span>
+            <span class="n">det_sym33_series</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="p">).</span><span class="nf">compute</span><span class="p">(),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">dask_df_map_partitions</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0254871 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Not so bad but still slower than Pandas built_in vectorization. Here is what can be found on <a href="https://docs.dask.org/en/stable/generated/dask.dataframe.from_pandas.html?highlight=from_pandas">dask’s documentaion</a>:</p>
+<blockquote>
+  <p>Note that, despite parallelism, Dask.dataframe may not always be faster than Pandas. We recommend that you stay with Pandas for as long as possible before switching to Dask.dataframe.</p>
+</blockquote>
+
+<p>Also, we guess that there might be a dataframe copy from Pandas to Dask? This method is probably more recommended when dealing with very large dataframes distributed on clusters.</p>
+
+<h2 id="polarsdataframeapply">polars.DataFrame.apply</h2>
+
+<p><a href="https://github.com/pola-rs/polars">Polars</a> is a fast multi-threaded DataFrame library written in Rust but also available in Python and Node.js. Here we are going to use <code class="language-plaintext highlighter-rouge">DataFrame.apply()</code> which allows to apply a custom function over the rows of a Polars dataFrame. The rows are passed as tuple. However, note this warning from Polars’ <a href="https://pola-rs.github.io/polars/py-polars/html/reference/api/polars.DataFrame.apply.html">documentation</a>:</p>
+<blockquote>
+  <p>Beware, this is slow.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>function name</th>
+      <th>method</th>
+      <th>returning rows as</th>
+      <th>row-wise function</th>
+      <th>argument type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>polars_apply</td>
+      <td>polars.DataFrame.apply()</td>
+      <td>tuple</td>
+      <td>det_sym33_array</td>
+      <td>array</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">polars_apply</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">df_pl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">.</span><span class="nf">from_pandas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">det_pl</span> <span class="o">=</span> <span class="n">df_pl</span><span class="p">.</span><span class="nf">apply</span><span class="p">(</span><span class="n">det_sym33_array</span><span class="p">)</span>
+    <span class="n">det_pd</span> <span class="o">=</span> <span class="n">det_pl</span><span class="p">.</span><span class="nf">to_pandas</span><span class="p">()[</span><span class="sh">"</span><span class="s">apply</span><span class="sh">"</span><span class="p">]</span>
+    <span class="n">det_pd</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">index</span>
+    <span class="n">det_pd</span><span class="p">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">return</span> <span class="n">det_pd</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">polars_apply</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0902959 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This is not so bad but one can wonder if a large part of the elapsed time is not spent converting the dataframe from Pandas to Polars and backward. Let’s measure the elepased time per line with a line profiler:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">lprun</span> <span class="o">-</span><span class="n">f</span> <span class="n">polars_apply</span> <span class="nf">polars_apply</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Timer unit: 1e-06 s
+
+Total time: 0.229353 s
+File: /tmp/ipykernel_16266/3940900507.py
+Function: polars_apply at line 1
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+     1                                           def polars_apply(df):
+     2         1       6545.0   6545.0      2.9      df_pl = pl.from_pandas(df)
+     3         1     221243.0 221243.0     96.5      det_pl = df_pl.apply(det_sym33_array)
+     4         1       1542.0   1542.0      0.7      det_pd = det_pl.to_pandas()["apply"]
+     5         1         14.0     14.0      0.0      det_pd.index = df.index
+     6         1          9.0      9.0      0.0      det_pd.name = None
+     7         1          0.0      0.0      0.0      return det_pd
+</code></pre></div></div>
+
+<p>Most of the time is actually spent within the <code class="language-plaintext highlighter-rouge">apply</code> method. However, we believe that there is a copy process in the <code class="language-plaintext highlighter-rouge">from_pandas</code> step, which would not be not optimal regarding memory usage?</p>
+
+<h2 id="polars-vectorize">Polars vectorize</h2>
+
+<p>We can also use Polars built-in vectorization the same way we did with Pandas. This does not make use of the previous row-wise functions.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">polars_vectorize</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">df_pl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">.</span><span class="nf">from_pandas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">det_pl</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df_pl</span><span class="p">.</span><span class="n">m11</span> <span class="o">*</span> <span class="p">(</span><span class="n">df_pl</span><span class="p">.</span><span class="n">m22</span> <span class="o">*</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m33</span> <span class="o">-</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m12</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m23</span> <span class="o">*</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m13</span> <span class="o">-</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m12</span> <span class="o">*</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m33</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m22</span> <span class="o">*</span> <span class="n">df_pl</span><span class="p">.</span><span class="n">m13</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+    <span class="n">det_pd</span> <span class="o">=</span> <span class="n">det_pl</span><span class="p">.</span><span class="nf">to_frame</span><span class="p">().</span><span class="nf">to_pandas</span><span class="p">()[</span><span class="sh">"</span><span class="s">m11</span><span class="sh">"</span><span class="p">]</span>
+    <span class="n">det_pd</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">index</span>
+    <span class="n">det_pd</span><span class="p">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">return</span> <span class="n">det_pd</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">polars_vectorize</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0090223 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>If we run the line profiler, we can observe that most of the elapsed time is now spent converting the dataframe between Pandas and polars:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">lprun</span> <span class="o">-</span><span class="n">f</span> <span class="n">polars_vectorize</span> <span class="nf">polars_vectorize</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Timer unit: 1e-06 s
+
+Total time: 0.014961 s
+File: /tmp/ipykernel_16266/1430159236.py
+Function: polars_vectorize at line 1
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+     1                                           def polars_vectorize(df):
+     2         1       7295.0   7295.0     48.8      df_pl = pl.from_pandas(df)
+     3         1          1.0      1.0      0.0      det_pl = (
+     4         3       2915.0    971.7     19.5          df_pl.m11 * (df_pl.m22 * df_pl.m33 - df_pl.m23**2)
+     5         1        551.0    551.0      3.7          + df_pl.m12 * (2.0 * df_pl.m23 * df_pl.m13 - df_pl.m12 * df_pl.m33)
+     6         1       2363.0   2363.0     15.8          - df_pl.m22 * df_pl.m13**2
+     7                                               )
+     8         1       1807.0   1807.0     12.1      det_pd = det_pl.to_frame().to_pandas()["m11"]
+     9         1         17.0     17.0      0.1      det_pd.index = df.index
+    10         1         11.0     11.0      0.1      det_pd.name = None
+    11         1          1.0      1.0      0.0      return det_pd
+</code></pre></div></div>
+
+<h2 id="numba">Numba</h2>
+
+<p><a href="https://numba.pydata.org/">Numba</a> makes Python code fast! Here we use the Numba <code class="language-plaintext highlighter-rouge">@jit</code> decorator with <code class="language-plaintext highlighter-rouge">nogil=True</code> for the Numba dedicated row-wise function. In the <code class="language-plaintext highlighter-rouge">apply_func_numba</code> function, we basically implement the loop over the dataframe rows.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span>
+    <span class="nf">float64</span><span class="p">(</span><span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="n">nogil</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">det_sym33_numba</span><span class="p">(</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">,</span> <span class="n">m13</span><span class="p">,</span> <span class="n">m22</span><span class="p">,</span> <span class="n">m23</span><span class="p">,</span> <span class="n">m33</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="n">m11</span> <span class="o">*</span> <span class="p">(</span><span class="n">m22</span> <span class="o">*</span> <span class="n">m33</span> <span class="o">-</span> <span class="n">m23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">m12</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">m23</span> <span class="o">*</span> <span class="n">m13</span> <span class="o">-</span> <span class="n">m12</span> <span class="o">*</span> <span class="n">m33</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">m22</span> <span class="o">*</span> <span class="n">m13</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">apply_func_numba</span><span class="p">(</span><span class="n">col_m11</span><span class="p">,</span> <span class="n">col_m12</span><span class="p">,</span> <span class="n">col_m13</span><span class="p">,</span> <span class="n">col_m22</span><span class="p">,</span> <span class="n">col_m23</span><span class="p">,</span> <span class="n">col_m33</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">col_m11</span><span class="p">)</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="sh">"</span><span class="s">float64</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_numba</span><span class="p">(</span>
+            <span class="n">col_m11</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m12</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m13</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m22</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m23</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m33</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">det</span>
+
+
+<span class="k">def</span> <span class="nf">numba_loop</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="nf">apply_func_numba</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m11</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m12</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m13</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m22</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m23</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m33</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">numba_loop</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0002950 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Well this is the fastest implementation so far.</p>
+
+<h2 id="numba-parallel">Numba parallel</h2>
+
+<p>Now we use the Numba <code class="language-plaintext highlighter-rouge">@njit</code> decorator along with <code class="language-plaintext highlighter-rouge">prange</code> looping. By default, all available cores are used. The previous row-wise function <code class="language-plaintext highlighter-rouge">apply_func_numba</code> is used here.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">apply_func_numba_para</span><span class="p">(</span><span class="n">col_m11</span><span class="p">,</span> <span class="n">col_m12</span><span class="p">,</span> <span class="n">col_m13</span><span class="p">,</span> <span class="n">col_m22</span><span class="p">,</span> <span class="n">col_m23</span><span class="p">,</span> <span class="n">col_m33</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">col_m11</span><span class="p">)</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="sh">"</span><span class="s">float64</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">prange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nf">det_sym33_numba</span><span class="p">(</span>
+            <span class="n">col_m11</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m12</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m13</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m22</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m23</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">col_m33</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">det</span>
+
+
+<span class="k">def</span> <span class="nf">numba_loop_para</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="nf">apply_func_numba_para</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m11</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m12</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m13</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m22</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m23</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+        <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">m33</span><span class="sh">"</span><span class="p">].</span><span class="nf">to_numpy</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nc">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">numba_loop_para</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0002439 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The parallel version is not a large improvement over the sequantial Numba version. This might be because of the relatively small size of the dataframe.</p>
+
+<h2 id="cython">Cython</h2>
+
+<p><a href="https://cython.org/">Cython</a> is a mix between C and Python. Writing Cython code is a little more involving than writing pure Python. Note that in the following we used <code class="language-plaintext highlighter-rouge">%%cython</code> magic command at the begining of the notebook cell to compile the Cython code (also we loaded the Cython extension at the begining of the notebook).</p>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span>
+
+<span class="kn">cimport</span> <span class="nn">cython</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+
+<span class="nd">@cython.binding</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.initializedcheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span> 
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">loop_cython</span><span class="p">(</span><span class="kt">double</span><span class="p">[:]</span> <span class="n">det</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m11</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m12</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m13</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m22</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m23</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m33</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+
+    <span class="k">cdef</span> <span class="kt">Py_ssize_t</span> <span class="n">i</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m11</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">m11</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="kt">m22</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m33</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">m23</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">m12</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">m23</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m13</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">m12</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m33</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="n">m22</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m13</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+
+        
+<span class="k">cpdef</span> <span class="nf">cython_loop</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros_like</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">m11</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="nf">loop_cython</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m11</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m12</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m13</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m22</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m23</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m33</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nf">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">cython_loop</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0004649 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_series_equal</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">det_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This is not as fast as Numba but close.</p>
+
+<h2 id="cython-parallel">Cython parallel</h2>
+
+<p>Similarly to what we did with Numba, we use here the <code class="language-plaintext highlighter-rouge">prange</code> looping function. Here is a quote from the <a href="https://cython.readthedocs.io/en/latest/src/userguide/parallelism.html">documentation</a>:</p>
+
+<blockquote>
+  <p>cython.parallel.prange([start,] stop[, step][, nogil=False][, schedule=None[, chunksize=None]][, num_threads=None])<br />
+This function can be used for parallel loops. OpenMP automatically starts a thread pool and distributes the work according to the schedule used.
+Thread-locality and reductions are automatically inferred for variables.</p>
+</blockquote>
+
+<div class="language-cython highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">cython</span> <span class="o">--</span><span class="nb">compile</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">fopenmp</span> <span class="o">--</span><span class="n">link</span><span class="o">-</span><span class="n">args</span><span class="o">=-</span><span class="n">fopenmp</span>
+
+<span class="kn">cimport</span> <span class="nn">cython</span>
+<span class="kn">from</span> <span class="n">cython.parallel</span> <span class="kn">import</span> <span class="n">prange</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+
+<span class="nd">@cython.binding</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@cython.initializedcheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span> 
+<span class="k">cdef</span> <span class="kt">void</span> <span class="nf">loop_cython_para</span><span class="p">(</span><span class="kt">double</span><span class="p">[:]</span> <span class="n">det</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m11</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m12</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m13</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m22</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m23</span><span class="p">,</span> <span class="kt">double</span><span class="p">[:]</span> <span class="n">m33</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span>
+
+    <span class="k">cdef</span> <span class="kt">Py_ssize_t</span> <span class="n">i</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">prange</span><span class="p">(</span><span class="n">m11</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="k">nogil</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">m11</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="kt">m22</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m33</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">m23</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">m12</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">m23</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m13</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">m12</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m33</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="n">m22</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">m13</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+
+        
+<span class="k">cpdef</span> <span class="nf">cython_loop_para</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros_like</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">m11</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="nf">loop_cython_para</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m11</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m12</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m13</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m22</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m23</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">df</span><span class="p">.</span><span class="n">m33</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="p">.</span><span class="nf">Series</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">det</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">cython_loop_para</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Elapsed time: </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="mf">8.7</span><span class="n">f</span><span class="si">}</span><span class="s"> s</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Elapsed time: 0.0003041 s
+</code></pre></div></div>
+
+<p>The parallel version is a little faster that the sequential one but we should test it on larger dataframes.</p>
+
+<h2 id="global-comparison">Global comparison</h2>
+
+<p>We start by comparing all methods over small size dataframes.</p>
+
+<h3 id="small-size-dataframes">Small size dataframes</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">compare_all_methods</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">df_sizes</span><span class="p">):</span>
+
+    <span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="sh">"</span><span class="s">m11</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m12</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m13</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m22</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m23</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">m33</span><span class="sh">"</span><span class="p">]</span>
+    <span class="n">time_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">df_sizes</span><span class="p">:</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">rng</span><span class="p">.</span><span class="nf">random</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">6</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nf">timing</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">func</span><span class="p">.</span><span class="n">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="n">df_tmp</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">time_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">((</span><span class="n">time_df</span><span class="p">,</span> <span class="n">df_tmp</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">time_df</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">pandas_vectorize</span><span class="p">,</span>
+    <span class="n">iterrows_array</span><span class="p">,</span>
+    <span class="n">apply_array</span><span class="p">,</span>
+    <span class="n">itertuples_scalars</span><span class="p">,</span>
+    <span class="n">np_apply_along_axis</span><span class="p">,</span>
+    <span class="n">np_vectorize_scalars</span><span class="p">,</span>
+    <span class="n">map_scalars</span><span class="p">,</span>
+    <span class="n">swifter_apply</span><span class="p">,</span>
+    <span class="n">dask_df_map_partitions</span><span class="p">,</span>
+    <span class="n">polars_apply</span><span class="p">,</span>
+    <span class="n">polars_vectorize</span><span class="p">,</span>
+    <span class="n">numba_loop</span><span class="p">,</span>
+    <span class="n">numba_loop_para</span><span class="p">,</span>
+    <span class="n">cython_loop</span><span class="p">,</span>
+    <span class="n">cython_loop_para</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="n">time_df</span> <span class="o">=</span> <span class="nf">compare_all_methods</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">df_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">1_000</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">])</span>
+<span class="n">c_max</span> <span class="o">=</span> <span class="n">time_df</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">c_max</span> <span class="o">=</span> <span class="n">c_max</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">columns</span> <span class="o">=</span> <span class="n">c_max</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">()</span>
+<span class="n">time_df</span> <span class="o">=</span> <span class="n">time_df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">time_df</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">stacked</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">logy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mf">1.0e-5</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Timing comparison of various dataframe looping methods</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Dataframe length</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed_time [s] (log scale)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2022-03-03_01/output_129_0.png" alt="Timings small 1" />
+</p>
+
+<p>Only the Numba and Cython methods are significantly faster than Pandas’ built_in vectorization (<code class="language-plaintext highlighter-rouge">pandas_vectorize</code>)!</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pd</span><span class="p">.</span><span class="n">options</span><span class="p">.</span><span class="n">display</span><span class="p">.</span><span class="n">float_format</span> <span class="o">=</span> <span class="sh">"</span><span class="s">{:,.2e}</span><span class="sh">"</span><span class="p">.</span><span class="nb">format</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">time_df</span><span class="p">.</span><span class="n">T</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1000</th>
+      <th>10000</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>iterrows_array</th>
+      <td>2.50e-02</td>
+      <td>2.76e-01</td>
+    </tr>
+    <tr>
+      <th>swifter_apply</th>
+      <td>4.08e-03</td>
+      <td>4.41e-02</td>
+    </tr>
+    <tr>
+      <th>apply_array</th>
+      <td>3.56e-03</td>
+      <td>3.75e-02</td>
+    </tr>
+    <tr>
+      <th>np_apply_along_axis</th>
+      <td>2.79e-03</td>
+      <td>3.71e-02</td>
+    </tr>
+    <tr>
+      <th>dask_df_map_partitions</th>
+      <td>1.11e-02</td>
+      <td>1.92e-02</td>
+    </tr>
+    <tr>
+      <th>itertuples_scalars</th>
+      <td>1.66e-03</td>
+      <td>1.56e-02</td>
+    </tr>
+    <tr>
+      <th>polars_apply</th>
+      <td>2.82e-03</td>
+      <td>1.21e-02</td>
+    </tr>
+    <tr>
+      <th>map_scalars</th>
+      <td>9.42e-04</td>
+      <td>9.08e-03</td>
+    </tr>
+    <tr>
+      <th>np_vectorize_scalars</th>
+      <td>7.03e-04</td>
+      <td>6.39e-03</td>
+    </tr>
+    <tr>
+      <th>polars_vectorize</th>
+      <td>2.39e-03</td>
+      <td>2.30e-03</td>
+    </tr>
+    <tr>
+      <th>pandas_vectorize</th>
+      <td>1.50e-03</td>
+      <td>1.52e-03</td>
+    </tr>
+    <tr>
+      <th>numba_loop_para</th>
+      <td>1.68e-04</td>
+      <td>1.84e-04</td>
+    </tr>
+    <tr>
+      <th>cython_loop_para</th>
+      <td>1.43e-04</td>
+      <td>1.81e-04</td>
+    </tr>
+    <tr>
+      <th>cython_loop</th>
+      <td>1.06e-04</td>
+      <td>1.20e-04</td>
+    </tr>
+    <tr>
+      <th>numba_loop</th>
+      <td>8.01e-05</td>
+      <td>9.84e-05</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="medium-to-large-size-dataframes">Medium to large size dataframes</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">pandas_vectorize</span><span class="p">,</span>
+    <span class="n">numba_loop</span><span class="p">,</span>
+    <span class="n">numba_loop_para</span><span class="p">,</span>
+    <span class="n">cython_loop</span><span class="p">,</span>
+    <span class="n">cython_loop_para</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="n">time_df</span> <span class="o">=</span> <span class="nf">compare_all_methods</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">df_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">1_000_000</span><span class="p">,</span> <span class="mi">10_000_000</span><span class="p">])</span>
+<span class="n">c_max</span> <span class="o">=</span> <span class="n">time_df</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">c_max</span> <span class="o">=</span> <span class="n">c_max</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">columns</span> <span class="o">=</span> <span class="n">c_max</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">()</span>
+<span class="n">time_df</span> <span class="o">=</span> <span class="n">time_df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">time_df</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">stacked</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">logy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mf">1.0e-5</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Timing comparison of various dataframe looping methods</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Dataframe length</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed_time [s] (log scale)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2022-03-03_01/output_133_0.png" alt="Timings large 1" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">time_df</span><span class="p">.</span><span class="n">T</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1000000</th>
+      <th>10000000</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>pandas_vectorize</th>
+      <td>3.95e-02</td>
+      <td>4.10e-01</td>
+    </tr>
+    <tr>
+      <th>numba_loop</th>
+      <td>3.92e-03</td>
+      <td>7.33e-02</td>
+    </tr>
+    <tr>
+      <th>cython_loop</th>
+      <td>4.40e-03</td>
+      <td>5.29e-02</td>
+    </tr>
+    <tr>
+      <th>cython_loop_para</th>
+      <td>3.21e-03</td>
+      <td>3.55e-02</td>
+    </tr>
+    <tr>
+      <th>numba_loop_para</th>
+      <td>2.35e-03</td>
+      <td>2.53e-02</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Let’s focus on the Numba and Cython methods.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">numba_loop</span><span class="p">,</span>
+    <span class="n">numba_loop_para</span><span class="p">,</span>
+    <span class="n">cython_loop</span><span class="p">,</span>
+    <span class="n">cython_loop_para</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">out</span> <span class="o">=</span> <span class="n">perfplot</span><span class="p">.</span><span class="nf">bench</span><span class="p">(</span>
+    <span class="n">setup</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">rng</span><span class="p">.</span><span class="nf">random</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">6</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">),</span>
+    <span class="n">kernels</span><span class="o">=</span><span class="p">[(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">func</span><span class="p">)(</span><span class="n">df</span><span class="p">)</span> <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="n">func</span><span class="p">.</span><span class="n">__name__</span> <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">],</span>
+    <span class="n">n_range</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="o">**</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">)],</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_timings</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">12</span><span class="p">)):</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">out</span><span class="p">.</span><span class="n">labels</span>
+    <span class="n">ms</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+        <span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="sh">"</span><span class="s">o-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+    <span class="n">markers</span> <span class="o">=</span> <span class="nf">cycle</span><span class="p">(</span>
+        <span class="p">(</span><span class="sh">""</span><span class="p">,</span> <span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">v</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">^</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">&lt;</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">&gt;</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">s</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">p</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">P</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">*</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">X</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">D</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">ax</span><span class="p">.</span><span class="nf">get_lines</span><span class="p">()):</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="nf">next</span><span class="p">(</span><span class="n">markers</span><span class="p">)</span>
+        <span class="n">line</span><span class="p">.</span><span class="nf">set_marker</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="sh">"</span><span class="s">on</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Timing comparison of various dataframe looping methods</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Dataframe length (log scale)</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Elapsed_time [s] (log scale)</span><span class="sh">"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="nf">plot_timings</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2022-03-03_01/output_137_0.png" alt="Timings large 2" />
+</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Pandas built-in vectorization is a very good solution when possible. If we want to be faster with no extra pain, Numba is the best solution. Cython is about as fast as Numba, flexible, but more involving.</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

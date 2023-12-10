@@ -1,0 +1,565 @@
+<h1 id="letour-data-set">LeTour data set</h1>
+<p>This file downloads raw data about every rider of every Tour de France (from 1903 up to 2020). This data will then be postprocessed and stored in CSV format.
+Executing this notebook might take some minutes.</p>
+
+<h2 id="1-retrieve-urls-for-data-extract">1) Retrieve urls for data extract</h2>
+<p>First we generate the urls that we need to download the raw HTML pages from the <code class="language-plaintext highlighter-rouge">letour.fr</code> website to work offline from here on. The dataframe dflink will stores the respective url for each year.
+Take a look at <code class="language-plaintext highlighter-rouge">view-source:https://www.letour.fr/en/history</code> (at around line 1143-1890).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span>
+<span class="kn">import</span> <span class="n">subprocess</span>
+<span class="kn">import</span> <span class="n">collections</span>
+<span class="kn">import</span> <span class="n">re</span>
+<span class="kn">from</span> <span class="n">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="n">time</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">requests</span>
+<span class="kn">from</span> <span class="n">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PREFIX</span> <span class="o">=</span> <span class="sh">'</span><span class="s">http://www.letour.fr</span><span class="sh">'</span>
+<span class="n">HISTORYPAGE</span> <span class="o">=</span> <span class="sh">'</span><span class="s">https://www.letour.fr/en/history</span><span class="sh">'</span>
+
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="sh">'</span><span class="s">Accept</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">text/html</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">User-Agent</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">python-requests/1.2.0</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">Accept-Charset</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">utf-8</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">accept-encoding</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">deflate, br</span><span class="sh">'</span><span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">resulthistpage</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">HISTORYPAGE</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+<span class="n">souphistory</span> <span class="o">=</span> <span class="nc">BeautifulSoup</span><span class="p">(</span><span class="n">resulthistpage</span><span class="p">.</span><span class="n">text</span><span class="p">,</span> <span class="sh">'</span><span class="s">html.parser</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Find select tag for histo links
+</span><span class="n">select_tag_histo</span> <span class="o">=</span> <span class="n">souphistory</span><span class="p">.</span><span class="nf">find_all</span><span class="p">(</span><span class="sh">"</span><span class="s">button</span><span class="sh">"</span><span class="p">,{</span><span class="sh">"</span><span class="s">class</span><span class="sh">"</span> <span class="p">:</span><span class="sh">"</span><span class="s">dateTabs__link</span><span class="sh">"</span><span class="p">})</span>
+
+<span class="n">LH</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="sh">"</span><span class="s">data-tabs-ajax</span><span class="sh">"</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">select_tag_histo</span><span class="p">]</span>
+
+<span class="n">dflink</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">({</span><span class="sh">'</span><span class="s">TDFHistorylink</span><span class="sh">'</span><span class="p">:</span><span class="n">LH</span><span class="p">})</span>
+<span class="n">dflink</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>TDFHistorylink</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>/en/block/history/10707/d0ab6a216569236433268b...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>/en/block/history/10708/0b76b8f809ad5d8bcf3579...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>/en/block/history/10709/c5f53ced72a23f333cc186...</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>/en/block/history/10710/ead1d1704b1600c795619e...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>/en/block/history/10711/f558d3bc819c8ee5dc627d...</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>102</th>
+      <td>/en/block/history/10809/7be3a459d846b4672915c5...</td>
+    </tr>
+    <tr>
+      <th>103</th>
+      <td>/en/block/history/10810/7035a5dc53631209d3581f...</td>
+    </tr>
+    <tr>
+      <th>104</th>
+      <td>/en/block/history/11818/f34c3404d95a697dcf77d4...</td>
+    </tr>
+    <tr>
+      <th>105</th>
+      <td>/en/block/history/11819/96c0eb3fa403ebf222f28b...</td>
+    </tr>
+    <tr>
+      <th>106</th>
+      <td>/en/block/history/11820/17fa8e795e69e9f326ea26...</td>
+    </tr>
+  </tbody>
+</table>
+<p>107 rows × 1 columns</p>
+</div>
+
+<h2 id="2-get-data-from-html-pages-and-convert-results-to-dataframes">2) Get data from HTML pages and convert results to dataframes</h2>
+
+<h3 id="21-create-function-that-convert-hhh-mm-ss-to-seconds">2.1) Create function that convert HHh mm’ ss’’ to seconds</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">calcTotalSeconds</span><span class="p">(</span><span class="n">row</span><span class="p">,</span><span class="n">mode</span><span class="p">):</span>
+
+   <span class="n">val</span> <span class="o">=</span> <span class="nf">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="nf">int</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nf">zip</span><span class="p">([</span><span class="mi">3600</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">row</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span><span class="sh">"</span><span class="s">:</span><span class="sh">"</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"'"</span><span class="p">,</span><span class="sh">"</span><span class="s">:</span><span class="sh">"</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">'"'</span><span class="p">,</span><span class="sh">'</span><span class="s">:</span><span class="sh">'</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">,</span><span class="sh">""</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s">+</span><span class="sh">"</span><span class="p">,</span><span class="sh">""</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">,</span><span class="sh">"</span><span class="s">0</span><span class="sh">"</span><span class="p">).</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="s">:</span><span class="sh">"</span><span class="p">)))</span>
+   
+   <span class="nf">if </span><span class="p">((</span><span class="n">mode</span><span class="o">==</span><span class="sh">'</span><span class="s">Gap</span><span class="sh">'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">180000</span><span class="p">)</span> <span class="p">:</span>
+        <span class="n">val</span><span class="o">=</span><span class="mi">0</span>
+    
+   <span class="k">return</span> <span class="n">val</span>
+</code></pre></div></div>
+
+<h3 id="22-create-a-function-that-will-retrieve-elements-from-a-source-html-page-located-on-an-input-url">2.2) Create a function that will retrieve elements from a source HTML page located on an input url</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">getstagesNrank</span><span class="p">(</span><span class="n">i_url</span><span class="p">):</span>
+    <span class="n">resultfull</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">i_url</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">resultfull</span><span class="p">.</span><span class="n">text</span>
+    <span class="n">resultstatus</span> <span class="o">=</span> <span class="n">resultfull</span><span class="p">.</span><span class="n">status_code</span>
+    
+    <span class="nf">print</span><span class="p">(</span><span class="n">i_url</span> <span class="o">+</span> <span class="sh">'</span><span class="s"> ==&gt; HTTP STATUS = </span><span class="sh">'</span> <span class="o">+</span> <span class="nf">str</span><span class="p">(</span><span class="n">resultstatus</span><span class="p">))</span>
+    
+    <span class="n">soup</span> <span class="o">=</span> <span class="nc">BeautifulSoup</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="sh">'</span><span class="s">html.parser</span><span class="sh">'</span><span class="p">)</span>  
+    <span class="n">h</span><span class="o">=</span><span class="n">soup</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="sh">'</span><span class="s">h3</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">year</span><span class="o">=</span><span class="nf">int</span><span class="p">(</span><span class="n">h</span><span class="p">.</span><span class="n">text</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:])</span>
+
+    <span class="c1"># Find select tag
+</span>    <span class="n">select_tag</span> <span class="o">=</span> <span class="n">soup</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="sh">"</span><span class="s">select</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="c1"># find all option tag inside select tag
+</span>    <span class="n">options</span> <span class="o">=</span> <span class="n">select_tag</span><span class="p">.</span><span class="nf">find_all</span><span class="p">(</span><span class="sh">"</span><span class="s">option</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="sh">'</span><span class="s">Year</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">TotalTDFDistance</span><span class="sh">'</span><span class="p">,</span><span class="sh">'</span><span class="s">Stage</span><span class="sh">'</span><span class="p">]</span>
+    <span class="n">lst</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1">#search for stages
+</span>    <span class="n">distance</span><span class="o">=</span><span class="n">soup</span><span class="p">.</span><span class="nf">select</span><span class="p">(</span><span class="sh">"</span><span class="s">[class~=statsInfos__number]</span><span class="sh">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">].</span><span class="n">contents</span>
+               
+    <span class="c1">#search for distance of the TDF edition
+</span>    <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+       <span class="n">lst</span><span class="p">.</span><span class="nf">append</span><span class="p">([</span><span class="n">year</span><span class="p">,</span><span class="nf">int</span><span class="p">(</span><span class="n">distance</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">,</span><span class="sh">""</span><span class="p">)),</span><span class="n">option</span><span class="p">.</span><span class="n">text</span><span class="p">])</span>
+               
+    <span class="n">dfstages</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
+    
+    
+    <span class="c1"># Find select tag for ranking racers
+</span>    <span class="n">rankingTable</span> <span class="o">=</span> <span class="n">soup</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="sh">"</span><span class="s">table</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">dfrank</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_html</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">rankingTable</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">Year</span><span class="sh">'</span><span class="p">]</span><span class="o">=</span><span class="n">year</span>
+    <span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">Distance (km)</span><span class="sh">'</span><span class="p">]</span><span class="o">=</span><span class="nf">int</span><span class="p">(</span><span class="n">distance</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s"> </span><span class="sh">"</span><span class="p">,</span><span class="sh">""</span><span class="p">))</span>
+    <span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">Number of stages</span><span class="sh">'</span><span class="p">]</span><span class="o">=</span><span class="nf">len</span><span class="p">(</span><span class="n">dfstages</span><span class="p">)</span>
+    <span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">TotalSeconds</span><span class="sh">'</span><span class="p">]</span><span class="o">=</span><span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">Times</span><span class="sh">'</span><span class="p">].</span><span class="nf">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="nf">calcTotalSeconds</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="sh">'</span><span class="s">Total</span><span class="sh">'</span><span class="p">))</span>
+    <span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">GapSeconds</span><span class="sh">'</span><span class="p">]</span><span class="o">=</span><span class="n">dfrank</span><span class="p">[</span><span class="sh">'</span><span class="s">Gap</span><span class="sh">'</span><span class="p">].</span><span class="nf">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="nf">calcTotalSeconds</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="sh">'</span><span class="s">Gap</span><span class="sh">'</span><span class="p">))</span>
+
+    
+    <span class="k">return</span> <span class="n">dfstages</span><span class="p">,</span> <span class="n">dfrank</span>
+</code></pre></div></div>
+
+<h3 id="23-loop-on-the-dflink-dataframe-to-get-data-from-each-url-source">2.3) Loop on the dflink dataframe to get data from each url source</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dfstagesres</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">dfstagesrestmp</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">dfrankres</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">dfrankrestmp</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">dfrankoutput</span><span class="o">=</span><span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span>  <span class="ow">in</span> <span class="n">dflink</span><span class="p">.</span><span class="nf">iterrows</span><span class="p">():</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">PREFIX</span><span class="o">+</span><span class="n">row</span><span class="p">[</span><span class="sh">'</span><span class="s">TDFHistorylink</span><span class="sh">'</span><span class="p">]</span>
+    <span class="k">try</span> <span class="p">:</span>
+      <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">12</span> <span class="p">:</span>  <span class="c1"># limit from 1919 (data need to be cleaned a little bit more before that)
+</span>        <span class="n">dfstagesres</span><span class="p">,</span> <span class="n">dfrankres</span><span class="o">=</span><span class="nf">getstagesNrank</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">dfstagesrestmp</span><span class="o">=</span> <span class="n">dfstagesres</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">dfstagesrestmp</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>  
+        <span class="n">dfrankrestmp</span><span class="o">=</span><span class="n">dfrankres</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">dfrankrestmp</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        
+        
+    <span class="k">except</span><span class="p">:</span>
+      <span class="k">raise</span>
+
+    
+<span class="n">dfstageoutput</span><span class="o">=</span><span class="n">dfstagesrestmp</span>
+<span class="n">dfrankoutput</span><span class="o">=</span><span class="n">dfrankrestmp</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://www.letour.fr/en/block/history/10719/f15cf81b7599ea113d2b1d614f73bf83 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10720/53ac40095834ae1aae5d197aa730799a ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10721/c663ba39ac60d58c55a1a787a23025fc ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10722/cc5d0ba48a5d9bd9ee5e222160452b6f ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10723/9212137527c3f19c0cfccd1d07d80649 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10724/61621b1b7012e711ae7457a04e123aab ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10725/326ccc005b547ad2ad33e2fc03d27159 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10726/417b583aab876fdb00496da5c2be1a7d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10727/0ab2dd4f425fcdcb9cc0a1511f49c494 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10728/58abb1c5f80d5d1b088ead3c32a5a815 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10729/323ab10f97b3b3b6c865b63dcecf7e88 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10730/9047f2218cebb70010ff9fc50585e204 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10731/71efd6183471464d6be619275e187eee ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10732/994e5d74cdaede876fec2b451051c8e1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10733/be923012b4124a9bd0991212e9977d42 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10734/aed1c90b119f634ebc5d1e7e6a671faf ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10735/05bd6d64c780c558f7ffd7bd5879c776 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10736/53cfbe0f209af0e4d92fff714bf2f18d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10737/c40634701bbc32655fc85bb3ddde49f5 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10738/c2d7990fb2a094d495e11e8098c59c51 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10739/e8866f6cc4d0163829c95efc4a729463 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10740/c5548896e2ae8715122b3989d3ed76b1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10741/a722302e475af7214500f16e424e25d0 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10742/dfaf06d272727e8b57b63f72fcdbafa8 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10743/5a9ece659139988007c4e0f6f9fc5c20 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10744/367ba379f6d341a7bdc545a122d3c78d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10745/7381958972518a9845edee052c8edbfc ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10746/45ef03cc5c64c264bf96bf08d4384d3d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10747/98d1ca2953df385a9bc1c7b1b4749b2b ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10748/1f6f715544c4aec948adcb4085900c4c ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10749/a896b855e40db82c92217ccdd5532cdb ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10750/e072737429413b7d608e99db5313b13e ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10751/bb0f8df099b6e1f53064105d9e789f1f ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10752/cb437a1a3262575de6df27be96d2cd55 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10753/e890ae42c19946e34da655a909f98bfe ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10754/1e38a3d734b196c4f8ac6ba7063b218b ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10755/ff596257302baac39a22e1f2e4faf016 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10756/89a04a27336b19dfe4d6a4ea2ee46582 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10757/a7983332f5a930e28087ae63a7874475 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10758/56a4797d820f12ec56f06298fab868b9 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10759/07dc37874db6b049e640b253672cf299 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10760/3b171e28d17eb88dbb829f02a9fb3709 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10761/c3e23b93c3d11a653857785d1136ffb6 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10762/e5cba06222169e8ea482b253c93fd5b9 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10763/adf45f6a131be9ab505e4d0f100418f7 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10764/9be91c73090072a334e97ec5d9b692b2 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10765/1602abcaab318c332c1479ecd27154e1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10766/5f1300708ea73ac042645afd5da10e29 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10767/62b2104a378309ef9ac5acc908e600df ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10768/12626d9920ed70ad18cdc7869e493ee0 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10769/9184e05910d640ad1af5cccc9321adbb ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10770/0b714daa83b004421e81d0ef62c8c0f3 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10771/395c856712f93e5289971151df458a61 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10772/3108137894d31c631408c1e2ac5510bb ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10773/ad0e4cf5a083a40d11bb15d1404559ed ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10774/5a2702b95bc1f297980241915b0c0eee ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10775/6365159573723beb801f343a6efb4763 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10776/1d486875bf13f11f37a63ee3a773ccc9 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10777/f1773d9b0704ed89afad4012905ec744 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10778/8845310ec3c8145620ac465f3e112cca ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10779/db843b1682239241b56010705153d657 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10780/fce0b5e49551473911dadd219da7cb6c ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10781/39d1113fcd9febaf891760301f41a383 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10782/c5cd539d3aed4897b7a087c06fff4e5e ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10783/0d7fef284362baf0738e2569898bcc5c ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10784/840372b1c5ef49ced963d12709d2bfe1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10785/88ea8997b2d00f171d74fdd18200c4ac ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10786/97ba8b33489f910f7217ee3f6bdd68c7 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10787/1a04d3c53ae89dcdf73df8027654c1db ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10788/d98288396c5dbd8446699ad88413632b ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10789/0073016ba550a84a666f752c64bafef8 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10790/ba6803b7f72483da9dcef054d3564bef ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10791/70c111aba67f7f32344852fc369f445d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10792/f892bbc452142340a7dfe883719d7637 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10793/532062cd8f6afe8ec3796beeee9fb60d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10794/f456958e5bf979def96740c09a39f0d0 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10795/0ed86366456d46e1defebebcedef4404 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10796/a0c4bbd9f74d2fb237f3fcfd985dcdfe ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10797/4c6e179ada14b5ea99feaa75cfc5cc27 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10798/dc1ea3d295e447e632d63c31d313e22c ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10799/4df09e2d455b3d4bfea3d78091f0b0b1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10800/14026271ed58df742b5e2182adc964cb ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10801/7c59f5199df3e8a97888b3ab3deafadb ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10802/814bff61212e58cf7c2beaddb1c083b3 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10803/757e8e81b7183fde7329fd8ab9b69783 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10804/89b36b01ffe439e016ec1d59c57b63d1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10805/1ec24b4375d16b922c9c9c489d25465c ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10806/196e36cfe7aff4b5fc2d1055f7dcf864 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10807/d538a7fbdfc0d657fbf064561840fbb1 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10808/3f166bedb535ee9bff2fb7ead0a7812c ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10809/7be3a459d846b4672915c576cb7ed6b9 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/10810/7035a5dc53631209d3581f64a433b10d ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/11818/f34c3404d95a697dcf77d4cd8e8278fa ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/11819/96c0eb3fa403ebf222f28b6e45115c56 ==&gt; HTTP STATUS = 200
+http://www.letour.fr/en/block/history/11820/17fa8e795e69e9f326ea26cf9912e571 ==&gt; HTTP STATUS = 200
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dfrankoutput</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Rank</th>
+      <th>Rider</th>
+      <th>Rider No.</th>
+      <th>Team</th>
+      <th>Times</th>
+      <th>Gap</th>
+      <th>B</th>
+      <th>P</th>
+      <th>Year</th>
+      <th>Distance (km)</th>
+      <th>Number of stages</th>
+      <th>TotalSeconds</th>
+      <th>GapSeconds</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>TADEJ POGAČAR</td>
+      <td>131</td>
+      <td>UAE TEAM EMIRATES</td>
+      <td>87h 20' 05''</td>
+      <td>-</td>
+      <td>32'</td>
+      <td>NaN</td>
+      <td>2020</td>
+      <td>3483</td>
+      <td>21</td>
+      <td>314405</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>PRIMOŽ ROGLIČ</td>
+      <td>11</td>
+      <td>TEAM JUMBO - VISMA</td>
+      <td>87h 21' 04''</td>
+      <td>+ 00h 00' 59''</td>
+      <td>33'</td>
+      <td>NaN</td>
+      <td>2020</td>
+      <td>3483</td>
+      <td>21</td>
+      <td>314464</td>
+      <td>59</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>RICHIE PORTE</td>
+      <td>101</td>
+      <td>TREK - SEGAFREDO</td>
+      <td>87h 23' 35''</td>
+      <td>+ 00h 03' 30''</td>
+      <td>04'</td>
+      <td>NaN</td>
+      <td>2020</td>
+      <td>3483</td>
+      <td>21</td>
+      <td>314615</td>
+      <td>210</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>MIKEL LANDA MEANA</td>
+      <td>61</td>
+      <td>BAHRAIN - MCLAREN</td>
+      <td>87h 26' 03''</td>
+      <td>+ 00h 05' 58''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>2020</td>
+      <td>3483</td>
+      <td>21</td>
+      <td>314763</td>
+      <td>358</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>ENRIC MAS NICOLAU</td>
+      <td>94</td>
+      <td>MOVISTAR TEAM</td>
+      <td>87h 26' 12''</td>
+      <td>+ 00h 06' 07''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>2020</td>
+      <td>3483</td>
+      <td>21</td>
+      <td>314772</td>
+      <td>367</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>9062</th>
+      <td>6</td>
+      <td>JACQUES COOMANS</td>
+      <td>63</td>
+      <td>TDF 1919 ***</td>
+      <td>246h 28' 49''</td>
+      <td>+ 15h 21' 34''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>1919</td>
+      <td>5560</td>
+      <td>15</td>
+      <td>887329</td>
+      <td>55294</td>
+    </tr>
+    <tr>
+      <th>9063</th>
+      <td>7</td>
+      <td>LUIGI LUCOTTI</td>
+      <td>19</td>
+      <td>TDF 1919 ***</td>
+      <td>247h 08' 27''</td>
+      <td>+ 16h 01' 12''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>1919</td>
+      <td>5560</td>
+      <td>15</td>
+      <td>889707</td>
+      <td>57672</td>
+    </tr>
+    <tr>
+      <th>9064</th>
+      <td>8</td>
+      <td>JOSEPH VAN DAELE</td>
+      <td>55</td>
+      <td>TDF 1919 ***</td>
+      <td>249h 30' 17''</td>
+      <td>+ 18h 23' 02''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>1919</td>
+      <td>5560</td>
+      <td>15</td>
+      <td>898217</td>
+      <td>66182</td>
+    </tr>
+    <tr>
+      <th>9065</th>
+      <td>9</td>
+      <td>ALFRED STEUX</td>
+      <td>56</td>
+      <td>TDF 1919 ***</td>
+      <td>251h 36' 16''</td>
+      <td>+ 20h 29' 01''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>1919</td>
+      <td>5560</td>
+      <td>15</td>
+      <td>905776</td>
+      <td>73741</td>
+    </tr>
+    <tr>
+      <th>9066</th>
+      <td>10</td>
+      <td>JULES NEMPON</td>
+      <td>151</td>
+      <td>TDF 1919 ***</td>
+      <td>252h 51' 27''</td>
+      <td>+ 21h 44' 12''</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>1919</td>
+      <td>5560</td>
+      <td>15</td>
+      <td>910287</td>
+      <td>78252</td>
+    </tr>
+  </tbody>
+</table>
+<p>9067 rows × 13 columns</p>
+</div>
+
+<h2 id="3-clean-up-the-data">3) Clean up the data</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Fix result types
+</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">ResultType</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">time</span><span class="sh">"</span>
+<span class="n">dfrankoutput</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">].</span><span class="nf">isin</span><span class="p">([</span><span class="mi">1905</span><span class="p">,</span><span class="mi">1906</span><span class="p">,</span><span class="mi">1908</span><span class="p">]),</span><span class="sh">"</span><span class="s">ResultType</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">null</span><span class="sh">"</span>
+<span class="n">dfrankoutput</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">].</span><span class="nf">isin</span><span class="p">([</span><span class="mi">1907</span><span class="p">,</span><span class="mi">1909</span><span class="p">,</span><span class="mi">1910</span><span class="p">,</span><span class="mi">1911</span><span class="p">,</span><span class="mi">1912</span><span class="p">]),</span><span class="sh">"</span><span class="s">ResultType</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">points</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Fix this weird bug for e.g. year 2006 and 1997
+</span><span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">np</span><span class="p">.</span><span class="nf">unique</span><span class="p">(</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">]):</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">dfrankoutput</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">]</span><span class="o">==</span><span class="n">year</span><span class="p">].</span><span class="nf">reset_index</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">tmp</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="sh">"</span><span class="s">TotalSeconds</span><span class="sh">"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">tmp</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="sh">"</span><span class="s">TotalSeconds</span><span class="sh">"</span><span class="p">]:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+<span class="c1"># Okay seems to be only for 2006 and 1997
+</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1997
+2006
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tmp</span> <span class="o">=</span> <span class="n">dfrankoutput</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">]</span><span class="o">==</span><span class="mi">2006</span><span class="p">].</span><span class="nf">reset_index</span><span class="p">()</span>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="sh">"</span><span class="s">TotalSeconds</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="sh">"</span><span class="s">GapSeconds</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">ts</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+<span class="n">dfrankoutput</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">]</span><span class="o">==</span><span class="mi">2006</span><span class="p">,</span><span class="sh">"</span><span class="s">TotalSeconds</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">dfrankoutput</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">]</span><span class="o">==</span><span class="mi">1997</span><span class="p">].</span><span class="nf">reset_index</span><span class="p">()</span>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="sh">"</span><span class="s">TotalSeconds</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="sh">"</span><span class="s">GapSeconds</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">ts</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+<span class="n">dfrankoutput</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dfrankoutput</span><span class="p">[</span><span class="sh">"</span><span class="s">Year</span><span class="sh">"</span><span class="p">]</span><span class="o">==</span><span class="mi">1997</span><span class="p">,</span><span class="sh">"</span><span class="s">TotalSeconds</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span>
+</code></pre></div></div>
+
+<h2 id="4-write-data-to-csv">4) Write Data to CSV</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dfrankoutput</span><span class="p">.</span><span class="nf">to_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">../data/TDF_Riders_History.csv</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dfstageoutput</span><span class="p">.</span><span class="nf">to_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">../data/TDF_Stages_History.csv</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>

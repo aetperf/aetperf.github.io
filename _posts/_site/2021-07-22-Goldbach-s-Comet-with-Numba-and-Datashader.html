@@ -1,0 +1,868 @@
+<p><strong>Updated</strong> Jul 29, 2021</p>
+
+<p>This Python notebook is about computing and plotting Goldbach function. It requires some basic mathematical knowledge, nothing fancy! The main point is to perfom some computations with <a href="http://numba.pydata.org/">Numba</a> and some efficient plotting with <a href="https://datashader.org/">Datashader</a>.</p>
+
+<p>Here is the definition of the Goldbach function from <a href="https://en.wikipedia.org/wiki/Goldbach%27s_comet">wikipedia</a>:</p>
+
+<blockquote>
+  <p>The function $g ( E )$  is defined for all even integers $E &gt; 2$ to be the number of different ways in which E can be expressed as the sum of two primes. For example, $g ( 22 ) = 3$  since 22 can be expressed as the sum of two primes in three different ways ( 22 = 11 + 11 = 5 + 17 = 3 + 19).</p>
+</blockquote>
+
+<p>The different prime pairs $(p_1, p_2)$ that sum to an even integer $E=p_1+p_2$ are called Goldbach partitions.</p>
+
+<p>Note that for Goldbach’s conjecture to be false, there must be $g(E) = 0$ somewhere for $E &gt; 2$. Anyway, here are the steps used in this notebook to compute Goldbach function. Given a maximum positive integer $n$:</p>
+<ul>
+  <li>For each natural number smaller or equal to $n$, build a quick way to check if it is a prime or not, and also list the corresponding primes. In order to do that, we are going to use the sieve of Eratosthenes.</li>
+  <li>for each even number $E$ smaller or equal to $n$, compute $g(E)$ by counting the number of cases where $E-p$ is prime for all primes $p$ not larger than $E/2$.</li>
+</ul>
+
+<p>If $E-p$ is prime for a given prime $p \leq E/2$ then $(p, E-p)$ is indeed a partition of $E$. We count all the partitions for $E$ by looping over all primes $p \leq E/2$, .</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">primesieve</span>
+<span class="kn">from</span> <span class="n">numba</span> <span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">njit</span><span class="p">,</span> <span class="n">prange</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">perfplot</span>
+<span class="kn">import</span> <span class="n">datashader</span> <span class="k">as</span> <span class="n">ds</span>
+<span class="kn">from</span> <span class="n">datashader</span> <span class="kn">import</span> <span class="n">transfer_functions</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">from</span> <span class="n">colorcet</span> <span class="kn">import</span> <span class="n">palette</span>
+
+<span class="n">FS_R</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># rectangular figure size
+</span><span class="n">FS_S</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># square figure size
+</span></code></pre></div></div>
+
+<p>Package versions:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">Python</span>    <span class="p">:</span> <span class="mf">3.9</span><span class="p">.</span><span class="mi">6</span>
+    <span class="n">pandas</span>    <span class="p">:</span> <span class="mf">1.3</span><span class="p">.</span><span class="mi">0</span>
+    <span class="n">datashader</span><span class="p">:</span> <span class="mf">0.13</span><span class="p">.</span><span class="mi">0</span>
+    <span class="n">primesieve</span><span class="p">:</span> <span class="mf">2.3</span><span class="p">.</span><span class="mi">0</span>
+    <span class="n">matplotlib</span><span class="p">:</span> <span class="mf">3.4</span><span class="p">.</span><span class="mi">2</span>
+    <span class="n">numpy</span>     <span class="p">:</span> <span class="mf">1.21</span><span class="p">.</span><span class="mi">1</span>
+    <span class="n">colorcet</span>  <span class="p">:</span> <span class="mf">2.0</span><span class="p">.</span><span class="mi">6</span>
+    <span class="n">perfplot</span>  <span class="p">:</span> <span class="mf">0.9</span><span class="p">.</span><span class="mi">6</span>
+    <span class="n">numba</span>     <span class="p">:</span> <span class="mf">0.53</span><span class="p">.</span><span class="mi">1</span>
+</code></pre></div></div>
+
+<h2 id="sieve-of-eratosthenes">Sieve of Eratosthenes</h2>
+
+<h3 id="simple-implementation-with-numba">Simple implementation with Numba</h3>
+
+<p>This code is inspired from <a href="https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes#Pseudocode">wikipedia</a> and <a href="https://www.geeksforgeeks.org/sieve-of-eratosthenes/">geeksforgeeks</a>. It flags all primes not greater than $n$. The algorithm includes a common optimization, which is to start enumerating the multiples of each prime $p$ from $p^2$.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">generate_is_prime_vector</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+    <span class="c1"># initialize all entries as True, except 0 and 1
+</span>    <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">bool_</span><span class="p">)</span>
+    <span class="n">is_prime_vec</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c1"># loop on prime numbers
+</span>    <span class="n">p</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">while</span> <span class="n">p</span> <span class="o">*</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="c1"># Update all multiples of p, starting from p * p
+</span>            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+                <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">p</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">is_prime_vec</span>
+</code></pre></div></div>
+
+<p>Let’s run it with a small value of <code class="language-plaintext highlighter-rouge">n</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_is_prime_vector</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">is_prime_vec</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([False, False,  True,  True, False,  True, False,  True, False,
+       False, False,  True])
+</code></pre></div></div>
+
+<p>We can get the list of primes from <code class="language-plaintext highlighter-rouge">is_prime_vec</code> using <code class="language-plaintext highlighter-rouge">np.flatnonzero</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">primes</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">flatnonzero</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">).</span><span class="nf">astype</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">uint64</span><span class="p">)</span>
+<span class="n">primes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([ 2,  3,  5,  7, 11], dtype=uint64)
+</code></pre></div></div>
+
+<h3 id="using-primesieve">Using primesieve</h3>
+
+<p>As an alternate way, these two arrays, <code class="language-plaintext highlighter-rouge">primes</code> and <code class="language-plaintext highlighter-rouge">is_prime_vec</code>, can be computed using the optimized C/C++ <a href="https://github.com/kimwalisch/primesieve">primesieve</a> library:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">primes</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">primesieve</span><span class="p">.</span><span class="nf">primes</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+<span class="n">primes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([ 2,  3,  5,  7, 11], dtype=uint64)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">is_prime_vec</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">bool_</span><span class="p">)</span>
+<span class="n">is_prime_vec</span><span class="p">[</span><span class="n">primes</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">is_prime_vec</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array([False, False,  True,  True, False,  True, False,  True, False,
+       False, False,  True])
+</code></pre></div></div>
+
+<h3 id="value-check">Value check</h3>
+
+<p>As a sanity check, we compare the prime lists obtained with the different methods for a larger value of <code class="language-plaintext highlighter-rouge">n</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">generate_primes_simple</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_is_prime_vector</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">primes</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">flatnonzero</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">).</span><span class="nf">astype</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">uint64</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">primes</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">primesieve</span><span class="p">.</span><span class="nf">primes</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">bool_</span><span class="p">)</span>
+    <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">primes</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">1_000_000</span>
+<span class="n">primes_1</span><span class="p">,</span> <span class="n">is_prime_vec_1</span> <span class="o">=</span> <span class="nf">generate_primes_simple</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">primes_2</span><span class="p">,</span> <span class="n">is_prime_vec_2</span> <span class="o">=</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">np</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_array_equal</span><span class="p">(</span><span class="n">primes_1</span><span class="p">,</span> <span class="n">primes_2</span><span class="p">)</span>
+<span class="n">np</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_array_equal</span><span class="p">(</span><span class="n">is_prime_vec_1</span><span class="p">,</span> <span class="n">is_prime_vec_2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 36.5 ms, sys: 15 µs, total: 36.5 ms
+Wall time: 60.3 ms
+</code></pre></div></div>
+
+<h3 id="elapsed-time">Elapsed time</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">perfplot</span><span class="p">.</span><span class="nf">bench</span><span class="p">(</span>
+    <span class="n">setup</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="p">,</span>
+    <span class="n">kernels</span><span class="o">=</span><span class="p">[</span>
+        <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="nf">generate_primes_simple</span><span class="p">(</span><span class="n">n</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">),</span>    
+    <span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">generate_primes_simple</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">generate_primes_primesieve</span><span class="sh">"</span><span class="p">],</span>
+    <span class="n">n_range</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span> <span class="o">**</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span>
+    <span class="n">equality_check</span><span class="o">=</span><span class="bp">None</span>
+<span class="p">)</span>
+<span class="n">out</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 7.2 s, sys: 281 ms, total: 7.48 s
+Wall time: 7.3 s
+</code></pre></div></div>
+
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n        </span>┃<span style="font-weight: bold"> generate_primes_simple </span>┃<span style="font-weight: bold"> generate_primes_primesieve </span>┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 10       │ 4.693000000000001e-06  │ 6.4000000000000006e-06     │
+│ 100      │ 5.1700000000000005e-06 │ 6.233e-06                  │
+│ 1000     │ 9.468e-06              │ 7.658e-06                  │
+│ 10000    │ 3.2039e-05             │ 1.4255000000000002e-05     │
+│ 100000   │ 0.000283582            │ 8.438300000000001e-05      │
+│ 1000000  │ 0.004541556            │ 0.000679709                │
+│ 10000000 │ 0.07260718000000001    │ 0.008423457                │
+└──────────┴────────────────────────┴────────────────────────────┘
+</pre>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ms</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS_S</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span>
+    <span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span>
+    <span class="mf">1.0e-8</span> <span class="o">*</span> <span class="n">out</span><span class="p">.</span><span class="n">n_range</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">)),</span>
+    <span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">$O(n \, log \, log \, n)$</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sh">"</span><span class="s">v-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">generate_primes_simple</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span>
+    <span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sh">"</span><span class="s">^-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">generate_primes_primesieve</span><span class="sh">"</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Runtime [s]</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">"</span><span class="s">n</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_title</span><span class="p">(</span><span class="sh">"</span><span class="s">Timings of the generate_primes functions</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-07-22_01/output_18_0.png" alt="Timings of generate_is_prime_vector" />
+</p>
+
+<p>The run time of both of these <code class="language-plaintext highlighter-rouge">generate_primes</code> functions is very small compared to the rest of the Goldbach function evaluation. Anyway, the primesieve version is way more efficient, so we are going to stick with it in the following. Note that is it is supposed to have a run time complexity of $0(n \, log \, log \, n)$ operations.</p>
+
+<p>The timings of the <code class="language-plaintext highlighter-rouge">generate_primes_simple</code> function in pure Python (without Numba) is not shown. It is usually slower by a factor 10 or 100 (100 is more likely than 10 for this kind of CPU bound function).</p>
+
+<h2 id="find-the-number-of-prime-pairs-for-a-given-even-number-e">Find the number of prime pairs for a given even number E</h2>
+
+<p>Now we show how $g(E)$ can be computed for a given value of $E$. We are going to compare 3 different implementations with Numba.</p>
+
+<h3 id="three-different-implementations">Three different implementations</h3>
+
+<p>In the fist version, <code class="language-plaintext highlighter-rouge">compute_g_1</code>, we loop over all natural numbers $2 \leq i \leq E/2$. If $i$ and $E-i$ are primes, then $(i, E-1)$ is a partition. The function <code class="language-plaintext highlighter-rouge">compute_g_1</code> takes the <code class="language-plaintext highlighter-rouge">is_prime_vec</code> boolean vector as argument, but not the <code class="language-plaintext highlighter-rouge">primes</code> array.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_g_1</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">E</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+    <span class="k">assert</span> <span class="n">E</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">E</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">E_half</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">E</span><span class="p">)</span>
+
+    <span class="c1"># initialization
+</span>    <span class="n">i</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># loop counter (we know that 0 and 1 are not primes)
+</span>    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of prime pairs
+</span>
+    <span class="c1"># we loop over all the prime numbers smaller than or equal to half of num
+</span>    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">E_half</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">E</span> <span class="o">-</span> <span class="n">i</span><span class="p">]:</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">count</span>
+</code></pre></div></div>
+
+<p>In the second version, we loop on primes $p$ instead on integers, with a <code class="language-plaintext highlighter-rouge">while</code> loop:</p>
+<ul>
+  <li>If $E-p$ is a prime, $(p, E-P)$ is a partition.</li>
+  <li>If $p &gt; E/2$, we exit the loop.</li>
+</ul>
+
+<p>The function <code class="language-plaintext highlighter-rouge">compute_g_2</code> takes both <code class="language-plaintext highlighter-rouge">is_prime_vec</code> and <code class="language-plaintext highlighter-rouge">primes</code> as arguments:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_g_2</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">primes</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">E</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+    <span class="k">assert</span> <span class="n">E</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">E</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">E_half</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">E</span><span class="p">)</span>
+
+    <span class="c1"># initialization
+</span>    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of prime pairs
+</span>
+    <span class="c1"># we loop over all the prime numbers smaller than or equal to half of num
+</span>    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">primes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">while</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="n">E_half</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">E</span> <span class="o">-</span> <span class="n">p</span><span class="p">]:</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">primes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">count</span>
+</code></pre></div></div>
+
+<p>The third function <code class="language-plaintext highlighter-rouge">compute_g_3</code> is similar to the previous one, but uses a <code class="language-plaintext highlighter-rouge">for</code> loop instead of <code class="language-plaintext highlighter-rouge">while</code>. The upper bound of the <code class="language-plaintext highlighter-rouge">for</code> loop is computed using <code class="language-plaintext highlighter-rouge">np.searchsorted</code>, since primes are sorted within the <code class="language-plaintext highlighter-rouge">primes</code> vector.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_g_3</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">primes</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">E</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+    <span class="k">assert</span> <span class="n">E</span> <span class="o">&lt;</span> <span class="nf">len</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">E</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">E_half</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">E</span><span class="p">)</span>
+
+    <span class="c1"># initialization
+</span>    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of prime pairs
+</span>
+    <span class="c1"># we loop over all the prime numbers smaller than or equal to half of num
+</span>    <span class="n">i_max</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">searchsorted</span><span class="p">(</span><span class="n">primes</span><span class="p">,</span> <span class="n">E_half</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="sh">"</span><span class="s">right</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">i_max</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">primes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">E</span> <span class="o">-</span> <span class="n">p</span><span class="p">]:</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">count</span>
+</code></pre></div></div>
+
+<h3 id="value-check-1">Value check</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">E</span> <span class="o">=</span> <span class="mi">22</span>
+<span class="k">assert</span> <span class="n">E</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="k">assert</span> <span class="n">E</span> <span class="o">&gt;</span> <span class="mi">0</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="nf">compute_g_1</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">E</span><span class="p">))</span>
+<span class="nf">print</span><span class="p">(</span><span class="nf">compute_g_2</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">,</span> <span class="n">E</span><span class="p">))</span>
+<span class="nf">print</span><span class="p">(</span><span class="nf">compute_g_3</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">,</span> <span class="n">E</span><span class="p">))</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>3
+3
+3
+CPU times: user 1.04 s, sys: 3.89 ms, total: 1.04 s
+Wall time: 1.12 s
+</code></pre></div></div>
+
+<h3 id="elapsed-time-1">Elapsed time</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">perfplot</span><span class="p">.</span><span class="nf">bench</span><span class="p">(</span>
+    <span class="n">setup</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">),</span>
+    <span class="n">kernels</span><span class="o">=</span><span class="p">[</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">compute_g_1</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nf">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">compute_g_2</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nf">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>    
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">compute_g_3</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nf">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">compute_g_1</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">compute_g_2</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">compute_g_3</span><span class="sh">"</span><span class="p">],</span>
+    <span class="n">n_range</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span> <span class="o">**</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span>
+    <span class="n">equality_check</span><span class="o">=</span><span class="bp">None</span>
+<span class="p">)</span>
+<span class="n">out</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 11.3 s, sys: 111 ms, total: 11.4 s
+Wall time: 11.9 s
+</code></pre></div></div>
+
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n        </span>┃<span style="font-weight: bold"> compute_g_1           </span>┃<span style="font-weight: bold"> compute_g_2            </span>┃<span style="font-weight: bold"> compute_g_3           </span>┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1000     │ 1.072e-06             │ 9.660000000000002e-07  │ 1.057e-06             │
+│ 10000    │ 1.147e-05             │ 2.2370000000000004e-06 │ 1.825e-06             │
+│ 100000   │ 8.608e-05             │ 1.0703e-05             │ 7.805e-06             │
+│ 1000000  │ 0.0009804660000000001 │ 8.4447e-05             │ 5.1739e-05            │
+│ 10000000 │ 0.00576324            │ 0.000573377            │ 0.0005268870000000001 │
+└──────────┴───────────────────────┴────────────────────────┴───────────────────────┘
+</pre>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ms</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS_S</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span>
+    <span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span>
+    <span class="mf">1.0e-9</span> <span class="o">*</span> <span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">$O(n)$</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sh">"</span><span class="s">v-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">compute_g_1</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sh">"</span><span class="s">^-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">compute_g_2</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sh">"</span><span class="s">^-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">compute_g_3</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Runtime [s]</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">"</span><span class="s">n</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_title</span><span class="p">(</span><span class="sh">"</span><span class="s">Timings of the compute_g functions</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-07-22_01/output_30_0.png" alt="Timings of the compute_g functions" />
+</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">compute_g_3</code> is the most efficient of the three variations. Let’s use this approach to compute many value of $g(E)$.</p>
+
+<p>The algorithms’ complexity is $O(n)$, because we basically loop over an array proportional to $n$ to perform a $O(1)$ operation.</p>
+
+<h2 id="loop-over-all-even-numbers-e-smaller-or-equal-to-n">Loop over all even numbers E smaller or equal to n</h2>
+
+<p>Now we simply loop over all even natural numbers $E \leq n$ to compute all respective values of $g(E)$. Note that in the following <code class="language-plaintext highlighter-rouge">compute_g_vector_seq</code> function, the outer loop has a step size of 1, in order to later use Numba <code class="language-plaintext highlighter-rouge">prange</code>, which only supports this unit step size. This means that we loop on contiguous integer values of $E/2$ instead of even values of $E$. Also, we compute <code class="language-plaintext highlighter-rouge">is_prime_vec</code> and <code class="language-plaintext highlighter-rouge">primes</code> only once and use it for all the evaluations of $g(E)$.</p>
+
+<p><code class="language-plaintext highlighter-rouge">n</code> is calculted from the length of <code class="language-plaintext highlighter-rouge">is_prime_vec</code>. In the arguments, we assume that <code class="language-plaintext highlighter-rouge">primes</code> is corresponding to the primes of <code class="language-plaintext highlighter-rouge">is_prime_vec</code>.</p>
+
+<h3 id="sequential-loop">Sequential loop</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_g_vector_seq</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">primes</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+    <span class="n">n_max</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_max_half</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">n_max</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">g_vec</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">n_max_half</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">E_half</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">n_max_half</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">E_half</span>
+        <span class="n">i_max</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">searchsorted</span><span class="p">(</span><span class="n">primes</span><span class="p">,</span> <span class="n">E_half</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="sh">"</span><span class="s">right</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">i_max</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">primes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">E</span> <span class="o">-</span> <span class="n">p</span><span class="p">]:</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">g_vec</span><span class="p">[</span><span class="n">E_half</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">uint</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">g_vec</span>
+</code></pre></div></div>
+
+<p>The $i$-th value of <code class="language-plaintext highlighter-rouge">g_vec</code> correponds to $g(2 \, i)$ with $i \geq 0 $:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">i</th>
+      <th style="text-align: right">E</th>
+      <th style="text-align: right">g_vec[i]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">0</td>
+      <td style="text-align: right">0</td>
+      <td style="text-align: right">0</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: right">0</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: right">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: right">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: right">8</td>
+      <td style="text-align: right">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td style="text-align: right">10</td>
+      <td style="text-align: right">2</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>and so on…</p>
+
+<h3 id="parallel-loop">Parallel loop</h3>
+
+<p>We are now going to parallelize <code class="language-plaintext highlighter-rouge">compute_g_vector_seq</code> by using the Numba <code class="language-plaintext highlighter-rouge">njit</code> decorator and <code class="language-plaintext highlighter-rouge">prange</code> on the outer explicit loop. The vector <code class="language-plaintext highlighter-rouge">g_vec</code> is shared across threads but each thread is only writing into its own partition.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_g_vector_par</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">primes</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+    <span class="n">n_max</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n_max_half</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">n_max</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">g_vec</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">n_max_half</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">uint</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">E_half</span> <span class="ow">in</span> <span class="nf">prange</span><span class="p">(</span><span class="n">n_max_half</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">E_half</span>
+        <span class="n">i_max</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">searchsorted</span><span class="p">(</span><span class="n">primes</span><span class="p">,</span> <span class="n">E_half</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="sh">"</span><span class="s">right</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">i_max</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">primes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">is_prime_vec</span><span class="p">[</span><span class="n">E</span> <span class="o">-</span> <span class="n">p</span><span class="p">]:</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">g_vec</span><span class="p">[</span><span class="n">E_half</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">uint</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">g_vec</span>
+</code></pre></div></div>
+
+<p>We can check $g$ at least for some for some small values of $E$:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n</span> <span class="o">=</span> <span class="mi">56</span>
+<span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">g_vec_1</span> <span class="o">=</span> <span class="nf">compute_g_vector_seq</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">)</span>
+<span class="n">g_vec_2</span> <span class="o">=</span> <span class="nf">compute_g_vector_par</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">)</span>
+<span class="n">g_vec_ref</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> 
+    <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="n">np</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_array_equal</span><span class="p">(</span><span class="n">g_vec_1</span><span class="p">,</span> <span class="n">g_vec_ref</span><span class="p">)</span>
+<span class="n">np</span><span class="p">.</span><span class="n">testing</span><span class="p">.</span><span class="nf">assert_array_equal</span><span class="p">(</span><span class="n">g_vec_2</span><span class="p">,</span> <span class="n">g_vec_ref</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="first-plot-of-the-comet">First plot of the comet</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">10_000</span>
+<span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">g_vec</span> <span class="o">=</span> <span class="nf">compute_g_vector_par</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">)</span>
+<span class="n">g_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">g</span><span class="sh">"</span><span class="p">:</span> <span class="n">g_vec</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">g_vec</span><span class="p">)))</span>
+<span class="n">g_df</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="n">g_df</span><span class="p">.</span><span class="n">index</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># The function g(E) is defined for all even integers E&gt;2
+</span><span class="n">g_df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 19.1 ms, sys: 0 ns, total: 19.1 ms
+Wall time: 4.36 ms
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>g</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>4</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS_R</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Goldbach</span><span class="sh">'</span><span class="s">s comet</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">g(E)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">autoscale</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">tight</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_40_0.png" alt="Goldbach's comet n=1e4" />
+</p>
+
+<h3 id="elapsed-time-2">Elapsed time</h3>
+
+<p>Now we compare the running time of the sequential and parallel versions of <code class="language-plaintext highlighter-rouge">compute_g_vector</code>. The code is running on a laptop with 8 cores (Intel(R) i7-7700HQ CPU @ 2.80GHz).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">perfplot</span><span class="p">.</span><span class="nf">bench</span><span class="p">(</span>
+    <span class="n">setup</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">),</span>
+    <span class="n">kernels</span><span class="o">=</span><span class="p">[</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">compute_g_vector_seq</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">compute_g_vector_par</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">jit</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">njit</span><span class="sh">"</span><span class="p">],</span>
+    <span class="n">n_range</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span> <span class="o">**</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span>
+<span class="p">)</span>
+<span class="n">out</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1min 18s, sys: 265 ms, total: 1min 19s
+Wall time: 35.6 s
+</code></pre></div></div>
+
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃<span style="font-weight: bold"> n       </span>┃<span style="font-weight: bold"> jit                    </span>┃<span style="font-weight: bold"> njit                  </span>┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 10      │ 9.740000000000001e-07  │ 7.213e-06             │
+│ 100     │ 1.8400000000000002e-06 │ 7.474000000000001e-06 │
+│ 1000    │ 3.7302e-05             │ 2.0854e-05            │
+│ 10000   │ 0.001960103            │ 0.0009358410000000001 │
+│ 100000  │ 0.182704941            │ 0.07333213200000001   │
+│ 1000000 │ 20.137010665000002     │ 7.841122203           │
+└─────────┴────────────────────────┴───────────────────────┘
+</pre>
+
+<p>Basically, running the parallel version on 8 cores divides the running time by a factor 2 to 3.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ms</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS_S</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span>
+    <span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span>
+    <span class="mf">1.0e-10</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">power</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">$O(n^2)$</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sh">"</span><span class="s">v-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">jit</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">loglog</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">n_range</span><span class="p">,</span> <span class="n">out</span><span class="p">.</span><span class="n">timings_s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sh">"</span><span class="s">^-</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">njit</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="sh">"</span><span class="s">on</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Runtime [s]</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlabel</span><span class="p">(</span><span class="sh">"</span><span class="s">N</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_title</span><span class="p">(</span><span class="sh">"</span><span class="s">Timings of the compute_g_vector function</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-07-22_01/output_44_0.png" alt="Timings of the compute_g_vector function" />
+</p>
+
+<p>If we run the parallel version with $n=1e6$, we might estimate if the running time with a larger value of $n$ is affordable.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">1_000_000</span>
+<span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">g_vec</span> <span class="o">=</span> <span class="nf">compute_g_vector_par</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 26.5 s, sys: 23.5 ms, total: 26.6 s
+Wall time: 6.28 s
+</code></pre></div></div>
+
+<p>So computing $g$ with $n = 5e6$ should take one or two minutes on my laptop with <code class="language-plaintext highlighter-rouge">compute_g_vector_par</code>… Let’s do that next.</p>
+
+<h2 id="compute-a-larger-vector-of-g-values">Compute a larger vector of g values</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">5_000_000</span>
+<span class="n">primes</span><span class="p">,</span> <span class="n">is_prime_vec</span> <span class="o">=</span> <span class="nf">generate_primes_primesieve</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">g_vec</span> <span class="o">=</span> <span class="nf">compute_g_vector_par</span><span class="p">(</span><span class="n">is_prime_vec</span><span class="p">,</span> <span class="n">primes</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 8min 33s, sys: 6.11 ms, total: 8min 33s
+Wall time: 1min 37s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">g_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">g_vec</span><span class="p">)),</span> <span class="sh">"</span><span class="s">g</span><span class="sh">"</span><span class="p">:</span> <span class="n">g_vec</span><span class="p">})</span>
+<span class="n">g_df</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="n">g_df</span><span class="p">.</span><span class="n">E</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># The function g(E) is defined for all even integers E&gt;2
+</span></code></pre></div></div>
+
+<h2 id="plotting-g-with-datashader">Plotting g with Datashader</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cmap</span> <span class="o">=</span> <span class="n">palette</span><span class="p">[</span><span class="sh">"</span><span class="s">dimgray</span><span class="sh">"</span><span class="p">]</span>
+<span class="n">bg_col</span> <span class="o">=</span> <span class="sh">"</span><span class="s">white</span><span class="sh">"</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">800</span>
+<span class="n">width</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">round</span><span class="p">(</span><span class="mf">1.6</span> <span class="o">*</span> <span class="n">height</span><span class="p">))</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+<span class="n">agg</span> <span class="o">=</span> <span class="n">cvs</span><span class="p">.</span><span class="nf">points</span><span class="p">(</span><span class="n">g_df</span><span class="p">,</span> <span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">g</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">set_background</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bg_col</span><span class="p">)</span>
+<span class="n">img</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1.1 s, sys: 16 ms, total: 1.12 s
+Wall time: 1.11 s
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_54_1.png" alt="Goldbach's comet n=1e7" />
+</p>
+
+<p>We can clearly observe some dense lines in this “comet tail”. In order to visualize this vertical distribution of prime pairs count, we are are going to normalize $g$. As explained on the wikipedia <a href="https://en.wikipedia.org/wiki/Goldbach%27s_comet">page</a>:</p>
+
+<blockquote>
+  <p>An illuminating way of presenting the comet data is as a histogram. The function g(E) can be normalized by dividing by the locally averaged value of g, gav, taken over perhaps 1000 neighboring values of the even number E. The histogram can then be accumulated over a range of up to about 10% either side of a central E.</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g_av</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g</span><span class="sh">"</span><span class="p">].</span><span class="nf">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="nf">mean</span><span class="p">()</span>
+<span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g</span><span class="sh">"</span><span class="p">]</span> <span class="o">/</span> <span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g_av</span><span class="sh">"</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 128 ms, sys: 23.9 ms, total: 152 ms
+Wall time: 153 ms
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+<span class="n">agg</span> <span class="o">=</span> <span class="n">cvs</span><span class="p">.</span><span class="nf">points</span><span class="p">(</span><span class="n">g_df</span><span class="p">,</span> <span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">set_background</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bg_col</span><span class="p">)</span>
+<span class="n">img</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 885 ms, sys: 12 ms, total: 897 ms
+Wall time: 908 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_57_1.png" alt="Goldbach's comet n=1e7" />
+</p>
+
+<p>We can now proceed to plot the histogram of the comet data, which will lead to some kind of cross section of the above plot:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">].</span><span class="nf">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Histogram of the normalized Goldbach function</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Normalized number of prime pairs</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Number of occurrences</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">xticks</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_59_0.png" alt="Histogram of the normalized Goldbach function" />
+</p>
+
+<h2 id="the-hardy-littlewood-estimate">The Hardy-Littlewood estimate</h2>
+
+<p>As described on the <a href="](https://en.wikipedia.org/wiki/Goldbach%27s_comet)">wikipedia page</a> for Goldbach’s comet, the number of Goldbach partitions can be estimated using the following formulae from Hardy and Littlewood (1922):</p>
+
+\[\frac{g(E)}{g_{av}} = \Pi_2 \prod \frac{p-1}{p-2}\]
+
+<p>where the product is taken over all primes p that are factors of $E/2$, $\Pi_2$ being the twin primes constant:</p>
+
+\[\Pi_2 = \prod_{p \geq 3} \left( 1 - \frac{1}{(1-p)^2} \right)\]
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">100_000_000</span>
+<span class="n">primes</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">primesieve</span><span class="p">.</span><span class="nf">primes</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+<span class="c1"># twin primes constant
+</span><span class="n">Pi2</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">prod</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="p">.</span><span class="nf">power</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">primes</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">Pi2</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 318 ms, sys: 76 ms, total: 394 ms
+Wall time: 405 ms
+
+0.6601618161644595
+</code></pre></div></div>
+
+<p>So let’s compute this estimate of the normalized Goldbach function with Numba <code class="language-plaintext highlighter-rouge">njit</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@njit</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_g_hl_vector_par</span><span class="p">(</span><span class="n">primes</span><span class="p">:</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n_max</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Pi2</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="p">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+    <span class="n">n_max_half</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">n_max</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">g_hl_vec</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">empty</span><span class="p">(</span><span class="n">n_max_half</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">E_half</span> <span class="ow">in</span> <span class="nf">prange</span><span class="p">(</span><span class="n">n_max_half</span><span class="p">):</span>
+        <span class="n">i_max</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">searchsorted</span><span class="p">(</span><span class="n">primes</span><span class="p">,</span> <span class="n">E_half</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="sh">"</span><span class="s">right</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">prod</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i_max</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">primes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">E_half</span> <span class="o">%</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prod</span> <span class="o">*=</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mf">2.0</span><span class="p">)</span>
+
+        <span class="n">g_hl_vec</span><span class="p">[</span><span class="n">E_half</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">float64</span><span class="p">(</span><span class="n">prod</span><span class="p">)</span>
+    <span class="n">g_hl_vec</span> <span class="o">*=</span> <span class="n">Pi2</span>
+
+    <span class="k">return</span> <span class="n">g_hl_vec</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">1_000_000</span>
+<span class="n">g_hl_vec</span> <span class="o">=</span> <span class="nf">compute_g_hl_vector_par</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">array</span><span class="p">(</span><span class="n">primesieve</span><span class="p">.</span><span class="nf">primes</span><span class="p">(</span><span class="n">n</span><span class="p">)),</span> <span class="n">n</span><span class="p">,</span> <span class="n">Pi2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1min 17s, sys: 83 ms, total: 1min 17s
+Wall time: 18.1 s
+</code></pre></div></div>
+
+<h3 id="plotting-the-estimate-with-datashader">Plotting the estimate with Datashader</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">g_hl_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">g_hl_vec</span><span class="p">)),</span> <span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">:</span> <span class="n">g_hl_vec</span><span class="p">})</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+<span class="n">agg</span> <span class="o">=</span> <span class="n">cvs</span><span class="p">.</span><span class="nf">points</span><span class="p">(</span><span class="n">g_hl_df</span><span class="p">,</span> <span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">set_background</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bg_col</span><span class="p">)</span>
+<span class="n">img</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 106 ms, sys: 16 ms, total: 122 ms
+Wall time: 117 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_67_1.png" alt="Estimate of the normalized Goldbach function" />
+</p>
+
+<p>The vertical distribution of the dense lines seems to be similar to the one from the normalized Goldbach function. This can be checked by computing and plotting both kernel density estimates.</p>
+
+<h3 id="kernel-density-estimates">Kernel density estimates</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">].</span><span class="n">plot</span><span class="p">.</span><span class="nf">density</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS_R</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Golbach function</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">g_hl_df</span><span class="p">.</span><span class="n">g_norm</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">density</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">'</span><span class="s">Hardy-Littlewood estimate</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">KDEs of the normalized Goldbach function and its Hardy-Littlewood estimate</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Normalized number of prime pairs</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Density</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">xticks</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_xlim</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 1min 6s, sys: 792 ms, total: 1min 6s
+Wall time: 1min 5s
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_69_1.png" alt="Kernel density estimates" />
+</p>
+
+<p>Note that the Goldbach function is computed up to $n=5e6$, against $n=1e6$ for the estimate, which might explain some of the differences between the densities. However, we can clearly observe that the peaks are located at the same places.</p>
+
+<h2 id="prime-e2-values-only">Prime E/2 values only</h2>
+
+<p>Finally, we are going to isolate a part of the most dense line from the comet tail (for a normalized number of prime pairs around 0.66). As explained in <a href="https://en.wikipedia.org/wiki/Goldbach%27s_comet">wikipedia</a>:</p>
+
+<blockquote>
+  <p>Of particular interest is the peak formed by selecting only values of E/2 that are prime. […] The peak is very close to a Gaussian form.</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">E_half</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">]).</span><span class="nf">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">g_df_primes</span> <span class="o">=</span> <span class="n">g_df</span><span class="p">[</span><span class="n">g_df</span><span class="p">[</span><span class="sh">"</span><span class="s">E_half</span><span class="sh">"</span><span class="p">].</span><span class="nf">isin</span><span class="p">(</span><span class="n">primes</span><span class="p">)]</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+<span class="n">agg</span> <span class="o">=</span> <span class="n">cvs</span><span class="p">.</span><span class="nf">points</span><span class="p">(</span><span class="n">g_df_primes</span><span class="p">,</span> <span class="sh">"</span><span class="s">E</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">set_background</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bg_col</span><span class="p">)</span>
+<span class="n">img</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 97.9 ms, sys: 3.98 ms, total: 102 ms
+Wall time: 99.7 ms
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_73_1.png" alt="Normalized Goldbach function for prime E/2 values" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">g_df_primes</span><span class="p">[</span><span class="sh">"</span><span class="s">g_norm</span><span class="sh">"</span><span class="p">].</span><span class="nf">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS_R</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Histogram of the normalized Goldbach function for prime E/2 values only</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Normalized number of prime pairs</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Number of occurrences</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="800" src="/img/2021-07-22_01/output_74_0.png" alt="Histogram of the normalized Goldbach function for prime E/2 values only" />
+</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

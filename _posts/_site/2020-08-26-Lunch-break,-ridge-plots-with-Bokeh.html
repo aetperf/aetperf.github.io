@@ -1,0 +1,567 @@
+<p><a href="https://bokeh.org/">Bokeh</a> is a great visualization Python library. In this short post, we are going to use it to create a ridge plot.</p>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-26_01/closeup.jpg" alt="closeup" />
+</p>
+
+<p>For that purpose, we use the <a href="https://github.com/CSSEGISandData/COVID-19">COVID-19 death data</a> from Johns Hopkins University, and plot the daily normalized death rate (100000 * number of daily deaths / population) per EU(+UK) country.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">colorcet</span> <span class="k">as</span> <span class="n">cc</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">bokeh.io</span> <span class="kn">import</span> <span class="n">show</span><span class="p">,</span> <span class="n">output_notebook</span>
+<span class="kn">from</span> <span class="n">bokeh.models</span> <span class="kn">import</span> <span class="n">ColumnDataSource</span><span class="p">,</span> <span class="n">DatetimeTickFormatter</span>
+<span class="kn">from</span> <span class="n">bokeh.plotting</span> <span class="kn">import</span> <span class="n">figure</span>
+
+<span class="nf">output_notebook</span><span class="p">()</span>
+
+<span class="c1"># Johns Hopkins University data url
+</span><span class="n">URL</span> <span class="o">=</span> <span class="sh">"</span><span class="s">https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<div class="bk-root">
+    <a href="https://bokeh.org" target="_blank" class="bk-logo bk-logo-small bk-logo-notebook"></a>
+    <span id="1001">Loading BokehJS ...</span>
+</div>
+
+<h2 id="load-and-prepare-the-data">Load and prepare the data</h2>
+
+<p>Load the COVID-19 data into a dataframe:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">deaths</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="n">URL</span><span class="p">)</span>
+<span class="n">deaths</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Province/State</th>
+      <th>Country/Region</th>
+      <th>Lat</th>
+      <th>...</th>
+      <th>8/24/20</th>
+      <th>8/25/20</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NaN</td>
+      <td>Afghanistan</td>
+      <td>33.93911</td>
+      <td>...</td>
+      <td>1389</td>
+      <td>1397</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>Albania</td>
+      <td>41.15330</td>
+      <td>...</td>
+      <td>254</td>
+      <td>259</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 221 columns</p>
+</div>
+
+<p>Also load a list of EU countries:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">countries</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span>
+        <span class="sh">"</span><span class="s">https://pkgstore.datahub.io/opendatafortaxjustice/listofeucountries/listofeucountries_csv/data/5ab24e62d2ad8f06b59a0e7ffd7cb556/listofeucountries_csv.csv</span><span class="sh">"</span>
+    <span class="p">)</span>
+    <span class="p">.</span><span class="n">values</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="p">.</span><span class="nf">tolist</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="c1"># Match country names
+</span><span class="n">countries</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">Czech Republic</span><span class="sh">"</span> <span class="k">else</span> <span class="sh">"</span><span class="s">Czechia</span><span class="sh">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">countries</span><span class="p">]</span>
+<span class="n">countries</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="sh">"</span><span class="s">Slovak Republic</span><span class="sh">"</span> <span class="k">else</span> <span class="sh">"</span><span class="s">Slovakia</span><span class="sh">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">countries</span><span class="p">]</span>
+
+<span class="n">n_countries</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czechia', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom']
+</code></pre></div></div>
+
+<p>We select EU countries in the COVID-19 data:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">deaths_eu</span> <span class="o">=</span> <span class="n">deaths</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">deaths</span><span class="p">[</span><span class="sh">"</span><span class="s">Country/Region</span><span class="sh">"</span><span class="p">].</span><span class="nf">isin</span><span class="p">(</span><span class="n">countries</span><span class="p">)].</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># cleanup
+</span><span class="n">deaths_eu</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">Province/State</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Lat</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Long</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">deaths_eu</span> <span class="o">=</span> <span class="n">deaths_eu</span><span class="p">.</span><span class="nf">groupby</span><span class="p">(</span><span class="sh">"</span><span class="s">Country/Region</span><span class="sh">"</span><span class="p">).</span><span class="nf">sum</span><span class="p">()</span>  <span class="c1"># with overseas territories
+</span><span class="n">deaths_eu</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">name</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Country</span><span class="sh">"</span>
+<span class="k">assert</span> <span class="nf">len</span><span class="p">(</span><span class="n">deaths_eu</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_countries</span>
+<span class="n">deaths_eu</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1/22/20</th>
+      <th>1/23/20</th>
+      <th>...</th>
+      <th>8/24/20</th>
+      <th>8/25/20</th>
+    </tr>
+    <tr>
+      <th>Country</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Austria</th>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>733</td>
+      <td>733</td>
+    </tr>
+    <tr>
+      <th>Belgium</th>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>9996</td>
+      <td>9996</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 217 columns</p>
+</div>
+
+<p>Now we load the population count by country into a dataframe. The CSV file comes from <a href="https://datahub.io/JohnSnowLabs/population-figures-by-country">this</a> website.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pop</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span>
+    <span class="sh">"</span><span class="s">./data/population-figures-by-country-csv_csv.csv</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">Country</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Country_Code</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Year_2016</span><span class="sh">"</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">pop</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pop</span><span class="p">.</span><span class="n">Country</span> <span class="o">==</span> <span class="sh">"</span><span class="s">Czech Republic</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Country</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Czechia</span><span class="sh">"</span>
+<span class="n">pop</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pop</span><span class="p">.</span><span class="n">Country</span> <span class="o">==</span> <span class="sh">"</span><span class="s">Slovak Republic</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Country</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Slovakia</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<p>And select EU countries:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pop_eu</span> <span class="o">=</span> <span class="n">pop</span><span class="p">[</span><span class="n">pop</span><span class="p">.</span><span class="n">Country</span><span class="p">.</span><span class="nf">isin</span><span class="p">(</span><span class="n">countries</span><span class="p">)].</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">pop_eu</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">Country_Code</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">pop_eu</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">Country</span><span class="sh">"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nf">len</span><span class="p">(</span><span class="n">pop_eu</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_countries</span>
+<span class="n">pop_eu</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Year_2016</th>
+    </tr>
+    <tr>
+      <th>Country</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Austria</th>
+      <td>8747358.0</td>
+    </tr>
+    <tr>
+      <th>Belgium</th>
+      <td>11348159.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>This population data date back to 2016, but it is recent enough for this blog post…</p>
+
+<p>We compute the death density as the number of deaths per 100000 inhabitants for each country:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dd_eu</span> <span class="o">=</span> <span class="n">deaths_eu</span><span class="p">.</span><span class="nf">div</span><span class="p">(</span><span class="n">pop_eu</span><span class="p">.</span><span class="n">Year_2016</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100000</span>
+<span class="n">dd_eu</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>1/22/20</th>
+      <th>1/23/20</th>
+      <th>...</th>
+      <th>8/24/20</th>
+      <th>8/25/20</th>
+    </tr>
+    <tr>
+      <th>Country</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Austria</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>8.379673</td>
+      <td>8.379673</td>
+    </tr>
+    <tr>
+      <th>Belgium</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>88.084772</td>
+      <td>88.084772</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 217 columns</p>
+</div>
+
+<p>Now we pivot the dataframe, convert the index into a <code class="language-plaintext highlighter-rouge">DatetimeIndex</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dd_eu</span> <span class="o">=</span> <span class="n">dd_eu</span><span class="p">.</span><span class="n">T</span>
+<span class="n">dd_eu</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">dd_eu</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+<span class="n">dd_eu</span><span class="p">.</span><span class="nf">tail</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Country</th>
+      <th>Austria</th>
+      <th>Belgium</th>
+      <th>...</th>
+      <th>Sweden</th>
+      <th>United Kingdom</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-08-24</th>
+      <td>8.379673</td>
+      <td>88.084772</td>
+      <td>...</td>
+      <td>58.698661</td>
+      <td>63.255251</td>
+    </tr>
+    <tr>
+      <th>2020-08-25</th>
+      <td>8.379673</td>
+      <td>88.084772</td>
+      <td>...</td>
+      <td>58.708759</td>
+      <td>63.279627</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 28 columns</p>
+</div>
+
+<p>and compute a smoothed daily count of deaths per 100000 inhabitants:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">nd</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">rate</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">dd_eu</span><span class="p">.</span><span class="nf">diff</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">median</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">rolling</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">nd</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">mean</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">dropna</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="n">rate</span><span class="p">.</span><span class="nf">tail</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Country</th>
+      <th>Austria</th>
+      <th>Belgium</th>
+      <th>...</th>
+      <th>Sweden</th>
+      <th>United Kingdom</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-08-22</th>
+      <td>0.006859</td>
+      <td>0.066971</td>
+      <td>...</td>
+      <td>0.026928</td>
+      <td>0.015032</td>
+    </tr>
+    <tr>
+      <th>2020-08-23</th>
+      <td>0.006859</td>
+      <td>0.066971</td>
+      <td>...</td>
+      <td>0.027601</td>
+      <td>0.014423</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 28 columns</p>
+</div>
+
+<p>Let’s reorder the countries from lowest to highest maximum daily death rate:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">order</span> <span class="o">=</span> <span class="n">rate</span><span class="p">.</span><span class="nf">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">).</span><span class="nf">sort_values</span><span class="p">().</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">tolist</span><span class="p">()</span>
+<span class="n">rate</span> <span class="o">=</span> <span class="n">rate</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+<span class="n">rate</span><span class="p">.</span><span class="nf">tail</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Country</th>
+      <th>Latvia</th>
+      <th>Slovakia</th>
+      <th>...</th>
+      <th>Spain</th>
+      <th>Belgium</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-08-22</th>
+      <td>0.0</td>
+      <td>3.700743e-18</td>
+      <td>...</td>
+      <td>0.025694</td>
+      <td>0.066971</td>
+    </tr>
+    <tr>
+      <th>2020-08-23</th>
+      <td>0.0</td>
+      <td>3.700743e-18</td>
+      <td>...</td>
+      <td>0.029139</td>
+      <td>0.066971</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 28 columns</p>
+</div>
+
+<p>Here we duplicate the last row in order to later create nice looking Bokeh <code class="language-plaintext highlighter-rouge">Patches</code> (with a vertical line on the right side):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">rate</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">rate</span><span class="p">,</span> <span class="n">rate</span><span class="p">.</span><span class="nf">tail</span><span class="p">(</span><span class="mi">1</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">rate</span><span class="p">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+</code></pre></div></div>
+
+<p>We choose a color palette (linear sampling):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">palette</span> <span class="o">=</span> <span class="p">[</span><span class="n">cc</span><span class="p">.</span><span class="n">rainbow</span><span class="p">[</span><span class="nf">int</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">9</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">order</span><span class="p">))]</span>
+</code></pre></div></div>
+
+<p>Finally we can create the ridge plot.</p>
+
+<h2 id="plot">Plot</h2>
+
+<p>Most of the following code comes from Bokeh’s <a href="https://docs.bokeh.org/en/latest/docs/gallery/ridgeplot.html">documentation</a>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">ridge</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nf">list</span><span class="p">(</span><span class="nf">zip</span><span class="p">([</span><span class="n">category</span><span class="p">]</span> <span class="o">*</span> <span class="nf">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">data</span><span class="p">))</span>
+
+
+<span class="n">source</span> <span class="o">=</span> <span class="nc">ColumnDataSource</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nf">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">rate</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">values</span><span class="p">))</span>
+<span class="n">p</span> <span class="o">=</span> <span class="nf">figure</span><span class="p">(</span>
+    <span class="n">y_range</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+    <span class="n">plot_height</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span>
+    <span class="n">plot_width</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span>
+    <span class="n">toolbar_location</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Daily normalized rate of COVID-19 deaths per EU(+UK) country</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p</span><span class="p">.</span><span class="n">title</span><span class="p">.</span><span class="n">text_font_size</span> <span class="o">=</span> <span class="sh">"</span><span class="s">15pt</span><span class="sh">"</span>
+<span class="n">p</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="n">major_label_text_font_size</span> <span class="o">=</span> <span class="sh">"</span><span class="s">10pt</span><span class="sh">"</span>
+<span class="n">p</span><span class="p">.</span><span class="n">yaxis</span><span class="p">.</span><span class="n">major_label_text_font_size</span> <span class="o">=</span> <span class="sh">"</span><span class="s">10pt</span><span class="sh">"</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">country</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nf">ridge</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">rate</span><span class="p">[</span><span class="n">country</span><span class="p">])</span>
+    <span class="n">source</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">country</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">.</span><span class="nf">patch</span><span class="p">(</span>
+        <span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">country</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">line_color</span><span class="o">=</span><span class="sh">"</span><span class="s">black</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">line_alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">outline_line_color</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">p</span><span class="p">.</span><span class="n">background_fill_color</span> <span class="o">=</span> <span class="sh">"</span><span class="s">#efefef</span><span class="sh">"</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="n">formatter</span> <span class="o">=</span> <span class="nc">DatetimeTickFormatter</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="sh">"</span><span class="s">%m/%d</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">ygrid</span><span class="p">.</span><span class="n">grid_line_color</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">p</span><span class="p">.</span><span class="n">xgrid</span><span class="p">.</span><span class="n">grid_line_color</span> <span class="o">=</span> <span class="sh">"</span><span class="s">#dddddd</span><span class="sh">"</span>
+<span class="n">p</span><span class="p">.</span><span class="n">xgrid</span><span class="p">.</span><span class="n">ticker</span> <span class="o">=</span> <span class="n">p</span><span class="p">.</span><span class="n">xaxis</span><span class="p">.</span><span class="n">ticker</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">axis</span><span class="p">.</span><span class="n">minor_tick_line_color</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">p</span><span class="p">.</span><span class="n">axis</span><span class="p">.</span><span class="n">major_tick_line_color</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">p</span><span class="p">.</span><span class="n">axis</span><span class="p">.</span><span class="n">axis_line_color</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">y_range</span><span class="p">.</span><span class="n">range_padding</span> <span class="o">=</span> <span class="mf">0.85</span>
+
+<span class="nf">show</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-26_01/output_01.jpg" alt="Ridge plot" />
+</p>
+
+<p>The highest rate in this plot was reached in Belgium:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">rate</span><span class="p">[</span><span class="sh">"</span><span class="s">Belgium</span><span class="sh">"</span><span class="p">].</span><span class="nf">max</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2.4268253555488593
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">str</span><span class="p">(</span><span class="n">rate</span><span class="p">[</span><span class="sh">"</span><span class="s">Belgium</span><span class="sh">"</span><span class="p">].</span><span class="nf">idxmax</span><span class="p">().</span><span class="nf">date</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'2020-04-21'
+</code></pre></div></div>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

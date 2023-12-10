@@ -1,0 +1,651 @@
+<p align="center">
+  <img width="400" src="https://optuna.readthedocs.io/en/stable/_static/optuna-logo.png" alt="world" />
+</p>
+
+<p>In this post, we are going to deal with single-objective continuous optimization problems, using the open-source <a href="https://github.com/optuna/optuna">Optuna</a> Python package. Here is a very short description of this library from their github repository:</p>
+
+<blockquote>
+  <p>Optuna is an automatic hyperparameter optimization software framework, particularly designed for machine learning. It features an imperative, define-by-run style user API. Thanks to our define-by-run API, the code written with Optuna enjoys high modularity, and the user of Optuna can dynamically construct the search spaces for the hyperparameters.</p>
+</blockquote>
+
+<p>Optuna is a really great package for HyperParameter Optimization (HPO). I have been using it for a little while along several machine learning frameworks such as XGBoost, LightGBM, Scikit-Learn, Keras, etc… Optuna is powerful, efficient and easy to use. From what I understand, it is developped by the people from the japanese company Preferred Networks Inc, which brought some other great open-source packages such as <a href="https://github.com/chainer/chainer">Chainer</a> or <a href="https://github.com/cupy/cupy">CuPy</a>.</p>
+
+<p>Let’s use it here on some “textbook” optimization problems, minimizing 4 classic non-convex <a href="https://en.wikipedia.org/wiki/Test_functions_for_optimization">test functions for single-objective optimization</a>:</p>
+<ul>
+  <li>Rastrigin</li>
+  <li>Ackley</li>
+  <li>Rosenbrock</li>
+  <li>Himmelblau</li>
+</ul>
+
+<p>We are going to use the <a href="https://en.wikipedia.org/wiki/CMA-ES">Covariance matrix adaptation evolution strategy (CMA-ES)</a> algorithm, which is an evolutionary strategy (stochastic, derivative-free) available in Optuna as <a href="https://optuna.readthedocs.io/en/stable/reference/generated/optuna.samplers.CmaEsSampler.html">optuna.samplers.CmaEsSampler</a>. Note that this sampler does not support categorical distributions in case you would like to use it for HPO.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="n">mpl_toolkits</span> <span class="kn">import</span> <span class="n">mplot3d</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="n">numba</span> <span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">import</span> <span class="n">optuna</span>
+
+<span class="c1"># suppress log messages from Optuna
+</span><span class="n">optuna</span><span class="p">.</span><span class="n">logging</span><span class="p">.</span><span class="nf">set_verbosity</span><span class="p">(</span><span class="n">optuna</span><span class="p">.</span><span class="n">logging</span><span class="p">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">watermark</span>
+
+<span class="n">SD</span> <span class="o">=</span> <span class="mi">123</span>  <span class="c1"># random seed
+</span></code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2020-08-28T16:03:01+02:00
+
+CPython 3.8.5
+IPython 7.17.0
+
+compiler   : GCC 7.5.0
+system     : Linux
+release    : 4.15.0-112-generic
+machine    : x86_64
+processor  : x86_64
+CPU cores  : 8
+interpreter: 64bit
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">watermark</span> <span class="o">--</span><span class="n">iversions</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>matplotlib 3.3.1
+optuna     2.0.0
+numpy      1.19.1
+</code></pre></div></div>
+
+<p>Note that Optuna 2.0 was just <a href="https://medium.com/optuna/optuna-v2-3165e3f1fc2">realeased last month</a>.</p>
+
+<h3 id="early-stopping-callback">Early stopping callback</h3>
+
+<p>An assumption in the following is that we do not know the minimum value of the objective function. This is why we create a stopping criterion in which an <code class="language-plaintext highlighter-rouge">EarlyStoppingExceeded</code> exception is raised when the score does not decrease in <code class="language-plaintext highlighter-rouge">OPTUNA_EARLY_STOPING</code> successive iterations. I found this implementation of early stopping callback on github <a href="https://github.com/optuna/optuna/issues/1001#issuecomment-596478792">here</a> (nicely provided by https://github.com/Alex-Lekov).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">OPTUNA_EARLY_STOPING</span> <span class="o">=</span> <span class="mi">250</span>  <span class="c1"># number of stagnation iterations required to raise an EarlyStoppingExceeded exception
+</span>
+
+<span class="k">class</span> <span class="nc">EarlyStoppingExceeded</span><span class="p">(</span><span class="n">optuna</span><span class="p">.</span><span class="n">exceptions</span><span class="p">.</span><span class="n">OptunaError</span><span class="p">):</span>
+    <span class="n">early_stop</span> <span class="o">=</span> <span class="n">OPTUNA_EARLY_STOPING</span>
+    <span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">best_score</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+<span class="k">def</span> <span class="nf">early_stopping_opt</span><span class="p">(</span><span class="n">study</span><span class="p">,</span> <span class="n">trial</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="n">best_value</span>
+
+    <span class="k">if</span> <span class="n">study</span><span class="p">.</span><span class="n">best_value</span> <span class="o">&lt;</span> <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span><span class="p">:</span>
+        <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="n">best_value</span>
+        <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">&gt;</span> <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop</span><span class="p">:</span>
+            <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">best_score</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">raise</span> <span class="nc">EarlyStoppingExceeded</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="p">)</span>
+    <span class="k">return</span>
+</code></pre></div></div>
+
+<h2 id="rastrigin-function">Rastrigin function</h2>
+
+<p>The Rastrigin is a non-linear multi-modal function. Here is the formula of the Rastrigin function:</p>
+
+<p>$f(\mathbf{x}) = A n + \sum_{i=1}^n \left[ x_i^2 - A \cos(2 \pi x_i) \right],$</p>
+
+<p>where $A=10$.</p>
+
+<p>We are going to use only a 2-dimensional version of the function ($n=2$):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">rastrigin_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">A</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="n">A</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">y</span><span class="p">))</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>The search domain is $-5.12 \leq x_i \leq 5.12$, for $i=1, 2$.</p>
+
+<h3 id="plots">Plots</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">5.12</span><span class="p">,</span> <span class="mf">5.12</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">5.12</span><span class="p">,</span> <span class="mf">5.12</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">Z</span> <span class="o">=</span> <span class="nf">rastrigin_2D</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">axes</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="sh">"</span><span class="s">3d</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">contour3D</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">zlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">z</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">2D Rastrigin countour3D</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_14_0.png" alt="output_14_0" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">cs</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">contourf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">colorbar</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">2D Rastrigin countourf</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_15_0.png" alt="output_15_0" />
+</p>
+
+<p>The global minimum is located at $\mathbf{x} = (0, 0)$ where $f(\mathbf{x}) = 0$.</p>
+
+<h3 id="optimization">Optimization</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Optuna's objective function
+</span><span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">trial</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.12</span><span class="p">,</span> <span class="mf">5.12</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.12</span><span class="p">,</span> <span class="mf">5.12</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nf">rastrigin_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="c1"># Optuna' Sampler
+</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="n">samplers</span><span class="p">.</span><span class="nc">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">SD</span><span class="p">)</span>
+
+<span class="c1"># Optuna' Study
+</span><span class="n">study</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="nf">create_study</span><span class="p">(</span><span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">study</span><span class="p">.</span><span class="nf">optimize</span><span class="p">(</span>
+        <span class="n">objective</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">early_stopping_opt</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">EarlyStoppingExceeded</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EarlyStopping Exceeded: No new best scores in </span><span class="si">{</span><span class="n">OPTUNA_EARLY_STOPING</span><span class="si">}</span><span class="s"> iterations</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EarlyStopping Exceeded: No new best scores in 250 iterations
+CPU times: user 1.18 s, sys: 0 ns, total: 1.18 s
+Wall time: 1.2 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_params</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'x': -3.8548264908988565e-10, 'y': -5.211127394832204e-10}
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_value</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.0
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trials</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="nf">trials_dataframe</span><span class="p">()</span>
+<span class="n">trials</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>number</th>
+      <th>value</th>
+      <th>datetime_start</th>
+      <th>...</th>
+      <th>state</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>15.185858</td>
+      <td>2020-08-28 16:03:03.971095</td>
+      <th>...</th>
+      <td>COMPLETE</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>10.601259</td>
+      <td>2020-08-28 16:03:04.056077</td>
+      <th>...</th>
+      <td>COMPLETE</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">trials</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="nf">expanding</span><span class="p">().</span><span class="nf">min</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">logy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Optimization history</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Iteration #</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Objective value (log scale)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_23_0.png" alt="output_23_0" />
+</p>
+
+<h2 id="ackley-function">Ackley function</h2>
+
+<p>Here is the formula of Ackley function:</p>
+
+<p>$f(x, y) = -20 \exp \left[-0.2 \sqrt{0.5 (x^2+y^2)} \right] - \exp \left[0.5 \left( \cos(2 \pi x) + \cos(2 \pi y) \right) \right] + e +20 $</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">ackley</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="nf">return </span><span class="p">(</span>
+        <span class="o">-</span><span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">sqrt</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">y</span><span class="p">))))</span>
+        <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">exp</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">y</span><span class="p">)))</span>
+        <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="n">e</span>
+        <span class="o">+</span> <span class="mi">20</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>The search domain is $-5 \leq x, y \leq 5$.</p>
+
+<h3 id="plots-1">Plots</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">Z</span> <span class="o">=</span> <span class="nf">ackley</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">axes</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="sh">"</span><span class="s">3d</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">contour3D</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">zlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">z</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Ackley countour3D</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_29_0.png" alt="output_29_0" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">cs</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">contourf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">colorbar</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Ackley countourf</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_30_0.png" alt="output_30_0" />
+</p>
+
+<p>Again, the global minimum is located at $(x, y) = (0, 0)$ where $f(x, y) = 0$.</p>
+
+<h3 id="optimization-1">Optimization</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Optuna's objective function
+</span><span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">trial</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nf">ackley</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="c1"># Optuna' Sampler
+</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="n">samplers</span><span class="p">.</span><span class="nc">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">SD</span><span class="p">)</span>
+
+<span class="c1"># Optuna' Study
+</span><span class="n">study</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="nf">create_study</span><span class="p">(</span><span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+
+<span class="c1"># reset the EarlyStoppingExceeded class
+</span><span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop</span> <span class="o">=</span> <span class="n">OPTUNA_EARLY_STOPING</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">=</span> <span class="bp">None</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">study</span><span class="p">.</span><span class="nf">optimize</span><span class="p">(</span>
+        <span class="n">objective</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">early_stopping_opt</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">EarlyStoppingExceeded</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EarlyStopping Exceeded: No new best scores on iters </span><span class="si">{</span><span class="n">OPTUNA_EARLY_STOPING</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EarlyStopping Exceeded: No new best scores on iters 250
+CPU times: user 1.57 s, sys: 8.06 ms, total: 1.58 s
+Wall time: 1.58 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_params</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'x': 2.604765386682313e-17, 'y': 2.52303410018247e-16}
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_value</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.0
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trials</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="nf">trials_dataframe</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">trials</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="nf">expanding</span><span class="p">().</span><span class="nf">min</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">logy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Optimization history</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Iteration #</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Objective value (log scale)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_37_0.png" alt="output_37_0" />
+</p>
+
+<h2 id="rosenbrock-function">Rosenbrock function</h2>
+
+<p>As explained on <a href="https://en.wikipedia.org/wiki/Rosenbrock_function">the wikipedia page</a>:</p>
+
+<blockquote>
+  <p>The global minimum is inside a long, narrow, parabolic shaped flat valley. To find the valley is trivial. To converge to the global minimum, however, is difficult.</p>
+</blockquote>
+
+<p>Here is the formula:</p>
+
+<p>$f( \mathbf{x}) = \sum_{i=1}^{n-1}\left[ 100 ( x_{i+1} - x_i^2)^2 + (1 - x_i)^2 \right],$</p>
+
+<p>with $n \geq 2$. We are going to use only a 2-dimensional version of the function ($n=2$):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">rosenbrock_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>The search domain is $-\infty \leq x, y \leq \infty$. Let’s limit the domain to $[-10, 10]^2$ for the search space.</p>
+
+<h3 id="plots-2">Plots</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">Z</span> <span class="o">=</span> <span class="nf">rosenbrock_2D</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">axes</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="sh">"</span><span class="s">3d</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">view_init</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="o">-</span><span class="mi">120</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">contour3D</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">zlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">z</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">2D Rosenbrock countour3D</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_43_0.png" alt="output_43_0" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">cs</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">contourf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">colorbar</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">2D Rosenbrock countourf</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_44_0.png" alt="output_44_0" />
+</p>
+
+<p>The global minimum is located at $(x, y) = (1, 1)$ where $f(x, y) = 0$.</p>
+
+<h3 id="optimization-2">Optimization</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Optuna's objective function
+</span><span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">trial</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nf">rosenbrock_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="c1"># Optuna' Sampler
+</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="n">samplers</span><span class="p">.</span><span class="nc">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">SD</span><span class="p">)</span>
+
+<span class="c1"># Optuna' Study
+</span><span class="n">study</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="nf">create_study</span><span class="p">(</span><span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+
+<span class="c1"># reset the EarlyStoppingExceeded class
+</span><span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop</span> <span class="o">=</span> <span class="n">OPTUNA_EARLY_STOPING</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">=</span> <span class="bp">None</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">study</span><span class="p">.</span><span class="nf">optimize</span><span class="p">(</span>
+        <span class="n">objective</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">early_stopping_opt</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">EarlyStoppingExceeded</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EarlyStopping Exceeded: No new best scores on iters </span><span class="si">{</span><span class="n">OPTUNA_EARLY_STOPING</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EarlyStopping Exceeded: No new best scores on iters 250
+CPU times: user 1.92 s, sys: 11.6 ms, total: 1.93 s
+Wall time: 1.93 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_params</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'x': 1.0, 'y': 1.0}
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_value</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.0
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trials</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="nf">trials_dataframe</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">trials</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="nf">expanding</span><span class="p">().</span><span class="nf">min</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">logy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Optimization history</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Iteration #</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Objective value (log scale)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_51_0.png" alt="output_51_0" />
+</p>
+
+<h2 id="himmelblaus-function">Himmelblau’s function</h2>
+
+<p>Himmelblau’s function is a 2D multi-modal function, with this formula:</p>
+
+<p>$f(x,y)=(x^{2}+y-11)^{2}+(x+y^{2}-7)^{2}$.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">himmelblau</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">11</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">np</span><span class="p">.</span><span class="nf">square</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="mi">7</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The search domain is $-\infty \leq x, y \leq \infty$. Let’s limit the domain to $[-5, 5]^2$ for the search space.</p>
+
+<h3 id="plots-3">Plots</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">Z</span> <span class="o">=</span> <span class="nf">himmelblau</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">axes</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="sh">"</span><span class="s">3d</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">contour3D</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">zlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">z</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Himmelblau countour3D</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_57_0.png" alt="output_57_0" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">cs</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">contourf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">"</span><span class="s">nipy_spectral</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">colorbar</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="o">-</span><span class="mf">2.805118</span><span class="p">,</span> <span class="mf">3.283186</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="o">-</span><span class="mf">3.779310</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.283186</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="mf">3.584458</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.848126</span><span class="p">,</span> <span class="sh">"</span><span class="s">wo</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Himmelblau countourf</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_58_0.png" alt="output_58_0" />
+</p>
+
+<p>The Himmelblau function has four equal local minima $f(x, y) = 0$, located at:</p>
+<ul>
+  <li>$(x, y) = (3, 2)$,</li>
+  <li>$(x, y) = (-2.805118, 3.131312)$ (approx.),</li>
+  <li>$(x, y) = (-3.779310, -3.283186)$  (approx.),</li>
+  <li>$(x, y) = (3.584458, -1.848126)$  (approx.),</li>
+</ul>
+
+<p>So obviously, the algorithm will find only one of these equal minima.</p>
+
+<h3 id="optimization-3">Optimization</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Optuna's objective function
+</span><span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">trial</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">trial</span><span class="p">.</span><span class="nf">suggest_uniform</span><span class="p">(</span><span class="sh">"</span><span class="s">y</span><span class="sh">"</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nf">himmelblau</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="c1"># Optuna' Sampler
+</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="n">samplers</span><span class="p">.</span><span class="nc">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">SD</span><span class="p">)</span>
+
+<span class="c1"># Optuna' Study
+</span><span class="n">study</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="nf">create_study</span><span class="p">(</span><span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+
+<span class="c1"># reset the EarlyStoppingExceeded class
+</span><span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop</span> <span class="o">=</span> <span class="n">OPTUNA_EARLY_STOPING</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">=</span> <span class="bp">None</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">study</span><span class="p">.</span><span class="nf">optimize</span><span class="p">(</span>
+        <span class="n">objective</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">early_stopping_opt</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">EarlyStoppingExceeded</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EarlyStopping Exceeded: No new best scores on iters </span><span class="si">{</span><span class="n">OPTUNA_EARLY_STOPING</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EarlyStopping Exceeded: No new best scores on iters 250
+CPU times: user 1.78 s, sys: 11.8 ms, total: 1.79 s
+Wall time: 1.8 s
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_params</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'x': 3.0, 'y': 2.0}
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_value</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0.0
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trials</span> <span class="o">=</span> <span class="n">study</span><span class="p">.</span><span class="nf">trials_dataframe</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">trials</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="nf">expanding</span><span class="p">().</span><span class="nf">min</span><span class="p">().</span><span class="nf">plot</span><span class="p">(</span><span class="n">logy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Optimization history</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Iteration #</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Objective value (log scale)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="750" src="/img/2020-08-28_01/output_65_0.png" alt="output_65_0" />
+</p>
+
+<p>One way to reach another minimum is to change the random seed:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Optuna' Sampler
+</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="n">samplers</span><span class="p">.</span><span class="nc">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># Optuna' Study
+</span><span class="n">study</span> <span class="o">=</span> <span class="n">optuna</span><span class="p">.</span><span class="nf">create_study</span><span class="p">(</span><span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+
+<span class="c1"># reset the EarlyStoppingExceeded class
+</span><span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop</span> <span class="o">=</span> <span class="n">OPTUNA_EARLY_STOPING</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">early_stop_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">EarlyStoppingExceeded</span><span class="p">.</span><span class="n">best_score</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">study</span><span class="p">.</span><span class="nf">optimize</span><span class="p">(</span>
+        <span class="n">objective</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">early_stopping_opt</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">EarlyStoppingExceeded</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">EarlyStopping Exceeded: No new best scores on iters </span><span class="si">{</span><span class="n">OPTUNA_EARLY_STOPING</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EarlyStopping Exceeded: No new best scores on iters 250
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">study</span><span class="p">.</span><span class="n">best_params</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'x': -2.805118086952745, 'y': 3.131312518250573}
+</code></pre></div></div>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

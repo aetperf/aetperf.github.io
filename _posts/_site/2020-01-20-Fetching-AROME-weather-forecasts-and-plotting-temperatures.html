@@ -1,0 +1,407 @@
+<p>Accurate weather forecasts might be very usefull for various types of models. In this post, we are going to download the latest available weather forecasts for France and plot some temperature fields, using different Python libraries:</p>
+
+<p align="center">
+  <img width="750" src="/img/2020-01-20_01/animation_lowres_2.gif" alt="gif" />
+</p>
+
+<p><a href="https://www.umr-cnrm.fr/spip.php?article120&amp;lang=en">Arome</a> is small scale numerical prediction model, operational at Meteo-France. AROME forecasts are available on the Meteo-France website <a href="https://donneespubliques.meteofrance.fr/?fond=produit&amp;id_produit=131&amp;id_rubrique=51">here</a> under the <a href="https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Open_Licence.pdf">ETALAB licence</a>.</p>
+
+<p align="center">
+  <img width="250" src="https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Logo_Licence_Ouverte_bleu_blanc_rouge.png" alt="Etalab" />
+</p>
+
+<p>From what we understand they only have been made available as “open data” since July 2019. The data files from Meteo-France are available as grib2 files. We are going to use the simple <code class="language-plaintext highlighter-rouge">pygrib</code> package to read them. Here is a summary of what we are going to do in this post:</p>
+<ul>
+  <li>download the latest forecasts</li>
+  <li>open the grib2 files</li>
+  <li>get the spatial grid</li>
+  <li>stack the temperature files into a 3D Numpy array</li>
+  <li>get a background map</li>
+  <li>plot the temperature fields</li>
+</ul>
+
+<p>Let us start by importing a few libraries (we use CPython 3.7.6 on a Linux OS):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span><span class="p">,</span> <span class="n">sys</span>
+<span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="n">subprocess</span>
+
+<span class="kn">import</span> <span class="n">pygrib</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">geopandas</span> <span class="k">as</span> <span class="n">gpd</span>
+<span class="kn">from</span> <span class="n">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span><span class="p">,</span> <span class="n">Polygon</span>
+</code></pre></div></div>
+
+<h2 id="download-the-latest-forecasts">Download the latest forecasts</h2>
+
+<p>The first thing we need to do is guessing the latest available run from Meteo France. In order to do that, we have the following function inspired from <a href="https://github.com/TimLepage/MeteoPredictor/blob/982dadda3e1f60558accfc8f9c9a3fe8bfd405b2/METEO/METEO_VISUALISATION_SIMPLE/PYTHON/RequeteAromeHD.py">this</a> repo:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">get_latest_run_time</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+    <span class="sh">'''</span><span class="s"> Runs are updated at 0am, 3am, 6am, 0pm, 6pm UTC.
+        Note that the delay must be adjusted.
+    </span><span class="sh">'''</span>
+    <span class="n">utc_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">datetime</span><span class="p">.</span><span class="nf">utcnow</span><span class="p">()</span>
+    <span class="n">candidate</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="nf">datetime</span><span class="p">(</span><span class="n">utc_now</span><span class="p">.</span><span class="n">year</span><span class="p">,</span> <span class="n">utc_now</span><span class="p">.</span><span class="n">month</span><span class="p">,</span> <span class="n">utc_now</span><span class="p">.</span><span class="n">day</span><span class="p">,</span> <span class="n">utc_now</span><span class="p">.</span><span class="n">hour</span><span class="p">)</span> <span class="o">-</span> \
+        <span class="n">datetime</span><span class="p">.</span><span class="nf">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">delay</span><span class="p">)</span>
+    <span class="n">run_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="nf">datetime</span><span class="p">(</span><span class="n">candidate</span><span class="p">.</span><span class="n">year</span><span class="p">,</span> <span class="n">candidate</span><span class="p">.</span><span class="n">month</span><span class="p">,</span> <span class="n">candidate</span><span class="p">.</span><span class="n">day</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">hour</span> <span class="ow">in</span> <span class="n">np</span><span class="p">.</span><span class="nf">flip</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">sort</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">])):</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="p">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="n">hour</span><span class="p">:</span>
+            <span class="n">run_time</span> <span class="o">+=</span> <span class="n">datetime</span><span class="p">.</span><span class="nf">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="nf">int</span><span class="p">(</span><span class="n">hour</span><span class="p">))</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">run_time</span><span class="p">.</span><span class="nf">isoformat</span><span class="p">()</span>
+
+<span class="n">run_time</span> <span class="o">=</span> <span class="nf">get_latest_run_time</span><span class="p">()</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">run_time</span><span class="p">)</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2020-01-20T06:00:00
+</code></pre></div></div>
+
+<p>So the latest available results from the AROME model dates back from today at 6am UTC. We are going to build the URL where the files can be fetched. Next, we need to define the forecasting time range(s) that we interested in. The available time ranges are the following ones: 0-6H, 7-12H, 13-18H, 19-24H, 25-30, 31-36H and 37-42H. The time range string is returned by the following function given an int between 0 and 6:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">get_time_range</span><span class="p">(</span><span class="n">batch_number</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sh">'''</span><span class="s"> 7 different 6-hours long time ranges: 0-6H, 7-12H, ... , 37-42H.
+    </span><span class="sh">'''</span>
+    <span class="k">assert</span> <span class="n">batch_number</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> 
+    <span class="n">end</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="p">(</span><span class="n">batch_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">batch_number</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="mi">5</span>
+    <span class="n">time_range</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">start</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="sh">'</span><span class="s">H</span><span class="sh">'</span> <span class="o">+</span> <span class="nf">str</span><span class="p">(</span><span class="n">end</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span><span class="sh">'</span><span class="s">H</span><span class="sh">'</span>
+    <span class="k">return</span> <span class="n">time_range</span>
+
+<span class="n">time_range</span> <span class="o">=</span> <span class="nf">get_time_range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">time_range</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'19H24H'
+</code></pre></div></div>
+
+<p>Let’s say we are interested in all the different time ranges, and gather them into a list:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">time_ranges</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">batch_number</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+    <span class="n">time_ranges</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="nf">get_time_range</span><span class="p">(</span><span class="n">batch_number</span><span class="p">))</span>
+<span class="n">time_ranges</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>['00H06H', '07H12H', '13H18H', '19H24H', '25H30H', '31H36H', '37H42H']
+</code></pre></div></div>
+
+<p>Now we are going to use 2 functions returning strings:</p>
+<ul>
+  <li>one to create the URLs</li>
+  <li>one to create the path where each file is going to be saved</li>
+</ul>
+
+<p>One of the parameter of these functions is <code class="language-plaintext highlighter-rouge">package</code>: this defines a group of weather fields. We are going to fetch the <code class="language-plaintext highlighter-rouge">SP1</code> package, which contains “current surface parameters”, and specifically the surface temperature. Also, we are going to fetch the results with a 0.025° resolution. We tried the finer ones (0.01°) but did not succeed in opening the files in Python, but only with the <a href="https://opengribs.org/en/xygrib">XyGrib</a> software. Note that 11 different packages are available on the Meteo-France web site with the coarser resolution (0.025°).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">create_url</span><span class="p">(</span><span class="n">run_time</span><span class="p">,</span> <span class="n">time_range</span><span class="o">=</span><span class="sh">'</span><span class="s">00H06H</span><span class="sh">'</span><span class="p">,</span> <span class="n">package</span><span class="o">=</span><span class="sh">'</span><span class="s">SP1</span><span class="sh">'</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="sh">'</span><span class="s">__5yLVTdr-sGeHoPitnFc7TZ6MhBcJxuSsoZp6y0leVHU__</span><span class="sh">'</span><span class="p">):</span>
+    <span class="sh">'''</span><span class="s"> This creates the url string to get the data with 0.025° spatial accuracy.
+    </span><span class="sh">'''</span>
+    <span class="k">assert</span> <span class="n">package</span> <span class="ow">in</span> <span class="p">[</span><span class="sh">'</span><span class="s">HP1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">HP2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">HP3</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">IP1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">IP2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">IP3</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">IP4</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">IP5</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">SP1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">SP2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">SP3</span><span class="sh">'</span><span class="p">]</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">http://dcpc-nwp.meteo.fr/services/PS_GetCache_DCPCPreviNum\?token\=</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="sh">'</span> \
+    <span class="o">+</span> <span class="sa">f</span><span class="sh">'</span><span class="s">\&amp;model\=AROME\&amp;grid\=0.025\&amp;package\=</span><span class="si">{</span><span class="n">package</span><span class="si">}</span><span class="s">\&amp;time\=</span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s">\&amp;referencetime\=</span><span class="si">{</span><span class="n">run_time</span><span class="si">}</span><span class="s">Z\&amp;format\=grib2</span><span class="sh">'</span>
+    <span class="k">return</span> <span class="n">url</span>
+
+<span class="k">def</span> <span class="nf">create_file_name</span><span class="p">(</span><span class="n">run_time</span><span class="p">,</span> <span class="n">time_range</span><span class="o">=</span><span class="sh">'</span><span class="s">00H06H</span><span class="sh">'</span><span class="p">,</span> <span class="n">package</span><span class="o">=</span><span class="sh">'</span><span class="s">SP1</span><span class="sh">'</span><span class="p">):</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="sh">''</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">run_time</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="s">:</span><span class="sh">'</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">,</span> <span class="sh">''</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">'</span><span class="s">T</span><span class="sh">'</span><span class="p">,</span> <span class="sh">''</span><span class="p">)</span>
+    <span class="n">file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">AROME_0.025_</span><span class="si">{</span><span class="n">package</span><span class="si">}</span><span class="s">_</span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s">_</span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s">.grib2</span><span class="sh">'</span>
+    <span class="k">return</span> <span class="n">file_name</span>
+</code></pre></div></div>
+<p>We can now  build a list of all URLs and target file names:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">time_range</span> <span class="ow">in</span> <span class="n">time_ranges</span><span class="p">:</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="nf">create_url</span><span class="p">(</span><span class="n">run_time</span><span class="p">,</span> <span class="n">time_range</span><span class="p">)</span>
+    <span class="n">file_name</span> <span class="o">=</span> <span class="nf">create_file_name</span><span class="p">(</span><span class="n">run_time</span><span class="p">,</span> <span class="n">time_range</span><span class="p">)</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="nf">getcwd</span><span class="p">(),</span> <span class="n">file_name</span><span class="p">)</span>  <span class="c1"># files are downloaded locally
+</span>    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">'</span><span class="s">wget --output-document </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s"> </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="sh">'</span>
+    <span class="n">files</span><span class="p">.</span><span class="nf">append</span><span class="p">({</span><span class="sh">'</span><span class="s">url</span><span class="sh">'</span><span class="p">:</span> <span class="n">url</span><span class="p">,</span> <span class="sh">'</span><span class="s">file_name</span><span class="sh">'</span><span class="p">:</span> <span class="n">file_name</span><span class="p">,</span> <span class="sh">'</span><span class="s">file_path</span><span class="sh">'</span><span class="p">:</span> <span class="n">file_path</span><span class="p">,</span> <span class="sh">'</span><span class="s">cmd</span><span class="sh">'</span><span class="p">:</span> <span class="n">cmd</span><span class="p">})</span>
+<span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># let's display the first item from the list
+</span></code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'url': 'http://dcpc-nwp.meteo.fr/services/PS_GetCache_DCPCPreviNum\\?token\\=__5yLVTdr-sGeHoPitnFc7TZ6MhBcJxuSsoZp6y0leVHU__\\&amp;model\\=AROME\\&amp;grid\\=0.025\\&amp;package\\=SP1\\&amp;time\\=00H06H\\&amp;referencetime\\=2020-01-20T06:00:00Z\\&amp;format\\=grib2',
+ 'file_name': 'AROME_0.025_SP1_00H06H_202001200600.grib2',
+ 'file_path': '/home/francois/Workspace/AROME/AROME_0.025_SP1_00H06H_202001200600.grib2',
+ 'cmd': 'wget --output-document /home/francois/Workspace/AROME/AROME_0.025_SP1_00H06H_202001200600.grib2 http://dcpc-nwp.meteo.fr/services/PS_GetCache_DCPCPreviNum\\?token\\=__5yLVTdr-sGeHoPitnFc7TZ6MhBcJxuSsoZp6y0leVHU__\\&amp;model\\=AROME\\&amp;grid\\=0.025\\&amp;package\\=SP1\\&amp;time\\=00H06H\\&amp;referencetime\\=2020-01-20T06:00:00Z\\&amp;format\\=grib2'}
+</code></pre></div></div>
+
+<p>Next we download the data files sequentially.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%%</span><span class="n">time</span>
+<span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">file</span><span class="p">[</span><span class="sh">'</span><span class="s">cmd</span><span class="sh">'</span><span class="p">]</span> <span class="k">for</span> <span class="nb">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]:</span>
+    <span class="n">subprocess</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CPU times: user 51.2 ms, sys: 66.1 ms, total: 117 ms
+Wall time: 28min 26s
+</code></pre></div></div>
+
+<p>28 min is quite long! This could be easily parallelized but is the upstream server allowing multiple requests from the same IP? Anyway we (slowly) got the following files:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">ls</span> <span class="o">-</span><span class="n">s</span> <span class="o">*</span><span class="p">.</span><span class="n">grib2</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>31808 AROME_0.025_SP1_00H06H_202001200600.grib2
+29268 AROME_0.025_SP1_07H12H_202001200600.grib2
+29692 AROME_0.025_SP1_13H18H_202001200600.grib2
+29712 AROME_0.025_SP1_19H24H_202001200600.grib2
+30552 AROME_0.025_SP1_25H30H_202001200600.grib2
+29928 AROME_0.025_SP1_31H36H_202001200600.grib2
+    0 AROME_0.025_SP1_37H42H_202001200600.grib2
+</code></pre></div></div>
+
+<p>We can notice that the last file was not available from the Meteo-France server at the moment we tried to access it. Also, we can observe that the files aren’t so large (around 30 MB each).</p>
+
+<h2 id="open-the-grib2-files">Open the grib2 files</h2>
+
+<p>We use the handy <code class="language-plaintext highlighter-rouge">pygrib</code> package:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">grbs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+    <span class="n">grbs</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">pygrib</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="sh">'</span><span class="s">file_path</span><span class="sh">'</span><span class="p">]))</span>
+</code></pre></div></div>
+
+<p>Also, we get all the description data and gather them into a dataframe:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">descr</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">grbs</span><span class="p">:</span>
+    <span class="n">item</span><span class="p">.</span><span class="nf">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">grb</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+        <span class="n">descr</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">grb</span><span class="p">).</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="s">:</span><span class="sh">'</span><span class="p">))</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+    <span class="n">descr</span><span class="p">,</span> 
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">id</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">unit</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">spacing</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">layer</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">level</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">hour</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">run_dt</span><span class="sh">'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id</th>
+      <th>name</th>
+      <th>unit</th>
+      <th>spacing</th>
+      <th>layer</th>
+      <th>level</th>
+      <th>hour</th>
+      <th>run_dt</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Mean sea level pressure</td>
+      <td>Pa (instant)</td>
+      <td>regular_ll</td>
+      <td>meanSea</td>
+      <td>level 0</td>
+      <td>fcst time 0 hrs</td>
+      <td>from 202001200600</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Mean sea level pressure</td>
+      <td>Pa (instant)</td>
+      <td>regular_ll</td>
+      <td>meanSea</td>
+      <td>level 0</td>
+      <td>fcst time 1 hrs</td>
+      <td>from 202001200600</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>547
+</code></pre></div></div>
+
+<p>We actually have 547 layers. Let us look at the different fields found in the files:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">name</span><span class="p">.</span><span class="nf">unique</span><span class="p">()</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array(['Mean sea level pressure', '10 metre U wind component',
+       '10 metre V wind component', '10 metre wind direction',
+       '10 metre wind speed', 'Wind speed (gust)',
+       'u-component of wind (gust)', 'v-component of wind (gust)',
+       '2 metre temperature', '2 metre relative humidity',
+       'Total Precipitation', 'Snow melt',
+       'Downward short-wave radiation flux', '75', 'Total Cloud Cover'],
+      dtype=object)
+</code></pre></div></div>
+
+<p>Obviously, not all the 15 variables are available for each of the 37 hours, or we would have 555 layers. This is because some of the variables do not exhibit the same one-hour based temporality. Let’s look at the <code class="language-plaintext highlighter-rouge">2 metre temperature</code> variable:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">name</span> <span class="o">==</span> <span class="sh">'</span><span class="s">2 metre temperature</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">hour</span><span class="sh">'</span><span class="p">].</span><span class="n">values</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>array(['fcst time 0 hrs', 'fcst time 1 hrs', 'fcst time 2 hrs',
+       'fcst time 3 hrs', 'fcst time 4 hrs', 'fcst time 5 hrs',
+       'fcst time 6 hrs', 'fcst time 7 hrs', 'fcst time 8 hrs',
+       'fcst time 9 hrs', 'fcst time 10 hrs', 'fcst time 11 hrs',
+       'fcst time 12 hrs', 'fcst time 13 hrs', 'fcst time 14 hrs',
+       'fcst time 15 hrs', 'fcst time 16 hrs', 'fcst time 17 hrs',
+       'fcst time 18 hrs', 'fcst time 19 hrs', 'fcst time 20 hrs',
+       'fcst time 21 hrs', 'fcst time 22 hrs', 'fcst time 23 hrs',
+       'fcst time 24 hrs', 'fcst time 25 hrs', 'fcst time 26 hrs',
+       'fcst time 27 hrs', 'fcst time 28 hrs', 'fcst time 29 hrs',
+       'fcst time 30 hrs', 'fcst time 31 hrs', 'fcst time 32 hrs',
+       'fcst time 33 hrs', 'fcst time 34 hrs', 'fcst time 35 hrs',
+       'fcst time 36 hrs'], dtype=object)
+</code></pre></div></div>
+
+<p>All the 37 hours are found.</p>
+
+<h2 id="get-the-spatial-grid">Get the spatial grid</h2>
+
+<p>Here we look for the first temperature field and get the associated grid:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">grb</span> <span class="o">=</span> <span class="n">grbs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">54</span><span class="p">]</span>
+<span class="n">grb</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>54:2 metre temperature:K (instant):regular_ll:heightAboveGround:level 2 m:fcst time 0 hrs:from 202001200600
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">lats</span><span class="p">,</span> <span class="n">lons</span> <span class="o">=</span> <span class="n">grb</span><span class="p">.</span><span class="nf">latlons</span><span class="p">()</span>  <span class="c1"># WGS84 projection
+</span><span class="n">lats</span><span class="p">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">lats</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="n">lats</span><span class="p">.</span><span class="nf">max</span><span class="p">(),</span> <span class="n">lons</span><span class="p">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">lons</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="n">lons</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>((601, 801), 38.00000000000085, 53.0, (601, 801), -8.0, 12.00000000000015)
+</code></pre></div></div>
+
+<p>So we assume that the grid is a uniform Catesian 801 x 601 grid.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">shape</span> <span class="o">=</span> <span class="n">lats</span><span class="p">.</span><span class="n">shape</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="n">lons</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="n">lons</span><span class="p">.</span><span class="nf">max</span><span class="p">(),</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">linspace</span><span class="p">(</span><span class="n">lats</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="n">lats</span><span class="p">.</span><span class="nf">max</span><span class="p">(),</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We also compute a ratio for the figure size:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ratio</span> <span class="o">=</span> <span class="p">(</span><span class="n">lats</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">lats</span><span class="p">.</span><span class="nf">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">lons</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">lons</span><span class="p">.</span><span class="nf">min</span><span class="p">())</span> 
+<span class="n">size_int</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">fig_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">size_int</span><span class="p">,</span> <span class="nf">int</span><span class="p">(</span><span class="nf">round</span><span class="p">(</span><span class="n">ratio</span> <span class="o">*</span> <span class="n">size_int</span><span class="p">)))</span>
+<span class="n">fig_size</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(20, 15)
+</code></pre></div></div>
+
+<h2 id="stack-the-temperature-files-into-a-3d-numpy-array">Stack the temperature files into a 3D Numpy array</h2>
+
+<p>For each temperature layer, we extract the values as a NumPy array. The data is reverted along the 1st axis in order to be displayed correctly. Also, the temperature unit is changed from Kelvin to Celsius:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">arrays</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">batch_number</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="n">grb_hours</span> <span class="o">=</span> <span class="n">grbs</span><span class="p">[</span><span class="n">batch_number</span><span class="p">].</span><span class="nf">select</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sh">'</span><span class="s">2 metre temperature</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">grb_hours</span><span class="p">)):</span>
+        <span class="n">grb</span> <span class="o">=</span> <span class="n">grb_hours</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">temper</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">copy</span><span class="p">(</span><span class="n">grb</span><span class="p">.</span><span class="n">values</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,])</span>  <span class="c1"># revert first axis
+</span>        <span class="n">temper</span> <span class="o">-=</span> <span class="mf">273.15</span>  <span class="c1"># from Kelvin to Celsius
+</span>        <span class="n">arrays</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">temper</span><span class="p">)</span>
+<span class="n">temperatures</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">temperatures</span><span class="p">.</span><span class="n">shape</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(601, 801, 37)
+</code></pre></div></div>
+
+<p>We can see that the 3rd dimension is the temporal one. We also compute the global min and max temperature in order to have a fixed colormap:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">temp_min</span><span class="p">,</span> <span class="n">temp_max</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">floor</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">min</span><span class="p">(</span><span class="n">temperatures</span><span class="p">))),</span> <span class="nf">int</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">ceil</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">max</span><span class="p">(</span><span class="n">temperatures</span><span class="p">)))</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">min </span><span class="si">{</span><span class="n">temp_min</span><span class="si">}</span><span class="s"> / max </span><span class="si">{</span><span class="n">temp_max</span><span class="si">}</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>min -31 / max 18
+</code></pre></div></div>
+
+<h2 id="get-a-background-map">Get a background map</h2>
+
+<p>We would like to plot the temperature as filled contours on top of an administrative map, so that the different borders can be seen. The borders are loaded with <a href="http://geopandas.org/">GeoPandas</a> from a shapefile found on the <a href="http://www.naturalearthdata.com">naturalearthdata.com</a> web site. However these are all the countries in the world and we are only interested in a bounding box around France defined by the previous spatial grid.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-countries/
+</span><span class="n">world</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">read_file</span><span class="p">(</span><span class="sh">'</span><span class="s">./countries/ne_10m_admin_0_countries.shp</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">world</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="sh">'</span><span class="s">white</span><span class="sh">'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">'</span><span class="s">black</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+<p align="center">
+  <img width="400" src="/img/2020-01-20_01/output_43_0.png" alt="world" />
+</p>
+
+<p>So let’s create a bounding box as a GeoDataFrame and intersect it with the world countries’ one:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">p1</span> <span class="o">=</span> <span class="nc">Point</span><span class="p">(</span><span class="n">lons</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="n">lats</span><span class="p">.</span><span class="nf">min</span><span class="p">())</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="nc">Point</span><span class="p">(</span><span class="n">lons</span><span class="p">.</span><span class="nf">max</span><span class="p">(),</span> <span class="n">lats</span><span class="p">.</span><span class="nf">min</span><span class="p">())</span>
+<span class="n">p3</span> <span class="o">=</span> <span class="nc">Point</span><span class="p">(</span><span class="n">lons</span><span class="p">.</span><span class="nf">max</span><span class="p">(),</span> <span class="n">lats</span><span class="p">.</span><span class="nf">max</span><span class="p">())</span>
+<span class="n">p4</span> <span class="o">=</span> <span class="nc">Point</span><span class="p">(</span><span class="n">lons</span><span class="p">.</span><span class="nf">min</span><span class="p">(),</span> <span class="n">lats</span><span class="p">.</span><span class="nf">max</span><span class="p">())</span>
+<span class="n">np1</span> <span class="o">=</span> <span class="p">(</span><span class="n">p1</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">p1</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">np2</span> <span class="o">=</span> <span class="p">(</span><span class="n">p2</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">p2</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">np3</span> <span class="o">=</span> <span class="p">(</span><span class="n">p3</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">p3</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">np4</span> <span class="o">=</span> <span class="p">(</span><span class="n">p4</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">p4</span><span class="p">.</span><span class="n">coords</span><span class="p">.</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">bb_polygon</span> <span class="o">=</span> <span class="nc">Polygon</span><span class="p">([</span><span class="n">np1</span><span class="p">,</span> <span class="n">np2</span><span class="p">,</span> <span class="n">np3</span><span class="p">,</span> <span class="n">np4</span><span class="p">])</span>
+<span class="n">bbox</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nc">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="p">[</span><span class="n">bb_polygon</span><span class="p">])</span>
+<span class="n">france</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nf">overlay</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="sh">'</span><span class="s">intersection</span><span class="sh">'</span><span class="p">)</span>
+<span class="n">france</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="sh">'</span><span class="s">white</span><span class="sh">'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">'</span><span class="s">black</span><span class="sh">'</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="400" src="/img/2020-01-20_01/output_47_0.png" alt="france" />
+</p>
+
+<h2 id="plot-the-temperature-fields">Plot the temperature fields</h2>
+
+<p>Here we go! Now we can finally plot the temperature fields:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">creation_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">datetime</span><span class="p">.</span><span class="nf">strptime</span><span class="p">(</span><span class="n">run_time</span><span class="p">,</span> <span class="sh">"</span><span class="s">%Y-%m-%dT%H:%M:%S</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">movie</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="n">temperatures</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">fig_size</span><span class="p">)</span>
+    <span class="n">CS</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">contourf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">temperatures</span><span class="p">[:,:,</span><span class="n">k</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="n">temp_min</span><span class="p">,</span> <span class="n">temp_max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="sh">'</span><span class="s">jet</span><span class="sh">'</span><span class="p">);</span>
+    <span class="n">france</span><span class="p">.</span><span class="n">geometry</span><span class="p">.</span><span class="n">boundary</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="sh">'</span><span class="s">k</span><span class="sh">'</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">);</span>
+    <span class="n">reference_time</span> <span class="o">=</span> <span class="n">creation_time</span> <span class="o">+</span> <span class="n">datetime</span><span class="p">.</span><span class="nf">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">.</span><span class="nf">set_title</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">run </span><span class="si">{</span><span class="n">creation_time</span><span class="p">.</span><span class="nf">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s"> - ref </span><span class="si">{</span><span class="n">reference_time</span><span class="p">.</span><span class="nf">isoformat</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">);</span>
+    <span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="p">.</span><span class="nf">colorbar</span><span class="p">(</span><span class="n">CS</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="p">.</span><span class="n">ax</span><span class="p">.</span><span class="nf">set_ylabel</span><span class="p">(</span><span class="sh">'</span><span class="s">2 metre temperature (°C)</span><span class="sh">'</span><span class="p">);</span>
+    <span class="k">if</span> <span class="n">movie</span><span class="p">:</span>
+<span class="c1">#         plt.savefig(f'temperature_{str(k).zfill(2)}.png', dpi=30) # low res 
+</span>        <span class="n">plt</span><span class="p">.</span><span class="nf">savefig</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">temperature_</span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="n">k</span><span class="p">).</span><span class="nf">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s">.png</span><span class="sh">'</span><span class="p">)</span>  <span class="c1"># high res
+</span>    <span class="k">else</span>
+        <span class="k">break</span>
+</code></pre></div></div>
+<p align="center">
+  <img width="750" src="/img/2020-01-20_01/output_49_0.png" alt="temperature" />
+</p>
+
+<p>And this is the command line used to create the animated gif from all the png files (generated with <code class="language-plaintext highlighter-rouge">movie = True</code>):</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># !convert -delay 10 -loop 0 temperature*.png animation.gif
+</span></code></pre></div></div>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

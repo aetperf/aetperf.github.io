@@ -1,0 +1,85 @@
+<p>GeoTIFF <a href="https://ngdc.noaa.gov/eog/dmsp/download_radcal.html">data</a> from NOAA (single GeoTIFF: F16_20100111-20110731_rad_v4.avg_vis.tif):</p>
+
+<blockquote>
+  <p>The Operational Linescan System (OLS) flown on the Defense Meteorological Satellite Program (DMSP) satellites, has a unique capability to record low light imaging data at night worldwide. These data are archived at the National Oceanic and Atmospheric Administration (NOAA) National Geophysical Data Center (NGDC).</p>
+</blockquote>
+
+<p>Following this nice <a href="https://automating-gis-processes.github.io/CSC18/lessons/L6/reading-raster.html">tutorial</a> on rasterio.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">rasterio</span>
+<span class="kn">from</span> <span class="n">rasterio.tools.mask</span> <span class="kn">import</span> <span class="n">mask</span>
+<span class="kn">import</span> <span class="n">os</span>
+<span class="kn">import</span> <span class="n">datashader</span> <span class="k">as</span> <span class="n">ds</span>
+<span class="kn">from</span> <span class="n">datashader</span> <span class="kn">import</span> <span class="n">transfer_functions</span> <span class="k">as</span> <span class="n">tf</span><span class="p">,</span>
+<span class="kn">import</span> <span class="n">xarray</span> <span class="k">as</span> <span class="n">xr</span>
+<span class="kn">from</span> <span class="n">colorcet</span> <span class="kn">import</span> <span class="n">palette</span>
+<span class="kn">from</span> <span class="n">shapely.geometry</span> <span class="kn">import</span> <span class="n">box</span>
+<span class="kn">import</span> <span class="n">geopandas</span> <span class="k">as</span> <span class="n">gpd</span>
+<span class="kn">from</span> <span class="n">fiona.crs</span> <span class="kn">import</span> <span class="n">from_epsg</span>
+<span class="kn">import</span> <span class="n">json</span>
+</code></pre></div></div>
+
+<h2 id="open-the-file">Open the file</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">data_path</span> <span class="o">=</span> <span class="sh">'</span><span class="s">/media/francois/T5/data/Global_Radiance_Calibrated_Nighttime_Lights/</span><span class="sh">'</span>
+<span class="n">file_name</span> <span class="o">=</span> <span class="sh">'</span><span class="s">F16_20100111-20110731_rad_v4.avg_vis.tif</span><span class="sh">'</span>  <span class="c1"># data from 2010
+</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">raster</span> <span class="o">=</span> <span class="n">rasterio</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="check-the-raster-attributes">Check the raster attributes</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">type</span><span class="p">(</span><span class="n">raster</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rasterio._io.RasterReader
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">raster</span><span class="p">.</span><span class="n">crs</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CRS({'init': 'epsg:4326'})
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">raster</span><span class="p">.</span><span class="n">bounds</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BoundingBox(left=-180.00416666665, bottom=-65.00416610665, right=180.00416522665, top=75.00416666665)
+</code></pre></div></div>
+
+<p>We can see above that this raster file is covering most of the planet.</p>
+
+<h2 id="mask--clip-the-raster">Mask / clip the raster</h2>
+
+<p>Let’s crop it using a bounding box, in order to focus on South Europe and North Africa:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># WGS84 coordinates
+</span><span class="n">minx</span><span class="p">,</span> <span class="n">miny</span> <span class="o">=</span> <span class="o">-</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">20.</span>
+<span class="n">maxx</span><span class="p">,</span> <span class="n">maxy</span> <span class="o">=</span>  <span class="mf">30.</span><span class="p">,</span> <span class="mf">60.</span>
+<span class="n">bbox</span> <span class="o">=</span> <span class="nf">box</span><span class="p">(</span><span class="n">minx</span><span class="p">,</span> <span class="n">miny</span><span class="p">,</span> <span class="n">maxx</span><span class="p">,</span> <span class="n">maxy</span><span class="p">)</span>
+
+<span class="n">geo</span> <span class="o">=</span> <span class="n">gpd</span><span class="p">.</span><span class="nc">GeoDataFrame</span><span class="p">({</span><span class="sh">'</span><span class="s">geometry</span><span class="sh">'</span><span class="p">:</span> <span class="n">bbox</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">crs</span><span class="o">=</span><span class="nf">from_epsg</span><span class="p">(</span><span class="mi">4326</span><span class="p">))</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="n">json</span><span class="p">.</span><span class="nf">loads</span><span class="p">(</span><span class="n">geo</span><span class="p">.</span><span class="nf">to_json</span><span class="p">())[</span><span class="sh">'</span><span class="s">features</span><span class="sh">'</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="sh">'</span><span class="s">geometry</span><span class="sh">'</span><span class="p">]]</span>
+<span class="n">out_img</span><span class="p">,</span> <span class="n">out_transform</span> <span class="o">=</span> <span class="nf">mask</span><span class="p">(</span><span class="n">raster</span><span class="o">=</span><span class="n">raster</span><span class="p">,</span> <span class="n">shapes</span><span class="o">=</span><span class="n">coords</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="convert-it-to-xarray-dataarray">Convert it to xarray DataArray</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="p">.</span><span class="nc">DataArray</span><span class="p">(</span><span class="n">out_img</span><span class="p">)[</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h2 id="re-sample-and-display">Re-sample and display</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># colors
+</span><span class="n">cmap</span> <span class="o">=</span> <span class="n">palette</span><span class="p">[</span><span class="sh">'</span><span class="s">fire</span><span class="sh">'</span><span class="p">]</span>
+<span class="n">bg_col</span> <span class="o">=</span> <span class="sh">'</span><span class="s">black</span><span class="sh">'</span>
+
+<span class="n">cvs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">.</span><span class="nc">Canvas</span><span class="p">(</span><span class="n">plot_width</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">shade</span><span class="p">(</span><span class="n">cvs</span><span class="p">.</span><span class="nf">raster</span><span class="p">(</span><span class="n">da</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="nf">set_background</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bg_col</span><span class="p">)</span>
+<span class="n">img</span>
+</code></pre></div></div>
+
+<p><img src="/img/2018-09-19_01/output_14_0.png" alt="" /></p>

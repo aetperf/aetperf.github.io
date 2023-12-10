@@ -1,0 +1,647 @@
+<p>The aim of this post is to use Python to fetch air quality data from a web service and to create a few plots.</p>
+
+<p>We are going to:</p>
+<ul>
+  <li>look at some daily data from earlier this year, before and after the lockdown, in the city of Lyon, France</li>
+  <li>compare 2020 with some from previous years</li>
+  <li>and eventually look at some specific pollutants</li>
+</ul>
+
+<p>The data is provided by an organization called <a href="https://www.atmo-auvergnerhonealpes.fr/">Atmo Auvergne-Rhône-Alpes</a> monitoring air quality over the Auvergne-Rhône-Alpes region. They also come up with a convenient web API (HTTP GET method). Note that an API token is required, you can easily get from their website after registration.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="n">requests</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="n">fastprogress.fastprogress</span> <span class="kn">import</span> <span class="n">progress_bar</span>
+<span class="kn">from</span> <span class="n">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="n">plt</span><span class="p">.</span><span class="n">style</span><span class="p">.</span><span class="nf">use</span><span class="p">(</span><span class="sh">"</span><span class="s">seaborn</span><span class="sh">"</span><span class="p">)</span>
+<span class="o">%</span><span class="n">load_ext</span> <span class="n">lab_black</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>  <span class="c1"># figure size
+</span>
+<span class="c1"># location: LYON 4EME ARRONDISSEMENT (4th district)
+</span><span class="n">CODE_INSEE</span> <span class="o">=</span> <span class="mi">69384</span>
+
+<span class="c1"># api-token
+</span><span class="n">API_TOKEN</span> <span class="o">=</span> <span class="sh">"</span><span class="s">8xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx7</span><span class="sh">"</span>
+
+<span class="c1"># api-endpoint
+</span><span class="n">URL</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">https://api.atmo-aura.fr/communes/</span><span class="si">{</span><span class="n">CODE_INSEE</span><span class="si">}</span><span class="s">/indices?api_token=</span><span class="si">{</span><span class="n">API_TOKEN</span><span class="si">}</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<h2 id="first-try-of-the-api">First try of the API</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">2020-05-24</span><span class="sh">"</span><span class="p">}</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">URL</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">PARAMS</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="nf">json</span><span class="p">()</span>
+<span class="n">data</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'licence': 'https://opendatacommons.org/licenses/odbl/',
+ 'commune': 'LYON-4E-ARRONDISSEMENT',
+ 'code_insee': '69384',
+ 'indices': {'date': '2020-05-24',
+  'valeur': '37.5560109609897',
+  'couleur_html': '#99E600',
+  'qualificatif': 'Bon',
+  'type_valeur': 'prévision'}}
+</code></pre></div></div>
+
+<p>Since we will not change the location (4th district in Lyon), we only need to keep the <code class="language-plaintext highlighter-rouge">date</code> and <code class="language-plaintext highlighter-rouge">valeur</code> items from this dictionary. <code class="language-plaintext highlighter-rouge">valeur</code> is the air pollution index value. It ranges from 0 to 100, but could also rise above 100, which would mean that the warning threshold is exceeded. This would imply a serious risk to the population and the environment justifying the implementation of emergency measures.</p>
+
+<p>Note that you can get historic values but also forecasts if you enter a future date in the <code class="language-plaintext highlighter-rouge">get</code> params (2 day horizon at most when I tried that).</p>
+
+<p>So let’s fetch the daily pollution index on a temporal range starting at the begining of 2020 and ending today.</p>
+
+<h2 id="daily-air-quality-in-2020-so-far">Daily air quality in 2020 so far</h2>
+
+<p>First we create a date range:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">start</span> <span class="o">=</span> <span class="nf">datetime</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="nf">date</span><span class="p">()</span>
+<span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="nf">now</span><span class="p">().</span><span class="nf">date</span><span class="p">()</span>
+<span class="n">day_range</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="sh">"</span><span class="s">D</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Now we can loop on these days and fetch the air quality data for each day. Since each item in <code class="language-plaintext highlighter-rouge">day_range</code> is a <code class="language-plaintext highlighter-rouge">Timestamp</code> object, we convert them to <code class="language-plaintext highlighter-rouge">str</code> with <code class="language-plaintext highlighter-rouge">strftime</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">daily_pollution_index</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="nf">progress_bar</span><span class="p">(</span><span class="n">day_range</span><span class="p">):</span>
+    <span class="n">day_str</span> <span class="o">=</span> <span class="n">day</span><span class="p">.</span><span class="nf">strftime</span><span class="p">(</span><span class="sh">"</span><span class="s">%Y-%m-%d</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">:</span> <span class="n">day_str</span><span class="p">}</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">URL</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="nf">json</span><span class="p">()</span>
+    <span class="n">daily_pollution_index</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="sh">"</span><span class="s">indices</span><span class="sh">"</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div>
+    <style>
+        /* Turns off some styling */
+        progress {
+            /* gets rid of default border in Firefox and Opera. */
+            border: none;
+            /* Needs to be in here for Safari polyfill so background images work as expected. */
+            background-size: auto;
+        }
+        .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {
+            background: #F44336;
+        }
+    </style>
+  <progress value="143" class="" max="143" style="width:300px; height:20px; vertical-align: middle;"></progress>
+  100.00% [143/143 00:21&lt;00:00]
+</div>
+
+<p>The list is given to Pandas to create a dataframe:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">daily_pollution_index</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>date</th>
+      <th>valeur</th>
+      <th>couleur_html</th>
+      <th>qualificatif</th>
+      <th>type_valeur</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2020-01-01</td>
+      <td>50.4253716534476</td>
+      <td>#FFFF00</td>
+      <td>Moyen</td>
+      <td>réelle</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2020-01-02</td>
+      <td>48.5803761861679</td>
+      <td>#C3F000</td>
+      <td>Bon</td>
+      <td>réelle</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>We clean up the dataframe a little bit, and create a <code class="language-plaintext highlighter-rouge">DatetimeIndex</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">valeur</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">,},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">type_valeur</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">couleur_html</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">qualificatif</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>value</th>
+    </tr>
+    <tr>
+      <th>date</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-01-01</th>
+      <td>50.425372</td>
+    </tr>
+    <tr>
+      <th>2020-01-02</th>
+      <td>48.580376</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>And we can now plot the daily historical air pollution index.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">].</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">o-</span><span class="sh">"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="sh">"</span><span class="s">#1f77b4</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">vlines</span><span class="p">(</span><span class="sh">"</span><span class="s">2020-03-17</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span>  <span class="c1"># lockdown start
+</span><span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">vlines</span><span class="p">(</span><span class="sh">"</span><span class="s">2020-05-11</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span>  <span class="c1"># lockdown end
+</span><span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Daily air quality in Lyon 4E</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Air pollution index (smaller is better)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-05-22_01/output_16_0.png" alt="png" /></p>
+
+<p>Well we do not see a significant drop in air pollution during the lockdown that took place between march 17 and may 11. The reason is that the air pollution index is combining 3 different kinds of pollutants:</p>
+<ul>
+  <li>NO2: Nitrogen dioxide,</li>
+  <li>O3: Ozone,</li>
+  <li>PM10: particulate matter, which are coarse particles with a diameter between 2.5 and 10 micrometers (μm)</li>
+</ul>
+
+<p>From what I understand, an index is computed for each of these three pollutants, and the air pollution index corresponds to a combination of these three values. So the pollution index will keep being large if any of these pollutant concentrations remain large.</p>
+
+<p>Now theses pollutants have very different origins: NO2 is mainly related to road traffic and other fossil fuel combustion processes, PM10 to wood heating (in the suburb), agriculture,… O3 is more complex; here is a quote from <a href="https://en.wikipedia.org/wiki/Ozone#Ozone_air_pollution">wikipedia</a>:</p>
+
+<blockquote>
+  <p>Ozone precursors are a group of pollutants, predominantly those emitted during the combustion of fossil fuels. Ground-level ozone pollution (tropospheric ozone) is created near the Earth’s surface by the action of daylight UV rays on these precursors. The ozone at ground level is primarily from fossil fuel precursors, but methane is a natural precursor, and the very low natural background level of ozone at ground level is considered safe.</p>
+</blockquote>
+
+<p>And of course these levels of pollution also depends on the weather conditions. A cold weather may yield a larger PM10 concentration due to heating. A sunny weather may increase the level of ozone concentration, while some rain may “clean” the particles, I guess. So many factors contribute to air pollution.</p>
+
+<p>Concerning the first part of 2020, let’s try to compare the above pollution values with the ones recorded in the 2 previous years.</p>
+
+<h2 id="monthly-air-quality-from-2018-to-2020">Monthly air quality from 2018 to 2020</h2>
+
+<p>We already have the data for 2020, so we now fetch the data for the same range of days (january 1 to may 22), but for 2018 and 2019. The data from previous years (&lt;2018) does not seem to be available on the web service.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">daily_pollution_index</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">2018</span><span class="p">,</span> <span class="mi">2020</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="nf">progress_bar</span><span class="p">(</span><span class="n">day_range</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">day</span> <span class="o">=</span> <span class="n">day</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">).</span><span class="nf">date</span><span class="p">()</span>
+            <span class="n">day_str</span> <span class="o">=</span> <span class="n">day</span><span class="p">.</span><span class="nf">strftime</span><span class="p">(</span><span class="sh">"</span><span class="s">%Y-%m-%d</span><span class="sh">"</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">:</span> <span class="n">day_str</span><span class="p">}</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">URL</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="nf">json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="sh">"</span><span class="s">indices</span><span class="sh">"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">daily_pollution_index</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="sh">"</span><span class="s">indices</span><span class="sh">"</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">No data for the date: </span><span class="si">{</span><span class="n">day</span><span class="p">.</span><span class="nf">date</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+    <style>
+        /* Turns off some styling */
+        progress {
+            /* gets rid of default border in Firefox and Opera. */
+            border: none;
+            /* Needs to be in here for Safari polyfill so background images work as expected. */
+            background-size: auto;
+        }
+        .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {
+            background: #F44336;
+        }
+    </style>
+  <progress value="143" class="" max="143" style="width:300px; height:20px; vertical-align: middle;"></progress>
+  100.00% [143/143 00:22&lt;00:00]
+</div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>No data for the date: 2020-02-29
+</code></pre></div></div>
+
+<div>
+    <style>
+        /* Turns off some styling */
+        progress {
+            /* gets rid of default border in Firefox and Opera. */
+            border: none;
+            /* Needs to be in here for Safari polyfill so background images work as expected. */
+            background-size: auto;
+        }
+        .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {
+            background: #F44336;
+        }
+    </style>
+  <progress value="143" class="" max="143" style="width:300px; height:20px; vertical-align: middle;"></progress>
+  100.00% [143/143 00:21&lt;00:00]
+</div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>No data for the date: 2020-02-29
+</code></pre></div></div>
+
+<p>Similarly to what we did before, we create a dataframe with a <code class="language-plaintext highlighter-rouge">DatetimeIndex</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df_hist</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">daily_pollution_index</span><span class="p">)</span>
+<span class="n">df_hist</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">valeur</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">,},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">df_hist</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">type_valeur</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">couleur_html</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">qualificatif</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">])</span>
+<span class="n">df_hist</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_hist</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>value</th>
+    </tr>
+    <tr>
+      <th>date</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2018-01-01</th>
+      <td>32.346865</td>
+    </tr>
+    <tr>
+      <th>2018-01-02</th>
+      <td>31.257633</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>And we merge the data corresponding to the 3 different years:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">2020</span><span class="sh">"</span><span class="p">,},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">month</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">day</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_hist</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">month</span>
+<span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_hist</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="n">day</span>
+<span class="n">df_all</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">2018</span><span class="sh">"</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">left</span><span class="sh">"</span><span class="p">).</span><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">2018</span><span class="sh">"</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="n">df_all</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="n">df_all</span><span class="p">,</span> <span class="n">df_hist</span><span class="p">[</span><span class="sh">"</span><span class="s">2019</span><span class="sh">"</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="sh">"</span><span class="s">left</span><span class="sh">"</span><span class="p">).</span><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">2019</span><span class="sh">"</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="n">df_all</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">day</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_all</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">date</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df_all</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>2020</th>
+      <th>2018</th>
+      <th>2019</th>
+    </tr>
+    <tr>
+      <th>date</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-01-01</th>
+      <td>50.425372</td>
+      <td>32.346865</td>
+      <td>21.538545</td>
+    </tr>
+    <tr>
+      <th>2020-01-02</th>
+      <td>48.580376</td>
+      <td>31.257633</td>
+      <td>31.926375</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Let’s plot the monthly average:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">monthly</span> <span class="o">=</span> <span class="n">df_all</span><span class="p">.</span><span class="nf">resample</span><span class="p">(</span><span class="sh">"</span><span class="s">M</span><span class="sh">"</span><span class="p">).</span><span class="nf">mean</span><span class="p">()</span>
+<span class="n">monthly</span><span class="p">[</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">monthly</span><span class="p">.</span><span class="n">index</span><span class="p">.</span><span class="nf">month_name</span><span class="p">()</span>
+<span class="n">monthly</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">month</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">monthly</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Monthly air quality in Lyon 4E</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Air pollution index (smaller is better)</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-05-22_01/output_25_0.png" alt="png" /></p>
+
+<p>Well there is no significant difference between the different years.</p>
+
+<p>Unfortunately the web service does not offer separate data for each pollutant. However these data are available from their website <a href="https://www.atmo-auvergnerhonealpes.fr/donnees/telecharger">here</a>, as CSV files.</p>
+
+<h2 id="daily-concentration-of-3-pollutants">Daily concentration of 3 pollutants</h2>
+
+<p>We download the data for the 3 pollutants seen earlier, on the same time range and with the same frequency. Let’s look at the first file:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">NO2</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">NO2.csv</span><span class="sh">"</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sh">"</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">NO2</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Station</th>
+      <th>Polluant</th>
+      <th>Mesure</th>
+      <th>Unité</th>
+      <th>01/01/2020</th>
+      <th>...</th>
+      <th>22/05/2020</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Lyon Centre</td>
+      <td>Dioxyde d'azote</td>
+      <td>Dioxyde d'azote</td>
+      <td>microg/m3</td>
+      <td>38,2</td>
+      <td>...</td>
+      <td>18,3</td>
+    </tr>
+  </tbody>
+</table>
+<p>1 rows × 147 columns</p>
+</div>
+
+<p>We need to transpose the dataframe in order to create a <code class="language-plaintext highlighter-rouge">DatetimeIndex</code>, and take care of the french number and date formats:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">NO2</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">Station</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Polluant</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Mesure</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Unité</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">NO2</span> <span class="o">=</span> <span class="n">NO2</span><span class="p">.</span><span class="n">T</span>
+<span class="n">NO2</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">NO2</span><span class="p">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="sh">"</span><span class="s">%d/%m/%Y</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">NO2</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">"</span><span class="s">NO2</span><span class="sh">"</span><span class="p">]</span>
+<span class="n">NO2</span><span class="p">[</span><span class="sh">"</span><span class="s">NO2</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">NO2</span><span class="p">[</span><span class="sh">"</span><span class="s">NO2</span><span class="sh">"</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">).</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s">,</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">)).</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">NO2</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>NO2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-01-01</th>
+      <td>38.2</td>
+    </tr>
+    <tr>
+      <th>2020-01-02</th>
+      <td>42.6</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Now we do the same with the two other files and concatenate the 3 columns:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">O3</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">O3.csv</span><span class="sh">"</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sh">"</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">O3</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">Station</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Polluant</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Mesure</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Unité</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">O3</span> <span class="o">=</span> <span class="n">O3</span><span class="p">.</span><span class="n">T</span>
+<span class="n">O3</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">O3</span><span class="p">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="sh">"</span><span class="s">%d/%m/%Y</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">O3</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">"</span><span class="s">O3</span><span class="sh">"</span><span class="p">]</span>
+<span class="n">O3</span><span class="p">[</span><span class="sh">"</span><span class="s">O3</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">O3</span><span class="p">[</span><span class="sh">"</span><span class="s">O3</span><span class="sh">"</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">).</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s">,</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">)).</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">PM10</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">PM10.csv</span><span class="sh">"</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sh">"</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">PM10</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">Station</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Polluant</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Mesure</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Unité</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">PM10</span> <span class="o">=</span> <span class="n">PM10</span><span class="p">.</span><span class="n">T</span>
+<span class="n">PM10</span><span class="p">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">PM10</span><span class="p">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="sh">"</span><span class="s">%d/%m/%Y</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">PM10</span><span class="p">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="sh">"</span><span class="s">PM10</span><span class="sh">"</span><span class="p">]</span>
+<span class="n">PM10</span><span class="p">[</span><span class="sh">"</span><span class="s">PM10</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">PM10</span><span class="p">[</span><span class="sh">"</span><span class="s">PM10</span><span class="sh">"</span><span class="p">].</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">).</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">.</span><span class="nf">replace</span><span class="p">(</span><span class="sh">"</span><span class="s">,</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">.</span><span class="sh">"</span><span class="p">)).</span><span class="nf">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">pol</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">concat</span><span class="p">([</span><span class="n">NO2</span><span class="p">,</span> <span class="n">O3</span><span class="p">,</span> <span class="n">PM10</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">pol</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>NO2</th>
+      <th>O3</th>
+      <th>PM10</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020-01-01</th>
+      <td>38.2</td>
+      <td>0.8</td>
+      <td>38.2</td>
+    </tr>
+    <tr>
+      <th>2020-01-02</th>
+      <td>42.6</td>
+      <td>0.9</td>
+      <td>35.1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Here is a little function to plot each pollutant:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_pollutant</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pollutant</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">pol</span><span class="p">[</span><span class="n">pollutant</span><span class="p">].</span><span class="nf">plot</span><span class="p">(</span>
+        <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+        <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">-o</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="n">pol</span><span class="p">[</span><span class="n">pollutant</span><span class="p">].</span><span class="nf">max</span><span class="p">()</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">vlines</span><span class="p">(</span><span class="sh">"</span><span class="s">2020-03-17</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span>  <span class="c1"># lockdown start
+</span>    <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">vlines</span><span class="p">(</span><span class="sh">"</span><span class="s">2020-05-11</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span>  <span class="c1"># lockdown end
+</span>    <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="sh">"</span><span class="s">Daily </span><span class="si">{</span><span class="n">pollutant</span><span class="si">}</span><span class="s"> cencentration in Lyon centre</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Date</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">ylabel</span><span class="o">=</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">pollutant</span><span class="si">}</span><span class="s"> cencentration (</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s">)</span><span class="sh">"</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></div>
+
+<p>that we can call 3 times:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_pollutant</span><span class="p">(</span><span class="n">pol</span><span class="p">,</span> <span class="sh">"</span><span class="s">NO2</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">microg/m3</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-05-22_01/output_35_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_pollutant</span><span class="p">(</span><span class="n">pol</span><span class="p">,</span> <span class="sh">"</span><span class="s">O3</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">microg/m3</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-05-22_01/output_36_0.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">plot_pollutant</span><span class="p">(</span><span class="n">pol</span><span class="p">,</span> <span class="sh">"</span><span class="s">PM10</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">microg/m3</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/img/2020-05-22_01/output_37_0.png" alt="png" /></p>
+
+<p>So clearly the NO2 concentration dropped at the begining of the lockdown alongside the intensity of road traffic, and remain low after (as does road traffic). The level of the two other pollutants during lockdown have a lot do with the specific weather conditions (see <a href="https://www.atmo-auvergnerhonealpes.fr/actualite/coronavirus-evolution-de-la-qualite-de-lair-ces-2-derniers-mois-et-juste-apres-le">this</a> page from Atmo).</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

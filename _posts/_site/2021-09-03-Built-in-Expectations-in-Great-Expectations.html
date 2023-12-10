@@ -1,0 +1,741 @@
+<p align="center">
+  <img width="200" src="https://github.com/great-expectations/great_expectations/blob/develop/generic_dickens_protagonist.png?raw=true" alt="Great Expectations" />
+</p>
+
+<p><a href="https://github.com/great-expectations/great_expectations">Great expectation</a> is a Python tool for data testing, documentation, and profiling. Here is a figure from the <a href="https://docs.greatexpectations.io/docs/">documentation</a> describing its purpose:</p>
+
+<p align="center">
+  <img width="600" src="https://docs.greatexpectations.io/assets/images/ge_overview-12fb8aa5caade62567e21be108526231.png" alt="Data validation with Great Expectations" />
+</p>
+
+<p>Great Expectations makes it easy to include data testing in your ML pipeline, when dealing with tabular data. Data testing is similar to software testing. You launch a test suite to check various assumptions on a given dataset: column names, types, min-max values, distributions, proportion of missing values, categories, string content… These are called Expectations. A set of declared Expectations is called an Expectation Suite. Once a Suite has been created, you can use it to validate any new/modified data. If ever it fails, you can adapt the pipeline depending on the type of data failure. The library also allows the automatic creation of data quality reports and documentation.</p>
+
+<p>Data checking makes it easier to identify the source of an error in an ML model, but also helps identifying some drifts or other problems with the input data. So, more generally it helps build trust around data.</p>
+
+<p>Great Expectations has many components and many features. In this post, we are going to focus on a single subject: Expectations, which is a central element of the library. We are going to list built-in Expectations, and apply them to an example dataset: the ubiquitous Titanic dataset. We are NOT going to deal with other subjects such as Expectations Suites, Datasources, Checkpoints, Stores, Data Contexts, CLI, deployment, metrics…</p>
+
+<h2 id="expectations">Expectations</h2>
+
+<p>As it is written in the <a href="https://docs.greatexpectations.io/docs/reference/core_concepts/#key-ideas">documentation</a>, “It all starts with Expectations. An Expectation is how we communicate the way data should appear.” From the <a href="https://legacy.docs.greatexpectations.io/en/latest/reference/core_concepts/expectations/expectations.html#expectations">API reference</a>:</p>
+
+<blockquote>
+  <p>An Expectation is a statement describing a verifiable property of data. Like assertions in traditional python unit tests, Expectations provide a flexible, declarative language for describing expected behavior. Unlike traditional unit tests, Great Expectations applies Expectations to data instead of code.</p>
+</blockquote>
+
+<p>Note that it is also possible to create custom Expectations. Here we are going to look at the built-in Expectations for the Pandas backend. As explained in the <a href="https://docs.greatexpectations.io/docs/reference/expectations/implemented_expectations/">documentation</a>: “Because Great Expectations can run against different platforms, not all Expectations have been implemented for all platforms.” The different backends are Pandas, SQL and Spark.</p>
+
+<h3 id="imports">Imports</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">string</span>
+<span class="kn">from</span> <span class="n">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">great_expectations</span> <span class="k">as</span> <span class="n">ge</span>
+</code></pre></div></div>
+
+<p>Versions:</p>
+<ul>
+  <li>Python 3.9.7</li>
+  <li>great_expectations 0.13.31</li>
+  <li>pandas 1.3.2</li>
+</ul>
+
+<h3 id="load-the-data-into-a-dataframe">Load the data into a dataframe</h3>
+
+<p>We load the data with Great Expectations:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">ge</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span>
+    <span class="sh">"</span><span class="s">https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv</span><span class="sh">"</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>Here is a small description of each feature:</p>
+<ul>
+  <li>Survival - Survival (0 = No; 1 = Yes)</li>
+  <li>Pclass - Passenger Class (1 = 1st; 2 = 2nd; 3 = 3rd)</li>
+  <li>Name - Name</li>
+  <li>Sex - Sex  (“male or “female”)</li>
+  <li>Age - Age</li>
+  <li>SibSp - Number of Siblings/Spouses Aboard</li>
+  <li>Parch - Number of Parents/Children Aboard</li>
+  <li>Ticket - Ticket Number</li>
+  <li>Fare - Passenger Fare</li>
+  <li>Cabin - Cabin</li>
+  <li>Embarked - Port of Embarkation (C = Cherbourg; Q = Queenstown; S = Southampton)</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">shape</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(891, 12)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">isna</span><span class="p">().</span><span class="nf">sum</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PassengerId      0
+Survived         0
+Pclass           0
+Name             0
+Sex              0
+Age            177
+SibSp            0
+Parch            0
+Ticket           0
+Fare             0
+Cabin          687
+Embarked         2
+dtype: int64
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">nunique</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PassengerId    891
+Survived         2
+Pclass           3
+Name           891
+Sex              2
+Age             88
+SibSp            7
+Parch            7
+Ticket         681
+Fare           248
+Cabin          147
+Embarked         3
+dtype: int64
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">dtypes</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PassengerId      int64
+Survived         int64
+Pclass           int64
+Name            object
+Sex             object
+Age            float64
+SibSp            int64
+Parch            int64
+Ticket          object
+Fare           float64
+Cabin           object
+Embarked        object
+dtype: object
+</code></pre></div></div>
+
+<h3 id="testing-an-expectation-on-the-dataset">Testing an Expectation on the dataset</h3>
+
+<p>The Expectation is seen as a DataFrame method. Let’s try the <code class="language-plaintext highlighter-rouge">expect_column_to_exist</code> Expectation:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_to_exist</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">expect</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+  "exception_info": {
+    "raised_exception": false,
+    "exception_traceback": null,
+    "exception_message": null
+  },
+  "success": true,
+  "result": {},
+  "meta": {}
+}
+</code></pre></div></div>
+
+<p>It returns a dict-like validation report. The level of verbosity can be changed when creating reports. But in the present post, we are only interested in the “success” key:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>True
+</code></pre></div></div>
+
+<p>So let’s start with the available Expectations. Note that some Expectations have not yet been migrated to the v3 (Batch Request) API, so we did not include them in this post. Also, we did not investigate <a href="https://docs.greatexpectations.io/docs/reference/expectations/distributional_expectations">distributional Expectations</a>, which are a bit more complicated to use…</p>
+
+<h2 id="expectations--table-shape">Expectations : Table shape</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">columns</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">columns</span>
+<span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+    <span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_to_exist</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_columns_to_match_ordered_list</span><span class="p">(</span><span class="n">column_list</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_columns_to_match_ordered_list</span><span class="p">(</span><span class="n">column_list</span><span class="o">=</span><span class="n">columns</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_columns_to_match_set</span><span class="p">(</span><span class="n">column_set</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_columns_to_match_set</span><span class="p">(</span><span class="n">column_set</span><span class="o">=</span><span class="n">columns</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">expect</span><span class="p">.</span><span class="n">result</span><span class="p">[</span><span class="sh">"</span><span class="s">details</span><span class="sh">"</span><span class="p">]</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{'mismatched': {'unexpected': ['Embarked']}}
+</code></pre></div></div>
+
+<p>When the <code class="language-plaintext highlighter-rouge">exact_match</code> boolean parameter is set to <code class="language-plaintext highlighter-rouge">False</code>, we get a failure if a given column is not found in the dataset, but not if columns from the dataset are not given:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_columns_to_match_set</span><span class="p">(</span>
+    <span class="n">column_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">toto</span><span class="sh">"</span><span class="p">],</span> <span class="n">exact_match</span><span class="o">=</span><span class="bp">False</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_columns_to_match_set</span><span class="p">(</span><span class="n">column_set</span><span class="o">=</span><span class="p">[],</span> <span class="n">exact_match</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_row_count_to_be_between</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">700</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>One can skip one of the arguments <code class="language-plaintext highlighter-rouge">min_value</code> or <code class="language-plaintext highlighter-rouge">max_value</code>. The default value is <code class="language-plaintext highlighter-rouge">None</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_row_count_to_be_between</span><span class="p">(</span><span class="n">max_value</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_table_row_count_to_equal</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">891</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<h2 id="expectations--missing-values-unique-values-and-types">Expectations : Missing values, unique values, and types</h2>
+
+<p>All the Expectations in this category support the <code class="language-plaintext highlighter-rouge">mostly</code> argument, used when only a fraction of the column values is supposed to match the expectation.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_unique</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_unique</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Ticket</span><span class="sh">"</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="p">[</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Survived</span><span class="sh">"</span><span class="p">]:</span>
+    <span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_not_be_null</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_not_be_null</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_not_be_null</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tmp_col</span> <span class="o">=</span> <span class="sh">"</span><span class="s">NullCol</span><span class="sh">"</span>
+<span class="n">df</span><span class="p">[</span><span class="n">tmp_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">NaN</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_null</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">NullCol</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="n">tmp_col</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_null</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Cabin</span><span class="sh">"</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>For the expected types (<code class="language-plaintext highlighter-rouge">type_</code> parameter), we use regular Python types. With the Pandas backend, we could also use NumPy dtypes. From the <a href="https://legacy.docs.greatexpectations.io/en/latest/autoapi/great_expectations/expectations/core/expect_column_values_to_be_of_type/index.html?highlight=expect_column_values_to_be_of_type#great_expectations.expectations.core.expect_column_values_to_be_of_type.ExpectColumnValuesToBeOfType">documentation</a>:</p>
+
+<blockquote>
+  <p>Valid types are defined by the current backend implementation and are dynamically loaded. For example, valid types for PandasDataset include any numpy dtype values (such as ‘int64’) or native python types (such as ‘int’), whereas valid types for a SqlAlchemyDataset include types named by the current driver such as ‘INTEGER’ in most SQL dialects and ‘TEXT’ in dialects such as postgresql. Valid types for SparkDFDataset include ‘StringType’, ‘BooleanType’ and other pyspark-defined type names.</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">types</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Survived</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Pclass</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Name</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Sex</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">float</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">SibSp</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Parch</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Ticket</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Fare</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">float</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Cabin</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">type_</span> <span class="ow">in</span> <span class="n">types</span><span class="p">.</span><span class="nf">items</span><span class="p">():</span>
+    <span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_of_type</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="n">type_</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>We could also use the <code class="language-plaintext highlighter-rouge">mostly</code> argument in case where most of the values are of the same type:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tmp_col</span> <span class="o">=</span> <span class="sh">"</span><span class="s">mixedTypes</span><span class="sh">"</span>
+<span class="n">df</span><span class="p">[</span><span class="n">tmp_col</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[:</span><span class="mi">3</span><span class="p">].</span><span class="n">index</span><span class="p">,</span> <span class="n">tmp_col</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">a</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_of_type</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">tmp_col</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_type_list</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">tmp_col</span><span class="p">,</span> <span class="n">type_list</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>Let’s insert a <code class="language-plaintext highlighter-rouge">float</code> type item in the temporary column and use the <code class="language-plaintext highlighter-rouge">mostly</code> argument:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[:</span><span class="mi">1</span><span class="p">].</span><span class="n">index</span><span class="p">,</span> <span class="n">tmp_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">pi</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_type_list</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">tmp_col</span><span class="p">,</span> <span class="n">type_list</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_type_list</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">tmp_col</span><span class="p">,</span> <span class="n">type_list</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">int</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">str</span><span class="sh">"</span><span class="p">],</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.99</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="n">tmp_col</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="expectations--sets-and-ranges">Expectations : Sets and ranges</h2>
+
+<p>All the Expectations in this category support the <code class="language-plaintext highlighter-rouge">mostly</code> argument.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Survived</span><span class="sh">"</span><span class="p">,</span> <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Pclass</span><span class="sh">"</span><span class="p">,</span> <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Sex</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">female</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">male</span><span class="sh">"</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">C</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Q</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">S</span><span class="sh">"</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span> <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">C</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">S</span><span class="sh">"</span><span class="p">],</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.9</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>Another possible argument is the boolean <code class="language-plaintext highlighter-rouge">parse_strings_as_datetimes</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">date_col</span> <span class="o">=</span> <span class="sh">"</span><span class="s">datetimeCol</span><span class="sh">"</span>
+<span class="n">date</span> <span class="o">=</span> <span class="sh">"</span><span class="s">1912-04-15</span><span class="sh">"</span>
+<span class="n">df</span><span class="p">[</span><span class="n">date_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">date</span>
+<span class="n">df</span><span class="p">[</span><span class="n">date_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">date_col</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">date_col</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">1912-04-14</span><span class="sh">"</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+    <span class="n">parse_strings_as_datetimes</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">date_col</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">1912-04-14</span><span class="sh">"</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+    <span class="n">parse_strings_as_datetimes</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">alphabet_string</span> <span class="o">=</span> <span class="n">string</span><span class="p">.</span><span class="n">ascii_uppercase</span>
+<span class="n">value_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">alphabet_string</span> <span class="k">if</span> <span class="n">l</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="sh">"</span><span class="s">C</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Q</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">S</span><span class="sh">"</span><span class="p">]]</span>
+
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_not_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="n">value_set</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>With <code class="language-plaintext highlighter-rouge">mostly</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_not_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span> <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">Q</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">X</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Y</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Z</span><span class="sh">"</span><span class="p">],</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.9</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_between</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>One can also use <code class="language-plaintext highlighter-rouge">strict_min</code> and <code class="language-plaintext highlighter-rouge">strict_max</code> to include the bounds or not (<code class="language-plaintext highlighter-rouge">default=False</code>).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">Parch</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>6
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Parch</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">strict_max</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_between</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Parch</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>Other possible arguments are:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">parse_strings_as_datetimes</code> (boolean or None) – If True, parse min_value, max_value, and all non-null column values to datetimes before making comparisons.</li>
+  <li><code class="language-plaintext highlighter-rouge">output_strftime_format</code> (str or None) – A valid strfime format for datetime output. Only used if parse_strings_as_datetimes=True.</li>
+  <li><code class="language-plaintext highlighter-rouge">mostly</code></li>
+</ul>
+
+<p>Let’s try an example with <code class="language-plaintext highlighter-rouge">parse_strings_as_datetimes</code> and <code class="language-plaintext highlighter-rouge">output_strftime_format</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="n">date_col</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">1912/04/15</span><span class="sh">"</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">date_col</span><span class="p">,</span>
+    <span class="n">min_value</span><span class="o">=</span><span class="sh">"</span><span class="s">1912-04-14</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">max_value</span><span class="o">=</span><span class="sh">"</span><span class="s">1912-04-16</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">parse_strings_as_datetimes</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">output_strftime_format</span><span class="o">=</span><span class="sh">"</span><span class="s">%Y/%m/%d</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_increasing</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>Other possible arguments are:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">strictly</code> (Boolean or None) – If True, values must be strictly greater than previous values</li>
+  <li><code class="language-plaintext highlighter-rouge">parse_strings_as_datetimes</code> (boolean or None) – If True, all non-null column values to datetimes before making comparisons</li>
+  <li><code class="language-plaintext highlighter-rouge">mostly</code></li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_increasing</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">,</span> <span class="n">strictly</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>In order to use <code class="language-plaintext highlighter-rouge">parse_strings_as_datetimes</code>, we create a column with an increasing dates as strings:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="n">date_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">date_range</span><span class="p">(</span>
+    <span class="n">start</span><span class="o">=</span><span class="nf">datetime</span><span class="p">(</span><span class="mi">1912</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">periods</span><span class="o">=</span><span class="n">df</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">freq</span><span class="o">=</span><span class="sh">"</span><span class="s">D</span><span class="sh">"</span>
+<span class="p">).</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_increasing</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">date_col</span><span class="p">,</span> <span class="n">parse_strings_as_datetimes</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">strictly</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="n">date_col</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_decreasing</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">PassengerId</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>Of course, <code class="language-plaintext highlighter-rouge">expect_column_values_to_be_decreasing</code> takes the same arguments as <code class="language-plaintext highlighter-rouge">expect_column_values_to_be_increasing</code>.</p>
+
+<h2 id="expectations--string-matching">Expectations : String matching</h2>
+
+<p>All the Expectations in this category support the <code class="language-plaintext highlighter-rouge">mostly</code> argument.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_value_lengths_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Name</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">200</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_value_lengths_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Name</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.9</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_value_lengths_to_equal</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_value_lengths_to_equal</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Cabin</span><span class="sh">"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">mostly</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>We are going to check this<code class="language-plaintext highlighter-rouge">expect_column_values_to_match_regex</code> expectation on the <code class="language-plaintext highlighter-rouge">Cabin</code> feature. Here are some example values:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'B57 B59 B63 B66', 'C7', 'E34', 'C32', 'B18', 'C124', 'C91', 'E40', 'T'
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_match_regex</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Cabin</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">regex</span><span class="o">=</span><span class="sh">"</span><span class="s">(?:[A-Z]</span><span class="se">\\</span><span class="s">d{0,3}</span><span class="se">\\</span><span class="s">s?)+</span><span class="sh">"</span><span class="p">,</span>  <span class="c1"># at least 1 group of 1 uppercase letter followed by 0 or more digits and 0 or 1 white space
+</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_match_regex_list</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Cabin</span><span class="sh">"</span><span class="p">,</span> <span class="n">regex_list</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">[A-Z]</span><span class="se">\\</span><span class="s">d{0,3}</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">(?:[A-Z]</span><span class="se">\\</span><span class="s">d{0,3}</span><span class="se">\\</span><span class="s">s?){2,100}</span><span class="sh">"</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_not_match_regex_list</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Cabin</span><span class="sh">"</span><span class="p">,</span> <span class="n">regex_list</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">[a-z]</span><span class="se">\\</span><span class="s">d{1,3}</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">[a-z]</span><span class="se">\\</span><span class="s">d{1,3}[a-z]</span><span class="sh">"</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<h2 id="expectations--datetime-and-json-parsing">Expectations : Datetime and JSON parsing</h2>
+
+<p>All the Expectations in this category support the <code class="language-plaintext highlighter-rouge">mostly</code> argument.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">date_example</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">1912/04/15</span><span class="sh">"</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_match_strftime_format</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">date_example</span><span class="sh">"</span><span class="p">,</span> <span class="n">strftime_format</span><span class="o">=</span><span class="sh">"</span><span class="s">%Y/%m/%d</span><span class="sh">"</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">date_example</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">date_example</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sh">"</span><span class="s">2012-01-19 17:21:00</span><span class="sh">"</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_dateutil_parseable</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">date_example</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">date_example</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span>
+    <span class="sh">"</span><span class="s">json_example</span><span class="sh">"</span>
+<span class="p">]</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">{
+    </span><span class="sh">"</span><span class="s">menu</span><span class="sh">"</span><span class="s">: {
+        </span><span class="sh">"</span><span class="s">id</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">file</span><span class="sh">"</span><span class="s">,
+        </span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">File</span><span class="sh">"</span><span class="s">,
+        </span><span class="sh">"</span><span class="s">popup</span><span class="sh">"</span><span class="s">: {
+            </span><span class="sh">"</span><span class="s">menuitem</span><span class="sh">"</span><span class="s">: [
+                { </span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">New</span><span class="sh">"</span><span class="s">, </span><span class="sh">"</span><span class="s">onclick</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">CreateNewDoc()</span><span class="sh">"</span><span class="s"> },
+                { </span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">Open</span><span class="sh">"</span><span class="s">, </span><span class="sh">"</span><span class="s">onclick</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">OpenDoc()</span><span class="sh">"</span><span class="s"> },
+                { </span><span class="sh">"</span><span class="s">value</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">Close</span><span class="sh">"</span><span class="s">, </span><span class="sh">"</span><span class="s">onclick</span><span class="sh">"</span><span class="s">: </span><span class="sh">"</span><span class="s">CloseDoc()</span><span class="sh">"</span><span class="s"> }
+            ]
+        }
+    }
+}</span><span class="sh">"""</span>
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_json_parseable</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">json_example</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">(</span><span class="sh">"</span><span class="s">json_example</span><span class="sh">"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">360.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">json_example</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sh">"""</span><span class="s">{</span><span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="s">: </span><span class="sh">"""</span>
+    <span class="o">+</span> <span class="n">df</span><span class="p">.</span><span class="n">latitude</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sh">"""</span><span class="s">, </span><span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="s">: </span><span class="sh">"""</span>
+    <span class="o">+</span> <span class="n">df</span><span class="p">.</span><span class="n">latitude</span><span class="p">.</span><span class="nf">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="o">+</span> <span class="sh">"</span><span class="s">}</span><span class="sh">"</span>
+<span class="p">)</span>
+
+<span class="n">json_schema</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sh">"</span><span class="s">title</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">Longitude and Latitude</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">description</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">A geographical coordinate on a planet (most commonly Earth).</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">required</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="p">],</span>
+    <span class="sh">"</span><span class="s">type</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">object</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">properties</span><span class="sh">"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="p">:</span> <span class="p">{</span><span class="sh">"</span><span class="s">type</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">number</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">minimum</span><span class="sh">"</span><span class="p">:</span> <span class="o">-</span><span class="mi">90</span><span class="p">,</span> <span class="sh">"</span><span class="s">maximum</span><span class="sh">"</span><span class="p">:</span> <span class="mi">90</span><span class="p">},</span>
+        <span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="p">:</span> <span class="p">{</span><span class="sh">"</span><span class="s">type</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">number</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">minimum</span><span class="sh">"</span><span class="p">:</span> <span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="sh">"</span><span class="s">maximum</span><span class="sh">"</span><span class="p">:</span> <span class="mi">180</span><span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_match_json_schema</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">json_example</span><span class="sh">"</span><span class="p">,</span> <span class="n">json_schema</span><span class="o">=</span><span class="n">json_schema</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">drop</span><span class="p">([</span><span class="sh">"</span><span class="s">latitude</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">longitude</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">json_example</span><span class="sh">"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="expectations--aggregate-functions">Expectations : Aggregate functions</h2>
+
+<p><code class="language-plaintext highlighter-rouge">expect_column_distinct_values_to_be_in_set</code> is not really different from <code class="language-plaintext highlighter-rouge">expect_column_values_to_be_in_set</code>. Note that it also supports the <code class="language-plaintext highlighter-rouge">parse_strings_as_datetimes</code> argument.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_distinct_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Survived</span><span class="sh">"</span><span class="p">,</span> <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_distinct_values_to_contain_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">C</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Q</span><span class="sh">"</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_distinct_values_to_equal_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">C</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">Q</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">S</span><span class="sh">"</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_mean_to_be_between</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="n">Age</span><span class="p">.</span><span class="nf">median</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>28.0
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_median_to_be_between</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_quantile_values_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">quantile_ranges</span><span class="o">=</span><span class="p">{</span>
+        <span class="sh">"</span><span class="s">quantiles</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">value_ranges</span><span class="sh">"</span><span class="p">:</span> <span class="p">[[</span><span class="mi">15</span><span class="p">,</span> <span class="mi">25</span><span class="p">],</span> <span class="p">[</span><span class="mi">23</span><span class="p">,</span> <span class="mi">33</span><span class="p">],</span> <span class="p">[</span><span class="mi">35</span><span class="p">,</span> <span class="mi">43</span><span class="p">]],</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_mean_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">strict_max</span><span class="o">=</span><span class="mf">100.0</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_stdev_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">strict_max</span><span class="o">=</span><span class="mf">20.0</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_unique_value_count_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Pclass</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">expect_column_proportion_of_unique_values_to_be_between</code>, from  the <a href="https://legacy.docs.greatexpectations.io/en/latest/autoapi/great_expectations/expectations/core/expect_column_proportion_of_unique_values_to_be_between/index.html?highlight=expect_column_proportion_of_unique_values_to_be_between">API reference</a>:</p>
+
+<blockquote>
+  <p>Expect the proportion of unique values to be between a minimum value and a maximum value.</p>
+</blockquote>
+
+<blockquote>
+  <p>For example, in a column containing [1, 2, 2, 3, 3, 3, 4, 4, 4, 4], there are 4 unique values and 10 total values for a proportion of 0.4.</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_proportion_of_unique_values_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span> <span class="n">strict_min</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">strict_max</span><span class="o">=</span><span class="mf">0.99</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_most_common_value_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Embarked</span><span class="sh">"</span><span class="p">,</span> <span class="n">value_set</span><span class="o">=</span><span class="p">(</span><span class="sh">"</span><span class="s">S</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">C</span><span class="sh">"</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_sum_to_be_between</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Survived</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">400</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_min_to_be_between</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expect</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="nf">expect_column_max_to_be_between</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Age</span><span class="sh">"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>For the <code class="language-plaintext highlighter-rouge">expect_column_kl_divergence_to_be_less_than</code> Expectation, we used some coefficients found on the <a href="https://github.com/great-expectations/great_expectations/blob/4a0aa8c67420aadcafeff7a45fbbe54943be543a/tests/profile/fixtures/expected_evrs_BasicSuiteBuilderProfiler_on_titanic_demo_mode.json">github repository</a>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">expect_column_kl_divergence_to_be_less_than</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Pclass</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">partition_object</span><span class="o">=</span><span class="p">{</span>
+        <span class="sh">"</span><span class="s">values</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="sh">"</span><span class="s">*</span><span class="sh">"</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+        <span class="sh">"</span><span class="s">weights</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="mf">0.0007616146230007616</span><span class="p">,</span>
+            <span class="mf">0.24523990860624523</span><span class="p">,</span>
+            <span class="mf">0.2124904798172125</span><span class="p">,</span>
+            <span class="mf">0.5415079969535415</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">expect_column_kl_divergence_to_be_less_than</code> is some kind of distribution Expectation, which expects a <code class="language-plaintext highlighter-rouge">partition_object</code> argument.</p>
+
+<h2 id="conditional-expectations">Conditional Expectations</h2>
+
+<p>Finally we are going to have a look at conditional Expectations with the <code class="language-plaintext highlighter-rouge">row_condition</code> argument. As explained in the <a href="https://docs.greatexpectations.io/docs/reference/expectations/conditional_expectations">documentation</a>:</p>
+
+<blockquote>
+  <p>Sometimes one may hold an Expectation not for a dataset in its entirety but only for a particular subset. Alternatively, what one expects of some variable may depend on the value of another. One may, for example, expect a column that holds the country of origin to not be null only for people of foreign descent.</p>
+</blockquote>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">.</span><span class="nf">expect_column_values_to_be_in_set</span><span class="p">(</span>
+    <span class="n">column</span><span class="o">=</span><span class="sh">"</span><span class="s">Sex</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">value_set</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">male</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">female</span><span class="sh">"</span><span class="p">],</span>
+    <span class="n">row_condition</span><span class="o">=</span><span class="sh">'</span><span class="s">Embarked==</span><span class="sh">"</span><span class="s">S</span><span class="sh">"'</span><span class="p">,</span>
+    <span class="n">condition_parser</span><span class="o">=</span><span class="sh">"</span><span class="s">pandas</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">expect</span><span class="p">.</span><span class="n">success</span>
+</code></pre></div></div>
+
+<p>Some of the Expectations do not take the <code class="language-plaintext highlighter-rouge">row_condition</code> argument:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">expect_column_to_exist</code></li>
+  <li><code class="language-plaintext highlighter-rouge">expect_table_columns_to_match_ordered_list</code></li>
+  <li><code class="language-plaintext highlighter-rouge">expect_table_column_count_to_be_between</code></li>
+  <li><code class="language-plaintext highlighter-rouge">expect_table_column_count_to_equal</code></li>
+</ul>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

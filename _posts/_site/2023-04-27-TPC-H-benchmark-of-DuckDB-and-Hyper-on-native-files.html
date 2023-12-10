@@ -1,0 +1,433 @@
+<p>In this blog post, we examine the performance of two popular SQL engines for querying large files:</p>
+<ul>
+  <li><a href="https://help.tableau.com/current/api/hyper_api/en-us/index.html">Tableau Hyper</a> / Proprietary License</li>
+  <li><a href="https://duckdb.org/">DuckDB</a> / MIT License
+These engines have gained popularity due to their efficiency, ease of use, and Python APIs.</li>
+</ul>
+
+<p>To evaluate their performance, we use the <a href="https://www.tpc.org/tpch/">TPC-H</a> benchmark, which is a widely-used measure of such systems’ performance, consisting of a set of queries that have broad industry-wide relevance. The data can be created using pre-determined database sizes, referred to as <em>scale factors</em>. In the following with are going to use a rather wide range of scale factors :  1, 3, 10, 30, 100.</p>
+
+<p>All the measurements are performed on the same laptop with a Linux OS. While it is possible to query Parquet files with both engines, we use the native file formats in the following:</p>
+<ul>
+  <li><em>.duckdb</em> for DuckDB</li>
+  <li><em>.hyper</em> for Tableau Hyper</li>
+</ul>
+
+<p>It is usually more efficient to run the queries on the native file format, matching the engine internals, than on Parquet files.</p>
+
+<p>Note that we employ default settings for both packages, and although the presented timings could be improved with configuration options tuning, we present the results without any modifications. It is also important to note that the DuckDB storage format is still under development and not yet stabilized, making it not always backward compatible.</p>
+
+<p>Finally, we are going to see how to generate query execution plans with each engine in Python.</p>
+
+<h2 id="package-versions">Package versions:</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Python          : 3.11.3 | packaged by conda-forge | (main, Apr  6 2023, 08:57:19) [GCC 11.3.0]
+DuckDB          : 0.7.2-dev2144
+TableauHyperAPI : 0.0.16868
+</code></pre></div></div>
+
+<h2 id="system-information">System information</h2>
+
+<p>The code is executed on a linux laptop with the following features:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OS : Linux mint 21.1, based on Ubuntu 22.04  
+CPU : 12th Gen Intel© Core™ i9-12900H (10 cores)    
+RAM : 32 GB  
+Data disk : Samsung SSD 980 PRO 1TB  
+</code></pre></div></div>
+
+<h2 id="native-file-size">Native file size</h2>
+
+<p>The TPC-H data used in this benchmark are generated using the DuckDB <a href="https://duckdb.org/docs/extensions/overview.html#all-available-extensions">TPC-H extension</a> and saved into duckdb and Parquet files with DuckDB.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">with</span> <span class="n">duckdb</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">duckdb_file_path</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="sh">"</span><span class="s">INSTALL tpch</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="sh">"</span><span class="s">LOAD tpch</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="sh">"</span><span class="s">CALL dbgen(sf=10)</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="sh">"</span><span class="s">SELECT * FROM information_schema.tables</span><span class="sh">"</span><span class="p">).</span><span class="nf">df</span><span class="p">()</span>
+    <span class="n">table_names</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">table_name</span><span class="p">.</span><span class="nf">to_list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">tbl</span> <span class="ow">in</span> <span class="n">table_names</span><span class="p">:</span>
+        <span class="n">parquet_file_path</span> <span class="o">=</span> <span class="n">parquet_dir</span><span class="p">.</span><span class="nf">joinpath</span><span class="p">(</span><span class="n">tbl</span> <span class="o">+</span> <span class="sh">"</span><span class="s">.parquet</span><span class="sh">"</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">COPY (SELECT * FROM </span><span class="si">{</span><span class="n">tbl</span><span class="si">}</span><span class="s">) TO </span><span class="sh">'</span><span class="si">{</span><span class="n">parquet_file_path</span><span class="si">}</span><span class="sh">'</span><span class="s"> (FORMAT PARQUET)</span><span class="sh">"</span>
+        <span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Each Parquet file is then converted into an hyper file with the Tableau Hyper engine.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hyper_schema</span> <span class="o">=</span> <span class="sh">'</span><span class="s">Export</span><span class="sh">'</span>
+<span class="k">with</span> <span class="nc">HyperProcess</span><span class="p">(</span><span class="n">telemetry</span><span class="o">=</span><span class="n">Telemetry</span><span class="p">.</span><span class="n">DO_NOT_SEND_USAGE_DATA_TO_TABLEAU</span><span class="p">)</span> <span class="k">as</span> <span class="n">hyper</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nc">Connection</span><span class="p">(</span>
+        <span class="n">endpoint</span><span class="o">=</span><span class="n">hyper</span><span class="p">.</span><span class="n">endpoint</span><span class="p">,</span>
+        <span class="n">database</span><span class="o">=</span><span class="n">hyper_file_path</span><span class="p">,</span>
+        <span class="n">create_mode</span><span class="o">=</span><span class="n">CreateMode</span><span class="p">.</span><span class="n">CREATE_AND_REPLACE</span><span class="p">,</span>
+    <span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+        <span class="n">conn</span><span class="p">.</span><span class="n">catalog</span><span class="p">.</span><span class="nf">create_schema_if_not_exists</span><span class="p">(</span><span class="n">hyper_schema</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">parquet_file_path</span> <span class="ow">in</span> <span class="n">parquet_file_paths</span><span class="p">:</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">basename</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+            <span class="n">table_name</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">splitext</span><span class="p">(</span><span class="n">file_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="nc">TableName</span><span class="p">(</span><span class="n">hyper_schema</span><span class="p">,</span> <span class="n">table_name</span><span class="p">)</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"""</span><span class="s">CREATE TABLE </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s"> AS 
+            (SELECT * FROM external(</span><span class="si">{</span><span class="n">parquet_file_path</span><span class="si">}</span><span class="s">))</span><span class="sh">"""</span>
+            <span class="n">conn</span><span class="p">.</span><span class="nf">execute_command</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Here is an array presenting the different file sizes:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">Scale factor</th>
+      <th style="text-align: right"><em>.duckdb</em> file size</th>
+      <th style="text-align: right"><em>.hyper</em> file size</th>
+      <th style="text-align: right">Total <em>.parquet</em> files size</th>
+      <th style="text-align: right">Total row count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: right">436.0 MB</td>
+      <td style="text-align: right">436.5 MB</td>
+      <td style="text-align: right">379 MB</td>
+      <td style="text-align: right">8 661 245</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">800.6 MB</td>
+      <td style="text-align: right">1.3 GB</td>
+      <td style="text-align: right">1.2 GB</td>
+      <td style="text-align: right">25 976 639</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">10</td>
+      <td style="text-align: right">2.7 GB</td>
+      <td style="text-align: right">4.5 GB</td>
+      <td style="text-align: right">3.8 GB</td>
+      <td style="text-align: right">86 586 082</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">30</td>
+      <td style="text-align: right">8.2 GB</td>
+      <td style="text-align: right">13.6 GB</td>
+      <td style="text-align: right">12 GB</td>
+      <td style="text-align: right">259 798 402</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">100</td>
+      <td style="text-align: right">27.7 GB</td>
+      <td style="text-align: right">46.3 GB</td>
+      <td style="text-align: right">38 GB</td>
+      <td style="text-align: right">866 037 932</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The total row count corresponds to the sum of 8 table lengths (<em>lineitem</em>, <em>customer</em>, <em>orders</em>, <em>supplier</em>, <em>region</em>, <em>partsupp</em>, <em>nation</em>, <em>part</em>).</p>
+
+<h2 id="results">Results</h2>
+
+<h3 id="query-execution-time">Query execution time</h3>
+
+<p>We report the combined elapsed time for the 22 TPC-H queries. To ensure accuracy and reduce the impact of fluctuations, we executed each query three times and recorded the best elapsed time out of the three runs. These 22 best elapsed times are then summed.</p>
+
+<p>We did not include fetch time in the elapsed time. We only measure the query execution time. The data is fetched in a second step in order to check the number of rows returned.</p>
+
+<ul>
+  <li>DuckDB:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># start timer
+</span><span class="n">conn</span><span class="p">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+<span class="c1"># stop timer
+</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">df</span><span class="p">()</span>
+<span class="n">n_returned_rows</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Hyper</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># start timer
+</span><span class="n">result</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">execute_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+<span class="c1"># stop timer
+</span>
+<span class="n">n_returned_rows</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">while</span> <span class="n">result</span><span class="p">.</span><span class="nf">next_row</span><span class="p">():</span>
+    <span class="n">n_returned_rows</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="n">result</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Here are the updated SQL execution timings for both engines across different scale factors:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">Scale factor</th>
+      <th style="text-align: right">DuckDB (s)</th>
+      <th style="text-align: right">Hyper (s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: right">0.68</td>
+      <td style="text-align: right">0.27</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">1.83</td>
+      <td style="text-align: right">0.69</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">10</td>
+      <td style="text-align: right">5.75</td>
+      <td style="text-align: right">2.41</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">30</td>
+      <td style="text-align: right">18.41</td>
+      <td style="text-align: right">7.65</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">100</td>
+      <td style="text-align: right">NaN</td>
+      <td style="text-align: right">33.82</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>During our analysis on scale factor 100 data, we encountered an error of “cannot allocate memory” when running query 21 using DuckDB. As a result, the corresponding table displays a value of NaN.</p>
+
+<p align="center">
+  <img width="600" src="/img/2023-04-27_01/output_6_0.png" alt="linear_scale" />
+</p>
+
+<p>Now we also ran the TPC-H queries without query 21 on the data generated with scale factor 100:</p>
+
+<p align="center">
+  <img width="600" src="/img/2023-04-27_01/output_8_0.png" alt="without_query_21" />
+</p>
+
+<p>Fetching data can introduce additional overhead to query execution time, which is dependent on both the amount of data being transferred and the target container used (such as Pandas or Polars). For instance, in the current experiment with DuckDB and Pandas, fetching the data added approximately 7-8% to the overall execution time.</p>
+
+<h2 id="query-plan-for-tpc-h-query-21-scale-factor-100">Query plan for TPC-H query 21 scale factor 100</h2>
+
+<p>Query execution plans provide a detailed view of how a database engine processes a given query. They describe the various steps involved in the query execution, such as data access, filtering, aggregation, and sorting. Understanding query plans can be critical for optimizing the performance of complex queries, as it allows identifying potential bottlenecks and areas for improvement. In this section, we examine the query execution plans for TPC-H query 21 on a scale factor of 100, as generated by the DuckDB and Tableau Hyper engines.</p>
+
+<h3 id="imports">Imports</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">duckdb</span>
+<span class="kn">from</span> <span class="n">tableauhyperapi</span> <span class="kn">import</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">CreateMode</span><span class="p">,</span> <span class="n">HyperProcess</span><span class="p">,</span> <span class="n">Telemetry</span>
+
+<span class="n">duckdb_file_path</span> <span class="o">=</span> <span class="sh">"</span><span class="s">/home/francois/Data/dbbenchdata/tpch_100/data.duckdb</span><span class="sh">"</span>
+<span class="n">hyper_file_path</span> <span class="o">=</span> <span class="sh">"</span><span class="s">/home/francois/Data/dbbenchdata/tpch_100/data.hyper</span><span class="sh">"</span>
+</code></pre></div></div>
+
+<h3 id="duckdb">DuckDB</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># query21
+</span><span class="n">query</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">EXPLAIN
+SELECT
+    s_name,
+    COUNT(*) AS numwait
+FROM
+    supplier,
+    lineitem l1,
+    orders,
+    nation
+WHERE
+    s_suppkey = l1.l_suppkey
+    AND o_orderkey = l1.l_orderkey
+    AND o_orderstatus = </span><span class="sh">'</span><span class="s">F</span><span class="sh">'</span><span class="s">
+    AND l1.l_receiptdate &gt; l1.l_commitdate
+    AND EXISTS (
+        SELECT
+            *
+        FROM
+            lineitem l2
+        WHERE
+            l2.l_orderkey = l1.l_orderkey
+            AND l2.l_suppkey &lt;&gt; l1.l_suppkey
+    )
+    AND NOT EXISTS (
+        SELECT
+            *
+        FROM
+            lineitem l3
+        WHERE
+            l3.l_orderkey = l1.l_orderkey
+            AND l3.l_suppkey &lt;&gt; l1.l_suppkey
+            AND l3.l_receiptdate &gt; l3.l_commitdate
+    )
+    AND s_nationkey = n_nationkey
+    AND n_name = </span><span class="sh">'</span><span class="s">SAUDI ARABIA</span><span class="sh">'</span><span class="s">
+GROUP BY
+    s_name
+ORDER BY
+    numwait DESC,
+    s_name
+LIMIT
+    100;</span><span class="sh">"""</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">conn</span> <span class="o">=</span> <span class="n">duckdb</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">duckdb_file_path</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="sh">"</span><span class="s">SET explain_output=</span><span class="sh">'</span><span class="s">all</span><span class="sh">'</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">query</span><span class="p">).</span><span class="nf">df</span><span class="p">()</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>explain_key</th>
+      <th>explain_value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>logical_plan</td>
+      <td>┌───────────────────────────┐                 ...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>logical_opt</td>
+      <td>┌───────────────────────────┐                 ...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>physical_plan</td>
+      <td>┌───────────────────────────┐                 ...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>When using the option <code class="language-plaintext highlighter-rouge">SET explain_output='all'</code>, DuckDB generates 3 different query plans:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">logical_plan</code></li>
+  <li><code class="language-plaintext highlighter-rouge">logical_opt</code></li>
+  <li><code class="language-plaintext highlighter-rouge">physical_plan</code></li>
+</ul>
+
+<p>Let’s visualize these plans:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">explain_key</span> <span class="o">==</span> <span class="sh">"</span><span class="s">logical_plan</span><span class="sh">"</span><span class="p">].</span><span class="n">explain_value</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-27_01/duckdb_plan_1.png" alt="duckdb_plan_1" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">explain_key</span> <span class="o">==</span> <span class="sh">"</span><span class="s">logical_opt</span><span class="sh">"</span><span class="p">].</span><span class="n">explain_value</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-27_01/duckdb_plan_2.png" alt="duckdb_plan_2" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">explain_key</span> <span class="o">==</span> <span class="sh">"</span><span class="s">physical_plan</span><span class="sh">"</span><span class="p">].</span><span class="n">explain_value</span><span class="p">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-27_01/duckdb_plan_3.png" alt="duckdb_plan_3" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">conn</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h3 id="hyper">Hyper</h3>
+
+<p>The following code is inspired from a Tableau Hyper example: <a href="https://github.com/tableau/query-graphs/blob/main/plan-dumper/dump-plans.py">here</a>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hyper</span> <span class="o">=</span> <span class="nc">HyperProcess</span><span class="p">(</span><span class="n">telemetry</span><span class="o">=</span><span class="n">Telemetry</span><span class="p">.</span><span class="n">DO_NOT_SEND_USAGE_DATA_TO_TABLEAU</span><span class="p">)</span>
+<span class="n">conn</span> <span class="o">=</span> <span class="nc">Connection</span><span class="p">(</span>
+    <span class="n">endpoint</span><span class="o">=</span><span class="n">hyper</span><span class="p">.</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">hyper_file_path</span><span class="p">,</span> <span class="n">create_mode</span><span class="o">=</span><span class="n">CreateMode</span><span class="p">.</span><span class="n">NONE</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">_</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">execute_command</span><span class="p">(</span><span class="sh">"</span><span class="s">SET schema </span><span class="sh">'</span><span class="s">Export</span><span class="sh">'</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We can generate different plans, either with <code class="language-plaintext highlighter-rouge">EXPLAIN</code>, <code class="language-plaintext highlighter-rouge">EXPLAIN (VERBOSE, ANALYZE)</code> or with <code class="language-plaintext highlighter-rouge">EXPLAIN (VERBOSE, OPTIMIZERSTEPS) </code>. Here is an excerpt from the documenation about the EXPLAIN SQL command <a href="https://tableau.github.io/hyper-db/docs/sql/command/explain/">here</a>:</p>
+
+<blockquote>
+  <p>There are three types of plans which can be queried:</p>
+  <ul>
+    <li>The <em>optimized</em> plan. By default, if no other behavior is requested through an <option>, `EXPLAIN` will display the optimized plan.</option></li>
+    <li>The <em>optimizer steps</em>. If the <code class="language-plaintext highlighter-rouge">OPTIMIZERSTEPS</code> option is present, Hyper will output the plan at multiple intermediate steps during query optimization, e.g., before and after join reordering.</li>
+    <li>The <em>analyzed</em> plan. When invoked with the <code class="language-plaintext highlighter-rouge">ANALYZE</code> option, Hyper will actually execute the query, including all side effects (inserted/deleted tuples, etc.). Instead of the normal query results, you will however receive the query plan of the query, annotated with runtime statistics such as the number of tuples processed by each operator.</li>
+  </ul>
+</blockquote>
+
+<p>Let’s generate two detailed graphs: the analyzed plan and the optimizer steps. We export them as json files and then use a great interactive query plan visualizer developed by Tableau: <a href="https://tableau.github.io/query-graphs/">https://tableau.github.io/query-graphs/</a>. Also there is rewrite (<a href="ttps://vogelsgesang.github.io/query-graphs/">here</a>) of the rendering layer of query-graphs currently ongoing, by Adrian Vogelsgesang (Tableau). It should be merged into the official Tableau query-graphs repository soon. This is is the one we are going to use next.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">explain</span> <span class="o">=</span> <span class="sh">"</span><span class="s">EXPLAIN (VERBOSE, ANALYZE) </span><span class="sh">"</span>
+<span class="n">planRes</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">execute_query</span><span class="p">(</span><span class="n">explain</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span>
+<span class="n">targetPath</span> <span class="o">=</span> <span class="sh">"</span><span class="s">./plan_analyze.json</span><span class="sh">"</span>
+<span class="n">plan</span> <span class="o">=</span> <span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">planRes</span><span class="p">)</span>
+<span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="n">targetPath</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="500" src="/img/2023-04-27_01/hyper_plan_1.png" alt="hyper_plan_1" />
+</p>
+
+<p>Note that the graph nodes can be expanded and give more information than on this screen capture.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">explain</span> <span class="o">=</span> <span class="sh">"</span><span class="s">EXPLAIN (VERBOSE, OPTIMIZERSTEPS) </span><span class="sh">"</span>
+<span class="n">planRes</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="nf">execute_query</span><span class="p">(</span><span class="n">explain</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span>
+<span class="n">targetPath</span> <span class="o">=</span> <span class="sh">"</span><span class="s">./plan_optimizersteps.json</span><span class="sh">"</span>
+<span class="n">plan</span> <span class="o">=</span> <span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">planRes</span><span class="p">)</span>
+<span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="n">targetPath</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="1200" src="/img/2023-04-27_01/hyper_plan_2.png" alt="hyper_plan_2" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">conn</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+<span class="n">hyper</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>These query plans could help us to gain insights into how each engine approaches the query and identify possible differences in performance.</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

@@ -1,0 +1,396 @@
+<p>In this Python notebook, we are going to look at Benford’s law, which predicts the leading digit distribution, when dealing with some real-world collections of numbers. This distribution usually occurs when the numbers are rather smoothly distributed over several orders of magnitute. This can be observed with population data, file size data, stock prices, river lengths, …</p>
+
+<p>We are going to check this law with a dataset of the population of all french cities (actually all settlements), as a simple experiment.</p>
+
+<p>Finally, we will look at the generalized version of this first-digit law : the significant-digit law, which also predicts the occurence of other significant digits.</p>
+
+<h2 id="imports">Imports</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">zipfile</span> <span class="kn">import</span> <span class="n">ZipFile</span>
+
+<span class="kn">import</span> <span class="n">requests</span>
+<span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="n">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="n">FS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>  <span class="c1"># figure size
+</span></code></pre></div></div>
+
+<h2 id="benfords-law">Benford’s law</h2>
+
+<p>Here is the definition from <a href="https://en.wikipedia.org/wiki/Benford%27s_law">wikipedia</a> :</p>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/wikipedia_01.png" alt="Distribution" />
+</p>
+
+<p>This was first discovered by Canadian-American astronomer Simon Newcomb in 1881, when he</p>
+<blockquote>
+  <p>noticed that in logarithm tables the earlier pages (that started with 1) were much more worn than the other pages.</p>
+</blockquote>
+
+<p>Let’s have a look at this distribution :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">benford</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+        <span class="sh">"</span><span class="s">proba</span><span class="sh">"</span><span class="p">:</span> <span class="p">[</span><span class="n">np</span><span class="p">.</span><span class="nf">log10</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)],</span>
+        <span class="sh">"</span><span class="s">leading_digit</span><span class="sh">"</span><span class="p">:</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">).</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">leading_digit</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">benford</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">20</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law</span><span class="sh">"</span><span class="p">,</span> 
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Leading digit</span><span class="sh">"</span><span class="p">,</span> 
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Probability of occurence</span><span class="sh">"</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_4_0.png" alt="Benford's law" />
+</p>
+
+<p>Now let’s check our population data.</p>
+
+<h2 id="population-of-french-cities">Population of french cities</h2>
+
+<p>Data from 2017 can be found <a href="https://www.insee.fr/fr/statistiques/4265429?sommaire=4265511">here</a>, from the website of the french institute of statistics and economic studies (INSEE). The chosen archive has several CSV files dealing with various administrative levels. We are going to use the commune level. Regarding population, communes are the same thing as cities when they have more than 2000 inhabitants, except for the 3 largest cities: Paris, Marseille and Lyon, where a commune corresponds to an “arrondissement”, which is some kind of district (e.g. twenty arrondissements in Paris). Below 2000 inhabitants, they correspond to villages. The data covers mainland France as well as overseas departments and regions.</p>
+
+<p>Let’s start by downloading and extracting the data :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">url</span> <span class="o">=</span> <span class="sh">"</span><span class="s">https://www.insee.fr/fr/statistiques/fichier/4265429/ensemble.zip</span><span class="sh">"</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">file_name</span> <span class="o">=</span> <span class="sh">"</span><span class="s">ensemble.zip</span><span class="sh">"</span>
+<span class="n">_</span> <span class="o">=</span> <span class="nf">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="sh">"</span><span class="s">wb</span><span class="sh">"</span><span class="p">).</span><span class="nf">write</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">content</span><span class="p">)</span>
+<span class="k">with</span> <span class="nc">ZipFile</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="sh">"</span><span class="s">r</span><span class="sh">"</span><span class="p">)</span> <span class="k">as</span> <span class="nb">zip</span><span class="p">:</span>
+    <span class="nb">zip</span><span class="p">.</span><span class="nf">extractall</span><span class="p">()</span>
+<span class="err">!</span><span class="n">ls</span> <span class="o">*</span><span class="p">.</span><span class="n">csv</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Arrondissements.csv		     meta_arrondissements.csv
+Cantons_et_metropoles.csv	     meta_associe.csv
+Collectivites_d_outre_mer.csv	     meta_cantons.csv
+Communes.csv			     meta_com.csv
+Communes_associees_ou_deleguees.csv  meta_communes.csv
+Departements.csv		     meta_departements.csv
+Fractions_cantonales.csv	     meta_fractions.csv
+Regions.csv			     meta_regions.csv
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">communes.csv</code> file has 5 columns and 34995 rows :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nf">read_csv</span><span class="p">(</span><span class="sh">"</span><span class="s">Communes.csv</span><span class="sh">"</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sh">"</span><span class="s">;</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">df</span><span class="p">.</span><span class="nf">head</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>DEPCOM</th>
+      <th>COM</th>
+      <th>PMUN</th>
+      <th>PCAP</th>
+      <th>PTOT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>01001</td>
+      <td>L' Abergement-Clémenciat</td>
+      <td>776</td>
+      <td>18</td>
+      <td>794</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>01002</td>
+      <td>L' Abergement-de-Varey</td>
+      <td>248</td>
+      <td>1</td>
+      <td>249</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p><code class="language-plaintext highlighter-rouge">DEPCOM</code> is some kind of ID code<br />
+<code class="language-plaintext highlighter-rouge">COM</code> is the commune name <br />
+<code class="language-plaintext highlighter-rouge">PTOT</code> is the total population<br />
+We are only interested in the <code class="language-plaintext highlighter-rouge">PTOT</code> column.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">PTOT</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">].</span><span class="nf">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">number_of_records</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">min_value</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">PTOT</span><span class="p">.</span><span class="nf">min</span><span class="p">()</span>
+<span class="n">max_value</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">PTOT</span><span class="p">.</span><span class="nf">max</span><span class="p">()</span>
+<span class="n">orders_of_magnitude</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">log10</span><span class="p">(</span><span class="n">max_value</span><span class="p">))</span> <span class="o">-</span> <span class="nf">int</span><span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">log10</span><span class="p">(</span><span class="n">min_value</span><span class="p">))</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">number_of_records : </span><span class="si">{</span><span class="n">number_of_records</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">min value : </span><span class="si">{</span><span class="n">min_value</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">max_value : </span><span class="si">{</span><span class="n">max_value</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">orders of magnitude : </span><span class="si">{</span><span class="n">orders_of_magnitude</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>number_of_records : 34989
+min value : 1
+max_value : 484809
+orders of magnitude : 5
+</code></pre></div></div>
+
+<p>Now we store the leading digit and compute the probability of occurence :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">leading_digit</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">PTOT</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">ld_occ_proba</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">leading_digit</span><span class="p">.</span><span class="nf">value_counts</span><span class="p">()</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We can observe that the data follows Benford’s law pretty well :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">ld_occ_proba</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">Observed data</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">benford</span><span class="p">.</span><span class="nf">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">False</span><span class="p">).</span><span class="n">plot</span><span class="p">.</span><span class="nf">scatter</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="sh">"</span><span class="s">leading_digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="sh">"</span><span class="s">proba</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">marker</span><span class="o">=</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law on the population of french communes</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Leading digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Probability of occurence</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span>
+    <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_15_0.png" alt="french communes" />
+</p>
+
+<h2 id="quick-explanation">Quick explanation</h2>
+
+<p>First we can observe that the values of Benford’s distribution corresponds to the spacing in a log scale bar :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+<span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nf">list</span><span class="p">(</span><span class="n">benford</span><span class="p">.</span><span class="n">proba</span><span class="p">.</span><span class="nf">cumsum</span><span class="p">().</span><span class="n">values</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
+    <span class="n">plt</span><span class="p">.</span><span class="nf">vlines</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+<span class="n">xs_h</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">xs</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">xs_h</span><span class="p">):</span>
+    <span class="n">plt</span><span class="p">.</span><span class="nf">text</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nf">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_18_0.png" alt="Log scale" />
+</p>
+
+<p>So if numbers are uniformly distributed in the log space over one order of magnitude, the probability that they start with the digit $i$ is actually equal to the width of the $i$-th column above :
+\begin{equation}
+P(D_1= d) = log_{10}(d+1) -  log_{10}(d) = log_{10} \left( 1 + \frac{1}{d} \right)
+\end{equation}</p>
+
+<p>Let’s generate some fake numbers uniformly in the log space, across several orders of magnitude, and check that they perfectly follow Benford’s law :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n</span> <span class="o">=</span> <span class="mi">1_000_000</span>
+<span class="n">l</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span>
+<span class="n">fake</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">gen</span><span class="sh">"</span><span class="p">:</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">l</span> <span class="o">+</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="nf">rand</span><span class="p">(</span><span class="n">n</span><span class="p">))})</span>
+
+<span class="n">coef</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">coef</span><span class="p">)</span> <span class="o">/</span> <span class="n">coef</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">xscale</span><span class="p">(</span><span class="sh">"</span><span class="s">log</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sh">"</span><span class="s">both</span><span class="sh">"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">hist</span><span class="p">(</span><span class="n">fake</span><span class="p">.</span><span class="n">gen</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">xlabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Numbers (Log scale)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Occurance</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">title</span><span class="p">(</span><span class="sh">"</span><span class="s">Distribution of the fake number collection</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_21_0.png" alt="Fake" />
+</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fake</span><span class="p">[</span><span class="sh">"</span><span class="s">leading_digit</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fake</span><span class="p">.</span><span class="n">gen</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">fake_ld_occ_proba</span> <span class="o">=</span> <span class="n">fake</span><span class="p">.</span><span class="n">leading_digit</span><span class="p">.</span><span class="nf">value_counts</span><span class="p">()</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">fake</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">fake_ld_occ_proba</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">Fake data</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">benford</span><span class="p">.</span><span class="nf">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">False</span><span class="p">).</span><span class="n">plot</span><span class="p">.</span><span class="nf">scatter</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="sh">"</span><span class="s">leading_digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="sh">"</span><span class="s">proba</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">marker</span><span class="o">=</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law on fake data</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Leading digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Probability of occurence</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span>
+    <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_23_0.png" alt="Fake" />
+</p>
+
+<p>If we look at the population’s distribution in the log space, we can see that it is rather spread out, across several orders of magnitude.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coef</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="nf">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">coef</span><span class="p">)</span> <span class="o">/</span> <span class="n">coef</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">xscale</span><span class="p">(</span><span class="sh">"</span><span class="s">log</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="sh">"</span><span class="s">both</span><span class="sh">"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="sh">"</span><span class="s">-</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">n</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">patches</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">hist</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">PTOT</span><span class="p">.</span><span class="n">values</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">xlabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Population (Log scale)</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">ylabel</span><span class="p">(</span><span class="sh">"</span><span class="s">Occurance</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="nf">title</span><span class="p">(</span><span class="sh">"</span><span class="s">Distribution of the communes</span><span class="sh">'</span><span class="s"> population</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_25_0.png" alt="Distribution" />
+</p>
+
+<p>So even if it is not uniform in the log space, it is smooth and wide enough to approximately follow Bendford’s law. As explained in <a href="https://en.wikipedia.org/wiki/Benford%27s_law">wikipedia</a>:</p>
+<blockquote>
+  <p>Benford’s law can be seen in the larger area covered by red (first digit one) compared to blue (first digit 8) shading.</p>
+</blockquote>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/wikipedia_02.png" alt="Distribution" />
+</p>
+
+<p>For each order of magnitude, the width corresponding to the leading digit 1 is almost 6 times larger than the one corresponding to the leading digit 8. So overall, the cumulative area under the distribution curve corresponding to the leading digit 1 is also about 6 times larger than the one corresponding to the leading digit 8.</p>
+
+<p>Now, an interesting thing is that it Bendford’s law can be easily generalized to every significant digit. Let’s apply the second-digit version of the law to the population dataset.</p>
+
+<h2 id="second-significant-digit">Second significant digit</h2>
+
+<p>Here is the generalization of Benford’s law, from Hill [1] :</p>
+
+<p>\begin{equation}
+P(D_1 = d_1, … ,D_k = d_k) = log_{10} \left[ 1 + \left( \sum_{i=1}^k d_i 10^{k-i} \right)^{-1} \right], \; k \geq 1
+\end{equation}</p>
+
+<p>where $d_j$ is the $j$-th significant digit ($d_1 \in (1, …, 9)$ and $d_j \in (0, …, 9)$ for $j&gt;1$).</p>
+
+<p>So the distribution of the second digit is the following one :</p>
+
+<p>\begin{equation}
+P(D_2 = d_2) = \sum_{d_1=1}^9  P(D_1 = d_1, D_2 = d_2) = \sum_{d_1=1}^9 log_{10} \left[ 1 + \frac{1}{10 \; d_1 + d_2} \right]
+\end{equation}</p>
+
+<p>Let’s have a look at this second-digit distribution :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">benford_2</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="nc">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">second_digit</span><span class="sh">"</span><span class="p">:</span> <span class="nf">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)},</span> <span class="n">index</span><span class="o">=</span><span class="nf">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">benford_2</span><span class="p">[</span><span class="sh">"</span><span class="s">proba</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="k">for</span> <span class="n">d1</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="n">benford_2</span><span class="p">.</span><span class="n">proba</span> <span class="o">+=</span> <span class="n">np</span><span class="p">.</span><span class="nf">log10</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">d1</span> <span class="o">+</span> <span class="n">benford_2</span><span class="p">.</span><span class="n">second_digit</span><span class="p">))</span>
+
+<span class="n">benford_2</span><span class="p">.</span><span class="nf">set_index</span><span class="p">(</span><span class="sh">"</span><span class="s">second_digit</span><span class="sh">"</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">benford_2</span><span class="p">.</span><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">grid</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">20</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law for the second significant digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Second significant digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Probability of occurence</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_29_0.png" alt="Second-digit" />
+</p>
+
+<p>Although the second-digit distribution is not uniform, it is less uneven than the first-digit one.</p>
+
+<p>Now we store the second digit and compute the probability of occurence :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">df</span><span class="p">[</span><span class="sh">"</span><span class="s">second_digit</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">df</span><span class="p">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">PTOT</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">,</span> <span class="sh">"</span><span class="s">second_digit</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">.</span><span class="n">PTOT</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">].</span><span class="n">PTOT</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">int</span><span class="p">(</span><span class="nf">str</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">sd_occ_pc</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">second_digit</span><span class="p">.</span><span class="nf">value_counts</span><span class="p">()</span> <span class="o">/</span> <span class="nf">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Again, we can observe that the data follows (the generalized) Benford’s law pretty well :</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ax</span> <span class="o">=</span> <span class="n">sd_occ_pc</span><span class="p">.</span><span class="n">plot</span><span class="p">.</span><span class="nf">bar</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">Observed data</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">benford_2</span><span class="p">.</span><span class="nf">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">False</span><span class="p">).</span><span class="n">plot</span><span class="p">.</span><span class="nf">scatter</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="sh">"</span><span class="s">second_digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="sh">"</span><span class="s">proba</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">marker</span><span class="o">=</span><span class="sh">"</span><span class="s">o</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sh">"</span><span class="s">Benford</span><span class="sh">'</span><span class="s">s law</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="p">.</span><span class="nf">grid</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="sh">"</span><span class="s">Second-digit law on the population of french communes</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Second significant digit</span><span class="sh">"</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sh">"</span><span class="s">Probability of occurence</span><span class="sh">"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">set_ylim</span><span class="p">(</span>
+    <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="p">.</span><span class="nf">legend</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p align="center">
+  <img width="600" src="/img/2021-01-20_01/output_33_0.png" alt="Second-digit" />
+</p>
+
+<h2 id="reference">Reference</h2>
+
+<p>[1] Hill, Theodore P. <em>A Statistical Derivation of the Significant-Digit Law.</em> 
+ Statist. Sci. 10 (1995), no. 4, 354–363. doi:10.1214/ss/1177009869.</p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>

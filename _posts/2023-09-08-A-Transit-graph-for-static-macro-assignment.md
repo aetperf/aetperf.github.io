@@ -146,7 +146,7 @@ The waiting links are the *boarding* and *transfer* links. Basically, each line 
 
 They can also be added between all the lines of a station if increasing the number of links is not an issue.
 
-*walking* links connect *stop* nodes, while *connector* links connect the zone centroids (*od* nodes) to *stop* nodes:
+*walking* links connect *stop* nodes within a station, while *connector* links connect the zone centroids (*od* nodes) to *stop* nodes:
 
 <p align="center">
   <img width="800" src="/img/2023-09-08_01/208089273-6ab4c267-7591-4f77-a1c1-88d072927061.jpg" alt="208089273-6ab4c267-7591-4f77-a1c1-88d072927061">
@@ -236,7 +236,19 @@ Here is a table listing all links :
 
 ## Transit graph in AequilibraE
 
-A few more edges types have been introduced in AequilibraE. Mainly we differentiate the connectors directed from the demand to the supply (*access connectors*) from the ones in the opposite direction (*egress connectors*). Also, we differentiate the transfer edges connecting lines within the same stop (*inner transfer*) from the ones connecting lines between distinct stops from the same station (*outer transfer*).
+A few more edges types have been introduced in AequilibraE. We may differentiate: 
+- the connectors directed from the demand to the supply (*access connectors*) from the ones in the opposite direction (*egress connectors*),
+- the transfer edges connecting lines within the same stop (*inner transfer*) from the ones connecting lines between distinct stops from the same station (*outer transfer*),
+- the *origin* and *destination* nodes
+
+This depends on the following parameters:
+- `with_walking_edges`
+- `with_inner_stop_transfers`
+- `with_outer_stop_transfers`
+- `blocking_centroid_flow`
+
+
+This leads to these possible edge types:
 - on-board
 - boarding
 - alighting

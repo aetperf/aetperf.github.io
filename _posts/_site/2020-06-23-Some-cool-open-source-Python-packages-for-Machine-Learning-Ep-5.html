@@ -1,0 +1,273 @@
+<p align="center">
+  <img width="800" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg/1920px-Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg" alt="Nasa pic" />    
+</p>
+
+<p><em>Image credit: NASA/JPL-Caltech and The Hubble Heritage Team (STScI/AURA)</em></p>
+
+<p>_</p>
+
+<p>There is a very rich ecosystem of Python libraries related to ML. Here is a list of some “active”, open-source packages that may be useful for ML day-to-day activities.</p>
+
+<p>Previous post list:</p>
+
+<ul>
+  <li><a href="https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html">Some cool open-source Python packages for Machine Learning EP 1</a> (2019/07/11)</li>
+  <li><a href="https://aetperf.github.io/2019/08/08/Some-cool-open-source-Python-packages-for-Machine-Learning-Ep-2.html">Some cool open-source Python packages for Machine Learning EP 2</a> (2019/08/08)</li>
+  <li><a href="https://aetperf.github.io/2019/10/23/Some-cool-open-source-Python-packages-for-Machine-Learning-Ep-3.html">Some cool open-source Python packages for Machine Learning EP 3</a> (2019/10/23)</li>
+  <li><a href="https://aetperf.github.io/2020/01/08/Some-cool-open-source-Python-packages-for-Machine-Learning-Ep-4.html">Some cool open-source Python packages for Machine Learning EP 4</a> (2020/01/08)</li>
+</ul>
+
+<p>(☞ﾟヮﾟ)☞</p>
+
+<p>_</p>
+
+<h2 id="recommender-systems">Recommender systems</h2>
+
+<ul>
+  <li><a href="https://github.com/NicolasHug/Surprise">Surprise</a> - a scikit building and analyzing recommender systems that deal with explicit rating data.</li>
+</ul>
+
+<h2 id="chat-bots">Chat-bots</h2>
+
+<ul>
+  <li><a href="https://github.com/deepmipt/DeepPavlov">DeepPavlov</a> - conversational AI library built on TensorFlow and Keras. DeepPavlov is designed for
+    <ul>
+      <li>development of production ready chat-bots and complex conversational systems,</li>
+      <li>research in the area of NLP and, particularly, of dialog systems.</li>
+    </ul>
+  </li>
+  <li><a href="https://github.com/facebookresearch/ParlAI">ParlAI</a> - a framework for training and evaluating AI models on a variety of openly available dialogue datasets.</li>
+</ul>
+
+<h2 id="causal-inference-probabilistic-ml">Causal Inference, probabilistic ML</h2>
+
+<ul>
+  <li><a href="https://github.com/uber/causalml">Causal ML</a> - a package that provides a suite of uplift modeling and causal inference methods using machine learning algorithms based on recent research. It provides a standard interface that allows user to estimate the Conditional Average Treatment Effect (CATE) or Individual Treatment Effect (ITE) from experimental or observational data. Essentially, it estimates the causal impact of intervention T on outcome Y for users with observed features X, without strong assumptions on the model form. Here is a quote from <a href="https://eng.uber.com/causal-inference-at-uber/">Uber Engineering Blog</a>:</li>
+</ul>
+
+<blockquote>
+  <p>At a more granular level, causal inference enables data scientists and product analysts to answer causal questions based on observational data, especially when A/B testing is not possible, or gain additional insights from a well-designed experiment. For example, we may launch an email campaign that is open for participation to all customers in a market. In this case, since we don’t have a randomized control group, how do we measure the campaign’s effect? In another example, suppose we have a randomized, controlled A/B test experiment but not everyone in the treatment group actually receive the treatment (i.e., if they don’t open the email). How do we estimate the treatment effect for the treated? Causal inference enables us to answer these types of questions, leading to better user experiences on our platform.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/quantumblacklabs/causalnex">CausalNex</a> - a library that helps data scientists to infer causation rather than observing correlation.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/pymc-devs/pymc3">PyMC3</a> - a package for Bayesian statistical modeling and Probabilistic Machine Learning focusing on advanced Markov Chain Monte Carlo (MCMC) and Variational Inference (VI) algorithms.</p>
+  </li>
+</ul>
+
+<h2 id="data-engineering">Data engineering</h2>
+
+<ul>
+  <li><a href="https://github.com/great-expectations/great_expectations">Great Expectations</a> - Great Expectations helps data teams eliminate pipeline debt, through data testing, documentation, and profiling. Software developers have long known that testing and documentation are essential for managing complex codebases. Great Expectations brings the same confidence, integrity, and acceleration to data science and data engineering teams.</li>
+</ul>
+
+<h2 id="feature-engineering">Feature engineering</h2>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/solegalli/feature_engine">Feature-engine</a> - a library with multiple transformers to engineer features for use in machine learning models. Feature-engine’s transformers follow Scikit-learn functionality with fit() and transform() methods to first learn the transforming paramenters from data and then transform the data.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/aerdem4/lofo-importance">LOFO Importance</a> - LOFO (Leave One Feature Out) Importance calculates the importances of a set of features based on a metric of choice, for a model of choice, by iteratively removing each feature from the set, and evaluating the performance of the model, with a validation scheme of choice, based on the chosen metric.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/pfnet-research/xfeat">xfeat</a> - flexible Feature Engineering &amp; Exploration Library using GPUs and <a href="https://github.com/optuna/optuna">Optuna</a>.</p>
+  </li>
+</ul>
+
+<h2 id="data-annotation">Data Annotation</h2>
+
+<ul>
+  <li><a href="https://github.com/dennisbakhuis/pigeonXT">PigeonXT</a> -  an extention to the original <a href="https://github.com/agermanidis/pigeon">Pigeon</a>, created by <a href="https://pypi.org/user/agermanidis/">Anastasis Germanidis</a>. PigeonXT is a simple widget that lets you quickly annotate a dataset of unlabeled examples from the comfort of your Jupyterlab notebook.</li>
+</ul>
+
+<h2 id="data-visualization">Data visualization</h2>
+
+<ul>
+  <li><a href="https://github.com/ResidentMario/missingno">missingno</a> - a small toolset of flexible and easy-to-use missing data visualizations and utilities that allows you to get a quick visual summary of the completeness (or lack thereof) of your dataset.</li>
+</ul>
+
+<h2 id="privacy--security">Privacy &amp; Security</h2>
+
+<ul>
+  <li><a href="https://github.com/FederatedAI/FATE">FATE</a> - a project initiated by Webank’s AI Department to provide a secure computing framework to support the federated AI ecosystem. It implements secure computation protocols based on homomorphic encryption and multi-party computation (MPC). It supports federated learning architectures and secure computation of various machine learning algorithms, including logistic regression, tree-based algorithms, deep learning and transfer learning. Definition of federated learning from <a href="https://en.wikipedia.org/wiki/Federated_learning">Wikipedia</a>:</li>
+</ul>
+
+<blockquote>
+  <p>Federated learning (aka collaborative learning) is a machine learning technique that trains an algorithm across multiple decentralized edge devices or servers holding local data samples, without exchanging their data samples. This approach stands in contrast to traditional centralized machine learning techniques where all data samples are uploaded to one server, as well as to more classical decentralized approaches which assume that local data samples are identically distributed.</p>
+</blockquote>
+
+<blockquote>
+  <p>Federated learning enables multiple actors to build a common, robust machine learning model without sharing data, thus addressing critical issues such as data privacy, data security, data access rights and access to heterogeneous data. Its applications are spread over a number of industries including defense, telecommunications, IoT, or pharmaceutics.</p>
+</blockquote>
+
+<h2 id="ensemble-learning">Ensemble learning</h2>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/scikit-learn-contrib/DESlib">DESlib</a> - an easy-to-use ensemble learning library focused on the implementation of the state-of-the-art techniques for dynamic classifier and ensemble selection. The library is is based on scikit-learn, using the same method signatures: fit, predict, predict_proba and score.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/bhargavvader/pycobra">pycobra</a> - a library for ensemble learning. It serves as a toolkit for regression and classification using these ensembled machines, and also for visualisation of the performance of the new machine and constituent machines.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/yzhao062/combo">combo</a> - a toolbox for machine Learning model combination. Model combination can be considered as a subtask of ensemble learning, and has been widely used in real-world tasks and data science competitions like Kaggle.</p>
+  </li>
+</ul>
+
+<h2 id="nlp">NLP</h2>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/Novetta/adaptnlp">AdaptNLP</a> - a high level framework and library for running, training, and deploying state-of-the-art Natural Language Processing (NLP) models for end to end tasks.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/LexPredict/lexpredict-lexnlp">LexNLP</a> - a library for working with real, unstructured legal text, including contracts, plans, policies, procedures, and other material.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/allenai/allennlp">AllenNLP</a> - a NLP research library, built on PyTorch, for developing state-of-the-art deep learning models on a wide variety of linguistic tasks.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/huggingface/tokenizers">Tokenizers</a> - an implementation of today’s most used tokenizers, with a focus on performance and versatility.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/NeelShah18/emot">Emot</a> - a library to extract the emojis and emoticons from a text (string).</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/vi3k6i5/flashtext">FlashText</a> - this package can be used to replace keywords in sentences or extract keywords from sentences. It is based on the <a href="https://arxiv.org/abs/1711.00046">FlashText</a> algorithm.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/minimaxir/aitextgen">aitextgen</a> - a robust tool for text-based AI training and generation using GPT-2, based on <a href="https://pytorch.org/">PyTorch</a>, <a href="https://github.com/huggingface/transformers">Hugging Face Transformers</a> and <a href="https://github.com/PyTorchLightning/pytorch-lightning">pytorch-lightning</a>.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/jaidevd/numerizer">numerizer</a> - a module to convert natural language numerics into ints and floats.</p>
+  </li>
+</ul>
+
+<h2 id="computer-vision">Computer vision</h2>
+
+<ul>
+  <li><a href="https://github.com/kornia/kornia">Kornia</a> - Kornia is a differentiable computer vision library for PyTorch. It consists of a set of routines and differentiable modules to solve generic computer vision problems. At its core, the package uses PyTorch as its main backend both for efficiency and to take advantage of the reverse-mode auto-differentiation to define and compute the gradient of complex functions.</li>
+</ul>
+
+<h2 id="time-series">Time series</h2>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/tslearn-team/tslearn">tslearn</a> - a package that provides machine learning tools for the analysis of time series.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/dmbee/seglearn">Seglearn</a> - a package for machine learning time series or sequences. It provides an integrated pipeline for segmentation, feature extraction, feature processing, and final estimator.</p>
+  </li>
+</ul>
+
+<h2 id="pipeline-frameworks">Pipeline frameworks</h2>
+
+<ul>
+  <li><a href="https://github.com/databand-ai/dbnd">DBND</a> - a framework for building and tracking data pipelines. DBND is used for processes ranging from data ingestion, preparation, machine learning model training and production.</li>
+</ul>
+
+<h2 id="deep-learning-frameworks">Deep learning frameworks</h2>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/lmnt-com/haste">Haste</a> - a CUDA implementation of fused RNN layers with built-in DropConnect and Zoneout regularization. Haste includes a standalone C++ API, a TensorFlow Python API, and a PyTorch API .</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/mindspore-ai/mindspore">MindSpore</a> - a deep learning training/inference framework that could be used for mobile, edge and cloud scenarios. MindSpore is designed to provide development experience with friendly design and efficient execution for the data scientists and algorithmic engineers, native support for Ascend AI processor, and software hardware co-optimization.</p>
+  </li>
+</ul>
+
+<h2 id="framework-wrapper">Framework wrapper</h2>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/PyTorchLightning/pytorch-lightning">PyTorch Lightning</a> - lightweight PyTorch wrapper for ML researchers, high-level interface.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/deepmind/sonnet">Sonnet</a> - a library built on top of TensorFlow 2 designed to provide simple, composable abstractions for machine learning research.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/explosion/thinc">Thinc</a> - a lightweight deep learning library that offers an elegant, type-checked, functional-programming API for composing models, with support for layers defined in other frameworks such as PyTorch, TensorFlow and MXNet.</p>
+  </li>
+</ul>
+
+<h2 id="hyper-parameter-optimization">Hyper-parameter optimization</h2>
+
+<ul>
+  <li><a href="https://github.com/facebookresearch/nevergrad">Nevergrad</a> - a toolbox for performing gradient-free optimization. The library includes a wide range of optimizers, such as:
+    <ul>
+      <li>Differential evolution,</li>
+      <li>Sequential quadratic programming,</li>
+      <li>FastGA,</li>
+      <li>Covariance matrix adaptation,</li>
+      <li>Population control methods for noise management,</li>
+      <li>Particle swarm optimization.</li>
+    </ul>
+  </li>
+  <li><a href="https://github.com/facebookresearch/hiplot">HiPlot</a> - a lightweight interactive visualization tool to help AI researchers discover correlations and patterns in high-dimensional data using parallel plots and other graphical ways to represent information.</li>
+</ul>
+
+<h2 id="auto-ml">Auto-ML</h2>
+
+<ul>
+  <li><a href="https://github.com/microsoft/nni">NNI</a> - a toolkit for automate machine learning lifecycle, including feature engineering, neural architecture search, model compression and hyper-parameter tuning.</li>
+</ul>
+
+<h2 id="tensor-computing">Tensor computing</h2>
+
+<ul>
+  <li><a href="https://github.com/microsoft/hummingbird">Hummingbird</a> - a library for compiling trained traditional ML models into tensor computations. Hummingbird allows users to seamlessly leverage neural network frameworks (such as <a href="https://pytorch.org/">PyTorch</a>) to accelerate traditional ML models</li>
+</ul>
+
+<h2 id="automatic-differentiation">Automatic differentiation</h2>
+
+<ul>
+  <li><a href="https://github.com/google/jax">JAX</a> - JAX is <a href="https://github.com/hips/autograd">Autograd</a> and <a href="https://www.tensorflow.org/xla">XLA</a>, brought together for high-performance machine learning research. With its updated version of <a href="https://github.com/hips/autograd">Autograd</a>, JAX can automatically differentiate native Python and NumPy functions. It can differentiate through loops, branches, recursion, and closures, and it can take derivatives of derivatives of derivatives. It supports reverse-mode differentiation (a.k.a. backpropagation) via grad as well as forward-mode differentiation, and the two can be composed arbitrarily to any order. What’s new is that JAX uses <a href="https://www.tensorflow.org/xla">XLA</a> to compile and run your NumPy programs on GPUs and TPUs.</li>
+</ul>
+
+<h2 id="open-science-collaboration">Open science collaboration</h2>
+
+<ul>
+  <li><a href="https://github.com/openml/openml-python">OpenML-Python</a> - an interface for <a href="https://www.openml.org/">OpenML</a>, an online platform for open science collaboration in machine learning. It can be used to download or upload OpenML data such as datasets and machine learning experiment results.</li>
+</ul>
+
+<h2 id="-not-python-but-with-python-support-">—— NOT PYTHON, but with Python support ——</h2>
+
+<h2 id="workflows">Workflows</h2>
+
+<ul>
+  <li><a href="https://github.com/lyft/flyte">Flyte</a> - a container-native, type-safe workflow and pipelines platform optimized for large scale processing and machine learning written in Golang. Workflows can be written in any language, with out of the box support for Python.</li>
+</ul>
+
+<h2 id="experimentation-frameworks">Experimentation frameworks</h2>
+
+<ul>
+  <li><a href="https://github.com/kubeflow/katib">Katib</a> - a Kubernetes-based system for Hyperparameter Tuning and Neural Architecture Search. Katib supports a number of ML frameworks, including TensorFlow, Apache MXNet, PyTorch, XGBoost, and others. Note that there is a Python <a href="https://github.com/kubeflow/katib/tree/master/sdk/python">SDK</a>.</li>
+</ul>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+

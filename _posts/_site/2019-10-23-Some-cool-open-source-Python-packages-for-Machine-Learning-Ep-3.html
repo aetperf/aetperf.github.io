@@ -1,0 +1,117 @@
+<p align="center">
+  <img width="750" src="/img/2019-10-23_01/moebius.jpg" alt="Moebius" />
+</p>
+
+<p>There is a very rich ecosystem of Python libraries related to ML. Here is a list of some “active”, open-source packages that may be useful for ML day-to-day activities.</p>
+
+<p>This post is following these ones:</p>
+
+<ul>
+  <li><a href="https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html">Some cool open-source Python packages for Machine Learning EP 1</a> (2019/07/11)</li>
+  <li><a href="https://aetperf.github.io/2019/08/08/Some-cool-open-source-Python-packages-for-Machine-Learning-Ep-2.html">Some cool open-source Python packages for Machine Learning EP 2</a> (2019/08/08)</li>
+</ul>
+
+<p>(☞ﾟヮﾟ)☞</p>
+
+<h2 id="feature-engineering">Feature engineering</h2>
+
+<ul>
+  <li><a href="https://github.com/scikit-learn-contrib/categorical-encoding/">category_encoders</a> - a set of scikit-learn-style transformers for encoding categorical variables into numeric by means of different techniques.</li>
+</ul>
+
+<h2 id="time-series">Time series</h2>
+
+<ul>
+  <li><a href="https://github.com/blue-yonder/tsfresh">TSFRESH</a> - automatically extracts 100s of features from time series. Those features describe basic characteristics of the time series such as the number of peaks, the average or maximal value or more complex features such as the time reversal symmetry statistic. To avoid extracting irrelevant features, the TSFRESH package has a built-in filtering procedure. This filtering procedure evaluates the explaining power and importance of each characteristic for the regression or classification tasks at hand.</li>
+  <li><a href="https://github.com/target/matrixprofile-ts">matrixprofile-ts</a> - a library for detecting patterns and anomalies in massive datasets using the Matrix Profile.</li>
+  <li><a href="https://github.com/alan-turing-institute/sktime">sktime</a> - a scikit-learn compatible toolbox for learning with time series data.</li>
+</ul>
+
+<h2 id="auto-ml">Auto-ML</h2>
+
+<ul>
+  <li><a href="https://github.com/hyperopt/hyperopt">Hyperopt</a> - a library for serial and parallel optimization over awkward search spaces, which may include real-valued, discrete, and conditional dimensions.</li>
+  <li><a href="https://github.com/ray-project/ray">ray[tune]</a> - a library for hyperparameter tuning at any scale.</li>
+  <li><a href="https://github.com/AxeldeRomblay/MLBox">MLBox</a> - a powerful Automated Machine Learning library.</li>
+  <li><a href="https://github.com/AIworx-Labs/chocolate">Chocolate</a> - a completely asynchronous hyperparameter optimisation framework relying solely on a database to share information between workers.</li>
+  <li><a href="https://github.com/HDI-Project/ATM">ATM</a> - a multi-tenant, multi-data system for automated machine learning (model selection and tuning).</li>
+  <li><a href="https://github.com/automl/HpBandSter">HpBandSter</a> - a distributed Hyperband implementation on Steroids.</li>
+  <li><a href="https://github.com/sherpa-ai/sherpa">SHERPA</a> - a library for hyperparameter tuning of machine learning models.</li>
+  <li><a href="https://github.com/HunterMcGushion/hyperparameter_hunter">HyperparameterHunter</a> - automatically save and learn from Experiment results, leading to long-term, persistent optimization that remembers all your tests.</li>
+</ul>
+
+<p>EDIT: here is a very nice post that compares <a href="https://github.com/hyperopt/hyperopt">Hyperopt</a> with <a href="https://github.com/optuna/optuna">Optuna</a>, mentioned in <a href="https://aetperf.github.io/2019/07/11/Some-cool-open-source-Python-packages-for-Machine-Learning.html">EP 1</a>: <a href="https://neptune.ai/blog/optuna-vs-hyperopt">https://neptune.ai/blog/optuna-vs-hyperopt</a></p>
+
+<h2 id="experimentation-frameworks-and-tools">Experimentation frameworks and tools</h2>
+
+<ul>
+  <li><a href="https://github.com/facebook/Ax">Ax</a> - an accessible, general-purpose platform for understanding, managing, deploying, and automating adaptive experiments.</li>
+</ul>
+
+<h2 id="workflows">Workflows</h2>
+
+<ul>
+  <li><a href="https://github.com/Kenza-AI/sagify">sagify</a> - a command-line utility to train and deploy Machine Learning/Deep Learning models on AWS SageMaker in a few simple steps!</li>
+  <li><a href="https://github.com/kubeflow-kale/kale">Kale</a> - a package that aims at automatically deploy a general purpose Jupyter Notebook as a running Kubeflow Pipelines instance, without requiring the use the specific KFP DSL.</li>
+</ul>
+
+<h2 id="computing">Computing</h2>
+
+<ul>
+  <li><a href="https://github.com/horovod/horovod">horovod</a> - a distributed training framework for TensorFlow, Keras, PyTorch, and MXNet. The goal of Horovod is to make distributed Deep Learning fast and easy to use.</li>
+  <li><a href="https://github.com/rapidsai/jupyterlab-nvdashboard">jupyterlab-nvdashboard</a> - A JupyterLab extension for displaying dashboards of GPU usage.</li>
+</ul>
+
+<h2 id="model-analysis">Model analysis</h2>
+
+<ul>
+  <li><a href="https://github.com/sicara/tf-explain">tf-explain</a> - implements interpretability methods as Tensorflow 2.0 callbacks to ease neural network’s understanding.</li>
+</ul>
+
+<h2 id="app-framework">App framework</h2>
+
+<ul>
+  <li><a href="https://github.com/streamlit/streamlit">Streamlit</a> - lets you create apps for your machine learning projects with deceptively simple scripts. It supports hot-reloading, so your app updates live as you edit and save your file. No need to mess with HTTP requests, HTML, JavaScript, etc. All you need is your favorite editor and a browser.</li>
+  <li><a href="https://github.com/voila-dashboards/voila">Voila</a> - from Jupyter notebooks to standalone web applications and dashboards .</li>
+</ul>
+
+<h2 id="data-visualization">Data visualization</h2>
+
+<ul>
+  <li><a href="https://github.com/spotify/chartify">Chartify</a> - a library that makes it easy for data scientists to create charts.</li>
+</ul>
+
+<h2 id="music">Music</h2>
+
+<ul>
+  <li><a href="https://github.com/librosa/librosa">LibROSA</a> - a package for music and audio analysis. It provides the building blocks necessary to create music information retrieval systems.</li>
+</ul>
+
+<h2 id="images">Images</h2>
+
+<ul>
+  <li><a href="https://github.com/idealo/imagededup">imagededup</a> - a package that simplifies the task of finding exact and near duplicates in an image collection.</li>
+</ul>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+

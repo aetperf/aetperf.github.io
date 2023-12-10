@@ -1,5 +1,5 @@
 
-**Update** Nov 17, 2023 - Added results with the latest DataFusion version.
+**Update** Nov 17, 2023 - Added results using the latest DataFusion version.
 
 
 Some time ago, we came across an intriguing Parquet sorting test shared by Mimoune Djouallah on Twitter [@mim_djo](https://twitter.com/mim_djo). The test involves reading a Parquet file, sorting the table, and writing the sorted data back to a Parquet file on disk. You can find the original post [here](https://x.com/mim_djo/status/1637321688382853120?s=20).
