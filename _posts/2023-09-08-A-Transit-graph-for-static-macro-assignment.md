@@ -1,5 +1,5 @@
 ---
-title: A Transit graph for static macro assignment WIP
+title: A Transit graph for static macro assignment
 layout: post
 comments: true
 author: François Pacull
@@ -138,7 +138,7 @@ Here is a figure showing how a simple stop is described:
 
 The waiting links are the *boarding* and *transfer* links. Basically, each line segment is associated with a *boarding*, an *on-board* and an *alighting* link. 
 
-*Transfer* links appear between distinct lines at the same stop:
+*Transfer* links appear between distinct lines at the same stop, and allow a count of the passenger flow between a couple of lines at a stop:
 
 <p align="center">
   <img width="800" src="/img/2023-09-08_01/208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9.jpg" alt="208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9">
@@ -236,8 +236,8 @@ Here is a table listing all links :
 
 ## Transit graph in AequilibraE
 
-A few more edges types have been introduced in AequilibraE. We may differentiate: 
-- the connectors directed from the demand to the supply (*access connectors*) from the ones in the opposite direction (*egress connectors*),
+A few more edge types have been introduced into the graph creation part of [AequilibraE](http://www.aequilibrae.com/python/latest/). We may differentiate: 
+- the connectors directed from OD nodes to the network (*access connectors*) from the ones in the opposite direction (*egress connectors*),
 - the transfer edges connecting lines within the same stop (*inner transfer*) from the ones connecting lines between distinct stops from the same station (*outer transfer*),
 - the *origin* and *destination* nodes
 
@@ -245,7 +245,9 @@ This might be changed with the following boolean parameters:
 - `with_walking_edges`: create walking edges between the stops of a station
 - `with_inner_stop_transfers`: create transfer edges between lines of a stop
 - `with_outer_stop_transfers`: create transfer edges between lines of different stops of a station
-- `blocking_centroid_flow`: duplicate OD nodes into unconnected origin and destination nodes in order to block centroid flows
+- `blocking_centroid_flow`: duplicate OD nodes into unconnected origin and destination nodes in order to block centroid flows. Flows starts from an origin node and ends at a destination node. It is not possible to use an egress connector followed by an access connector in a middle of a trip.
+
+Note that during the assignment, if passengers have the choice between a transfer edge or a walking edge for a line change, they will always be assigned to the transfer edge.
 
 This leads to these possible edge types:
 - on-board
@@ -258,7 +260,25 @@ This leads to these possible edge types:
 - outer_transfer
 - walking
 
-If we buit the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
+Here is a simple example of a station with two stops, with two lines each. In the first case, we have walking edges between stops, but no transfer edge:
+
+<p align="center">
+  <img width="600" src="/img/2023-09-08_01/with_walking_only.png" alt="with_walking_only">
+</p>
+
+In the second case, we have inner transfer edges, but no outer transfer ones:
+
+<p align="center">
+  <img width="600" src="/img/2023-09-08_01/with_inner_transfer.png" alt="with_inner_transfer">
+</p>
+
+Finally we have both kinds of transfer edges:
+
+<p align="center">
+  <img width="600" src="/img/2023-09-08_01/with_inner_and_outer_transfer.png" alt="with_inner_and_outer_transfer">
+</p>
+
+If we build the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
 
 | Edge type        |   Count |
 |:-----------------|--------:|
