@@ -36,7 +36,7 @@ We are going at first to describe the input transit network, which is mostly com
 Transit stops are points where passenger can board, alight or change vehicles. Also, they can be part of larger stations, where stops are connected by transfer links.
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208088240-38e72a88-569e-4b12-a3df-9bc1fb1a4e62.jpg" alt="208088240-38e72a88-569e-4b12-a3df-9bc1fb1a4e62">
+  <img width="800" src="/img/2023-12-11_01/208088240-38e72a88-569e-4b12-a3df-9bc1fb1a4e62.jpg" alt="208088240-38e72a88-569e-4b12-a3df-9bc1fb1a4e62">
 </p>
 
 In this figure, we have two stops : A and B, which belong to the same station (in red).
@@ -50,7 +50,7 @@ A transit line is a set of services that may use different routes.
 A routes is described by a sequence of stop nodes. We assume here the routes to be directed. For example, we can take a simple case with 3 stops:
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208088742-2c51a9f5-298c-4a1a-af10-edcde6437d0c.jpg" alt="208088742-2c51a9f5-298c-4a1a-af10-edcde6437d0c">
+  <img width="800" src="/img/2023-12-11_01/208088742-2c51a9f5-298c-4a1a-af10-edcde6437d0c.jpg" alt="208088742-2c51a9f5-298c-4a1a-af10-edcde6437d0c">
 </p>
 
 In this case, the `L1` line is made of two distinct routes: 
@@ -63,7 +63,7 @@ But we can have many different configurations:
 - a route that does not stop at a given stop: AC
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208088800-5f65028f-8040-49bb-89d7-ad81b013538b.jpg" alt="208088800-5f65028f-8040-49bb-89d7-ad81b013538b">
+  <img width="800" src="/img/2023-12-11_01/208088800-5f65028f-8040-49bb-89d7-ad81b013538b.jpg" alt="208088800-5f65028f-8040-49bb-89d7-ad81b013538b">
 </p>
 
 
@@ -95,7 +95,7 @@ Note that we included a travel time for each line segment. This is another link 
 In order to assign the passengers on the network, we also need to express the demand in the different regions of the network. This is why the network area is decomposed into a partition of transit assignment zones, for example into 4 non-overlapping zones:
 
 <p align="center">
-  <img width="600" src="/img/2023-09-08_01/208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0.jpg" alt="208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0">
+  <img width="600" src="/img/2023-12-11_01/208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0.jpg" alt="208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0">
 </p>
 
 
@@ -104,7 +104,7 @@ Then the demand is express as a number of trips from each zone to each zone: a 4
 Also, each zone centroid is connected to some network nodes, in order to connect the supply and demand. These are the *connectors*.
 
 <p align="center">
-  <img width="600" src="/img/2023-09-08_01/208089058-a735d969-5f13-4ab4-b983-2c637e865aa4.jpg" alt="208089058-a735d969-5f13-4ab4-b983-2c637e865aa4">
+  <img width="600" src="/img/2023-12-11_01/208089058-a735d969-5f13-4ab4-b983-2c637e865aa4.jpg" alt="208089058-a735d969-5f13-4ab4-b983-2c637e865aa4">
 </p>
 
 We now have all the elements required to describe the assignment graph.
@@ -132,7 +132,7 @@ Nodes can be of the following types:
 Here is a figure showing how a simple stop is described:
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208089118-72766743-ce62-4f25-8296-026a8f9657b5.jpg" alt="208089118-72766743-ce62-4f25-8296-026a8f9657b5">
+  <img width="800" src="/img/2023-12-11_01/208089118-72766743-ce62-4f25-8296-026a8f9657b5.jpg" alt="208089118-72766743-ce62-4f25-8296-026a8f9657b5">
 </p>
 
 
@@ -141,7 +141,7 @@ The waiting links are the *boarding* and *transfer* links. Basically, each line 
 *Transfer* links appear between distinct lines at the same stop, and allow a count of the passenger flow between a couple of lines at a stop:
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9.jpg" alt="208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9">
+  <img width="800" src="/img/2023-12-11_01/208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9.jpg" alt="208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9">
 </p>
 
 They can also be added between all the lines of a station if increasing the number of links is not an issue.
@@ -149,7 +149,7 @@ They can also be added between all the lines of a station if increasing the numb
 *walking* links connect *stop* nodes within a station, while *connector* links connect the zone centroids (*od* nodes) to *stop* nodes:
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208089273-6ab4c267-7591-4f77-a1c1-88d072927061.jpg" alt="208089273-6ab4c267-7591-4f77-a1c1-88d072927061">
+  <img width="800" src="/img/2023-12-11_01/208089273-6ab4c267-7591-4f77-a1c1-88d072927061.jpg" alt="208089273-6ab4c267-7591-4f77-a1c1-88d072927061">
 </p>
 
 Connectors that connect *od* to *stop* nodes allow passengers to access the network, while connectors in the opposite direction allow them to egress. Walking nodes/links may be used to connect stops from distant stations.
@@ -184,7 +184,7 @@ Next, we are going see a classic transit network example with only four stops an
 This example is taken from *Spiess and Florian* [1]:
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208089367-5e636a8e-c133-425d-bc7c-0c9b4af7a038.jpg" alt="208089367-5e636a8e-c133-425d-bc7c-0c9b4af7a038">
+  <img width="800" src="/img/2023-12-11_01/208089367-5e636a8e-c133-425d-bc7c-0c9b4af7a038.jpg" alt="208089367-5e636a8e-c133-425d-bc7c-0c9b4af7a038">
 </p>
 
 Travel time is indicated on the figure. We have the following four line characteristics:
@@ -199,7 +199,7 @@ Travel time is indicated on the figure. We have the following four line characte
 Passengers want to go from A to B, so we can divide the network area into two distinct zones: TAZ 1 and TAZ 2. The assignment graph associated to this network has 26 links:
 
 <p align="center">
-  <img width="800" src="/img/2023-09-08_01/208089460-913526d1-fd40-4ed8-b1a3-65cf264de336.jpg" alt="208089460-913526d1-fd40-4ed8-b1a3-65cf264de336">
+  <img width="800" src="/img/2023-12-11_01/208089460-913526d1-fd40-4ed8-b1a3-65cf264de336.jpg" alt="208089460-913526d1-fd40-4ed8-b1a3-65cf264de336">
 </p>
 
 
@@ -263,19 +263,19 @@ This leads to these possible edge types:
 Here is a simple example of a station with two stops, with two lines each. In the first case, we have walking edges between stops, but no transfer edge:
 
 <p align="center">
-  <img width="600" src="/img/2023-09-08_01/with_walking_only.png" alt="with_walking_only">
+  <img width="600" src="/img/2023-12-11_01/with_walking_only.png" alt="with_walking_only">
 </p>
 
 In the second case, we have inner transfer edges, but no outer transfer ones:
 
 <p align="center">
-  <img width="600" src="/img/2023-09-08_01/with_inner_transfer.png" alt="with_inner_transfer">
+  <img width="600" src="/img/2023-12-11_01/with_inner_transfer.png" alt="with_inner_transfer">
 </p>
 
 Finally we have both kinds of transfer edges:
 
 <p align="center">
-  <img width="600" src="/img/2023-09-08_01/with_inner_and_outer_transfer.png" alt="with_inner_and_outer_transfer">
+  <img width="600" src="/img/2023-12-11_01/with_inner_and_outer_transfer.png" alt="with_inner_and_outer_transfer">
 </p>
 
 If we build the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
