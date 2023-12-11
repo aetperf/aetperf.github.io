@@ -10,10 +10,9 @@ tags:
 - Transit network
 ---
 
+This post is a description of a graph structure for a *transit network*, used for *static*, *link-based*, *frequency-based* *assignment*. Our focus is the classic algorithm "Optimal strategies" by Spiess & Florian [1]. This assignment algorithm has been implemented in [AequilibraE](http://www.aequilibrae.com/python/latest/) package, a comprehensive Python package for transportation modeling that offers a wide array  functionalities and features.
 
-This post is a description of a graph structure for a *transit network*, used for *static*, *link-based*, *frequency-based* *assignment*, such as the classic algorithm "Optimal strategies" by Spiess & Florian [1]. This assignment algorithm has been implemented in [AequilibraE](http://www.aequilibrae.com/python/latest/) package, a comprehensive Python package for transportation modeling that offers various functionalities and features.
-
-Let's start by giving a few short definitions:
+Let's start by giving a few definitions:
 
 - *transit* definition from [Wikipedia](https://en.wikipedia.org/wiki/Public_transport):
 
@@ -31,21 +30,23 @@ Let's start by giving a few short definitions:
 
 We are going at first to describe the input transit network, which is mostly composed of stops, lines and zones.
 
-## Transit stops and stations
+## Elements of a transit network
 
-Transit stops are points where passenger can board, alight or change vehicles. Also, they can be part of larger stations, where stops are connected by transfer links.
+### Transit stops and stations
+
+Transit stops are points where passenger can board, alight or change vehicles. Also, they can be part of larger stations:
 
 <p align="center">
   <img width="800" src="/img/2023-12-11_01/208088240-38e72a88-569e-4b12-a3df-9bc1fb1a4e62.jpg" alt="208088240-38e72a88-569e-4b12-a3df-9bc1fb1a4e62">
 </p>
 
-In this figure, we have two stops : A and B, which belong to the same station (in red).
+In the illustration above, two distinct stops, A and B, are highlighted, both affiliated with the same station (depicted in red).
 
-## Transit lines
+### Transit lines
 
-A transit line is a set of services that may use different routes. 
+A transit line is a set of services that may use different routes, decomposed into segments. 
 
-### Transit routes
+#### Transit routes
 
 A routes is described by a sequence of stop nodes. We assume here the routes to be directed. For example, we can take a simple case with 3 stops:
 
@@ -57,7 +58,7 @@ In this case, the `L1` line is made of two distinct routes:
 - ABC 
 - CBA.  
 
-But we can have many different configurations:
+Various configurations are possible, such as:
 - a partial route at a given moment of the day: AB, 
 - a route with an additional stop : ABDC
 - a route that does not stop at a given stop: AC
@@ -66,8 +67,7 @@ But we can have many different configurations:
   <img width="800" src="/img/2023-12-11_01/208088800-5f65028f-8040-49bb-89d7-ad81b013538b.jpg" alt="208088800-5f65028f-8040-49bb-89d7-ad81b013538b">
 </p>
 
-
-So lines can be decomposed into multiple "sub-lines" depending on the distinct routes, with distinct elements being part of the same commercial line. In the above case, we would have for example:
+Lines can be decomposed into multiple sub-lines, each representing distinct routes. For the given example, we may have several sub-lines under the same commercial line (L1):
 
 |line id|commercial name|stop sequence| headway (s) |
 |-------|---------------|-------------|-------------|
@@ -77,43 +77,44 @@ So lines can be decomposed into multiple "sub-lines" depending on the distinct r
 |L1_a4  | L1            | AC          | 3600 |
 |L1_b1  | L1            | CBA         | 600 |
 
-The headway is associated to each sub-line and corresponds to the mean time range between consecutive vehicles. It is related to the inverse of the line frequency. The frequency is what is used as link attribute in the assignment algorithm.
+Headway, associated with each sub-line, corresponds to the mean time range between consecutive vehicles—the inverse of the line frequency used as a link attribute in the assignment algorithm.
 
-### Line segments
+#### Line segments
 
-A line segment is a portion of a transit line between two consecutive stops. With the previous example line `L1_a1`, we would get two distinct line segments:
+A line segment represents a portion of a transit line between two consecutive stops. Using the example line `L1_a1`, we derive two distinct line segments:
 
 |line id|segment index| origin stop | destination stop | travel_time (s) |
 |----------|---------|-------------|------------------|--------------|
 | L1_a1 | 1 | A | B | 300 |
 | L1_a1 | 2 | B | C | 600 |
 
-Note that we included a travel time for each line segment. This is another link attribute used by the assignment algorithm.
+Note that a travel time is included for each line segment, serving as another link attribute used by the assignment algorithm.
 
 ## Transit assignment zones and connectors
 
-In order to assign the passengers on the network, we also need to express the demand in the different regions of the network. This is why the network area is decomposed into a partition of transit assignment zones, for example into 4 non-overlapping zones:
+To effectively assign passengers on the network, expressing demand between regions is crucial. This is achieved by first decomposing the network area into a partition of transit assignment zones, as illustrated below with 4 non-overlapping zones:
 
 <p align="center">
   <img width="600" src="/img/2023-12-11_01/208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0.jpg" alt="208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0">
 </p>
 
+The demand is then expressed as a number of trips from each zone to every other zone, forming a 4 by 4 Origin/Destination (OD) matrix in this case.
 
-Then the demand is express as a number of trips from each zone to each zone: a 4 by 4 Origin/Destination (OD) matrix in this case. 
-
-Also, each zone centroid is connected to some network nodes, in order to connect the supply and demand. These are the *connectors*.
+Additionally, each zone centroid is connected to specific network nodes to facilitate the connection between supply and demand. These connection points are referred to as *connectors*.
 
 <p align="center">
   <img width="600" src="/img/2023-12-11_01/208089058-a735d969-5f13-4ab4-b983-2c637e865aa4.jpg" alt="208089058-a735d969-5f13-4ab4-b983-2c637e865aa4">
 </p>
 
-We now have all the elements required to describe the assignment graph.
+With these components, we now have all the elements required to describe the assignment graph.
 
 ## The Assignment graph
 
 ### Link and node types
 
-The transit network is used to generate a graph with specific nodes and links used to model the transit process. Links can be of different types:
+The transit network is used to generate a graph with specific nodes and links used to model the transit process. Various link types and node categories play crucial roles in this representation.
+
+**Link types:**  
 - *on-board*
 - *boarding*
 - *alighting*
@@ -122,29 +123,28 @@ The transit network is used to generate a graph with specific nodes and links us
 - *connector*
 - *walking*
 
-Nodes can be of the following types:
+**Nodes types:**  
 - *stop*
 - *boarding*
 - *alighting*
 - *od* 
 - *walking* 
 
-Here is a figure showing how a simple stop is described:
+To illustrate, consider the anatomy of a simple stop:
 
 <p align="center">
   <img width="800" src="/img/2023-12-11_01/208089118-72766743-ce62-4f25-8296-026a8f9657b5.jpg" alt="208089118-72766743-ce62-4f25-8296-026a8f9657b5">
 </p>
 
+Waiting links encompass *boarding* and *transfer* links. Each line segment is associated with a *boarding*, an *on-board* and an *alighting* link.
 
-The waiting links are the *boarding* and *transfer* links. Basically, each line segment is associated with a *boarding*, an *on-board* and an *alighting* link. 
-
-*Transfer* links appear between distinct lines at the same stop, and allow a count of the passenger flow between a couple of lines at a stop:
+*Transfer* links enable to compute the passenger flow count between line couples at the same stop:
 
 <p align="center">
   <img width="800" src="/img/2023-12-11_01/208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9.jpg" alt="208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9">
 </p>
 
-They can also be added between all the lines of a station if increasing the number of links is not an issue.
+These links can be extended between all lines of a station if an increase in the number of links is viable.
 
 *walking* links connect *stop* nodes within a station, while *connector* links connect the zone centroids (*od* nodes) to *stop* nodes:
 
@@ -152,11 +152,11 @@ They can also be added between all the lines of a station if increasing the numb
   <img width="800" src="/img/2023-12-11_01/208089273-6ab4c267-7591-4f77-a1c1-88d072927061.jpg" alt="208089273-6ab4c267-7591-4f77-a1c1-88d072927061">
 </p>
 
-Connectors that connect *od* to *stop* nodes allow passengers to access the network, while connectors in the opposite direction allow them to egress. Walking nodes/links may be used to connect stops from distant stations.
+Connectors that connect *od* to *stop* nodes allow passengers to access the network, while connectors in the opposite direction allow them to egress. Walking nodes/links may also be used to connect stops from distant stations.
 
 ### Link attributes
 
-Here is a table that summarize the link characteristics/attributes depending on the link types:
+The table below summarizes link characteristics and attributes based on link types:
 
 | link type | from node type | to node type | cost | frequency |
 |-----------|----------------|--------------|------|-----------|
@@ -168,26 +168,26 @@ Here is a table that summarize the link characteristics/attributes depending on 
 |*connector*|*od* or *stop*|*od* or *stop*| trav. time | $\infty$ |
 |*walking*|*stop* or *walking*|*stop* or *walking*| trav. time | $\infty$ |
 
-The travel time is specific to each line segment or walking time. For example, there can be 10 minutes connection between stops in a large transit station. A constant boarding and alighting time is used all over the network. The *dwell* links have constant cost equal to the sum of the alighting and boarding constants.
+The travel time is specific to each line segment or walking time. For example, there can be 10 minutes connection between stops in a large transit station. Constant boarding and alighting times are applied uniformly across the network, and *dwell* links have constant cost equal to the sum of the alighting and boarding constants.
 
-We can use more attributes for specific link types, e.g.:
+Additional attributes can be introduced for specific link types, such as:
 - *line_id*: for *on-board*, *boarding*, *alighting* and *dwell* links.
 - *line_seg_idx*: the line segment index for *boarding*, *on-board* and *alighting* links.
 - *stop_id*: for *alighting*, *dwell* and *boarding* links. This can also apply to *transfer* links for inner stop transfers.
 - *o_line_id*: origin line id for *transfer* links
 - *d_line_id*: destination line id for *transfer* links
 
-Next, we are going see a classic transit network example with only four stops and four lines.
+In the next section, we will explore a small classic transit network example featuring four stops and four lines.
 
 ## A Small example : Spiess and Florian
 
-This example is taken from *Spiess and Florian* [1]:
+This illustrative example is taken from *Spiess and Florian* [1]:
 
 <p align="center">
   <img width="800" src="/img/2023-12-11_01/208089367-5e636a8e-c133-425d-bc7c-0c9b4af7a038.jpg" alt="208089367-5e636a8e-c133-425d-bc7c-0c9b4af7a038">
 </p>
 
-Travel time is indicated on the figure. We have the following four line characteristics:
+Travel time are indicated on the figure. We have the following four distinct line characteristics:
 
 |line id|route|headway (min)| frequency (1/s) |
 |-------|-----|------------:|-----------------|
@@ -196,7 +196,7 @@ Travel time is indicated on the figure. We have the following four line characte
 |L3|XYB|30|0.000555556|
 |L4|YB|6|0.002777778|
 
-Passengers want to go from A to B, so we can divide the network area into two distinct zones: TAZ 1 and TAZ 2. The assignment graph associated to this network has 26 links:
+Passengers aim to travel from A to B, prompting the division of the network area into two distinct zones: TAZ 1 and TAZ 2. The assignment graph associated with this network encompasses 26 links:
 
 <p align="center">
   <img width="800" src="/img/2023-12-11_01/208089460-913526d1-fd40-4ed8-b1a3-65cf264de336.jpg" alt="208089460-913526d1-fd40-4ed8-b1a3-65cf264de336">
@@ -236,16 +236,26 @@ Here is a table listing all links :
 
 ## Transit graph in AequilibraE
 
-A few more edge types have been introduced into the graph creation part of [AequilibraE](http://www.aequilibrae.com/python/latest/). We may differentiate: 
-- the connectors directed from OD nodes to the network (*access connectors*) from the ones in the opposite direction (*egress connectors*),
-- the transfer edges connecting lines within the same stop (*inner transfer*) from the ones connecting lines between distinct stops from the same station (*outer transfer*),
-- the *origin* and *destination* nodes
 
-This might be changed with the following boolean parameters:
+The graph creation process in [AequilibraE](http://www.aequilibrae.com/python/latest/) incorporates several edge types to capture the nuances of transit networks. Notable distinctions include:
+
+**Connectors :**  
+- *access connectors* directed from od nodes to the network   
+- *egress connectors* directed from the network to the od nodes  
+
+**Transfer edges :**
+- *inner transfer*: Connect lines within the same stop  
+- *outer transfer*: Connect lines between distinct stops within the same station  
+
+**Origin and Destination Nodes :**  
+- *origin* nodes: represent the starting point of passenger trips
+- *destination* nodes: represent the end point of passenger trips
+
+Users can customize these features using boolean parameters:
 - `with_walking_edges`: create walking edges between the stops of a station
 - `with_inner_stop_transfers`: create transfer edges between lines of a stop
 - `with_outer_stop_transfers`: create transfer edges between lines of different stops of a station
-- `blocking_centroid_flow`: duplicate OD nodes into unconnected origin and destination nodes in order to block centroid flows. Flows starts from an origin node and ends at a destination node. It is not possible to use an egress connector followed by an access connector in a middle of a trip.
+- `blocking_centroid_flow`: duplicate OD nodes into unconnected origin and destination nodes in order to block centroid flows. Flows starts from an origin node and ends at a destination node. It is not possible to use an egress connector followed by an access connector in the middle of a trip.
 
 Note that during the assignment, if passengers have the choice between a transfer edge or a walking edge for a line change, they will always be assigned to the transfer edge.
 
@@ -260,25 +270,27 @@ This leads to these possible edge types:
 - outer_transfer
 - walking
 
-Here is a simple example of a station with two stops, with two lines each. In the first case, we have walking edges between stops, but no transfer edge:
+Here is a simple example of a station with two stops, with two lines each:
+
+- walking edges only:
 
 <p align="center">
-  <img width="600" src="/img/2023-12-11_01/with_walking_only.png" alt="with_walking_only">
+  <img width="500" src="/img/2023-12-11_01/with_walking_only.png" alt="with_walking_only">
 </p>
 
-In the second case, we have inner transfer edges, but no outer transfer ones:
+- inner transfer edges, but no outer transfer ones:
 
 <p align="center">
-  <img width="600" src="/img/2023-12-11_01/with_inner_transfer.png" alt="with_inner_transfer">
+  <img width="500" src="/img/2023-12-11_01/with_inner_transfer.png" alt="with_inner_transfer">
 </p>
 
-Finally we have both kinds of transfer edges:
+- both inner and outer transfer edges:
 
 <p align="center">
-  <img width="600" src="/img/2023-12-11_01/with_inner_and_outer_transfer.png" alt="with_inner_and_outer_transfer">
+  <img width="500" src="/img/2023-12-11_01/with_inner_and_outer_transfer.png" alt="with_inner_and_outer_transfer">
 </p>
 
-If we build the graph for the city of Lyon France (GTFS files from 2022), we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
+If we build the graph for the city of Lyon France (GTFS files from 2022) on a random day, we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
 
 | Edge type        |   Count |
 |:-----------------|--------:|
@@ -301,7 +313,6 @@ and vertex types:
 | boarding    |    7590 |
 | stop        |    4499 |
 | od          |     517 |
-
 
 ## References 
 
