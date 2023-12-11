@@ -26,7 +26,7 @@ Let's start by giving a few definitions:
 
 - *frequency-based* (or *headway-based*) as opposed to schedule-based : schedules are averaged in order to get line frequencies. In the schedule-based approach, distinct vehicle trips are represented by distinct links. We can see the associated network as a time-expanded network, where the third dimension would be time. 
 
-- *link-based*: the assignment algorithm is not evaluating paths, or any aggregated information besides attributes stored by nodes and links. In the present case, each link has an associated cost (travel time) `c` [s] and frequency `f` [1/s].
+- *link-based*: the assignment algorithm is not evaluating paths, or any aggregated information besides attributes stored by nodes and links. In the present case, each link has an associated cost (travel time) *c* [*s*] and frequency *f* [1/*s*].
 
 We are going at first to describe the input transit network, which is mostly composed of stops, lines and zones.
 
