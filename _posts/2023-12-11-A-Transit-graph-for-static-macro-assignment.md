@@ -95,7 +95,7 @@ Note that a travel time is included for each line segment, serving as another li
 To effectively assign passengers on the network, expressing demand between regions is crucial. This is achieved by first decomposing the network area into a partition of transit assignment zones, as illustrated below with 4 non-overlapping zones:
 
 <p align="center">
-  <img width="600" src="/img/2023-12-11_01/208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0.jpg" alt="208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0">
+  <img width="400" src="/img/2023-12-11_01/208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0.jpg" alt="208088960-bd088858-ef7b-43e5-86bc-341eb8f6e7b0">
 </p>
 
 The demand is then expressed as a number of trips from each zone to every other zone, forming a 4 by 4 Origin/Destination (OD) matrix in this case.
@@ -103,7 +103,7 @@ The demand is then expressed as a number of trips from each zone to every other 
 Additionally, each zone centroid is connected to specific network nodes to facilitate the connection between supply and demand. These connection points are referred to as *connectors*.
 
 <p align="center">
-  <img width="600" src="/img/2023-12-11_01/208089058-a735d969-5f13-4ab4-b983-2c637e865aa4.jpg" alt="208089058-a735d969-5f13-4ab4-b983-2c637e865aa4">
+  <img width="400" src="/img/2023-12-11_01/208089058-a735d969-5f13-4ab4-b983-2c637e865aa4.jpg" alt="208089058-a735d969-5f13-4ab4-b983-2c637e865aa4">
 </p>
 
 With these components, we now have all the elements required to describe the assignment graph.
@@ -133,7 +133,7 @@ The transit network is used to generate a graph with specific nodes and links us
 To illustrate, consider the anatomy of a simple stop:
 
 <p align="center">
-  <img width="800" src="/img/2023-12-11_01/208089118-72766743-ce62-4f25-8296-026a8f9657b5.jpg" alt="208089118-72766743-ce62-4f25-8296-026a8f9657b5">
+  <img width="600" src="/img/2023-12-11_01/208089118-72766743-ce62-4f25-8296-026a8f9657b5.jpg" alt="208089118-72766743-ce62-4f25-8296-026a8f9657b5">
 </p>
 
 Waiting links encompass *boarding* and *transfer* links. Each line segment is associated with a *boarding*, an *on-board* and an *alighting* link.
@@ -141,7 +141,7 @@ Waiting links encompass *boarding* and *transfer* links. Each line segment is as
 *Transfer* links enable to compute the passenger flow count between line couples at the same stop:
 
 <p align="center">
-  <img width="800" src="/img/2023-12-11_01/208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9.jpg" alt="208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9">
+  <img width="600" src="/img/2023-12-11_01/208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9.jpg" alt="208089209-885dd6ac-f3e6-43e0-b8ff-f548a375aec9">
 </p>
 
 These links can be extended between all lines of a station if an increase in the number of links is viable.
@@ -149,7 +149,7 @@ These links can be extended between all lines of a station if an increase in the
 *walking* links connect *stop* nodes within a station, while *connector* links connect the zone centroids (*od* nodes) to *stop* nodes:
 
 <p align="center">
-  <img width="800" src="/img/2023-12-11_01/208089273-6ab4c267-7591-4f77-a1c1-88d072927061.jpg" alt="208089273-6ab4c267-7591-4f77-a1c1-88d072927061">
+  <img width="600" src="/img/2023-12-11_01/208089273-6ab4c267-7591-4f77-a1c1-88d072927061.jpg" alt="208089273-6ab4c267-7591-4f77-a1c1-88d072927061">
 </p>
 
 Connectors that connect *od* to *stop* nodes allow passengers to access the network, while connectors in the opposite direction allow them to egress. Walking nodes/links may also be used to connect stops from distant stations.
