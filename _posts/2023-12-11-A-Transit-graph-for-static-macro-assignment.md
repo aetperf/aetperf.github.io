@@ -5,9 +5,15 @@ comments: true
 author: François Pacull
 tags: 
 - Python
-- static macro assignment
-- Hyperpath
-- Transit network
+- Graph 
+- Transit network 
+- Public transport 
+- AequilibraE 
+- Assignment 
+- Static 
+- Macro 
+- Frequency-based 
+- Headway-based
 ---
 
 This post is a description of a graph structure for a *transit network*, used for *static*, *link-based*, *frequency-based* *assignment*. Our focus is the classic algorithm "Optimal strategies" by Spiess & Florian [1]. This assignment algorithm has been implemented in [AequilibraE](http://www.aequilibrae.com/python/latest/) package, a comprehensive Python package for transportation modeling that offers a wide array  functionalities and features.
