@@ -149,13 +149,13 @@ The table below summarizes link characteristics and attributes based on link typ
 
 | link type | from node type | to node type | cost | frequency |
 |-----------|----------------|--------------|------|-----------|
-|*on-board*|*boarding*|*alighting*| trav. time | $\\infty$ |
+|*on-board*|*boarding*|*alighting*| trav. time | $ \infty $ |
 |*boarding*|*stop*|*boarding*| const. | line freq. |
-|*alighting*|*alighting*|*stop*| const. | $\\infty$ |
-|*dwell*|*alighting*|*boarding*| const. | $\\infty$ |
+|*alighting*|*alighting*|*stop*| const. | $ \infty $ |
+|*dwell*|*alighting*|*boarding*| const. | $ \infty $ |
 |*transfer*|*alighting*|*boarding*| const. + trav. time | dest. line freq. |
-|*connector*|*od* or *stop*|*od* or *stop*| trav. time | $\\infty$ |
-|*walking*|*stop* or *walking*|*stop* or *walking*| trav. time | $\\infty$ |
+|*connector*|*od* or *stop*|*od* or *stop*| trav. time | $ \infty $ |
+|*walking*|*stop* or *walking*|*stop* or *walking*| trav. time | $ \infty $ |
 
 The travel time is specific to each line segment or walking time. For example, there can be 10 minutes connection between stops in a large transit station. Constant boarding and alighting times are applied uniformly across the network, and *dwell* links have constant cost equal to the sum of the alighting and boarding constants.
 
@@ -196,32 +196,32 @@ Here is a table listing all links :
 
 | link id | link type | line id | cost | frequency |
 |---------|-----------|---------|------|-----------|
-|1|*connector*||0|$\\infty$|
+|1|*connector*||0|$ \infty $|
 |2|*boarding*|L1|0|0.001388889|
 |3|*boarding*|L2|0|0.001388889|
-|4|*on-board*|L1|1500|$\\infty$|
-|5|*on-board*|L2|420|$\\infty$|
-|6|*alighting*|L2|0|$\\infty$|
-|7|*dwell*|L2|0|$\\infty$|
+|4|*on-board*|L1|1500|$ \infty $|
+|5|*on-board*|L2|420|$ \infty $|
+|6|*alighting*|L2|0|$ \infty $|
+|7|*dwell*|L2|0|$ \infty $|
 |8|*transfer*||0|0.000555556|
 |9|*boarding*|L2|0|0.001388889|
 |10|*boarding*|L3|0|0.000555556|
-|11|*on-board*|L2|360|$\\infty$|
-|12|*on-board*|L3|240|$\\infty$|
-|13|*alighting*|L3|0|$\\infty$|
-|14|*alighting*|L2|0|$\\infty$|
+|11|*on-board*|L2|360|$ \infty $|
+|12|*on-board*|L3|240|$ \infty $|
+|13|*alighting*|L3|0|$ \infty $|
+|14|*alighting*|L2|0|$ \infty $|
 |15|*transfer*|L3|0|0.000555556|
 |16|*transfer*||0|0.002777778|
-|17|*dwell*|L3|0|$\\infty$|
+|17|*dwell*|L3|0|$ \infty $|
 |18|*transfer*||0|0.002777778|
 |19|*boarding*|L3|0|0.000555556|
 |20|*boarding*|L4|0|0.002777778|
-|21|*on-board*|L3|240|$\\infty$|
-|22|*on-board*|L4|600|$\\infty$|
-|23|*alighting*|L4|0|$\\infty$|
-|24|*alighting*|L3|0|$\\infty$|
-|25|*alighting*|L1|0|$\\infty$|
-|26|*connector*||0|$\\infty$|
+|21|*on-board*|L3|240|$ \infty $|
+|22|*on-board*|L4|600|$ \infty $|
+|23|*alighting*|L4|0|$ \infty $|
+|24|*alighting*|L3|0|$ \infty $|
+|25|*alighting*|L1|0|$ \infty $|
+|26|*connector*||0|$ \infty $|
 
 ## Transit graph specificities in AequilibraE
 
