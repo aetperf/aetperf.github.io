@@ -234,7 +234,7 @@ Here is a table listing all links :
 |25|*alighting*|L1|0|$\infty$|
 |26|*connector*||0|$\infty$|
 
-## Transit graph in AequilibraE
+## Transit graph specificities in AequilibraE
 
 
 The graph creation process in [AequilibraE](http://www.aequilibrae.com/python/latest/) incorporates several edge types to capture the nuances of transit networks. Notable distinctions include:
@@ -290,7 +290,7 @@ Here is a simple example of a station with two stops, with two lines each:
   <img width="500" src="/img/2023-12-11_01/with_inner_and_outer_transfer.png" alt="with_inner_and_outer_transfer">
 </p>
 
-If we build the graph for the city of Lyon France (GTFS files from 2022) on a random day, we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
+As an illustrative example, if we build the graph for the city of Lyon France (GTFS files from 2022) on a given day, we get 20196 vertices and 91107 edges, with `with_walking_edges=True`, `with_inner_stop_transfers=True`, `with_outer_stop_transfers=True` and `blocking_centroid_flow=False`. Here is the distribution of edge types:
 
 | Edge type        |   Count |
 |:-----------------|--------:|
