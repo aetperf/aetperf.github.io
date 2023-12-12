@@ -208,8 +208,8 @@ Here is a table listing all links :
 | link id | link type | line id | cost | frequency |
 |---------|-----------|---------|------|-----------|
 |1|*connector*||0|$\infty$|
-|2|*boading*|L1|0|0.001388889|
-|3|*boading*|L2|0|0.001388889|
+|2|*boarding*|L1|0|0.001388889|
+|3|*boarding*|L2|0|0.001388889|
 |4|*on-board*|L1|1500|$\infty$|
 |5|*on-board*|L2|420|$\infty$|
 |6|*alighting*|L2|0|$\infty$|
