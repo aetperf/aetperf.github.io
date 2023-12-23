@@ -67,6 +67,7 @@ deps_shp_fp = "/home/francois/Data/RGE_ALTI/departements-20140306-50m-shp/depart
 
 ## Parse the HTML from the IGN web page using BeautifulSoup
 
+We specifically target and extract download links related to the 5-meter resolution, filtering out any links associated with the 1-meter resolution.
 
 ```python
 # Retrieve HTML content from IGN web page
@@ -204,8 +205,10 @@ Our Python script efficiently retrieves, organizes, and validates the IGN DTM do
 
 
 ```python
+# Define bounding box coordinates
 bbox = (4.346466, 45.463020, 5.340729, 46.030342)
 
+# Define points to create a polygon
 point1 = (bbox[0], bbox[1])
 point2 = (bbox[0], bbox[3])
 point3 = (bbox[2], bbox[3])
@@ -214,7 +217,10 @@ point4 = (bbox[2], bbox[1])
 
 
 ```python
+# Create a polygon from the points
 polygon = Polygon([point1, point2, point3, point4])
+
+# Display the polygon
 polygon
 ```
 
@@ -237,6 +243,8 @@ ax.set_axis_off()
 <p align="center">
   <img width="800" src="/img/2023-12-12_01/output_12_0.png" alt="Bounding box with map tiles">
 </p>    
+
+This bounding box serves as the spatial extent for our analysis, encompassing the specific region of interest within Lyon. 
 
 
 ## Intersection with "department" zones
