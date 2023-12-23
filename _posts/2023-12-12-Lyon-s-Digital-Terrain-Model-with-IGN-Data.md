@@ -605,21 +605,26 @@ len(all_tif_file_paths)
 
 ## Raster Mosaic with Python
 
+The next step is to create a raster mosaic from these individual tiles.
 
 ```python
+# Define the path for the output mosaic
 output_mosaic_path = os.path.join(tif_dir_path, "lyon_mosaic.tif")
 
+# List to store raster objects for mosaic
 raster_to_mosaic = []
 for p in all_tif_file_paths:
     raster = rio.open(p)
     raster_to_mosaic.append(raster)
 ```
 
+We use the `merge` function from `rasterio` to create the mosaic:
 
 ```python
 mosaic, output = merge(raster_to_mosaic)
 ```
 
+Update the metadata for the output mosaic:
 
 ```python
 output_meta = raster.meta.copy()
@@ -633,6 +638,7 @@ output_meta.update(
 )
 ```
 
+Write the mosaic to a new GeoTIFF file:
 
 ```python
 with rio.open(output_mosaic_path, "w", **output_meta) as m:
@@ -641,7 +647,7 @@ with rio.open(output_mosaic_path, "w", **output_meta) as m:
 del mosaic
 ```
 
-Let's downsample this mosaic and plot it:
+Now, let's downsample this mosaic and plot it:
 
 ```python
 upscale_factor = 0.125
@@ -676,6 +682,8 @@ ax.set_axis_off()
 
 
 ## Raster Bounding Box Cropping with Rasterio
+
+
 
 
 ```python
