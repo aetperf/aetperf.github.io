@@ -96,6 +96,8 @@ print(f"Found {link_count} download link(s)")
 
     Found 105 download link(s)
 
+Each download link is linked to its respective French "department" code.
+
 ## Organize and Validate Data with Pandas
 
 ```python
@@ -199,10 +201,9 @@ df.head(3)
 </table>
 </div>
 
-Our Python script efficiently retrieves, organizes, and validates the IGN DTM download links.
-
 ## Bounding box definition
 
+In our geospatial exploration of Lyon, the first step involves defining a bounding box that encapsulates the region of interest. The subsequent polygon visualization provides a clear representation of the defined area, offering a geographical context for our subsequent analysis within Lyon:
 
 ```python
 # Define bounding box coordinates
@@ -247,11 +248,9 @@ ax.set_axis_off()
 This bounding box serves as the spatial extent for our analysis, encompassing the specific region of interest within Lyon. 
 
 
-## Intersection with "department" zones
+## Intersected "Department" zones list
 
-zones shapefile downloaded from [this](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/) page.  
-
-[Export de mars 2014 - vérifié et simplifié à 50m](https://www.data.gouv.fr/fr/datasets/r/6e53bca5-1153-49d4-bff5-dd69f39369b5)
+To determine which French departments intersect with our defined bounding box, we use a shapefile containing the polygons of French department zones. The shapefile was downloaded from [this](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/) page, specifically the [Export de mars 2014 - vérifié et simplifié à 50m](https://www.data.gouv.fr/fr/datasets/r/6e53bca5-1153-49d4-bff5-dd69f39369b5)
 
 
 ```python
@@ -300,7 +299,7 @@ zones.head(2)
 </div>
 
 
-
+We can now identify which department zones intersect with the previously defined bounding box.
 
 ```python
 intersected_zones = zones.loc[zones.intersects(polygon)]
@@ -358,7 +357,7 @@ intersected_zones
 </div>
 
 
-
+We visualize these intersected zones along with the bounding box.
 
 ```python
 ax = intersected_zones.boundary.plot(alpha=0.2, label="insee_code")
@@ -369,7 +368,7 @@ ax = bbox_gdf.plot(alpha=0.3, ax=ax)
   <img width="600" src="/img/2023-12-12_01/output_16_0.png" alt="Intersected zones">
 </p>    
 
-
+Finally, we obtain the list of French department codes that intersect with the bounding box.
 
 ```python
 zone_codes = intersected_zones.code_insee.values.tolist()
@@ -382,11 +381,12 @@ zone_codes
     ['01', '38', '42', '69']
 
 
-
 ## Data download
 
+Now that we have identified the French department codes intersecting with the bounding box, let's proceed with downloading and organizing the relevant Digital Terrain Model (DTM) data.
 
 ```python
+# Create a list of download items for the intersected zones
 download_items = []
 for zone_code in zone_codes:
     download_items.append(
@@ -397,19 +397,23 @@ for zone_code in zone_codes:
     )
 ```
 
+Next, we iterate through the download items, downloading and uncompressing the relevant data.
 
 ```python
+# List to store paths of downloaded and uncompressed files
 dem_dir_paths = []
+
+# Iterate through download items
 for download_item in download_items:
     crs = download_item["crs"]
 
-    # url, paths, file name
+    # Define file paths
     dem_file_url = download_item["download_link"]
     dem_file_name = download_item["compressed_file_name"]
     dem_file_path = os.path.join(DATA_DIR_PATH, dem_file_name)
     dem_dir_path = os.path.splitext(dem_file_path)[0]
 
-    # download
+    # Download file if not already downloaded
     is_downloaded = os.path.isfile(dem_file_path) | os.path.isdir(dem_dir_path)
     if not is_downloaded:
         print(f"downloading file {dem_file_name}")
@@ -418,7 +422,7 @@ for download_item in download_items:
             for chunk in r.iter_content(chunk_size=512):
                 fd.write(chunk)
 
-    # uncompress
+    # Uncompress file if not already uncompressed
     dem_dir_paths.append(dem_dir_path)
     is_uncompressed = os.path.isdir(dem_dir_path)
     if not is_uncompressed:
@@ -429,6 +433,7 @@ for download_item in download_items:
             os.remove(dem_file_path)
 ```
 
+The `dem_dir_paths` list now contains the paths of the downloaded and uncompressed files:
 
 ```python
 dem_dir_paths
@@ -443,24 +448,25 @@ dem_dir_paths
      '/home/francois/Data/RGE_ALTI/5M/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_D069_2023-08-10']
 
 
+These directories contain the Digital Terrain Model data for the specified French departments, and we can proceed with the data conversion.
 
 ## Convert `.asc` files to `.tif` files
 
+The next step is to convert the `.asc` files to `.tif` files for compatibility with various geospatial tools and libraries.
 
 ```python
+# Create a directory to store the tif files if it doesn't exist
 if not os.path.exists(tif_dir_path):
     os.makedirs(tif_dir_path)
     print(f"tif files directory : {tif_dir_path}")
 ```
 
-The following 2 functions and 1 class are taken straight from the great blog post [1] by Guillaume Attard:
+The following functions and class, extracted from Guillaume Attard's great blog post [1], are used to handle the conversion from `.asc` to `.tif`.
 
 
 ```python
 def get_header_asc(filepath):
-    """
-    This function reads the header of an asc file and returns
-    the data into a dictionnary
+    """Function to read the header of an asc file and return the data as a dictionary.
     """
     file = open(filepath)
     content = file.readlines()[:6]
@@ -469,8 +475,7 @@ def get_header_asc(filepath):
 
 
 class RGEitem:
-    """
-    This class is used to handle RGE items.
+    """Class to handle RGE items.
     """
 
     def __init__(self, filepath):
@@ -489,18 +494,7 @@ class RGEitem:
 
 
 def asc_to_tif(file, output_rasterpath, epsg):
-    """
-    Transforms an .asc file into a geoTIFF.
-
-    Params:
-    -------
-    file: an RGEitem
-    output_raster_path (str): path of the tif file that will be saved.
-    epsg (int): projection system.
-
-    Returns:
-    --------
-    output_rasterpath (str): name of the output geoTIFF
+    """Function to transform an .asc file into a geoTIFF
     """
     xmin = file.xllc
     ymax = file.yllc + file.nrows * file.res
@@ -525,15 +519,19 @@ def asc_to_tif(file, output_rasterpath, epsg):
     output_raster.FlushCache()
 ```
 
+Now, we find all `.asc` files in the downloaded directories and convert them to `.tif`.
 
 ```python
+# Function to find all asc files in a directory
 def find_asc_files(directory):
     directory = os.path.join(directory, "**/*.asc")
     asc_file_paths = glob.glob(directory, recursive=True)
     return asc_file_paths
 
-
+# List to store paths of all converted tif files
 all_tif_file_paths = []
+
+# Iterate through the downloaded directories
 for dem_dir_path in dem_dir_paths:
     print(f"top directory : {dem_dir_path}")
     asc_file_paths = find_asc_files(dem_dir_path)
@@ -594,12 +592,11 @@ ax.set_axis_off()
 </p>   
     
 
+The total number of converted `.tif` files is:
 
 ```python
 len(all_tif_file_paths)
 ```
-
-
 
 
     1096
