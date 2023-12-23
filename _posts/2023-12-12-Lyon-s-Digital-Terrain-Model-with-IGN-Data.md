@@ -7,15 +7,21 @@ tags:
 - Python
 ---
 
+In this post, we explore how to extract, organize, and analyze high-resolution Digital Terrain Model (DTM) data from IGN (Institut national de l'information géographique et forestière). 
+
+This Digital Terrain Model (DTM) provides a detailed grid-based depiction of the topography of the entire French territory on a large scale. Regular updates are obtained from surveys conducted using airborne LIDAR or aerial image correlation. For our purposes, we will be working with the 5-meter resolution option, although a 1-meter resolution is also available. 
+
 The data comes from this IGN page : https://geoservices.ign.fr/rgealti
 
-This Digital Terrain Model (DTM) provides a detailed grid-based depiction of the topography of the entire French territory on a large scale. Regular updates are obtained from surveys conducted using airborne LIDAR or aerial image correlation. For our purposes, we will be working with the 5-meter resolution option, although a 1-meter resolution is also available.
+## System and package versions
 
 OS and package versions:
 
     Python version       : 3.11.6  
     OS                   : Linux  
     Machine              : x86_64  
+
+
     contextily           : 1.4.0
     geopandas            : 0.14.1
     matplotlib           : 3.8.2
@@ -31,8 +37,7 @@ OS and package versions:
     tqdm                 : 4.66.1
 
 
-
-
+## Imports
 
 
 ```python
@@ -60,9 +65,10 @@ from shapely.ops import transform
 from tqdm import tqdm
 
 DATA_DIR_PATH = "/home/francois/Data/RGE_ALTI/5M/"
-IGN_URL = "https://geoservices.ign.fr/rgealti#telechargement5m"  # 5 m precision
+IGN_URL = "https://geoservices.ign.fr/rgealti"
+DEPS_SHP_FP = "/home/francois/Data/RGE_ALTI/departements-20140306-50m-shp/departements-20140306-50m.shp"
+
 tif_dir_path = os.path.join(DATA_DIR_PATH, "tif_files")
-deps_shp_fp = "/home/francois/Data/RGE_ALTI/departements-20140306-50m-shp/departements-20140306-50m.shp"
 ```
 
 ## Parse the HTML from the IGN web page using BeautifulSoup
@@ -254,7 +260,7 @@ To determine which French departments intersect with our defined bounding box, w
 
 
 ```python
-zones = gpd.read_file(deps_shp_fp)[["code_insee", "geometry"]]
+zones = gpd.read_file(DEPS_SHP_FP)[["code_insee", "geometry"]]
 zones.head(2)
 ```
 
@@ -552,30 +558,14 @@ for dem_dir_path in dem_dir_paths:
     top directory : /home/francois/Data/RGE_ALTI/5M/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_D001_2023-08-08
     291 asc files
 
-
-    100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 291/291 [00:00<00:00, 56083.37it/s]
-
-
     top directory : /home/francois/Data/RGE_ALTI/5M/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_D038_2020-11-13
     383 asc files
-
-
-    100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 383/383 [00:00<00:00, 206321.40it/s]
-
 
     top directory : /home/francois/Data/RGE_ALTI/5M/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_D042_2023-08-10
     248 asc files
 
-
-    100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 248/248 [00:00<00:00, 197042.51it/s]
-
-
     top directory : /home/francois/Data/RGE_ALTI/5M/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_D069_2023-08-10
     174 asc files
-
-
-    100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 174/174 [00:00<00:00, 231685.36it/s]
-
 
 
 ```python
@@ -684,15 +674,12 @@ ax.set_axis_off()
 ## Raster Bounding Box Cropping with Rasterio
 
 
-
+Now that we have our mosaic raster and a defined bounding box in the Lambert 93 (LAM93) projected CRS, let's proceed with cropping the raster to the extent of our bounding box.
 
 ```python
+# Transform the bounding box polygon to the mosaic's CRS (Lambert 93)
 wgs84 = pyproj.CRS("EPSG:4326")
 lam93 = pyproj.CRS("EPSG:2154")
-```
-
-
-```python
 project = pyproj.Transformer.from_crs(wgs84, lam93, always_xy=True).transform
 polygon_lam93 = transform(project, polygon)
 ```
@@ -709,29 +696,27 @@ polygon_lam93
 
 
 ```python
+# Open the mosaic raster
 mosaic_raster = rio.open(output_mosaic_path)
 ```
 
 
 ```python
+
+# Check the CRS of the mosaic raster
 mosaic_raster.crs
 ```
-
-
-
 
     CRS.from_epsg(2154)
 
 
-
+The CRS (Coordinate Reference System) of the mosaic raster is confirmed to be EPSG:2154, which corresponds to Lambert 93. Now, let's use Rasterio to crop the mosaic raster to the extent of the transformed bounding box:
 
 ```python
+# Crop the mosaic raster to the bounding box
 out_image, out_transform = mask(mosaic_raster, [polygon_lam93], crop=True, filled=False)
+
 out_meta = mosaic_raster.meta
-```
-
-
-```python
 out_meta.update(
     {
         "driver": "GTiff",
@@ -742,14 +727,19 @@ out_meta.update(
 )
 ```
 
+We've successfully cropped the mosaic raster to the extent of the defined bounding box. The resulting cropped raster is stored in `out_image`, and the associated metadata is stored in `out_meta`. 
+
 ## Save and plot
 
+Now that we have successfully cropped the mosaic raster to the extent of our bounding box, let's save the resulting raster and create a visual representation.
 
 ```python
+# Save the cropped raster to a new GeoTIFF file
 with rio.open("lyon_dem.tif", "w", **out_meta) as dest:
     dest.write(out_image)
 ```
 
+Now, let's open the saved raster for visualization and analysis:
 
 ```python
 dem = rio.open("lyon_dem.tif")
@@ -757,6 +747,7 @@ dem = rio.open("lyon_dem.tif")
 
 
 ```python
+# Plot the cropped raster
 fig, ax = plt.subplots(1, figsize=(16, 16))
 _ = show(dem, cmap="terrain", ax=ax)
 ax.set_axis_off()
@@ -766,11 +757,13 @@ ax.set_axis_off()
 <p align="center">
   <img width="800" src="/img/2023-12-12_01/output_49_0.png" alt="Cropped mosaic">
 </p>   
-    
+
+The resulting plot showcases the elevation data within the cropped region.
 
 
 ## Point queries
 
+In this section, we perform point queries on the cropped elevation data to extract elevation values at randomly generated coordinates within the region of interest.
 
 ```python
 rng = np.random.default_rng(421)
@@ -786,10 +779,8 @@ random_x = rng.uniform(bbox[0], bbox[2], num_points)
 random_y = rng.uniform(bbox[1], bbox[3], num_points)
 point_coords = [transform(project, Point(x, y)) for x, y in zip(random_x, random_y)]
 point_coords = [(p.x, p.y) for p in point_coords]
-```
 
-
-```python
+# Create a GeoDataFrame to store the random points
 points = pd.DataFrame(point_coords, columns=["x_lam93", "y_lamb93"])
 points["x_wgs84"] = random_x
 points["y_wgs84"] = random_y
@@ -798,10 +789,8 @@ points_gdf = gpd.GeoDataFrame(
     geometry=gpd.points_from_xy(points.x_lam93, points.y_lamb93),
     crs="EPSG:2154",
 )
-```
 
-
-```python
+# Plot the elevation map with sample points
 fig, ax = plt.subplots(1, figsize=(10, 8))
 figure = show(dem, cmap="terrain", ax=ax)
 im = figure.get_images()[0]
@@ -817,6 +806,7 @@ _ = ax.set(title="Elevation map of the region of Lyon, FR")
   <img width="800" src="/img/2023-12-12_01/output_54_0.png" alt="Sample points queries mosaic">
 </p>   
 
+Now, let's perform point queries to extract elevation values at these random points:
 
 ```python
 %%time
@@ -886,6 +876,8 @@ points.head(3)
 </table>
 </div>
 
+
+The resulting GeoDataFrame `points` now includes the random points' coordinates in both Lambert 93 (x_lam93, y_lamb93) and WGS84 (x_wgs84, y_wgs84) CRS, along with the corresponding elevation values.
 
 
 
