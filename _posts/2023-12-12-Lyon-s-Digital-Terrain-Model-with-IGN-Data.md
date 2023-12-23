@@ -889,7 +889,7 @@ print(points["elevation"].max(), points["elevation"].min())
 
 ## Conclusion
 
-In this post, we've covered the basics of web scraping IGN's DTM data in Lyon, France. From downloading files to point queries, each step serves a practical purpose in gaining insights from geospatial data. It's worth highlighting the instrumental role of [Rasterio}(https://rasterio.readthedocs.io/en/stable/)!
+In this post, we've covered the basics of web scraping IGN's DTM data in Lyon, France. From downloading files to point queries, each step serves a practical purpose in gaining insights from geospatial data. It's worth highlighting the instrumental role of [Rasterio](https://rasterio.readthedocs.io/en/stable/)!
 
 ## References
 
