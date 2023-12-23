@@ -877,7 +877,7 @@ points.head(3)
 </div>
 
 
-The resulting GeoDataFrame `points` now includes the random points' coordinates in both Lambert 93 (x_lam93, y_lamb93) and WGS84 (x_wgs84, y_wgs84) CRS, along with the corresponding elevation values.
+The resulting GeoDataFrame `points` now includes the random points' coordinates in both Lambert 93 (x_lam93, y_lamb93) and WGS84 (x_wgs84, y_wgs84) CRS, along with the corresponding elevation values. 
 
 
 
@@ -887,6 +887,9 @@ print(points["elevation"].max(), points["elevation"].min())
 
     839.79 150.5
 
+## Conclusion
+
+In this post, we've covered the basics of web scraping IGN's DTM data in Lyon, France. From downloading files to point queries, each step serves a practical purpose in gaining insights from geospatial data. It's worth highlighting the instrumental role of [Rasterio}(https://rasterio.readthedocs.io/en/stable/)!
 
 ## References
 
