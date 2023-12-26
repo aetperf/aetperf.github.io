@@ -1,5 +1,5 @@
 ---
-title: Lyon's Digital Terrain Model with IGN Data WIP
+title: Lyon's Digital Terrain Model with IGN Data
 layout: post
 comments: true
 author: François Pacull
@@ -7,11 +7,21 @@ tags:
 - Python
 ---
 
-In this post, we explore how to extract, organize, and analyze high-resolution Digital Terrain Model (DTM) data from IGN (Institut national de l'information géographique et forestière). 
+In this post, we explore how to extract and merge data from a french high-resolution Digital Terrain Model (DTM). This DTM is provided by the IGN (National Institute of Geographic and Forest Information). It gives a detailed grid-based depiction of the topography of the entire French territory on a large scale. For our purposes, we will be working with the 5-meter resolution option, although a 1-meter resolution is also available. It can be found on this web page : [https://geoservices.ign.fr/rgealti](https://geoservices.ign.fr/rgealti). 
 
-This Digital Terrain Model (DTM) provides a detailed grid-based depiction of the topography of the entire French territory on a large scale. Regular updates are obtained from surveys conducted using airborne LIDAR or aerial image correlation. For our purposes, we will be working with the 5-meter resolution option, although a 1-meter resolution is also available. 
+In the following we merge all the small files to generate a comprehensive raster. While this facilitates batch processing, it's important to note that the memory usage might be substantial. Here are the steps followed:
 
-The data comes from this IGN page : [https://geoservices.ign.fr/rgealti](https://geoservices.ign.fr/rgealti)
+- HTML Parsing with BeautifulSoup
+- Data Organization with Pandas
+- Bounding Box Definition
+- Intersected "Department" Zones List
+- Data Download
+- Conversion to GeoTIFF Format
+- Raster Mosaic
+- Raster Bounding Box Cropping
+- Point Queries
+
+
 
 ## System and package versions
 
@@ -37,7 +47,7 @@ OS and package versions:
     tqdm                 : 4.66.1
 
 
-## Imports
+## Python imports
 
 
 ```python
@@ -104,7 +114,7 @@ print(f"Found {link_count} download link(s)")
 
 Each download link is linked to its respective French "department" code.
 
-## Organize and Validate Data with Pandas
+## Organize Data with Pandas
 
 ```python
 # Create Pandas DataFrame with download links
@@ -207,12 +217,14 @@ df.head(3)
 </table>
 </div>
 
+Note that the coordinate reference system (CRS) is always Lambert-93 or EPSG:2154 for this data when dealing with regions in European France.
+
 ## Bounding box definition
 
-In our geospatial exploration of Lyon, the first step involves defining a bounding box that encapsulates the region of interest. The subsequent polygon visualization provides a clear representation of the defined area, offering a geographical context for our subsequent analysis within Lyon:
+The first step involves defining a bounding box that encapsulates the region of interest: Lyon, france. 
 
 ```python
-# Define bounding box coordinates
+# Define bounding box coordinates in EPSG:4326
 bbox = (4.346466, 45.463020, 5.340729, 46.030342)
 
 # Define points to create a polygon
@@ -233,12 +245,13 @@ polygon
 
     
 <p align="center">
-  <img width="400" src="/img/2023-12-12_01/output_11_0.svg" alt="Bounding box">
+  <img width="400" src="/img/2023-12-26_01/output_11_0.svg" alt="Bounding box">
 </p>
 
 
 
 ```python
+# display the polygon with map tiles
 bbox_gdf = gpd.GeoSeries([polygon], crs="EPSG:4326")
 fig, ax = plt.subplots(1, figsize=(12, 12))
 ax = bbox_gdf.plot(alpha=0.3, ax=ax)
@@ -248,15 +261,13 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="800" src="/img/2023-12-12_01/output_12_0.png" alt="Bounding box with map tiles">
+  <img width="800" src="/img/2023-12-26_01/output_12_0.png" alt="Bounding box with map tiles">
 </p>    
-
-This bounding box serves as the spatial extent for our analysis, encompassing the specific region of interest within Lyon. 
 
 
 ## Intersected "Department" zones list
 
-To determine which French departments intersect with our defined bounding box, we use a shapefile containing the polygons of French department zones. The shapefile was downloaded from [this](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/) page, specifically the [Export de mars 2014 - vérifié et simplifié à 50m](https://www.data.gouv.fr/fr/datasets/r/6e53bca5-1153-49d4-bff5-dd69f39369b5)
+To determine which French departments intersect with our defined bounding box, we use a shapefile containing the polygons of French department zones expressed in EPSG:4326 coordinates. The shapefile was downloaded from [this](https://www.data.gouv.fr/fr/datasets/contours-des-departements-francais-issus-d-openstreetmap/) page, specifically the [Export de mars 2014 - vérifié et simplifié à 50m](https://www.data.gouv.fr/fr/datasets/r/6e53bca5-1153-49d4-bff5-dd69f39369b5)
 
 
 ```python
@@ -371,7 +382,7 @@ ax = bbox_gdf.plot(alpha=0.3, ax=ax)
 ```
 
 <p align="center">
-  <img width="600" src="/img/2023-12-12_01/output_16_0.png" alt="Intersected zones">
+  <img width="600" src="/img/2023-12-26_01/output_16_0.png" alt="Intersected zones">
 </p>    
 
 Finally, we obtain the list of French department codes that intersect with the bounding box.
@@ -382,14 +393,12 @@ zone_codes
 ```
 
 
-
-
     ['01', '38', '42', '69']
 
 
-## Data download
+## IGN data download
 
-Now that we have identified the French department codes intersecting with the bounding box, let's proceed with downloading and organizing the relevant Digital Terrain Model (DTM) data.
+Now that we have identified the French department codes intersecting with the bounding box, let's proceed with downloading and organizing the relevant DTM data.
 
 ```python
 # Create a list of download items for the intersected zones
@@ -454,7 +463,7 @@ dem_dir_paths
      '/home/francois/Data/RGE_ALTI/5M/RGEALTI_2-0_5M_ASC_LAMB93-IGN69_D069_2023-08-10']
 
 
-These directories contain the Digital Terrain Model data for the specified French departments, and we can proceed with the data conversion.
+These directories contain the DTM data for the specified French departments, and we can proceed with the data conversion.
 
 ## Convert `.asc` files to `.tif` files
 
@@ -568,6 +577,8 @@ for dem_dir_path in dem_dir_paths:
     174 asc files
 
 
+Here is an example of one of these small `.tif` files:
+
 ```python
 fig, ax = plt.subplots(1, figsize=(6, 6))
 
@@ -578,7 +589,7 @@ ax.set_axis_off()
 ```
 
 <p align="center">
-  <img width="300" src="/img/2023-12-12_01/output_27_0.png" alt="A small tif file">
+  <img width="300" src="/img/2023-12-26_01/output_27_0.png" alt="A small tif file">
 </p>   
     
 
@@ -637,7 +648,7 @@ with rio.open(output_mosaic_path, "w", **output_meta) as m:
 del mosaic
 ```
 
-Now, let's downsample this mosaic and plot it:
+Now, let's downsample this mosaic in order to save some memory space, and plot it:
 
 ```python
 upscale_factor = 0.125
@@ -666,7 +677,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="800" src="/img/2023-12-12_01/output_37_0.png" alt="Mosaic tif file">
+  <img width="800" src="/img/2023-12-26_01/output_37_0.png" alt="Mosaic tif file">
 </p>   
     
 
@@ -674,7 +685,7 @@ ax.set_axis_off()
 ## Raster Bounding Box Cropping with Rasterio
 
 
-Now that we have our mosaic raster and a defined bounding box in the Lambert 93 (LAM93) projected CRS, let's proceed with cropping the raster to the extent of our bounding box.
+Now that we have our mosaic raster and a defined bounding box in the Lambert 93 (LAM93) projected CRS, let's proceed with cropping the raster to the extent of our bounding box. Remember that the bounding box is expressed in EPSG:4326 while the raster is in EPSG:2154.
 
 ```python
 # Transform the bounding box polygon to the mosaic's CRS (Lambert 93)
@@ -690,7 +701,7 @@ polygon_lam93
 ```
 
 <p align="center">
-  <img width="300" src="/img/2023-12-12_01/output_41_0.svg" alt="Bounding box on projected CRS">
+  <img width="300" src="/img/2023-12-26_01/output_41_0.svg" alt="Bounding box on projected CRS">
 </p>   
     
 
@@ -755,7 +766,7 @@ ax.set_axis_off()
 
 
 <p align="center">
-  <img width="800" src="/img/2023-12-12_01/output_49_0.png" alt="Cropped mosaic">
+  <img width="800" src="/img/2023-12-26_01/output_49_0.png" alt="Cropped mosaic">
 </p>   
 
 The resulting plot showcases the elevation data within the cropped region.
@@ -803,7 +814,7 @@ _ = ax.set(title="Elevation map of the region of Lyon, FR")
 
     
 <p align="center">
-  <img width="800" src="/img/2023-12-12_01/output_54_0.png" alt="Sample points queries mosaic">
+  <img width="800" src="/img/2023-12-26_01/output_54_0.png" alt="Sample points queries mosaic">
 </p>   
 
 Now, let's perform point queries to extract elevation values at these random points:
@@ -887,13 +898,9 @@ print(points["elevation"].max(), points["elevation"].min())
 
     839.79 150.5
 
-## Conclusion
-
-In this post, we've covered the basics of web scraping IGN's DTM data in Lyon, France. From downloading files to point queries, each step serves a practical purpose in gaining insights from geospatial data. It's worth highlighting the instrumental role of [Rasterio](https://rasterio.readthedocs.io/en/stable/)!
-
 ## References
 
-[1] Guillaume Attard (2022) https://medium.com/@gui.attard/pre-processing-the-dem-of-france-rge-alti-5m-for-implementation-into-earth-engine-de9a0778e0d9
+[1] Guillaume Attard (2022) [https://medium.com/@gui.attard/pre-processing-the-dem-of-france-rge-alti-5m-for-implementation-into-earth-engine-de9a0778e0d9](https://medium.com/@gui.attard/pre-processing-the-dem-of-france-rge-alti-5m-for-implementation-into-earth-engine-de9a0778e0d9)
 
 
 
