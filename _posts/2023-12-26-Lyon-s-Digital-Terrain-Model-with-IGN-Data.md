@@ -13,6 +13,7 @@ tags:
 - GeoTIFF
 - Elevation
 - IGN
+- scraping
 ---
 
 In this post, we explore how to extract and merge data from a french high-resolution Digital Terrain Model (DTM). This DTM is provided by the IGN (National Institute of Geographic and Forest Information). It gives a detailed grid-based depiction of the topography of the entire French territory on a large scale. For our purposes, we will be working with the 5-meter resolution option, although a 1-meter resolution is also available. It can be found on this web page : [https://geoservices.ign.fr/rgealti](https://geoservices.ign.fr/rgealti). 
@@ -225,7 +226,7 @@ df.head(3)
 </table>
 </div>
 
-Note that the coordinate reference system (CRS) is always Lambert-93 or EPSG:2154 for this data when dealing with regions in European France.
+Note that the Coordinate Reference System (CRS) is always Lambert-93 or EPSG:2154 for this data when dealing with regions in European France.
 
 ## Bounding box definition
 
@@ -729,7 +730,7 @@ mosaic_raster.crs
     CRS.from_epsg(2154)
 
 
-The CRS (Coordinate Reference System) of the mosaic raster is confirmed to be EPSG:2154, which corresponds to Lambert 93. Now, let's use Rasterio to crop the mosaic raster to the extent of the transformed bounding box:
+The CRS of the mosaic raster is confirmed to be EPSG:2154, which corresponds to Lambert 93. Now, let's use Rasterio to crop the mosaic raster to the extent of the transformed bounding box:
 
 ```python
 # Crop the mosaic raster to the bounding box
