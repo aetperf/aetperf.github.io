@@ -5,6 +5,14 @@ comments: true
 author: François Pacull
 tags: 
 - Python
+- Geospatial
+- raster
+- rasterio
+- DEM
+- DTM
+- GeoTIFF
+- Elevation
+- IGN
 ---
 
 In this post, we explore how to extract and merge data from a french high-resolution Digital Terrain Model (DTM). This DTM is provided by the IGN (National Institute of Geographic and Forest Information). It gives a detailed grid-based depiction of the topography of the entire French territory on a large scale. For our purposes, we will be working with the 5-meter resolution option, although a 1-meter resolution is also available. It can be found on this web page : [https://geoservices.ign.fr/rgealti](https://geoservices.ign.fr/rgealti). 
