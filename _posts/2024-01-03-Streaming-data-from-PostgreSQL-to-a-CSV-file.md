@@ -364,7 +364,7 @@ _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s
   <img width="800" src="/img/2024-01-03_01/output_41_0.png" alt="Sample points queries mosaic">
 </p>  
 
-This example demonstrates DuckDB's effective management of system resources, showcasing its ability in handling memory constraints and efficiently leveraging CPU resources during data operations.
+This example demonstrates DuckDB's effective management of system resources, showcasing its ability in handling memory constraints and efficiently leveraging CPU resources during data operations. However, when considering the combined factors of memory usage and elapsed time, Psycopg2, ADBC, and Turbodbc also emerge as noteworthy tools, showcasing their impressive capabilities.
 
 ## Postcript
 
