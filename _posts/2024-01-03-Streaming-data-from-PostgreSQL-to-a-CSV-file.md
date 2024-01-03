@@ -376,7 +376,7 @@ Besides the DuckDB exctraction, all the other streaming approaches use a rather 
 
 Additionally, it's worth mentioning that we did not manage to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
 
-Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264), maaking it unfit for this task.
+Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264), making it unfit for this task.
 
 
 {% if page.comments %}
