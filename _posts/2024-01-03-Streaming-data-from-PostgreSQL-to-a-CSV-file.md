@@ -368,7 +368,7 @@ This example demonstrates DuckDB's effective management of system resources, sho
 
 ## Postcript
 
-Besides the DuckDB exctraction, all the other streaming approaches use a rather small amout of memory, several gigabytes in this particular TPCH case. DuckDB stands out due to its unique capability of intentionally allocating a fixed amount of memory to speed up the processing. It's important to note that DuckDB's performance might suffer if provided with insufficient memory. To explore this further, let's experiment with different sizes of the `memory_limit` parameter and observe its impact on the elapsed time:
+Besides the DuckDB exctraction, all the other streaming approaches use a rather small amout of memory, several gigabytes for this particular TPCH case. It's important to note that DuckDB's performance might suffer if provided with less memory. To explore this further, let's experiment with different sizes of the `memory_limit` parameter and observe its impact on the elapsed time:
 
 <p align="center">
   <img width="800" src="/img/2024-01-03_01/Selection_124.png" alt="DuckDB - Elapsed time vs memory limit">
