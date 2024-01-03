@@ -319,7 +319,7 @@ sql_duckdb
 
 An important consideration is DuckDB's default memory setting, which is configured to use 80% of available RAM. Given DuckDB's efficiency in memory usage, this default setting is sufficient for the current operation. However this limit would be reached if we were dealing with a larger table, for example the TPCH lineitem table generated with scale factor 100. 
 
-Because we want to reach the memory limit  and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB, and see how it is smoothly handled by DuckDB. This is done with the configuration command `SET memory_limit = '16GB';`
+Because we want to reach the memory limit  and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB. This is done with the configuration command `SET memory_limit = '16GB';`
 
 
 ```python
