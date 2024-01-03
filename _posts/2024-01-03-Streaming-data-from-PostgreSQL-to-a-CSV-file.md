@@ -122,7 +122,7 @@ with engine.connect().execution_options(
     mode = "w"
     for df in pd.read_sql(sql=sql, con=conn, chunksize=chunk_size):
         df.to_csv(
-            csv_file_path, mode=mode, header=first_chunk, quoting=csv.QUOTE_ALL, index=False
+            csv_file_path, mode=mode, sep=';', header=first_chunk, quoting=csv.QUOTE_ALL, index=False
         )
         if first_chunk:
             mode = "a"
@@ -142,9 +142,9 @@ Next we display the first three and last three rows of the generated CSV file:
 !head -n 3 {csv_file_path}
 ```
 
-    "l_orderkey","l_partkey","l_suppkey","l_linenumber","l_quantity","l_extendedprice","l_discount","l_tax","l_returnflag","l_linestatus","l_shipdate","l_commitdate","l_receiptdate","l_shipinstruct","l_shipmode","l_comment"
-    "1","1551894","76910","1","17.0","33078.94","0.04","0.02","N","O","1996-03-13","1996-02-12","1996-03-22","DELIVER IN PERSON        ","TRUCK     ","to beans x-ray carefull"
-    "1","673091","73092","2","36.0","38306.16","0.09","0.06","N","O","1996-04-12","1996-02-28","1996-04-20","TAKE BACK RETURN         ","MAIL      "," according to the final foxes. qui"
+    "l_orderkey";"l_partkey";"l_suppkey";"l_linenumber";"l_quantity";"l_extendedprice";"l_discount";"l_tax";"l_returnflag";"l_linestatus";"l_shipdate";"l_commitdate";"l_receiptdate";"l_shipinstruct";"l_shipmode";"l_comment"
+    "1";"1551894";"76910";"1";"17.0";"33078.94";"0.04";"0.02";"N";"O";"1996-03-13";"1996-02-12";"1996-03-22";"DELIVER IN PERSON        ";"TRUCK     ";"to beans x-ray carefull"
+    "1";"673091";"73092";"2";"36.0";"38306.16";"0.09";"0.06";"N";"O";"1996-04-12";"1996-02-28";"1996-04-20";"TAKE BACK RETURN         ";"MAIL      ";" according to the final foxes. qui"
 
 
 
@@ -152,9 +152,9 @@ Next we display the first three and last three rows of the generated CSV file:
 !tail -n 3 {csv_file_path}
 ```
 
-    "60000000","118838","93842","5","28.0","51991.24","0.0","0.08","N","O","1997-09-29","1997-11-06","1997-09-30","COLLECT COD              ","SHIP      ","regular foxes among the even depths use "
-    "60000000","1294851","19864","6","48.0","88597.92","0.03","0.07","N","O","1997-11-28","1997-10-05","1997-12-06","COLLECT COD              ","MAIL      ","ual asymptotes wake af"
-    "60000000","558286","33302","7","12.0","16131.12","0.02","0.05","N","O","1997-10-09","1997-10-27","1997-10-21","COLLECT COD              ","REG AIR   ","ickly according to the furiousl"
+    "60000000";"118838";"93842";"5";"28.0";"51991.24";"0.0";"0.08";"N";"O";"1997-09-29";"1997-11-06";"1997-09-30";"COLLECT COD              ";"SHIP      ";"regular foxes among the even depths use "
+    "60000000";"1294851";"19864";"6";"48.0";"88597.92";"0.03";"0.07";"N";"O";"1997-11-28";"1997-10-05";"1997-12-06";"COLLECT COD              ";"MAIL      ";"ual asymptotes wake af"
+    "60000000";"558286";"33302";"7";"12.0";"16131.12";"0.02";"0.05";"N";"O";"1997-10-09";"1997-10-27";"1997-10-21";"COLLECT COD              ";"REG AIR   ";"ickly according to the furiousl"
 
 
 ## Pandas + PyArrow
@@ -319,7 +319,7 @@ sql_duckdb
 
 An important consideration is DuckDB's default memory setting, which is configured to use 80% of available RAM. Given DuckDB's efficiency in memory usage, this default setting is sufficient for the current operation. However this limit would be reached if we were dealing with a larger table, for example the TPCH lineitem table generated with scale factor 100. 
 
-Because we want to reach the memory limit  and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB. This is done with the configuration command `SET memory_limit = '16GB';`
+Because we want to reach the memory limit and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB. This is done with the configuration command `SET memory_limit = '16GB';`
 
 
 ```python
