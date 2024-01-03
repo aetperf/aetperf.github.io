@@ -374,9 +374,9 @@ Besides the DuckDB exctraction, all the other streaming approaches use a rather 
   <img width="800" src="/img/2024-01-03_01/Selection_124.png" alt="DuckDB - Elapsed time vs memory limit">
 </p>
 
-Additionally, it's worth mentioning that due to the time constraints during the preparation of this post, we were unable to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
+Additionally, it's worth mentioning that we did not manage to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
 
-Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264).
+Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264), maaking it unfit for this task.
 
 
 {% if page.comments %}
