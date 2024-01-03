@@ -97,7 +97,7 @@ Additionally, we instruct the SQL engine to sort the table by the `l_orderkey` c
 ```python
 sql = "SELECT * FROM tpch_10.lineitem ORDER BY l_orderkey"
 ```
-The following approaches will employ the same SQL query.
+All the following approaches will employ the same SQL query. Let's start with the first technique.
 
 ## Pandas
 
@@ -201,7 +201,7 @@ elapsed_time["Pandas+PyArrow"] = time.perf_counter() - start_time_step
 
 ## Turbodbc + PyArrow
 
-[turbodbc](https://turbodbc.readthedocs.io/en/latest/) is module to access relational databases via the Open Database Connectivity (ODBC) interface. Unlike previous approaches, we establish the connection using the data source name (DSN). Notably, asynchronous I/O is activated during data retrieval, allowing the fetching of new result sets from the database in the background while Python processes the existing ones.
+[turbodbc](https://turbodbc.readthedocs.io/en/latest/) is a module to access relational databases via the Open Database Connectivity (ODBC) interface. Unlike previous approaches, we establish the connection using the data source name (DSN). Notably, asynchronous I/O is activated during data retrieval, allowing the fetching of new result sets from the database in the background while Python processes the existing ones.
 
 ```python
 %%time
@@ -269,7 +269,7 @@ In this section, we leverage ADBC in conjunction with PyArrow to fetch data as A
 
 > ADBC aims to provide a minimal database client API standard, based on Arrow, for C, Go, and Java (with bindings for other languages). Applications code to this API standard (in much the same way as they would with JDBC or ODBC), but fetch result sets in Arrow format (e.g. via the [C Data Interface](https://arrow.apache.org/docs/format/CDataInterface.html)). They then link to an implementation of the standard: either directly to a vendor-supplied driver for a particular database, or to a driver manager that abstracts across multiple drivers. Drivers implement the standard using a database-specific API, such as Flight SQL.
 
-The ADBC implementation used here is specifically tailored for PostgreSQL, demonstrating its compatibility with various databases, including DuckDB, Snowflake, SQLite, and any connection employing the Flight SQL Driver.
+The ADBC implementation utilized in this context is specifically designed for PostgreSQL. However, alternative implementations may provide support for databases such as DuckDB, Snowflake, or SQLite.
 
 Data is fetched as Arrow batches and written with PyArrow. 
 
@@ -308,7 +308,7 @@ In this segment, we explore the integration of the in-process database [DuckDB](
 
 > The postgres extension allows DuckDB to directly read and write data from a running Postgres database instance. The data can be queried directly from the underlying Postgres database. Data can be loaded from Postgres tables into DuckDB tables, or vice versa.
 
-To enable the PostgreSQL extension, a straightforward SQL command is employed: `INSTALL postgres;`. Following this installation, and the extension loading, the `ATTACH` command is utilized to make the PostgreSQL database accessible to DuckDB. In this process, an alias, in this case, `db`, is assigned to the database, and accordingly, SQL queries need to be adjusted to consider this alias. For instance, the SELECT query is modified as follows:
+To enable the PostgreSQL extension, a straightforward SQL command is employed: `INSTALL postgres;`. Following this installation, and the extension loading, the `ATTACH` command is utilized to make the PostgreSQL database accessible to DuckDB. In this process, an alias, `db` in this present case, is assigned to the database, and accordingly, SQL queries need to be adjusted to consider this alias. The SELECT query is modified as follows:
 
 ```python
 sql_duckdb = sql.replace("tpch_", "db.tpch_")
@@ -317,11 +317,9 @@ sql_duckdb
 
     'SELECT * FROM db.tpch_10.lineitem ORDER BY l_orderkey'
 
-An important consideration is DuckDB's default memory setting, which is configured to use 80% of available RAM. Given DuckDB's efficiency in memory usage, this default setting is sufficient for the current operation. However, when dealing with larger tables, such as the TPCH `lineitem` table generated with a scale factor of 100, a more controlled memory limit may be desired. In this example, the memory limit is set to 16 GB using the configuration command:
+An important consideration is DuckDB's default memory setting, which is configured to use 80% of available RAM. Given DuckDB's efficiency in memory usage, this default setting is sufficient for the current operation. However this limit would be reached if we were dealing with a larger table, for example the TPCH lineitem table generated with scale factor 100. 
 
-An important consideration is DuckDB's default memory setting, which is configured to use 80% of available RAM. Given DuckDB's efficiency in memory usage, this default setting is sufficient for the current operation. However this would not be enough if we were dealing with a larger table, for example the TPCH lineitem table generated with scale factor 100. 
-
-Because we want to reach the memory limit  and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB, in order to reach the limit and see how it is smoothly handled by DuckDB. This is done with the configuration command `SET memory_limit = '16GB';`
+Because we want to reach the memory limit  and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB, and see how it is smoothly handled by DuckDB. This is done with the configuration command `SET memory_limit = '16GB';`
 
 
 ```python
