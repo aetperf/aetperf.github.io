@@ -1,5 +1,5 @@
 ---
-title: Streaming data from PostgreSQL to a CSV file WIP
+title: Streaming data from PostgreSQL to a CSV file
 layout: post
 comments: true
 author: François Pacull
@@ -347,9 +347,6 @@ elapsed_time["DuckDB"] = time.perf_counter() - start_time_step
     Wall time: 38.7 s
 
 
-This example demonstrates DuckDB's effective management of system resources, showcasing its prowess in handling memory constraints and efficiently leveraging CPU resources during data operations.
-
-
 ## Results
 
 
@@ -366,8 +363,22 @@ _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s
 ```
 
 <p align="center">
-  <img width="800" src="/img/2024-01-02_01/output_41_0.png" alt="Sample points queries mosaic">
+  <img width="800" src="/img/2024-01-03_01/output_41_0.png" alt="Sample points queries mosaic">
 </p>  
+
+This example demonstrates DuckDB's effective management of system resources, showcasing its ability in handling memory constraints and efficiently leveraging CPU resources during data operations.
+
+## Postcript
+
+Besides the DuckDB exctraction, all the other streaming approaches use a small amout of memory, about a few gigabytes in this particular TPCH case. DuckDB stands out due to its unique capability of intentionally allocating a fixed amount of memory to speed up the processing. It's important to note that DuckDB's performance might suffer if provided with insufficient memory. To explore this further, let's experiment with different sizes of the memory_limit parameter and observe its impact on the elapsed time.
+
+<p align="center">
+  <img width="800" src="/img/2024-01-03_01/Selection_124.png" alt="DuckDB - Elapsed time vs memory limit">
+</p>
+
+Additionally, it's worth mentioning that due to the time constraints during the preparation of this post, we were unable to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
+
+Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264).
 
 
 {% if page.comments %}
