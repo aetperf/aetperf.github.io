@@ -159,8 +159,8 @@ Next we display the first three and last three rows of the generated CSV file:
 Also we check that the `l_orderkey` column is sorted:
 
 ```python
-df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
-assert df.l_orderkey.is_monotonic_increasing
+check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
 ## Pandas + PyArrow
@@ -206,8 +206,8 @@ elapsed_time["Pandas+PyArrow"] = time.perf_counter() - start_time_step
 
 
 ```python
-df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
-assert df.l_orderkey.is_monotonic_increasing
+check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
 
@@ -249,8 +249,8 @@ elapsed_time["Turbodbc+PyArrow"] = time.perf_counter() - start_time_step
 
 
 ```python
-df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
-assert df.l_orderkey.is_monotonic_increasing
+check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
 
@@ -281,8 +281,8 @@ elapsed_time["Psycopg2"] = time.perf_counter() - start_time_step
 
 
 ```python
-df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
-assert df.l_orderkey.is_monotonic_increasing
+check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
 
@@ -327,8 +327,8 @@ elapsed_time["ADBC+PyArrow"] = time.perf_counter() - start_time_step
 
 
 ```python
-df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
-assert df.l_orderkey.is_monotonic_increasing
+check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
 
@@ -376,8 +376,8 @@ elapsed_time["DuckDB"] = time.perf_counter() - start_time_step
 
 
 ```python
-df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
-assert df.l_orderkey.is_monotonic_increasing
+check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
 
@@ -385,12 +385,12 @@ assert df.l_orderkey.is_monotonic_increasing
 
 
 ```python
-df = pd.DataFrame.from_dict(elapsed_time, orient="index", columns=["Elapsed time (s)"])
+et_df = pd.DataFrame.from_dict(elapsed_time, orient="index", columns=["Elapsed time (s)"])
 ```
 
 
 ```python
-ax = df.sort_values(by="Elapsed time (s)").plot.barh(
+ax = et_df.sort_values(by="Elapsed time (s)").plot.barh(
     alpha=0.7, legend=False, figsize=(6, 4)
 )
 _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s)")
