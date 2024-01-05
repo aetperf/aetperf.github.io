@@ -134,7 +134,7 @@ elapsed_time["Pandas"] = time.perf_counter() - start_time_step
     Wall time: 7min 17s
 
 
-The CSV file containing the data from the PostgreSQL table, occupies approximately 10 gigabytes of disk space. Note that if we don't activate the `stream_results` option, the data is fully loaded into memory by the `read_sql` statement, even with smaller chunks. This does not fit in the available RAM on the computer.
+The CSV file containing the data from the PostgreSQL table, occupies approximately **10 gigabytes** of disk space. Note that if we don't activate the `stream_results` option, the data is fully loaded into memory by the `read_sql` statement, even with smaller chunks. This does not fit in the available RAM on the computer.
 
 Next we display the first three and last three rows of the generated CSV file:
 
@@ -156,6 +156,12 @@ Next we display the first three and last three rows of the generated CSV file:
     "60000000";"1294851";"19864";"6";"48.0";"88597.92";"0.03";"0.07";"N";"O";"1997-11-28";"1997-10-05";"1997-12-06";"COLLECT COD              ";"MAIL      ";"ual asymptotes wake af"
     "60000000";"558286";"33302";"7";"12.0";"16131.12";"0.02";"0.05";"N";"O";"1997-10-09";"1997-10-27";"1997-10-21";"COLLECT COD              ";"REG AIR   ";"ickly according to the furiousl"
 
+Also we check that the `l_orderkey` column is sorted:
+
+```python
+df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert df.l_orderkey.is_monotonic_increasing
+```
 
 ## Pandas + PyArrow
 
@@ -199,6 +205,12 @@ elapsed_time["Pandas+PyArrow"] = time.perf_counter() - start_time_step
     Wall time: 5min 50s
 
 
+```python
+df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert df.l_orderkey.is_monotonic_increasing
+```
+
+
 ## Turbodbc + PyArrow
 
 [turbodbc](https://turbodbc.readthedocs.io/en/latest/) is a module to access relational databases via the Open Database Connectivity (ODBC) interface. Unlike previous approaches, we establish the connection using the data source name (DSN). Notably, asynchronous I/O is activated during data retrieval, allowing the fetching of new result sets from the database in the background while Python processes the existing ones.
@@ -236,6 +248,12 @@ elapsed_time["Turbodbc+PyArrow"] = time.perf_counter() - start_time_step
     Wall time: 2min 4s
 
 
+```python
+df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert df.l_orderkey.is_monotonic_increasing
+```
+
+
 ## Psycopg2
 
 Psycopg is a wrapper for the [libpq](https://www.postgresql.org/docs/current/libpq.html) C library, the official PostgreSQL client library. We are going to use `COPY () TO STDOUT` which streams data to the client, along with the [`copy_expert`](https://www.psycopg.org/docs/cursor.html#cursor.copy_expert) method.
@@ -260,6 +278,12 @@ elapsed_time["Psycopg2"] = time.perf_counter() - start_time_step
 
     CPU times: user 9.72 s, sys: 7.31 s, total: 17 s
     Wall time: 51.9 s
+
+
+```python
+df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert df.l_orderkey.is_monotonic_increasing
+```
 
 
 ## ADBC + PyArrow
@@ -300,6 +324,12 @@ elapsed_time["ADBC+PyArrow"] = time.perf_counter() - start_time_step
 
     CPU times: user 1min 5s, sys: 5.95 s, total: 1min 11s
     Wall time: 1min 11s
+
+
+```python
+df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert df.l_orderkey.is_monotonic_increasing
+```
 
 
 ## DuckDB
@@ -343,6 +373,12 @@ elapsed_time["DuckDB"] = time.perf_counter() - start_time_step
 
     CPU times: user 3min 38s, sys: 2min 14s, total: 5min 53s
     Wall time: 38.7 s
+
+
+```python
+df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
+assert df.l_orderkey.is_monotonic_increasing
+```
 
 
 ## Results
