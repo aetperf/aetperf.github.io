@@ -377,13 +377,13 @@ _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/output_41_0.png" alt="Sample points queries mosaic">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/output_41_0.png" alt="Elapsed time">
 </p>  
 
 Let's look at the memory usage of each method with the [memory_profiler](https://github.com/pythonprofilers/memory_profiler) package. This is done outside of Jupyter using Python scripts.
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/memory_usage.png" alt="Sample points queries mosaic">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/memory_usage.png" alt="Memory usage">
 </p>  
 
 So, overall, Psycopg2, DuckDB and ADBC + PyArrow all achieve a high level of performance. 
