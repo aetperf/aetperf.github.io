@@ -1,3 +1,19 @@
+---
+title: Streaming data from PostgreSQL to a CSV file
+layout: post
+comments: true
+author: François Pacull
+tags: 
+- Python
+- SQL
+- PostgreSQL
+- ADBC
+- COPY
+- Psycopg2
+- DuckDB
+- TurbODBC
+- PyArrow
+---
 
 In this post, we explore the process of streaming data from a PostgreSQL database to a CSV file using Python. The primary goal is to avoid loading the entire dataset into memory, enabling a more scalable and resource-efficient approach.
 
@@ -8,7 +24,6 @@ We'll try out various Python libraries and techniques and evaluate their perform
 - Psycopg2
 - ADBC + PyArrow
 - DuckDB
-
 
 ## System and package versions
 
@@ -46,7 +61,7 @@ csv_file_path = os.path.abspath("./test_lineitem.csv")
 credentials_file_path = os.path.abspath("./credentials.json")
 ```
 
-While the credentials retrieved below serve the classic connection method, we also employ an ODBC connection later on, with a Data Source Name [DSN].
+While the credentials retrieved below serve the classic connection method, we also employ an ODBC connection later on, with a Data Source Name (DSN).
 
 ```python
 with open(credentials_file_path, "r") as json_file:
@@ -63,7 +78,7 @@ elapsed_time = {}
 
 ## Query
 
-The [TPC-H](https://www.tpc.org/tpch/) benchmark stands as a widely-utilized metric for assessing the performance of database systems. The data can be created using pre-determined database sizes, referred to as *scale factors*. In this context, we are utilizing a scale factor of 10, focusing on the largest table among the 8 TPCH tables: `lineitem`. This table comprises approximately 60 million [59,986,052] rows and 16 columns. Below is a glimpse of the first 10 rows of the table:
+The [TPC-H](https://www.tpc.org/tpch/) benchmark stands as a widely-utilized metric for assessing the performance of database systems. The data can be created using pre-determined database sizes, referred to as *scale factors*. In this context, we are utilizing a scale factor of 10, focusing on the largest table among the 8 TPCH tables: `lineitem`. This table comprises approximately 60 million (59,986,052) rows and 16 columns. Below is a glimpse of the first 10 rows of the table:
 
     ┌────────────┬───────────┬───────────┬───┬────────────┬──────────────────────┐
     │ l_orderkey │ l_partkey │ l_suppkey │ … │ l_shipmode │      l_comment       │
@@ -91,6 +106,7 @@ sql = "SELECT * FROM tpch_10.lineitem ORDER BY l_orderkey"
 All the following approaches will employ the same SQL query. Let's start with the first technique.
 
 ## Pandas
+
 
 The code creates a [SQLAlchemy](https://www.sqlalchemy.org/) engine for PostgreSQL using the [psycopg2](https://www.psycopg.org/docs/) driver, specifying the connection details from the credentials.
 
@@ -146,14 +162,12 @@ Next we display the first three and last three rows of the generated CSV file:
     "60000000";"1294851";"19864";"6";"48.0";"88597.92";"0.03";"0.07";"N";"O";"1997-11-28";"1997-10-05";"1997-12-06";"COLLECT COD              ";"MAIL      ";"ual asymptotes wake af"
     "60000000";"558286";"33302";"7";"12.0";"16131.12";"0.02";"0.05";"N";"O";"1997-10-09";"1997-10-27";"1997-10-21";"COLLECT COD              ";"REG AIR   ";"ickly according to the furiousl"
 
-
 Also we check that the `l_orderkey` column is sorted:
 
 ```python
 check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
 assert check_df.l_orderkey.is_monotonic_increasing
 ```
-
 
 ## Pandas + PyArrow
 
@@ -205,7 +219,7 @@ assert check_df.l_orderkey.is_monotonic_increasing
 
 ## Turbodbc + PyArrow
 
-[turbodbc](https://turbodbc.readthedocs.io/en/latest/) is a module to access relational databases via the Open Database Connectivity [ODBC] interface. Unlike previous approaches, we establish the connection using the data source name [DSN]. Notably, asynchronous I/O is activated during data retrieval, allowing the fetching of new result sets from the database in the background while Python processes the existing ones.
+[turbodbc](https://turbodbc.readthedocs.io/en/latest/) is a module to access relational databases via the Open Database Connectivity (ODBC) interface. Unlike previous approaches, we establish the connection using the data source name (DSN). Notably, asynchronous I/O is activated during data retrieval, allowing the fetching of new result sets from the database in the background while Python processes the existing ones.
 
 ```python
 %%time
@@ -245,6 +259,7 @@ check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
 assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
+
 ## Psycopg2
 
 Psycopg is a wrapper for the [libpq](https://www.postgresql.org/docs/current/libpq.html) C library, the official PostgreSQL client library. We are going to use `COPY () TO STDOUT` which streams data to the client, along with the [`copy_expert`](https://www.psycopg.org/docs/cursor.html#cursor.copy_expert) method.
@@ -270,17 +285,19 @@ elapsed_time["Psycopg2"] = time.perf_counter() - start_time_step
     CPU times: user 9.72 s, sys: 7.31 s, total: 17 s
     Wall time: 51.9 s
 
+
 ```python
 check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
 assert check_df.l_orderkey.is_monotonic_increasing
 ```
+
 
 ## ADBC + PyArrow
 
 
 In this section, we leverage ADBC in conjunction with PyArrow to fetch data as Arrow batches and subsequently write it to a CSV file. [ABDC](https://arrow.apache.org/docs/format/ADBC.html) stands for the Arrow Database Connectivity:
 
-> ADBC aims to provide a minimal database client API standard, based on Arrow, for C, Go, and Java [with bindings for other languages]. Applications code to this API standard [in much the same way as they would with JDBC or ODBC], but fetch result sets in Arrow format [e.g. via the [C Data Interface](https://arrow.apache.org/docs/format/CDataInterface.html)]. They then link to an implementation of the standard: either directly to a vendor-supplied driver for a particular database, or to a driver manager that abstracts across multiple drivers. Drivers implement the standard using a database-specific API, such as Flight SQL.
+> ADBC aims to provide a minimal database client API standard, based on Arrow, for C, Go, and Java (with bindings for other languages). Applications code to this API standard (in much the same way as they would with JDBC or ODBC), but fetch result sets in Arrow format (e.g. via the [C Data Interface](https://arrow.apache.org/docs/format/CDataInterface.html)). They then link to an implementation of the standard: either directly to a vendor-supplied driver for a particular database, or to a driver manager that abstracts across multiple drivers. Drivers implement the standard using a database-specific API, such as Flight SQL.
 
 The ADBC implementation utilized in this context is specifically designed for PostgreSQL. However, alternative implementations may provide support for databases such as DuckDB, Snowflake, or SQLite.
 
@@ -319,6 +336,7 @@ elapsed_time["ADBC+PyArrow"] = time.perf_counter() - start_time_step
 check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
 assert check_df.l_orderkey.is_monotonic_increasing
 ```
+
 
 ## DuckDB
 
@@ -363,6 +381,7 @@ check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
 assert check_df.l_orderkey.is_monotonic_increasing
 ```
 
+
 ## Results
 
 ```python
@@ -377,13 +396,13 @@ _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/output_41_0.png" alt="Elapsed time">
+  <img width="800" src="/img/2024-01-08_01/output_41_0.png" alt="Elapsed time">
 </p>  
 
 Let's look at the memory usage of each method with the [memory_profiler](https://github.com/pythonprofilers/memory_profiler) package. This is done outside of Jupyter using Python scripts.
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/memory_usage.png" alt="Memory usage">
+  <img width="800" src="/img/2024-01-08_01/memory_usage.png" alt="Memory usage">
 </p>  
 
 So, overall, Psycopg2, DuckDB and ADBC + PyArrow all achieve a high level of performance. 
@@ -391,3 +410,27 @@ So, overall, Psycopg2, DuckDB and ADBC + PyArrow all achieve a high level of per
 Additionally, it's worth mentioning that we did not manage to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
 
 Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264), making it unfit for this task.
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
