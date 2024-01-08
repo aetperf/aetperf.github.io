@@ -1,7 +1,7 @@
 
 In this post, we explore the process of streaming data from a PostgreSQL database to a CSV file using Python. The primary goal is to avoid loading the entire dataset into memory, enabling a more scalable and resource-efficient approach.
 
-We'll try out various Python libraries and techniques and evaluate their performance in terms of elapsed time:
+We'll try out various Python libraries and techniques and evaluate their performance in terms of elapsed time and memory:
 - Pandas
 - Pandas + PyArrow
 - Turbodbc + PyArrow
@@ -326,41 +326,36 @@ In this segment, we explore the integration of the in-process database [DuckDB](
 
 > The postgres extension allows DuckDB to directly read and write data from a running Postgres database instance. The data can be queried directly from the underlying Postgres database. Data can be loaded from Postgres tables into DuckDB tables, or vice versa.
 
-To enable the PostgreSQL extension, a straightforward SQL command is employed: `INSTALL postgres;`. Following this installation, and the extension loading, the `ATTACH` command is utilized to make the PostgreSQL database accessible to DuckDB. In this process, an alias, `db` in this present case, is assigned to the database, and accordingly, SQL queries need to be adjusted to consider this alias. The SELECT query is modified as follows:
+To enable the PostgreSQL extension, a straightforward SQL command is employed: `INSTALL postgres;`. Following this installation, and the extension loading, the `ATTACH` command is utilized to make the PostgreSQL database accessible to DuckDB. In this process, an alias, `tpch` in this present case, is assigned to the database, and accordingly, SQL queries need to be adjusted to consider this alias. The SELECT query is modified as follows:
 
 ```python
 sql_duckdb = sql.replace("tpch_", "db.tpch_")
 sql_duckdb
 ```
 
-    'SELECT * FROM db.tpch_10.lineitem ORDER BY l_orderkey'
-
-An important consideration is DuckDB's default memory setting, which is configured to use 80% of available RAM. Given DuckDB's efficiency in memory usage, this default setting is sufficient for the current operation. However this limit would be reached if we were dealing with a larger table, for example the TPCH lineitem table generated with scale factor 100. 
-
-Because we want to reach the memory limit and see how it is smoothly handled by DuckDB, we set the memory limit to a smaller size : 16 GB. This is done with the configuration command `SET memory_limit = '16GB';`
+Now here call this query with the `postgres_query` function:
 
 
 ```python
 %%time
 start_time_step = time.perf_counter()
-output_query = (
-    f"COPY ({sql_duckdb}) TO '{csv_file_path}' (HEADER, DELIMITER ';', force_quote *);"
-)
 conn = duckdb.connect()
 conn.sql("INSTALL postgres;")
 conn.sql("LOAD postgres;")
 conn.sql(
     f"""ATTACH 'dbname={creds["database"]} user={creds["username"]} password={creds["password"]} host={creds["server"]} port={creds["port"]}' 
-    AS db (TYPE postgres);"""
+    AS tpch (TYPE POSTGRES);"""
 )
-conn.sql("SET memory_limit = '16GB';")
-conn.sql(output_query)
+conn.sql(
+    f"""COPY (SELECT * FROM postgres_query('tpch', '{sql}')) 
+    TO '{csv_file_path}' (HEADER, DELIMITER ';', force_quote *);"""
+)
 conn.close()
 elapsed_time["DuckDB"] = time.perf_counter() - start_time_step
 ```
 
-    CPU times: user 3min 38s, sys: 2min 14s, total: 5min 53s
-    Wall time: 38.7 s
+    CPU times: user 1min 2s, sys: 5.17 s, total: 1min 7s
+    Wall time: 1min 7s
 
 
 ```python
@@ -370,11 +365,9 @@ assert check_df.l_orderkey.is_monotonic_increasing
 
 ## Results
 
-
 ```python
 et_df = pd.DataFrame.from_dict(elapsed_time, orient="index", columns=["Elapsed time (s)"])
 ```
-
 
 ```python
 ax = et_df.sort_values(by="Elapsed time (s)").plot.barh(
@@ -384,36 +377,16 @@ _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/output_41_0.png" alt="Sample points queries mosaic">
+  <img width="800" src="/img/2024-01-03_01/output_41_0.png" alt="Sample points queries mosaic">
 </p>  
 
-This example demonstrates DuckDB's effective management of system resources, showcasing its ability in handling memory constraints and efficiently leveraging CPU resources during data operations. However, when considering the combined factors of memory usage and elapsed time, Psycopg2, ADBC, and Turbodbc also emerge as noteworthy tools, showcasing their impressive capabilities.
-
-## Postcript
-
-Besides the DuckDB exctraction, all the other streaming approaches use a rather small amout of memory, several gigabytes for this particular TPCH case. It's important to note that DuckDB's performance might suffer if provided with insufficient memory. To explore this further, let's experiment with different sizes of the `memory_limit` parameter and observe its impact on the elapsed time:
+Let's look at the memory usage of each method with the [memory_profiler](https://github.com/pythonprofilers/memory_profiler) package. This is done outside of Jupyter using Python scripts.
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/Selection_124.png" alt="DuckDB - Elapsed time vs memory limit">
-</p>
+  <img width="800" src="/img/2024-01-03_01/memory_usage.png" alt="Sample points queries mosaic">
+</p>  
 
-So it does suffer from a lower memory limit. Also, one can wonder why DuckDB is using so much memory as compared to the others. Let's look at the memory usage of each method with the [memory_profiler](https://github.com/pythonprofilers/memory_profiler) package. We set the DuckDB's `memory_limit` parameter to 16GB:
-
-<p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/memory_WITH_ORDERBY.png" alt="Memory limit with ORDER BY">
-</p>
-
-DuckDB is really taking **a lot more** memory than the others! Now let's look at the memory usage if we do not sort the table. Here is the associated SQL query: 
-
-```SQL
-SELECT * FROM tpch_10.lineitem
-```
-
-<p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/memory_WITHOUT_ORDERBY.png" alt="Memory limit without ORDER BY">
-</p>
-
-This times the memory usage of DuckDB is smaller, but still significantly larger than Psycopg2. The elapsed time of the unsorted query with DuckDB reaches an impressive value of 17 s. So it appears that DuckDB is taking care of the sorting part, instead of delegating Postgres to do it.
+So, overall, Psycopg2, DuckDB and ADBC + PyArrow all achieve a high level of performance. 
 
 Additionally, it's worth mentioning that we did not manage to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
 
