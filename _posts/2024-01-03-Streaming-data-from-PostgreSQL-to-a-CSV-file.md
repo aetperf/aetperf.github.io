@@ -17,7 +17,13 @@ tags:
 
 In this post, we explore the process of streaming data from a PostgreSQL database to a CSV file using Python. The primary goal is to avoid loading the entire dataset into memory, enabling a more scalable and resource-efficient approach.
 
-We'll try out various Python libraries and techniques and evaluate their performance in terms of elapsed time.
+We'll try out various Python libraries and techniques and evaluate their performance in terms of elapsed time:
+- Pandas
+- Pandas + PyArrow
+- Turbodbc + PyArrow
+- Psycopg2
+- ADBC + PyArrow
+- DuckDB
 
 ## System and package versions
 
@@ -92,7 +98,7 @@ The [TPC-H](https://www.tpc.org/tpch/) benchmark stands as a widely-utilized met
     │ 10 rows                                               16 columns (5 shown) │
     └────────────────────────────────────────────────────────────────────────────┘
 
-Additionally, we instruct the SQL engine to sort the table by the `l_orderkey` column.
+Additionally, we instruct the SQL engine to **sort** the table by the `l_orderkey` column:
 
 ```python
 sql = "SELECT * FROM tpch_10.lineitem ORDER BY l_orderkey"
@@ -400,15 +406,35 @@ _ = ax.set(title="TPCH-SF10 lineitem table CSV extract", xlabel="Elapsed time (s
   <img width="800" src="/img/2024-01-03_01/output_41_0.png" alt="Sample points queries mosaic">
 </p>  
 
+
 This example demonstrates DuckDB's effective management of system resources, showcasing its ability in handling memory constraints and efficiently leveraging CPU resources during data operations. However, when considering the combined factors of memory usage and elapsed time, Psycopg2, ADBC, and Turbodbc also emerge as noteworthy tools, showcasing their impressive capabilities.
 
 ## Postcript
 
-Besides the DuckDB exctraction, all the other streaming approaches use a rather small amout of memory, several gigabytes for this particular TPCH case. It's important to note that DuckDB's performance might suffer if provided with less memory. To explore this further, let's experiment with different sizes of the `memory_limit` parameter and observe its impact on the elapsed time:
+Besides the DuckDB exctraction, all the other streaming approaches use a rather small amout of memory, in the order of hundred of megabytes for this particular TPCH case. It's important to note that DuckDB's performance might suffer if provided with less memory. To explore this further, let's experiment with different sizes of the `memory_limit` parameter and observe its impact on the elapsed time:
 
 <p align="center">
   <img width="800" src="/img/2024-01-03_01/Selection_124.png" alt="DuckDB - Elapsed time vs memory limit">
 </p>
+
+So it does suffer from a lower memory limit. Also, one can wonder why DuckDB is using so much memory as compared to the others. Let's look at the memory usage of each method. We set the `memory_limit` parameter to 16GB:
+
+<p align="center">
+  <img width="800" src="/img/2024-01-03_01/memory_WITH_ORDERBY.png" alt="Memory limit with ORDER BY">
+</p>
+
+DuckDB is really taking **a lot more** memory than the others! Now let's look at the memory usage if we do not sort the table. Here is the associated SQL query: 
+
+```SQL
+SELECT * FROM tpch_10.lineitem
+```
+
+<p align="center">
+  <img width="800" src="/img/2024-01-03_01/memory_WITHOUT_ORDERBY.png" alt="Memory limit without ORDER BY">
+</p>
+
+This times the memory usage of DuckDB is smaller, but still significantly larger than Psycopg2. The elapsed time of the unsorted query with DuckDB reaches an impressive value of 17 s. So it appears that DuckDB is taking care of the sorting part, instead of delegating Postgres to do it.
+
 
 Additionally, it's worth mentioning that we did not manage to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
 
