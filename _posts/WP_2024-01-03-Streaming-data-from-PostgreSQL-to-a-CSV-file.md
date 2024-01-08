@@ -397,7 +397,7 @@ Besides the DuckDB exctraction, all the other streaming approaches use a rather 
   <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/Selection_124.png" alt="DuckDB - Elapsed time vs memory limit">
 </p>
 
-So it does suffer from a lower memory limit. Also, one can wonder why DuckDB is using so much memory as compared to the others. Let's look at the memory usage of each method. We set the `memory_limit` parameter to 16GB:
+So it does suffer from a lower memory limit. Also, one can wonder why DuckDB is using so much memory as compared to the others. Let's look at the memory usage of each method with the [memory_profiler](https://github.com/pythonprofilers/memory_profiler) package. We set the DuckDB's `memory_limit` parameter to 16GB:
 
 <p align="center">
   <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-03_01/memory_WITH_ORDERBY.png" alt="Memory limit with ORDER BY">
