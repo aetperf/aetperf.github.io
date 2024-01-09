@@ -326,7 +326,7 @@ In this segment, we explore the integration of the in-process database [DuckDB](
 
 > The postgres extension allows DuckDB to directly read and write data from a running Postgres database instance. The data can be queried directly from the underlying Postgres database. Data can be loaded from Postgres tables into DuckDB tables, or vice versa.
 
-To enable the PostgreSQL extension, a straightforward SQL command is employed: `INSTALL postgres;`. Following this installation, and the extension loading, the `ATTACH` command is utilized to make the PostgreSQL database accessible to DuckDB. In this process, an alias, `tpch` in this present case, is assigned to the database, and accordingly, SQL queries need to be adjusted to consider this alias. The SELECT query is modified as follows:
+To enable the PostgreSQL extension, a straightforward SQL command is employed: `INSTALL postgres;`. Following this installation, and the extension loading, the `ATTACH` command is utilized to make the PostgreSQL database accessible to DuckDB. In this process, an alias, `db` in this present case, is assigned to the database, and accordingly, SQL queries need to be adjusted to consider this alias. The SELECT query is modified as follows:
 
 ```python
 sql_duckdb = sql.replace("tpch_", "db.tpch_")
@@ -344,10 +344,10 @@ conn.sql("INSTALL postgres;")
 conn.sql("LOAD postgres;")
 conn.sql(
     f"""ATTACH 'dbname={creds["database"]} user={creds["username"]} password={creds["password"]} host={creds["server"]} port={creds["port"]}' 
-    AS tpch (TYPE POSTGRES);"""
+    AS db (TYPE POSTGRES);"""
 )
 conn.sql(
-    f"""COPY (SELECT * FROM postgres_query('tpch', '{sql}')) 
+    f"""COPY (SELECT * FROM postgres_query('db', '{sql}')) 
     TO '{csv_file_path}' (HEADER, DELIMITER ';', force_quote *);"""
 )
 conn.close()
