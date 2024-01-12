@@ -1,23 +1,48 @@
-# Create a routable pedestrian network with elevation WIP
-
-- Open Stree Maps
-
+---
+title: Create a routable pedestrian network with elevation WIP
+layout: post
+comments: true
+author: François Pacull
+tags: 
+- Python
+- OSM
 - OSMnx
-
-It is possible to 
-https://osmnx.readthedocs.io/en/stable/getting-started.html#working-with-elevation
-
-osmnx.elevation.add_node_elevations_raster(G, filepath, band=1, cpus=None)
-
-https://osmnx.readthedocs.io/en/stable/internals-reference.html#osmnx-elevation-module
+---
 
 
-we want to be able to run path algorithms on this network.
+In this blog post, we will explore how to create a routable pedestrian network with elevation using Python and [OSMnx](https://osmnx.readthedocs.io/en/stable/). OSMnx is a Python library that allows you to retrieve [OpenStreetMap](https://www.openstreetmap.org/) (OSM) data and work with street networks.
 
+Here's a summary of the steps followed in the blog post:
+
+- Graph download with OSMnx
+- Graph processing with Pandas
+- Add node elevation with rasterio
+- Plot the network
+- Compute the edge walking time attribute
+- Save the edges and nodes to file
+
+As the underlying motivation for this graph processing flow, our aim is to empower the network for the execution of path algorithms.
+
+## System and package versions
+
+We are operating on Python version 3.11.7 and running on a Linux x86_64 machine.
+
+
+    contextily             : 1.5.0
+    fiona                  : 1.9.5
+    geopandas              : 0.14.1
+    matplotlib             : 3.8.2
+    numpy                  : 1.26.3
+    osmnx                  : 1.8.1
+    pandas                 : 2.1.4
+    rasterio               : 1.3.9
+    shapely                : 2.0.2
+
+
+## Imports
 
 ```python
 import contextily as cx
-import fiona
 import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
@@ -25,26 +50,27 @@ import pandas as pd
 import rasterio as rio
 from shapely.geometry import LineString, Point
 
-plt.style.use("fivethirtyeight")
-
 DEM_FP = "./lyon_dem.tif"
 OUTPUT_NODES_FP = "./nodes_lyon_pedestrian_network.GeoJSON"
 OUTPUT_EDGES_FP = "./edges_lyon_pedestrian_network.GeoJSON"
 ```
 
-## Graph download and creation within some bounding box
+The file paths for Digital Elevation Model (DEM), and the output nodes and edges GeoJSON files are defined just above.
 
+## Graph download with OSMnx
+
+We begin by defining a bounding box using the coordinates in EPSG:4326 (WGS 84). This box encapsulates the geographical area of interest:
 
 ```python
-# Define bounding box coordinates in EPSG:4326
 bbox = (4.446716, 45.515971, 5.193787, 45.970243)
 ```
 
-https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.graph.graph_from_bbox
+Now, let's utilize the [`ox.graph_from_bbox`](https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.graph.graph_from_bbox) function with specific parameters, besides the bounding box:
 
-- simplify (bool) – if True, simplify graph topology with the simplify_graph function
-- retain_all (bool) – if True, return the entire graph even if it is not connected. otherwise, retain only the largest weakly connected component.
-- truncate_by_edge (bool) – if True, retain nodes outside bounding box if at least one of node’s neighbors is within the bounding box
+- `network_type (string {"all_private", "all", "bike", "drive", "drive_service", "walk"})`: what type of street network to get
+- `simplify (bool)`: If set to `True`, the graph topology is simplified using the `simplify_graph` function.
+- `retain_all (bool)`: When `True`, the function returns the entire graph even if it's not fully connected. Otherwise, it retains only the largest weakly connected component.
+- `truncate_by_edge (bool)`: Enabling this option retains nodes outside the bounding box if at least one of a node's neighbors is within the bounding box.
 
 
 ```python
@@ -64,7 +90,7 @@ G = ox.graph_from_bbox(
     CPU times: user 1min 6s, sys: 1.19 s, total: 1min 7s
     Wall time: 1min 7s
 
-
+The output graph is a [NetworkX](https://networkx.org/) object. We can explore some of the graph properties, such as whether it is directed:
 
 ```python
 G.is_directed()
@@ -76,7 +102,7 @@ G.is_directed()
     True
 
 
-
+Now we concert the graph into [GeoDataFrames](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.html) for nodes and edges, respectively:
 
 ```python
 %%time
@@ -105,16 +131,15 @@ edges_gdf.columns
 ```
 
 
-
-
     Index(['osmid', 'highway', 'oneway', 'reversed', 'length', 'geometry', 'lanes',
            'ref', 'maxspeed', 'bridge', 'name', 'service', 'width', 'junction',
            'access', 'tunnel', 'est_width', 'area'],
           dtype='object')
 
 
+In the next section, we will process the graph, removing many useless features for our pedestrian routing use-case.
 
-## Graph simplification
+## Graph processing with Pandas
 
 
 ```python
@@ -122,7 +147,6 @@ edges_gdf.columns
 edges_gdf = edges_gdf.loc[edges_gdf.highway != "trunk"]
 edges_gdf = edges_gdf.loc[edges_gdf.highway != "trunk_link"]
 ```
-
 
 ```python
 edges_gdf["highway"].value_counts()[:20]
@@ -453,15 +477,21 @@ nodes.shape
 
 
 
-## Add elevation to nodes
+## Add node elevation with rasterio
 
+In this section we are going to add the elevation attribute to the graph nodes. We are going to use a raster file prepared in a previous post:
+
+- [Lyon's Digital Terrain Model with IGN Data](https://aetperf.github.io/2023/12/26/Lyon-s-Digital-Terrain-Model-with-IGN-Data.html)
+
+We are going to query the raster file using [rasterio](https://rasterio.readthedocs.io/en/stable/). Note that it is also possible to [add node elevation within OSMnx](https://osmnx.readthedocs.io/en/stable/getting-started.html#working-with-elevation) using the [elevation module](https://osmnx.readthedocs.io/en/stable/internals-reference.html#osmnx-elevation-module): `osmnx.elevation.add_node_elevations_raster()`
+```
+
+First we need to convert the node coordinates to the same Coordinate Reference System (CRS) as the raster file, i.e. a projected CRS: EPSG:2154, RGF93 v1 / Lambert-93 -- France.
 
 ```python
 nodes = nodes.to_crs("EPSG:2154")
 nodes.head(3)
 ```
-
-
 
 
 <div>
@@ -608,7 +638,7 @@ nodes.head()
 
 
 
-## Plot
+## Plot the network
 
 
 ```python
@@ -621,7 +651,7 @@ _ = plt.axis("off")
 
 
 <p align="center">
-  <img width="800" src="/img/2024-01-11_01/output_30_0.png" alt="Pedestrian network">
+  <img width="1200" src="/img/2024-01-11_01/output_30_0.png" alt="Pedestrian network">
 </p>      
 
 
@@ -757,7 +787,7 @@ linestring
 ```
 
 <p align="center">
-  <img width="400" src="/img/2024-01-11_01/output_38_0.svg" alt="An curvy edge">
+  <img width="200" src="/img/2024-01-11_01/output_38_0.svg" alt="A curvy edge">
 </p> 
 
 
@@ -906,7 +936,7 @@ _ = ax.set(title="Edge slope distribution", xlabel="Slope (°)")
 ```
 
 <p align="center">
-  <img width="400" src="/img/2024-01-11_01/output_47_0.png" alt="An curvy edge">
+  <img width="800" src="/img/2024-01-11_01/output_47_0.png" alt="Edge slope distribution">
 </p> 
 
 
@@ -988,10 +1018,12 @@ edges.head(3)
 
 
 
- ## Save to file
+ ## Save the edges and nodes to file
 
 
 ```python
+import fiona
+
 fiona.supported_drivers
 ```
 
