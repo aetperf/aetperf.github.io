@@ -1,4 +1,7 @@
 
+**Update** Jan 24, 2024 - Added FastBCP.
+
+
 In this post, we explore the process of streaming data from a PostgreSQL database to a CSV file using Python. The primary goal is to avoid loading the entire dataset into memory, enabling a more scalable and resource-efficient approach.
 
 We'll try out various Python libraries and techniques and evaluate their performance in terms of elapsed time and memory:
@@ -8,6 +11,7 @@ We'll try out various Python libraries and techniques and evaluate their perform
 - Psycopg2
 - ADBC + PyArrow
 - DuckDB
+- FastBCP
 
 
 ## System and package versions
@@ -362,6 +366,35 @@ elapsed_time["DuckDB"] = time.perf_counter() - start_time_step
 check_df = pd.read_csv(csv_file_path, delimiter=";", usecols=["l_orderkey"])
 assert check_df.l_orderkey.is_monotonic_increasing
 ```
+
+## FastBCP
+
+While our focus here is primarily on Python tools, we added FastBCP as a reference regarding CPU and memory usage. FastBCP has been developed in-house by Romain Ferraton at [Architecture & Performance](https://www.architecture-performance.fr/). It is a command line tool, written in C#, that is compatible with any operating system where dotnet is installed. We used dotnet on Linux in the present case.
+
+FastBCP employs parallel threads, reading data through multiple connections by partitioning SQL on the 'l_orderkey' column. This approach results in distinct CSV files, later merged into a final output. However, it's important to note that due to its parallel behavior, the resulting CSV file may not be sorted. Also, the observed elapsed time take the merging phase into account.
+
+For reference, here's the Python script used:
+
+```python
+import subprocess  
+
+start_time_step = time.perf_counter()
+output_dir_path = os.path.basename(csv_file_path)
+output_file_name = os.path.dirname(csv_file_path)
+n_jobs = 8
+delimiter = ";"
+sql_fastbcp = "SELECT * FROM tpch_10.lineitem"
+
+subprocess.run(
+    f"""./FastBCP -C pgcopy -S {creds['server']} -U "{creds['username']}" -X "{creds['password']}" -I tpch -D {output_dir_path} -o {output_file_name} -p {n_jobs} -q "{sql_fastbcp}" -m Random -n "." -d "{delimiter}" -t false -f "yyyy-MM-dd HH:mm:ss" -e "UTF-8" -c "(L_ORDERKEY/10000000)::int" -M true""",
+    shell=True,
+    check=True,
+)
+elapsed_time["FastBCP"] = time.perf_counter() - start_time_step
+```
+
+Notice that 8 jobs were configured for this execution. 
+
 
 ## Results
 
