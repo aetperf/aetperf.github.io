@@ -97,8 +97,6 @@ G.is_directed()
 ```
 
 
-
-
     True
 
 
@@ -117,8 +115,6 @@ nodes_gdf, edges_gdf = ox.graph_to_gdfs(G)
 ```python
 nodes_gdf.columns
 ```
-
-
 
 
     Index(['y', 'x', 'street_count', 'highway', 'ref', 'geometry'], dtype='object')
