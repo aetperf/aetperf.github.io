@@ -11,7 +11,6 @@ We'll try out various Python libraries and techniques and evaluate their perform
 - Psycopg2
 - ADBC + PyArrow
 - DuckDB
-- FastBCP
 
 Also, we will include a fast in-house extraction tool written in C#:
 - FastBCP
