@@ -373,7 +373,7 @@ assert check_df.l_orderkey.is_monotonic_increasing
 
 While our focus here is on Python tools, we added FastBCP as a reference regarding CPU and memory usage. FastBCP has been developed in-house by Romain Ferraton at [Architecture & Performance](https://www.architecture-performance.fr/). It is a command line tool, written in C#, that is compatible with any operating system where dotnet is installed. We used dotnet on Linux in the present case.
 
-FastBCP employs parallel threads, reading data through multiple connections by partitioning SQL on the 'l_orderkey' column. This approach results in distinct CSV files, later merged into a final output. It's worth mentioning that due to its parallel behavior, the resulting data in the CSV file may not be sorted. This is why the ORDER BY clause is removed from the query in this particular case. Also, the returned elapsed time take the merging phase into account.
+FastBCP employs parallel threads, reading data through multiple connections by partitioning SQL on the 'l_orderkey' column. This approach results in distinct CSV files, later merged into a final output. It's worth mentioning that due to its parallel settings, the resulting data in the CSV file may not be sorted. This is why the ORDER BY clause is removed from the query in this particular case. Also, the returned elapsed time take the merging phase into account.
 
 For reference, here's the Python script used:
 
