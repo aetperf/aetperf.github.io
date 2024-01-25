@@ -16,7 +16,7 @@ tags:
 - FastBCP
 ---
 
-**Update** Jan 24, 2024 - Added FastBCP.
+**Update** Jan 25, 2024 - Added FastBCP.
 
 
 In this post, we explore the process of streaming data from a PostgreSQL database to a CSV file using Python. The primary goal is to avoid loading the entire dataset into memory, enabling a more scalable and resource-efficient approach.
