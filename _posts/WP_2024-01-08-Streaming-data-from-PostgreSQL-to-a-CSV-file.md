@@ -423,6 +423,8 @@ Let's look at the memory usage of each method with the [memory_profiler](https:/
 
 So, overall, Psycopg2, DuckDB and ADBC + PyArrow all achieve a high level of performance. 
 
+While we briefly included FastBCP for a reference comparison, we did not delve into extensive details. However, in the near future, we plan to focus on it in a dedicated post, thoroughly examining its behavior and performance in the context of data extraction.
+
 Additionally, it's worth mentioning that we did not manage to employ [Polars](https://pola.rs/) for the streaming extraction, leading to an out-of-memory error.
 
 Also, it appears that [ConnectorX](https://sfu-db.github.io/connector-x/intro.html) currently lacks support for [retrieving results as Arrow batches or any type of chunks](https://github.com/sfu-db/connector-x/issues/264), making it unfit for this task.
