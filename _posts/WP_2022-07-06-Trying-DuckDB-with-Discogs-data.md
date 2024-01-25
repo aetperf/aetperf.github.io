@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img width="400" src="https://github.com/duckdb/duckdb/blob/master/logo/DuckDB_Logo.png?raw=true" alt="DuckDB_Logo">
+  <img width="400" src="https://github.com/duckdb/duckdb/blob/main/logo/DuckDB_Logo-stacked.png?raw=true" alt="DuckDB_Logo">
 </p>
 
 This notebook is a small example of using DuckDB with the Python API. 
@@ -22,7 +22,7 @@ pip install duckdb
 Voilà!
 
 <p align="center">
-  <img width="400" src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/Discogs_logo.svg/2560px-Discogs_logo.svg.png" alt="Discogs_Logo">
+  <img width="400" src="https://upload.wikimedia.org/wikipedia/fr/8/88/Discogs_logo.gif" alt="Discogs_Logo">
 </p>
 
 * What is [Discogs](https://www.discogs.com/)? Here is a description from [wikipedia](https://en.wikipedia.org/wiki/Discogs):
