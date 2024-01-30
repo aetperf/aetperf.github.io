@@ -10,7 +10,7 @@ tags:
 ---
 
 
-In this blog post, we will explore how to create a routable pedestrian network with elevation using Python and [OSMnx](https://osmnx.readthedocs.io/en/stable/). OSMnx is a Python library that allows you to retrieve [OpenStreetMap](https://www.openstreetmap.org/) (OSM) data and work with street networks.
+In this blog post, we will explore how to create a routable pedestrian network with elevation using Python and [OSMnx](https://osmnx.readthedocs.io/en/stable/). OSMnx is a Python library that allows you to retrieve [OpenStreetMap](https://www.openstreetmap.org/) (OSM) data and work with street networks, among other things.
 
 Here's a summary of the steps followed in the blog post:
 
@@ -62,7 +62,7 @@ The file paths for Digital Elevation Model (DEM), and the output nodes and edges
 We begin by defining a bounding box using the coordinates in EPSG:4326 (WGS 84). This box encapsulates the geographical area of interest:
 
 ```python
-bbox = (4.446716, 45.515971, 5.193787, 45.970243)
+bbox = (4.5931155, 45.515971, 5.0473875, 45.970243)
 ```
 
 Now, let's utilize the [`ox.graph_from_bbox`](https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.graph.graph_from_bbox) function with specific parameters, besides the bounding box:
@@ -87,8 +87,8 @@ G = ox.graph_from_bbox(
 )
 ```
 
-    CPU times: user 1min 6s, sys: 1.19 s, total: 1min 7s
-    Wall time: 1min 7s
+    CPU times: user 52.5 s, sys: 1.19 s, total: 53.7 s
+    Wall time: 59.3 s
 
 The output graph is a [NetworkX](https://networkx.org/) object. We can explore some of the graph properties, such as whether it is directed:
 
@@ -107,10 +107,30 @@ Now we concert the graph into [GeoDataFrames](https://geopandas.org/en/stable/do
 nodes_gdf, edges_gdf = ox.graph_to_gdfs(G)
 ```
 
-    CPU times: user 9.25 s, sys: 141 ms, total: 9.39 s
-    Wall time: 9.37 s
+    CPU times: user 7.92 s, sys: 85.7 ms, total: 8.01 s
+    Wall time: 8.02 s
+
+Let's have a look at the Coordinate Reference System (CRS):
+
+```python
+nodes_gdf.crs
+```
 
 
+    <Geographic 2D CRS: EPSG:4326>
+    Name: WGS 84
+    Axis Info [ellipsoidal]:
+    - Lat[north]: Geodetic latitude (degree)
+    - Lon[east]: Geodetic longitude (degree)
+    Area of Use:
+    - name: World.
+    - bounds: (-180.0, -90.0, 180.0, 90.0)
+    Datum: World Geodetic System 1984 ensemble
+    - Ellipsoid: WGS 84
+    - Prime Meridian: Greenwich
+
+
+The GeoDataFrames have many columns:
 
 ```python
 nodes_gdf.columns
@@ -118,8 +138,6 @@ nodes_gdf.columns
 
 
     Index(['y', 'x', 'street_count', 'highway', 'ref', 'geometry'], dtype='object')
-
-
 
 
 ```python
@@ -135,7 +153,9 @@ edges_gdf.columns
 
 In the next section, we will process the graph, removing many useless features for our pedestrian routing use-case.
 
-## Graph processing with Pandas
+## Graph simplification
+
+### Highway type
 
 
 ```python
@@ -150,32 +170,31 @@ edges_gdf["highway"].value_counts()[:20]
 
 
 
-
     highway
-    service                   118730
-    residential               102618
-    footway                    89894
-    unclassified               66840
-    tertiary                   34132
-    track                      33426
-    path                       31814
-    secondary                  24810
-    primary                    15702
-    corridor                    4794
-    [steps, footway]            4028
-    living_street               3434
-    pedestrian                  3046
-    steps                       2286
-    [track, unclassified]       1708
-    [residential, track]        1406
-    [residential, footway]      1356
-    [path, track]               1192
-    [footway, service]           825
-    [service, footway]           787
+    service                   98658
+    residential               85920
+    footway                   82620
+    unclassified              46060
+    tertiary                  26462
+    path                      25706
+    track                     21636
+    secondary                 19220
+    primary                   13192
+    corridor                   4778
+    [footway, steps]           3718
+    living_street              3316
+    pedestrian                 2850
+    steps                      2074
+    [footway, service]         1376
+    [footway, residential]     1108
+    [track, residential]        978
+    [track, path]               884
+    [residential, path]         614
+    [residential, service]      476
     Name: count, dtype: int64
 
 
-
+### Edge column selection and renaming
 
 ```python
 # edge column selection and renaming
@@ -184,8 +203,6 @@ edges = edges.rename(columns={"u": "tail", "v": "head"})
 edges.drop("key", axis=1, inplace=True)
 edges.head(3)
 ```
-
-
 
 
 <div>
@@ -214,68 +231,86 @@ edges.head(3)
   <tbody>
     <tr>
       <th>0</th>
-      <td>2087150</td>
-      <td>3209480797</td>
-      <td>LINESTRING (4.53724 45.74513, 4.53756 45.74519...</td>
+      <td>143196</td>
+      <td>387462616</td>
+      <td>LINESTRING (5.02801 45.67790, 5.02769 45.67791...</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>2087150</td>
-      <td>2025220166</td>
-      <td>LINESTRING (4.53724 45.74513, 4.53684 45.74510...</td>
+      <td>143403</td>
+      <td>21714981</td>
+      <td>LINESTRING (4.87754 45.73383, 4.87739 45.73379)</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>2087150</td>
-      <td>3209480790</td>
-      <td>LINESTRING (4.53724 45.74513, 4.53775 45.74517...</td>
+      <td>143403</td>
+      <td>9226919131</td>
+      <td>LINESTRING (4.87754 45.73383, 4.87723 45.73393)</td>
     </tr>
   </tbody>
 </table>
 </div>
 
+### Make sure we get each edge in both directions
 
-
+The first step ensures that each edge is represented in both directions (tail to head and head to tail).
 
 ```python
-# make sure we get each edge once in both directions
-
 # we select one direction between each pair couples
 edges["min_vert"] = edges[["tail", "head"]].min(axis=1)
 edges["max_vert"] = edges[["tail", "head"]].max(axis=1)
-edges.drop_duplicates(subset=["min_vert", "max_vert"], inplace=True)
-edges.drop(["min_vert", "max_vert"], axis=1, inplace=True)
+```
 
-# we revert these edges and concatenate them
+Compute length in a projected CRS:
+
+
+```python
+edges = edges.to_crs("EPSG:2154")
+edges["length"] = edges.geometry.map(lambda g: g.length)
+edges = edges.to_crs("EPSG:4326")
+```
+
+
+Sort the edges based on minimum vertex, maximum vertex, and length, then remove parallel edges, keeping only the shortest one.
+
+
+```python
+edges = edges.sort_values(by=["min_vert", "max_vert", "length"], ascending=True)
+edges = edges.drop_duplicates(subset=["min_vert", "max_vert"], keep="first")
+edges = edges.drop(["min_vert", "max_vert"], axis=1)
+```
+
+We reverse the edges and concatenate them with the original edges to ensure representation in both directions.
+
+```python
 edges_reverse = edges.copy(deep=True)
 edges_reverse[["tail", "head"]] = edges_reverse[["head", "tail"]]
 edges_reverse.geometry = edges_reverse.geometry.map(lambda g: g.reverse())
 edges = pd.concat((edges, edges_reverse), axis=0)
+```
 
-# cleanup
+We remove loops and duplicate edges, then reset the index.
+
+```python
 edges = edges.sort_values(by=["tail", "head"])
-edges = edges.loc[edges["tail"] != edges["head"]]  # remove loops
-edges.drop_duplicates(subset=["tail", "head"], inplace=True)
+edges = edges.loc[edges["tail"] != edges["head"]]
 edges.reset_index(drop=True, inplace=True)
 edges.shape
 ```
 
 
+    (440248, 4)
 
 
-    (541394, 3)
 
-
+### Node column selection
 
 
 ```python
-# node column selection and renaming
 nodes = nodes_gdf[["geometry"]].copy(deep=True)
 nodes = nodes.reset_index(drop=False)
 nodes.head(3)
 ```
-
-
 
 
 <div>
@@ -303,40 +338,78 @@ nodes.head(3)
   <tbody>
     <tr>
       <th>0</th>
-      <td>2087150</td>
-      <td>POINT (4.53724 45.74513)</td>
+      <td>126096</td>
+      <td>POINT (4.78386 45.78928)</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>2087196</td>
-      <td>POINT (4.50251 45.73066)</td>
+      <td>143196</td>
+      <td>POINT (5.02801 45.67790)</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>2087231</td>
-      <td>POINT (4.47475 45.71289)</td>
+      <td>143356</td>
+      <td>POINT (4.84325 45.71446)</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 
+### Node reindexing
 
+The following function reindexes node IDs and updates both the nodes and edges DataFrames:
 
 ```python
-# reindex the nodes and update the edges
-nodes["id"] = nodes.index
-edges = pd.merge(
-    edges, nodes[["id", "osmid"]], left_on="tail", right_on="osmid", how="left"
+def reindex_nodes(
+    nodes, edges, node_id_col="osmid", tail_id_col="tail", head_id_col="head"
+):
+    if node_id_col == "id":
+        node_id_col = "id_old"
+        nodes = nodes.rename(columns={"id": node_id_col})
+
+    assert "geometry" in nodes
+
+    # reindex the nodes and update the edges
+    nodes = nodes.reset_index(drop=True)
+    if "id" in nodes.columns:
+        nodes = nodes.drop("id", axis=1)
+    nodes["id"] = nodes.index
+    edges = pd.merge(
+        edges,
+        nodes[["id", node_id_col]],
+        left_on=tail_id_col,
+        right_on=node_id_col,
+        how="left",
+    )
+    edges.drop([tail_id_col, node_id_col], axis=1, inplace=True)
+    edges.rename(columns={"id": tail_id_col}, inplace=True)
+    edges = pd.merge(
+        edges,
+        nodes[["id", node_id_col]],
+        left_on=head_id_col,
+        right_on=node_id_col,
+        how="left",
+    )
+    edges.drop([head_id_col, node_id_col], axis=1, inplace=True)
+    edges.rename(columns={"id": head_id_col}, inplace=True)
+
+    # reorder the columns to have tail andf head node vertices first
+    cols = edges.columns
+    extra_cols = [c for c in cols if c not in ["tail", "head"]]
+    cols = ["tail", "head"] + extra_cols
+    edges = edges[cols]
+
+    # cleanup
+    if node_id_col in nodes:
+        nodes = nodes.drop(node_id_col, axis=1)
+
+    return nodes, edges
+
+
+nodes, edges = reindex_nodes(
+    nodes, edges, node_id_col="osmid", tail_id_col="tail", head_id_col="head"
 )
-edges.drop(["tail", "osmid"], axis=1, inplace=True)
-edges.rename(columns={"id": "tail"}, inplace=True)
-edges = pd.merge(
-    edges, nodes[["id", "osmid"]], left_on="head", right_on="osmid", how="left"
-)
-edges.drop(["head", "osmid"], axis=1, inplace=True)
-edges.rename(columns={"id": "head"}, inplace=True)
-edges = edges[["tail", "head", "geometry"]]
 ```
 
 
@@ -368,26 +441,30 @@ edges.head(3)
       <th>tail</th>
       <th>head</th>
       <th>geometry</th>
+      <th>length</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
-      <td>145061</td>
-      <td>152458</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17643 45.62180...</td>
+      <td>1</td>
+      <td>14988</td>
+      <td>LINESTRING (5.02801 45.67790, 5.02769 45.67791...</td>
+      <td>158.045057</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>145061</td>
-      <td>152462</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17622 45.62183...</td>
+      <td>5</td>
+      <td>714</td>
+      <td>LINESTRING (4.87754 45.73383, 4.87739 45.73379)</td>
+      <td>12.138616</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>145061</td>
-      <td>166277</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17627 45.62179...</td>
+      <td>5</td>
+      <td>140378</td>
+      <td>LINESTRING (4.87754 45.73383, 4.87761 45.73387...</td>
+      <td>11.072676</td>
     </tr>
   </tbody>
 </table>
@@ -403,13 +480,12 @@ edges.shape
 
 
 
-    (541394, 3)
+    (440248, 4)
 
 
 
 
 ```python
-nodes.drop("osmid", axis=1, inplace=True)
 nodes.set_index("id", inplace=True)
 nodes.head(3)
 ```
@@ -445,15 +521,15 @@ nodes.head(3)
   <tbody>
     <tr>
       <th>0</th>
-      <td>POINT (4.53724 45.74513)</td>
+      <td>POINT (4.78386 45.78928)</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>POINT (4.50251 45.73066)</td>
+      <td>POINT (5.02801 45.67790)</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>POINT (4.47475 45.71289)</td>
+      <td>POINT (4.84325 45.71446)</td>
     </tr>
   </tbody>
 </table>
@@ -469,85 +545,36 @@ nodes.shape
 
 
 
-    (206284, 1)
+    (167128, 1)
 
 
+## Network visualization
 
-## Add node elevation with rasterio
-
-In this section we are going to add the elevation attribute to the graph nodes. We are going to use a raster file prepared in a previous post:
-
-- [Lyon's Digital Terrain Model with IGN Data](https://aetperf.github.io/2023/12/26/Lyon-s-Digital-Terrain-Model-with-IGN-Data.html)
-
-We are going to query the raster file using [rasterio](https://rasterio.readthedocs.io/en/stable/). Note that it is also possible to [add node elevation within OSMnx](https://osmnx.readthedocs.io/en/stable/getting-started.html#working-with-elevation) using the [elevation module](https://osmnx.readthedocs.io/en/stable/internals-reference.html#osmnx-elevation-module): `osmnx.elevation.add_node_elevations_raster()`
-```
-
-First we need to convert the node coordinates to the same Coordinate Reference System (CRS) as the raster file, i.e. a projected CRS: EPSG:2154, RGF93 v1 / Lambert-93 -- France.
 
 ```python
-nodes = nodes.to_crs("EPSG:2154")
-nodes.head(3)
+ax = edges.plot(linewidth=0.2, alpha=0.7, figsize=(12, 12))
+cx.add_basemap(
+    ax, source=cx.providers.CartoDB.VoyagerNoLabels, crs=edges.crs.to_string()
+)
+_ = plt.axis("off")
 ```
 
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>geometry</th>
-    </tr>
-    <tr>
-      <th>id</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>POINT (819515.290 6517333.579)</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>POINT (816845.594 6515675.314)</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>POINT (814724.346 6513661.646)</td>
-    </tr>
-  </tbody>
-</table>
-</div>
+    
+<p align="center">
+  <img width="800" src="/img/2024-01-11_01/output_30_0.png" alt="Network visualization">
+</p> 
 
 
+## Incorporating elevation data into nodes
 
+The code transforms the node coordinates to Lambert 93 for compatibility with the elevation data source. After extracting latitude and longitude coordinates, it samples elevation data from a Digital Elevation Model (DEM) using the rasterio library. The resulting elevation values are added to the nodes DataFrame, with special consideration for handling invalid elevation values. 
 
 ```python
 # extract point coordinates in Lambert 93
+nodes = nodes.to_crs("EPSG:2154")
 lon_lam93 = nodes.geometry.apply(lambda p: p.x)
 lat_lam93 = nodes.geometry.apply(lambda p: p.y)
-```
-
-
-```python
 nodes = nodes.to_crs("EPSG:4326")
-```
-
-
-```python
 point_coords = list(zip(lon_lam93, lat_lam93))
 ```
 
@@ -562,14 +589,14 @@ dem = rio.open(DEM_FP)
 nodes["z"] = [x[0] for x in dem.sample(point_coords)]
 ```
 
-    CPU times: user 2.51 s, sys: 240 ms, total: 2.75 s
-    Wall time: 2.75 s
+    CPU times: user 2.36 s, sys: 232 ms, total: 2.59 s
+    Wall time: 2.6 s
 
 
 
 ```python
 nodes.loc[nodes["z"] <= -99999, "z"] = np.nan
-nodes.head()
+nodes.head(3)
 ```
 
 
@@ -605,28 +632,18 @@ nodes.head()
   <tbody>
     <tr>
       <th>0</th>
-      <td>POINT (4.53724 45.74513)</td>
-      <td>323.760010</td>
+      <td>POINT (4.78386 45.78928)</td>
+      <td>257.890015</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>POINT (4.50251 45.73066)</td>
-      <td>393.540009</td>
+      <td>POINT (5.02801 45.67790)</td>
+      <td>251.649994</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>POINT (4.47475 45.71289)</td>
-      <td>424.230011</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>POINT (4.45839 45.70706)</td>
-      <td>469.100006</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>POINT (4.78359 45.74445)</td>
-      <td>275.119995</td>
+      <td>POINT (4.84325 45.71446)</td>
+      <td>163.899994</td>
     </tr>
   </tbody>
 </table>
@@ -634,44 +651,23 @@ nodes.head()
 
 
 
-## Plot the network
+## Computing edge walking time attribute
 
-
-```python
-ax = edges.plot(linewidth=0.2, alpha=0.7, figsize=(12, 10))
-cx.add_basemap(
-    ax, source=cx.providers.CartoDB.VoyagerNoLabels, crs=edges.crs.to_string()
-)
-_ = plt.axis("off")
-```
-
-
-<p align="center">
-  <img width="1200" src="/img/2024-01-11_01/output_30_0.png" alt="Pedestrian network">
-</p>      
-
-
-## Compute the edge walking time attribute
-
-https://en.wikipedia.org/wiki/Tobler%27s_hiking_function
+This section focuses on calculating the walking time attribute for each edge in the network. It begins by describing the simple [Tobler's hiking function](https://en.wikipedia.org/wiki/Tobler%27s_hiking_function), which estimates walking speed based on the slope of the terrain:
 
 $$v = 6 e^{-3.5 \left| \tan(\theta) + 0.05 \right|}$$
+
+$v$ is the walking speed and $\theta$ the slope angle. Let's plot this function:
 
 
 ```python
 def walking_speed_kmh(slope_deg):
     theta = np.pi * slope_deg / 180.0
     return 6.0 * np.exp(-3.5 * np.abs(np.tan(theta) + 0.05))
-```
 
-
-```python
 x = np.linspace(-20, 20, 100)
 y = np.array(list(map(walking_speed_kmh, x)))
-```
 
-
-```python
 fig, ax = plt.subplots(figsize=(6, 4))
 _ = plt.plot(x, y, alpha=0.7)
 _ = ax.set(
@@ -682,9 +678,10 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="400" src="/img/2024-01-11_01/output_34_0.png" alt="Tobler's hiking function">
-</p>      
+  <img width="500" src="/img/2024-01-11_01/output_34_0.png" alt="Network visualization">
+</p> 
 
+Now we create some edge features, for the tail and head elevations:
 
 ```python
 edges = pd.merge(
@@ -703,212 +700,28 @@ edges = pd.merge(
 )
 ```
 
-
-```python
-edges = edges.to_crs("EPSG:2154")
-edges["length"] = edges.geometry.map(lambda g: g.length)
-```
-
-
-```python
-edges.head(3)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>tail</th>
-      <th>head</th>
-      <th>geometry</th>
-      <th>tail_z</th>
-      <th>head_z</th>
-      <th>length</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>145061</td>
-      <td>152458</td>
-      <td>LINESTRING (869567.830 6504812.245, 869576.816...</td>
-      <td>219.820007</td>
-      <td>219.820007</td>
-      <td>35.998225</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>145061</td>
-      <td>152462</td>
-      <td>LINESTRING (869567.830 6504812.245, 869560.425...</td>
-      <td>219.820007</td>
-      <td>220.320007</td>
-      <td>23.203918</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>145061</td>
-      <td>166277</td>
-      <td>LINESTRING (869567.830 6504812.245, 869564.173...</td>
-      <td>219.820007</td>
-      <td>219.220001</td>
-      <td>86.592815</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
+In order to compute the angle, we are going to assume that the linestrings are straight, although they are not:
 
 ```python
 linestring = edges.iloc[0].geometry
 linestring
 ```
 
+
 <p align="center">
-  <img width="200" src="/img/2024-01-11_01/output_38_0.svg" alt="A curvy edge">
+  <img width="500" src="/img/2024-01-11_01/output_38_0.svg" alt="Network visualization">
 </p> 
-
-
-```python
-def compute_straight_length(linestring):
-    first = Point(linestring.coords[0])
-    last = Point(linestring.coords[-1])
-    straight_line = LineString([first, last])
-    return straight_line.length
-```
-
-
-```python
-compute_straight_length(linestring)
-```
-
-
-
-
-    34.511755994005895
-
-
-
-
-```python
-edges["straight_length"] = edges.geometry.map(lambda g: compute_straight_length(g))
-```
-
-
-```python
-edges = edges.to_crs("EPSG:4326")
-```
-
-
-```python
-edges.head(3)
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>tail</th>
-      <th>head</th>
-      <th>geometry</th>
-      <th>tail_z</th>
-      <th>head_z</th>
-      <th>length</th>
-      <th>straight_length</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>145061</td>
-      <td>152458</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17643 45.62180...</td>
-      <td>219.820007</td>
-      <td>219.820007</td>
-      <td>35.998225</td>
-      <td>34.511756</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>145061</td>
-      <td>152462</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17622 45.62183...</td>
-      <td>219.820007</td>
-      <td>220.320007</td>
-      <td>23.203918</td>
-      <td>22.823563</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>145061</td>
-      <td>166277</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17627 45.62179...</td>
-      <td>219.820007</td>
-      <td>219.220001</td>
-      <td>86.592815</td>
-      <td>84.532070</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
-edges.straight_length.min()
-```
-
-
-
-
-    0.011105097809826743
 
 
 
 
 ```python
 def compute_slope(triangle_att):
-    """tail_z, head_z, straight_length"""
+    """triangle_att = [tail_z, head_z, length]"""
     tail_z = triangle_att[0]
     head_z = triangle_att[1]
-    straight_length = triangle_att[2]
-    x = (head_z - tail_z) / straight_length
+    length = triangle_att[2]
+    x = (head_z - tail_z) / length
     x = np.amin([x, 1.0])
     x = np.amax([x, -1.0])
     theta = np.arcsin(x)
@@ -920,7 +733,7 @@ def compute_slope(triangle_att):
 
 
 ```python
-edges["slope_deg"] = edges[["tail_z", "head_z", "straight_length"]].apply(
+edges["slope_deg"] = edges[["tail_z", "head_z", "length"]].apply(
     compute_slope, raw=True, axis=1
 )
 ```
@@ -931,8 +744,9 @@ ax = edges.slope_deg.plot.hist(bins=25, alpha=0.7)
 _ = ax.set(title="Edge slope distribution", xlabel="Slope (°)")
 ```
 
+    
 <p align="center">
-  <img width="800" src="/img/2024-01-11_01/output_47_0.png" alt="Edge slope distribution">
+  <img width="500" src="/img/2024-01-11_01/output_47_0.png" alt="Network visualization">
 </p> 
 
 
@@ -948,7 +762,7 @@ edges["travel_time_s"] = 3600.0 * 1.0e-3 * edges["length"] / edges.walking_speed
 
 ```python
 edges.drop(
-    ["tail_z", "head_z", "length", "straight_length", "slope_deg", "walking_speed_kmh"],
+    ["tail_z", "head_z", "length", "length", "slope_deg", "walking_speed_kmh"],
     axis=1,
     inplace=True,
 )
@@ -989,24 +803,24 @@ edges.head(3)
   <tbody>
     <tr>
       <th>0</th>
-      <td>145061</td>
-      <td>152458</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17643 45.62180...</td>
-      <td>25.729650</td>
+      <td>1</td>
+      <td>14988</td>
+      <td>LINESTRING (5.02801 45.67790, 5.02769 45.67791...</td>
+      <td>108.643949</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>145061</td>
-      <td>152462</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17622 45.62183...</td>
-      <td>17.906953</td>
+      <td>5</td>
+      <td>714</td>
+      <td>LINESTRING (4.87754 45.73383, 4.87739 45.73379)</td>
+      <td>8.478201</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>145061</td>
-      <td>166277</td>
-      <td>LINESTRING (5.17632 45.62181, 5.17627 45.62179...</td>
-      <td>60.373345</td>
+      <td>5</td>
+      <td>140378</td>
+      <td>LINESTRING (4.87754 45.73383, 4.87761 45.73387...</td>
+      <td>7.740958</td>
     </tr>
   </tbody>
 </table>
@@ -1014,12 +828,79 @@ edges.head(3)
 
 
 
- ## Save the edges and nodes to file
+checking for missing values, parallel edges and loops:
 
 
 ```python
-import fiona
+edges.isna().sum(axis=0)
+```
 
+
+
+
+    tail             0
+    head             0
+    geometry         0
+    travel_time_s    0
+    dtype: int64
+
+
+
+
+```python
+edges[["tail", "head"]].duplicated().sum()
+```
+
+
+
+
+    0
+
+
+
+
+```python
+edges[edges["tail"] == edges["head"]]
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>tail</th>
+      <th>head</th>
+      <th>geometry</th>
+      <th>travel_time_s</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+
+
+
+ ## Save to file
+
+
+```python
 fiona.supported_drivers
 ```
 
@@ -1056,8 +937,8 @@ nodes.to_file(OUTPUT_NODES_FP, driver="GeoJSON", crs="EPSG:4326")
 edges.to_file(OUTPUT_EDGES_FP, driver="GeoJSON", crs="EPSG:4326")
 ```
 
-    CPU times: user 22.1 s, sys: 136 ms, total: 22.2 s
-    Wall time: 22.2 s
+    CPU times: user 21.7 s, sys: 124 ms, total: 21.8 s
+    Wall time: 21.9 s
 
 
 
@@ -1065,6 +946,6 @@ edges.to_file(OUTPUT_EDGES_FP, driver="GeoJSON", crs="EPSG:4326")
 !ls -l *.GeoJSON
 ```
 
-    -rw-rw-r-- 1 francois francois 161497552 Jan  4 21:26 edges_lyon_pedestrian_network.GeoJSON
-    -rw-rw-r-- 1 francois francois  32088554 Jan  4 21:25 nodes_lyon_pedestrian_network.GeoJSON
+    -rw-rw-r-- 1 francois francois 127182433 Jan 30 18:28 edges_lyon_pedestrian_network.GeoJSON
+    -rw-rw-r-- 1 francois francois  25986369 Jan 30 18:27 nodes_lyon_pedestrian_network.GeoJSON
 
