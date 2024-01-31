@@ -724,7 +724,14 @@ linestring
   <img width="500" src="/img/2024-01-31_01/output_38_0.png" alt="Linestring">
 </p> 
 
-This function, `compute_slope`, calculates the slope angle of a triangle based on its attributes. 
+This function, `compute_slope`, calculates the slope angle of a triangle based on its attributes. We start by making sure that the edge length is always strictly greater than zero:
+
+```python
+edges["length"].min()
+```
+    0.011105097809826743
+
+
 
 ```python
 def compute_slope(triangle_att):
