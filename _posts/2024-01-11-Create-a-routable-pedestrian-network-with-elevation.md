@@ -21,7 +21,7 @@ Here's a summary of the steps followed in the blog post:
 - Computing edge walking time attribute
 - Save the edges and nodes to files
 
-As the underlying motivation for this graph processing steps, our aim is to run path algorithms ont his pedestrian network.
+As the underlying motivation for this graph processing steps, our aim is to run path algorithms on this pedestrian network.
 
 ## System and package versions
 
@@ -55,7 +55,7 @@ OUTPUT_NODES_FP = "./nodes_lyon_pedestrian_network.GeoJSON"
 OUTPUT_EDGES_FP = "./edges_lyon_pedestrian_network.GeoJSON"
 ```
 
-The file paths for Digital Elevation Model (DEM), and the output nodes and edges GeoJSON files are defined just above.
+The file paths for Digital Terrain Model (DTM), and the output nodes and edges GeoJSON files are defined just above.
 
 ## Graph download with OSMnx
 
@@ -100,7 +100,7 @@ G.is_directed()
     True
 
 
-Now we concert the graph into [GeoDataFrames](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.html) for nodes and edges, respectively:
+Now we convert the graph into [GeoDataFrames](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.html) for nodes and edges, respectively:
 
 ```python
 %%time
@@ -255,7 +255,7 @@ edges.head(3)
 
 ### Make sure we get each edge in both directions
 
-The first step ensures that each edge is represented in both directions (tail to head and head to tail).
+This step ensures that each edge is represented in both directions (tail to head and head to tail).
 
 ```python
 # we select one direction between each pair couples
@@ -360,7 +360,7 @@ nodes.head(3)
 
 ### Node reindexing
 
-The following function reindexes node IDs and updates both the nodes and edges DataFrames:
+The following function reindexes node IDs contiguously and updates both the nodes and edges DataFrames:
 
 ```python
 def reindex_nodes(
@@ -569,7 +569,7 @@ _ = plt.axis("off")
 
 ## Incorporating elevation data into nodes
 
-The code transforms the node coordinates to Lambert 93 for compatibility with the elevation data source. After extracting latitude and longitude coordinates, it samples elevation data from a Digital Terrain Model (DTM) using the rasterio library. The DTM raster file comes from a previous post:
+The following piece of code transforms the node coordinates to Lambert 93 for compatibility with the elevation data source. After extracting latitude and longitude coordinates, it samples elevation data from a Digital Terrain Model (DTM) using the [rasterio](https://rasterio.readthedocs.io/en/stable/) library. The DTM raster file comes from a previous post:
 - [Lyon's Digital Terrain Model with IGN Data](https://aetperf.github.io/2023/12/26/Lyon-s-Digital-Terrain-Model-with-IGN-Data.html)  
 
 The resulting elevation values are added to the nodes DataFrame, with special consideration for handling invalid elevation values. 
@@ -707,7 +707,7 @@ edges = pd.merge(
 )
 ```
 
-To compute the slope angle, we are going to use the curvilinear length instead of the Euclidean distance between endpoints, considering the curvy nature of the linestrings.:
+In order to compute the slope angle, we are going to use the curvilinear length instead of the Euclidean distance between endpoints, considering the curvy nature of the linestrings.:
 
 ```python
 linestring = edges.iloc[0].geometry
@@ -728,9 +728,7 @@ def compute_slope(triangle_att):
     tail_z, head_z, length = triangle_att
 
     x = (head_z - tail_z) / length
-    x = np.amin([x, 1.0])
-    x = np.amax([x, -1.0])
-    theta = np.arcsin(x)
+    theta = np.arctan(x)
     theta_deg = theta * 180.0 / np.pi
 
     # Limits the slope angle to a maximum of 20.0 degrees and 
@@ -776,8 +774,6 @@ edges.head(3)
 ```
 
 
-
-
 <div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
@@ -808,30 +804,29 @@ edges.head(3)
       <td>1</td>
       <td>14988</td>
       <td>LINESTRING (5.02801 45.67790, 5.02769 45.67791...</td>
-      <td>108.643949</td>
+      <td>108.644212</td>
     </tr>
     <tr>
       <th>1</th>
       <td>5</td>
       <td>714</td>
       <td>LINESTRING (4.87754 45.73383, 4.87739 45.73379)</td>
-      <td>8.478201</td>
+      <td>8.478205</td>
     </tr>
     <tr>
       <th>2</th>
       <td>5</td>
       <td>140378</td>
       <td>LINESTRING (4.87754 45.73383, 4.87761 45.73387...</td>
-      <td>7.740958</td>
+      <td>7.740962</td>
     </tr>
   </tbody>
 </table>
 </div>
 
-
 ## Save the edges and nodes to files
 
-Ultimately, we will save our network as two dataframes—one for nodes and one for edges. Below is the list of supported drivers for the output format:
+Ultimately, we will save our network as two dataframes, one for nodes and one for edges. Below is the list of supported drivers for the output format:
 
 ```python
 fiona.supported_drivers
@@ -862,7 +857,7 @@ fiona.supported_drivers
      'TopoJSON': 'r'}
 
 
-We are going to to use the GeoJSON driver:
+We are going to use the GeoJSON driver:
 
 ```python
 %%time
