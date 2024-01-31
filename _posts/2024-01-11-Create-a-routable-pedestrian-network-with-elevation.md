@@ -50,7 +50,7 @@ import pandas as pd
 import rasterio as rio
 from shapely.geometry import LineString, Point
 
-DEM_FP = "./lyon_dem.tif"
+DTP_FP = "./lyon_dem.tif"
 OUTPUT_NODES_FP = "./nodes_lyon_pedestrian_network.GeoJSON"
 OUTPUT_EDGES_FP = "./edges_lyon_pedestrian_network.GeoJSON"
 ```
@@ -569,7 +569,10 @@ _ = plt.axis("off")
 
 ## Incorporating elevation data into nodes
 
-The code transforms the node coordinates to Lambert 93 for compatibility with the elevation data source. After extracting latitude and longitude coordinates, it samples elevation data from a Digital Elevation Model (DEM) using the rasterio library. The resulting elevation values are added to the nodes DataFrame, with special consideration for handling invalid elevation values. 
+The code transforms the node coordinates to Lambert 93 for compatibility with the elevation data source. After extracting latitude and longitude coordinates, it samples elevation data from a Digital Terrain Model (DTM) using the rasterio library. The DTM raster file comes from a previous post:
+- [Lyon's Digital Terrain Model with IGN Data](https://aetperf.github.io/2023/12/26/Lyon-s-Digital-Terrain-Model-with-IGN-Data.html)  
+
+The resulting elevation values are added to the nodes DataFrame, with special consideration for handling invalid elevation values. 
 
 Note that it was also possible to add the elevation data with OSMnx, using [osmnx.elevation.add_node_elevations_raster](https://osmnx.readthedocs.io/en/latest/user-reference.html#osmnx.elevation.add_node_elevations_raster). 
 
@@ -584,7 +587,7 @@ point_coords = list(zip(lon_lam93, lat_lam93))
 
 
 ```python
-dem = rio.open(DEM_FP)
+dem = rio.open(DTP_FP)
 ```
 
 
@@ -722,9 +725,8 @@ def compute_slope(triangle_att):
     """
     triangle_att must be [tail_z, head_z, length]
     """
-    tail_z = triangle_att[0]
-    head_z = triangle_att[1]
-    length = triangle_att[2]
+    tail_z, head_z, length = triangle_att
+
     x = (head_z - tail_z) / length
     x = np.amin([x, 1.0])
     x = np.amax([x, -1.0])
@@ -739,14 +741,15 @@ def compute_slope(triangle_att):
     return theta_deg
 ```
 
-
 ```python
 edges["slope_deg"] = edges[["tail_z", "head_z", "length"]].apply(
     compute_slope, raw=True, axis=1
 )
 ```
 
-Here is the distribution of the linestrings slope over our network.
+Note that we could have computed `slope_deg` using Pandas column operations, and without applying a row function. 
+
+Here is the distribution of the linestrings' slope over our network.
 
 ```python
 ax = edges.slope_deg.plot.hist(bins=25, alpha=0.7)
