@@ -1,5 +1,5 @@
 ---
-title: Create a routable pedestrian network with elevation WIP
+title: Create a routable pedestrian network with elevation
 layout: post
 comments: true
 author: François Pacull
