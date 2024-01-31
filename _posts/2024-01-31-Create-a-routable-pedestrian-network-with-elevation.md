@@ -563,7 +563,7 @@ _ = plt.axis("off")
 
     
 <p align="center">
-  <img width="800" src="/img/2024-01-11_01/output_30_0.png" alt="Network visualization">
+  <img width="800" src="/img/2024-01-31_01/output_30_0.png" alt="Network visualization">
 </p> 
 
 
@@ -685,7 +685,7 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="500" src="/img/2024-01-11_01/output_34_0.png" alt="Tobler's hiking function">
+  <img width="500" src="/img/2024-01-31_01/output_34_0.png" alt="Tobler's hiking function">
 </p> 
 
 To calculate the edge travel time, it is necessary to first compute the edge slope by utilizing the elevation information from the endpoints. We create some edge features, for the tail and head elevations:
@@ -715,7 +715,7 @@ linestring
 ```
 
 <p align="center">
-  <img width="500" src="/img/2024-01-11_01/output_38_0.png" alt="Linestring">
+  <img width="500" src="/img/2024-01-31_01/output_38_0.png" alt="Linestring">
 </p> 
 
 This function, `compute_slope`, calculates the slope angle of a triangle based on its attributes. 
@@ -756,7 +756,7 @@ _ = ax.set(title="Edge slope distribution", xlabel="Slope (°)")
 
     
 <p align="center">
-  <img width="500" src="/img/2024-01-11_01/output_47_0.png" alt="Edge slope distribution">
+  <img width="500" src="/img/2024-01-31_01/output_47_0.png" alt="Edge slope distribution">
 </p> 
 
 Now we can apply Tobler’s hiking function to each edge and compute the travel time:
