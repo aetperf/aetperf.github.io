@@ -15,13 +15,13 @@ In this blog post, we will explore how to create a routable pedestrian network w
 Here's a summary of the steps followed in the blog post:
 
 - Graph download with OSMnx
-- Graph processing with Pandas
-- Add node elevation with rasterio
-- Plot the network
-- Compute the edge walking time attribute
-- Save the edges and nodes to file
+- Graph simplification with Pandas
+- Network visualization
+- Incorporating elevation data into nodes
+- Computing edge walking time attribute
+- Save the edges and nodes to files
 
-As the underlying motivation for this graph processing flow, our aim is to empower the network for the execution of path algorithms.
+As the underlying motivation for this graph processing steps, our aim is to run path algorithms ont his pedestrian network.
 
 ## System and package versions
 
@@ -130,7 +130,7 @@ nodes_gdf.crs
     - Prime Meridian: Greenwich
 
 
-The GeoDataFrames have many columns:
+The GeoDataFrames have many columns that we won't use:
 
 ```python
 nodes_gdf.columns
@@ -153,16 +153,18 @@ edges_gdf.columns
 
 In the next section, we will process the graph, removing many useless features for our pedestrian routing use-case.
 
-## Graph simplification
+## Graph simplification with Pandas
 
 ### Highway type
 
+We initiate the process by excluding major roads, deemed less pedestrian-friendly based on data checked on [openstreetmap.org](https://www.openstreetmap.org/#map=6/46.449/2.210):
 
 ```python
-# remove most important roads
 edges_gdf = edges_gdf.loc[edges_gdf.highway != "trunk"]
 edges_gdf = edges_gdf.loc[edges_gdf.highway != "trunk_link"]
 ```
+
+Let's have a look at the various highway types remaining within our network. The *service* type is the most prevalent, followed by *residential* and *footway*:
 
 ```python
 edges_gdf["highway"].value_counts()[:20]
@@ -289,7 +291,7 @@ edges_reverse.geometry = edges_reverse.geometry.map(lambda g: g.reverse())
 edges = pd.concat((edges, edges_reverse), axis=0)
 ```
 
-We remove loops and duplicate edges, then reset the index.
+We remove loops, then reset the index.
 
 ```python
 edges = edges.sort_values(by=["tail", "head"])
@@ -394,7 +396,7 @@ def reindex_nodes(
     edges.drop([head_id_col, node_id_col], axis=1, inplace=True)
     edges.rename(columns={"id": head_id_col}, inplace=True)
 
-    # reorder the columns to have tail andf head node vertices first
+    # reorder the columns to have tail and head node vertices first
     cols = edges.columns
     extra_cols = [c for c in cols if c not in ["tail", "head"]]
     cols = ["tail", "head"] + extra_cols
@@ -569,6 +571,8 @@ _ = plt.axis("off")
 
 The code transforms the node coordinates to Lambert 93 for compatibility with the elevation data source. After extracting latitude and longitude coordinates, it samples elevation data from a Digital Elevation Model (DEM) using the rasterio library. The resulting elevation values are added to the nodes DataFrame, with special consideration for handling invalid elevation values. 
 
+Note that it was also possible to add the elevation data with OSMnx, using [osmnx.elevation.add_node_elevations_raster](https://osmnx.readthedocs.io/en/latest/user-reference.html#osmnx.elevation.add_node_elevations_raster). 
+
 ```python
 # extract point coordinates in Lambert 93
 nodes = nodes.to_crs("EPSG:2154")
@@ -678,10 +682,10 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="500" src="/img/2024-01-11_01/output_34_0.png" alt="Network visualization">
+  <img width="500" src="/img/2024-01-11_01/output_34_0.png" alt="Tobler's hiking function">
 </p> 
 
-Now we create some edge features, for the tail and head elevations:
+To calculate the edge travel time, it is necessary to first compute the edge slope by utilizing the elevation information from the endpoints. We create some edge features, for the tail and head elevations:
 
 ```python
 edges = pd.merge(
@@ -700,24 +704,24 @@ edges = pd.merge(
 )
 ```
 
-In order to compute the angle, we are going to assume that the linestrings are straight, although they are not:
+To compute the slope angle, we are going to use the curvilinear length instead of the Euclidean distance between endpoints, considering the curvy nature of the linestrings.:
 
 ```python
 linestring = edges.iloc[0].geometry
 linestring
 ```
 
-
 <p align="center">
-  <img width="500" src="/img/2024-01-11_01/output_38_0.svg" alt="Network visualization">
+  <img width="500" src="/img/2024-01-11_01/output_38_0.png" alt="Linestring">
 </p> 
 
-
-
+This function, `compute_slope`, calculates the slope angle of a triangle based on its attributes. 
 
 ```python
 def compute_slope(triangle_att):
-    """triangle_att = [tail_z, head_z, length]"""
+    """
+    triangle_att must be [tail_z, head_z, length]
+    """
     tail_z = triangle_att[0]
     head_z = triangle_att[1]
     length = triangle_att[2]
@@ -726,8 +730,12 @@ def compute_slope(triangle_att):
     x = np.amax([x, -1.0])
     theta = np.arcsin(x)
     theta_deg = theta * 180.0 / np.pi
+
+    # Limits the slope angle to a maximum of 20.0 degrees and 
+    # a minimum of -20.0 degrees
     theta_deg = np.amin([theta_deg, 20.0])
     theta_deg = np.amax([theta_deg, -20.0])
+
     return theta_deg
 ```
 
@@ -738,6 +746,7 @@ edges["slope_deg"] = edges[["tail_z", "head_z", "length"]].apply(
 )
 ```
 
+Here is the distribution of the linestrings slope over our network.
 
 ```python
 ax = edges.slope_deg.plot.hist(bins=25, alpha=0.7)
@@ -746,30 +755,20 @@ _ = ax.set(title="Edge slope distribution", xlabel="Slope (°)")
 
     
 <p align="center">
-  <img width="500" src="/img/2024-01-11_01/output_47_0.png" alt="Network visualization">
+  <img width="500" src="/img/2024-01-11_01/output_47_0.png" alt="Edge slope distribution">
 </p> 
 
+Now we can apply Tobler’s hiking function to each edge and compute the travel time:
 
 ```python
 edges["walking_speed_kmh"] = edges.slope_deg.map(lambda s: walking_speed_kmh(s))
-```
-
-
-```python
 edges["travel_time_s"] = 3600.0 * 1.0e-3 * edges["length"] / edges.walking_speed_kmh
-```
-
-
-```python
+# cleanup
 edges.drop(
     ["tail_z", "head_z", "length", "length", "slope_deg", "walking_speed_kmh"],
     axis=1,
     inplace=True,
 )
-```
-
-
-```python
 edges.head(3)
 ```
 
@@ -827,78 +826,9 @@ edges.head(3)
 </div>
 
 
+## Save the edges and nodes to files
 
-checking for missing values, parallel edges and loops:
-
-
-```python
-edges.isna().sum(axis=0)
-```
-
-
-
-
-    tail             0
-    head             0
-    geometry         0
-    travel_time_s    0
-    dtype: int64
-
-
-
-
-```python
-edges[["tail", "head"]].duplicated().sum()
-```
-
-
-
-
-    0
-
-
-
-
-```python
-edges[edges["tail"] == edges["head"]]
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>tail</th>
-      <th>head</th>
-      <th>geometry</th>
-      <th>travel_time_s</th>
-    </tr>
-  </thead>
-  <tbody>
-  </tbody>
-</table>
-</div>
-
-
-
- ## Save to file
-
+Ultimately, we will save our network as two dataframes—one for nodes and one for edges. Below is the list of supported drivers for the output format:
 
 ```python
 fiona.supported_drivers
@@ -929,7 +859,7 @@ fiona.supported_drivers
      'TopoJSON': 'r'}
 
 
-
+We are going to to use the GeoJSON driver:
 
 ```python
 %%time
