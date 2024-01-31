@@ -7,6 +7,12 @@ tags:
 - Python
 - OSM
 - OSMnx
+- pedestrian network
+- DTM
+- Elevation
+- rasterio
+- Pandas
+- GeoPandas
 ---
 
 
