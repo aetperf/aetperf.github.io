@@ -513,7 +513,7 @@ _ = plt.axis("off")
 
     
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-31_01/output_30_0.png" alt="Network visualization">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-01-31_01/output_30_0.png" alt="Network visualization">
 </p> 
 
 
