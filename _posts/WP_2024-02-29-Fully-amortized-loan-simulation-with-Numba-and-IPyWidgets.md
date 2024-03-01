@@ -12,7 +12,7 @@ $i$ : the monthy interest rate
 $P_m$ : the principal part of monthly payment $m$  
 $I_m$ : the interest part of monthly payment $m$  
 $T$ : the constant monthly payment  
-$B_m$ : the balance (principal still due) after the $m$-th payment
+$B_m$ : the balance [principal still due] after the $m$-th payment
 
 We have the following identities:
 - $i = r / 12$
@@ -20,11 +20,11 @@ We have the following identities:
 - $\sum_{m=1}^M P_m = A$
 - $B_M = 0$
 
-$\forall \; 1 \leq m \leq M:$
+$\forall \\; 1 \leq m \leq M:$
 - $T = P_m + I_m$
 - $B_m =A - (P_1 + ... + P_m)$
   
-$\forall \; 2 \leq m \leq M:$
+$\forall \\; 2 \leq m \leq M:$
 - $I_m = i B_{m-1}$
 - $B_m = B_{m-1} - P_m$
 
@@ -229,7 +229,6 @@ df.head(3)
 ```python
 df.tail(3)
 ```
-
 
 
 
