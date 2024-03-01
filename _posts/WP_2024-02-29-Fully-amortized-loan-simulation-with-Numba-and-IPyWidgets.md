@@ -55,7 +55,7 @@ And so:
 
 $$T= \frac{A}{\sum_{m=0}^{M-1} (1+i)^m} + i A$$
 
-For $i>0$, the denominator of the fraction can be simplified in the following way:
+For $i > 0$, the denominator of the fraction can be simplified in the following way:
 
 $$
 \begin{align*}
