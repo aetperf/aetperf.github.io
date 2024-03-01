@@ -55,7 +55,7 @@ And so:
 
 $$T= \frac{A}{\sum_{m=0}^{M-1} (1+i)^m} + i A$$
 
-For $i > 0$, the denominator of the fraction can be simplified in the following way:
+For $i \gt 0$, the denominator of the fraction can be simplified in the following way:
 
 $$
 \begin{align*}
@@ -316,7 +316,7 @@ plot_amortized_loan(amount=110_000, interest_rate_pc=3.78, period_m=180)
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-02-29_01/output_11_0.png" alt="static">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-02-29_01/output_11_0.png" alt="static">
 </p> 
     
 
@@ -359,7 +359,7 @@ _ = interact(
 ```
 
 <p align="center">
-  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-02-29_01/ipywidget.png" alt="ipywidget">
+  <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-02-29_01/ipywidget.png" alt="ipywidget">
 </p> 
 
 Thanks to Numba, each adjustment made using the slider widget triggers a swift response, leading to an almost instantaneous update of the figure.
