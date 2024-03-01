@@ -1,5 +1,5 @@
 ---
-title: Fully Amortized Loan simulation with Numba and IPyWidgets WIP
+title: Fully Amortized Loan simulation with Numba and IPyWidgets
 layout: post
 comments: true
 author: François Pacull
@@ -14,11 +14,7 @@ In this blog post, we will show how to use Python to simulate the amortization o
 
 ## Amortization formulas
 
-When you take out a loan, such as a mortgage or a car loan, you typically agree to repay the loan in equal monthly installments over a fixed period of time. This type of loan is known as a fully amortized loan.
-
-The process of calculating the monthly payments and tracking the outstanding balance of a fully amortized loan is known as amortization. In this section, we will derive the formulas for calculating the monthly payments and the outstanding balance of a fully amortized loan.
-
-We will use the following variables in our derivation:
+When you take out a loan, you typically agree to repay the loan in equal monthly installments over a fixed period of time. This type of loan is known as a fully amortized loan. We will use the following variables in our derivation:
 
 $A$ : the principal amount borrowed  
 $M$ : the total number of monthly payments  
@@ -49,7 +45,7 @@ It is easy to show by recursion that:
 
 $$P_m=(T-iA)(1+i)^{m-1}$$
 
-Indeed we have $P_1=T-I_1=T-iA$, and:
+Indeed, we have $P_1=T-I_1=T-iA$, and:
 
 $$
 \begin{align*}
@@ -90,7 +86,7 @@ $$P_1 = \frac{i A}{(1+i)^m - 1}$$
 
 ## Imports
 
-In the previous section, we derived the formulas for calculating the monthly payments and the outstanding balance of a fully amortized loan. In the next section, we will implement these formulas in Python. First, let's import the necessary libraries:
+In the next section, we will implement these formulas in Python. First, let's import the necessary libraries:
 
 ```python
 import ipywidgets as widgets
@@ -109,7 +105,7 @@ We are operating on Python version 3.11.5 and running on a Linux x86_64 machine.
     numba                  : 0.57.1
 
 
-## Implementing the Amortization Formulae in Python
+## Implementing the Amortization Formulas in Python
 
 ```python
 @jit(nopython=True)
@@ -404,6 +400,7 @@ _ = interact(
   <img width="800" src="/img/2024-02-29_01/ipywidget.png" alt="ipywidget">
 </p> 
 
+Thanks to Numba, each adjustment made using the slider widget triggers a swift response, leading to an almost instantaneous update of the figure.
 
 ## References
 
