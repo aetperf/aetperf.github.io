@@ -400,7 +400,7 @@ _ = interact(
   <img width="800" src="/img/2024-02-29_01/ipywidget.png" alt="ipywidget">
 </p> 
 
-Thanks to Numba, each adjustment made using the slider widget triggers a swift response, leading to an almost instantaneous update of the figure.
+Thanks to Numba, each adjustment made using a slider widget triggers a swift response, leading to an almost instantaneous update of the figure.
 
 ## References
 
