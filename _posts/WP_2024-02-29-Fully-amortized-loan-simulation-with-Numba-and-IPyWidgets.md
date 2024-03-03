@@ -361,7 +361,7 @@ _ = interact(
   <img width="1200" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-02-29_01/ipywidget.png" alt="ipywidget">
 </p> 
 
-Thanks to Numba, each adjustment made using a slider widget triggers a swift response, leading to an almost instantaneous update of the figure.
+Thanks to Numba, each adjustment made using a slider widget triggers a swift response, leading to an almost instantaneous update of the figure in the Jupyter notebook.
 
 ## References
 
