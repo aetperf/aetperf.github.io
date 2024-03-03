@@ -230,8 +230,6 @@ df.head(3)
 df.tail(3)
 ```
 
-
-
 <div>
 <table border="1" class="dataframe">
   <thead>
@@ -276,6 +274,7 @@ df.tail(3)
 </table>
 </div>
 
+One aspect not addressed in this simulation is the rounding of results to two decimal places, which could be a consideration for future refinements.
 
 
 ## Plot

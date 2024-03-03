@@ -314,6 +314,7 @@ df.tail(3)
 </table>
 </div>
 
+One aspect not addressed in this simulation is the rounding of results to two decimal places, which could be a consideration for future refinements.
 
 
 ## Plot
