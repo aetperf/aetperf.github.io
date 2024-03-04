@@ -1,5 +1,5 @@
 ---
-title: Calculating walking isochrones with Python WIP
+title: Calculating walking isochrones with Python
 layout: post
 comments: true
 author: François Pacull
@@ -15,14 +15,9 @@ tags:
 - KDTree
 ---
 
-In this blog post, we'll explore how to calculate walking isochrones using Python, taking into account the slope of the terrain. 
+In this blog post, we'll explore how to calculate walking isochrones using Python, taking into account the slope of the terrain. An isochrone is a line connecting all points that can be reached within a certain time from/to a specified location. By incorporating slope into our calculations, we can create more accurate isochrones. 
 
-An isochrone is a line connecting all points that can be reached within a certain time from/to a specified location. By incorporating slope into our calculations, we can create more accurate isochrones. 
-
-We'll use a pedestrian network dataset for Lyon, France, and demonstrate how to load the data, find the closest node to a point of interest, and calculate isochrones using Dijkstra's algorithm. We'll also show how to visualize the results using [GeoPandas](https://geopandas.org/en/stable/) and [Matplotlib](https://matplotlib.org/).
-
-To compute Dijkstra's algorithm, we will use the [edsger](https://pypi.org/project/edsger/) library, which is a sandbox repository we created to experiment with graph algorithms.
-
+We'll use a pedestrian network dataset for Lyon, France, and demonstrate how to load the data, find the closest node to a point of interest, and calculate isochrones using Dijkstra's algorithm. 
 
 ## Imports
 
@@ -205,16 +200,16 @@ To better understand the terrain of our area of interest, here is a topographic 
   <img width="500" src="/img/2024-03-01_01/relief_CroixRousse.png" alt="relief_CroixRousse">
 </p> 
 
-Note that the graph is not planar, which can be due to features such as a straight pedestrian tunnel under the hill. This means that the graph cannot be drawn in two dimensions without edges crossing each other. This can create challenges when generating the isochrones with concave hulls, as it may result in "weakly" connected regions.
+Note that the graph is not planar, which can be due to features such as a straight pedestrian tunnel under a hill. This means that the graph cannot be drawn in two dimensions without edges crossing each other. This can create challenges when generating the isochrones with concave hulls, as it may result in "weakly" connected sub-regions.
 
-Here's the code to define the POI and convert it to Lambert 93 coordinates using the [pyproj](https://pyproj4.github.io/pyproj/stable/) library. 
+Here's the code to define the POI and convert it to a projected coordinate reference system (Lambert 93) using the [pyproj](https://pyproj4.github.io/pyproj/stable/) library. 
 
 ```python
 x, y = 4.831721769832956, 45.774505209895295
 poi_wgs84 = Point(x, y)
 
 wgs84 = pyproj.CRS("EPSG:4326")
-lam93 = pyproj.CRS("EPSG:2154")
+lam93 = pyproj.CRS("EPSG:2154")  # Lambert 93
 project = pyproj.Transformer.from_crs(wgs84, lam93, always_xy=True).transform
 poi_lam93 = transform(project, poi_wgs84)
 ```
@@ -485,7 +480,7 @@ graph_edges = pd.concat([edges, connectors], axis=0)
 
 ## Dijkstra
 
-Now that we have created the graph with the connectors, we can compute the shortest paths from/to the POI using Dijkstra's algorithm. We will use the `Dijkstra` class from the `edsger` library to do this.
+Now that we have created the graph with the connectors, we can compute the shortest paths from/to the POI using Dijkstra's algorithm. We will use the `Dijkstra` class from the [edsger](https://pypi.org/project/edsger/) library, which is a playground repository we created to experiment with graph algorithms.
 
 First, we need to convert the "tail" and "head" columns of the `graph_edges` dataframe to unsigned 32-bit integers, as required by the `Dijkstra` class:
 
@@ -577,7 +572,7 @@ The `tt_out` and `tt_in` arrays contain the travel times from the POI to all oth
 
 ## Isochrones
 
-The function `create_isochrones` is defined to generate the isochrones. The function loops through the defined travel time steps and creates a MultiPoint object for each travel time, containing all the coordinates that are within reach from/to the POI. The concave hull of each set of points is then calculated using the `concave_hull` function from the [shapely](https://shapely.readthedocs.io/en/stable/reference/shapely.concave_hull.html) library, with the specified ratio and hole allowance.
+The function `create_isochrones` is defined to generate the isochrones. The function loops through the defined travel time steps and creates a MultiPoint object for each travel time value, containing all the coordinates that are within reach from/to the POI. The concave hull of each set of points is then calculated using the `concave_hull` function from the [shapely](https://shapely.readthedocs.io/en/stable/reference/shapely.concave_hull.html) library, with the specified ratio and hole allowance.
 
 ```python
 def create_isochrones(
@@ -732,9 +727,7 @@ _ = plt.axis("off")
 </p> 
 
     
-The plot reveals a small discrepancy between the area that can be reached within 15 minutes from the hilltop and the area that can be reached within 15 minutes to the hilltop. This is due to the presence of the hill, which affects the walking speed and results in different isochrone shapes.
-
-As someone who lives near this POI, I can confirm that the difference between the "from" and "to" 15-minutes isochrones is quite significant. I guess that I tend to walk faster downhill and slower uphill than what is predicted by Tobler's hiking function.
+The plot reveals a small discrepancy between the area that can be reached within 15 minutes from the hilltop and the area that can be reached within 15 minutes to the hilltop. As someone who lives near this POI, I can confirm that the difference between the "from" and "to" 15-minutes isochrones is quite significant. I guess that I tend to walk faster downhill and slower uphill than what is predicted by Tobler's hiking function.
 
 
 {% if page.comments %}
