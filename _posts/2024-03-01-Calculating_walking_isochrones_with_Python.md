@@ -651,6 +651,8 @@ Now let's create and plot these isochrones.
 
 ### From the POI
 
+5, 10 and 15 minutes "outward" isochrones.
+
 ```python
 isochrones_out = create_isochrones(
     coords, tt_col="tt_out", x_col="x_2154", y_col="y_2154", steps_m=steps
@@ -676,6 +678,7 @@ _ = plt.axis("off")
 
 ### To the POI
 
+5, 10 and 15 minutes "inward" isochrones.
 
 ```python
 isochrones_in = create_isochrones(
