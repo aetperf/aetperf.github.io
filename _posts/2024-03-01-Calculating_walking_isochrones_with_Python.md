@@ -649,7 +649,7 @@ coords["tt_in"] = tt_in[:-1]
 
 Now let's create and plot these isochrones.
 
-### From the hilltop
+### From the POI
 
 ```python
 isochrones_out = create_isochrones(
@@ -674,7 +674,7 @@ _ = plt.axis("off")
   <img width="800" src="/img/2024-03-01_01/output_41_0.png" alt="From">
 </p> 
 
-### To the hilltop
+### To the POI
 
 
 ```python
@@ -707,6 +707,9 @@ _ = plt.axis("off")
 
 ### Overlap
 
+We keep the same colors as before:
+- *from the POI* in blue
+- *to the POI* in red
 
 ```python
 t = 15  # 15 minutes
