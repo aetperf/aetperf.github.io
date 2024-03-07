@@ -1,19 +1,3 @@
----
-title: Calculating walking isochrones with Python
-layout: post
-comments: true
-author: François Pacull
-tags: 
-- Python
-- Isochrones
-- Spatial analysis
-- Dijkstra
-- Shapely
-- concave_hull
-- GeoPandas
-- sklearn
-- KDTree
----
 
 In this blog post, we'll explore how to calculate walking isochrones using Python, taking into account the slope of the terrain. An isochrone is a line connecting all points that can be reached within a certain time from/to a specified location. By incorporating slope into our calculations, we can create more accurate isochrones. 
 
@@ -59,7 +43,7 @@ We are operating on Python version 3.11.7 and running on a Linux x86_64 machine.
 
 ## Load the network
 
-In this section, we load the nodes and edges datasets from GeoJSON files. The edges dataset has a travel time that takes edge slope into account. This directed network was created in a previous post: [Create a routable pedestrian network with elevation](https://aetperf.github.io/2024/01/31/Create-a-routable-pedestrian-network-with-elevation.html)
+In this section, we load the nodes and edges datasets from GeoJSON files. The edges dataset has a travel time that takes edge slope into account. This directed network was created in a previous post: [Create a routable pedestrian network with elevation](https://www.architecture-performance.fr/ap_blog/create-a-routable-pedestrian-network-with-elevation/)
 
 
 
@@ -78,19 +62,6 @@ nodes.head(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -140,19 +111,6 @@ edges.head(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -191,13 +149,13 @@ edges.head(3)
 In order to compute the isochrones, we first need to find the closest node to our Point Of Interest (POI). We've chosen a POI location in the center of the Croix-Rousse district in Lyon. This location is interesting because it's a hilly area with a lot of variation in elevation, which will make for some interesting isochrones.
 
 <p align="center">
-  <img width="500" src="/img/2024-03-01_01/POI_CroixRousse.png" alt="POI_CroixRousse">
+  <img width="500" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-03-01_01/POI_CroixRousse.png" alt="POI_CroixRousse">
 </p> 
 
 To better understand the terrain of our area of interest, here is a topographic map that displays the changes in elevation.
 
 <p align="center">
-  <img width="500" src="/img/2024-03-01_01/relief_CroixRousse.png" alt="relief_CroixRousse">
+  <img width="500" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-03-01_01/relief_CroixRousse.png" alt="relief_CroixRousse">
 </p> 
 
 Note that the graph is not planar, which can be due to features such as a straight pedestrian tunnel under a hill. This means that the graph cannot be drawn in two dimensions without edges crossing each other. This can create challenges when generating the isochrones with concave hulls, as it may result in "weakly" connected sub-regions.
@@ -286,19 +244,6 @@ nodes.iloc[ind[0]]
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -414,19 +359,6 @@ connectors.head(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -673,7 +605,7 @@ _ = plt.axis("off")
 ```
 
 <p align="center">
-  <img width="800" src="/img/2024-03-01_01/output_41_0.png" alt="From">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-03-01_01/output_41_0.png" alt="From">
 </p> 
 
 ### To the POI
@@ -704,7 +636,7 @@ _ = plt.axis("off")
 ```
 
 <p align="center">
-  <img width="800" src="/img/2024-03-01_01/output_44_0.png" alt="To">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-03-01_01/output_44_0.png" alt="To">
 </p> 
 
 
@@ -729,32 +661,8 @@ _ = plt.axis("off")
 
 
 <p align="center">
-  <img width="800" src="/img/2024-03-01_01/output_46_0.png" alt="Overlap">
+  <img width="800" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-03-01_01/output_46_0.png" alt="Overlap">
 </p> 
 
     
 The plot reveals a small discrepancy between the area that can be reached within 15 minutes from the hilltop and the area that can be reached within 15 minutes to the hilltop. As someone who lives near this POI, I can confirm that the difference between the "from" and "to" 15-minutes isochrones is quite significant. I guess that I tend to walk faster downhill and slower uphill than what is predicted by Tobler's hiking function.
-
-
-{% if page.comments %}
-<div id="disqus_thread"></div>
-<script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-{% endif %}
