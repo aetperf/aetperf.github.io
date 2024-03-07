@@ -59,7 +59,7 @@ We are operating on Python version 3.11.7 and running on a Linux x86_64 machine.
 
 ## Load the network
 
-In this section, we load the nodes and edges datasets from GeoJSON files. The edges dataset has a travel time that takes edge slope into account. This directed network was created in a previous post: [Create a routable pedestrian network with elevation](https://aetperf.github.io/2024/01/31/Create-a-routable-pedestrian-network-with-elevation.html)
+In this section, we load the nodes and edges datasets from GeoJSON files. The edges dataset has a travel time that takes edge slope into account. This directed network was created in a previous post: [*Create a routable pedestrian network with elevation*](https://aetperf.github.io/2024/01/31/Create-a-routable-pedestrian-network-with-elevation.html)
 
 
 
