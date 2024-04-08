@@ -20,7 +20,7 @@ tags:
 In this blog post, we will explore how to enrich a digital terrain model (DTM) using Python. We are going to use a DTM raster file of the region of Lyon, France, which was created in a previous post using data from the French National Geographic Institute (IGN): 
 [Lyon's Digital Terrain Model with IGN Data](https://aetperf.github.io/2023/12/26/Lyon-s-Digital-Terrain-Model-with-IGN-Data.html). We will crop the DTM to a specific bounding box and enrich it with additional data using the efficient [RichDEM](https://richdem.readthedocs.io/en/latest/) package. Specifically, we will add slope and aspect data to the DTM, which can be used to analyze the steepness and orientation of the terrain.
 
-Once we have enriched the DTM, we will save it to a new file and query it to extract data at specific locations. Finally, we will visualize hill shades with different azimuth and altitude angles, which helps visualizing the terrain data.
+Once we have enriched the DTM, we will save it to a new file and query it to extract data at specific locations. Finally, we will visualize hill shades with different azimuth and altitude angles.
 
 ## Imports
 
@@ -66,7 +66,7 @@ First we need to load the data and crop the raster file with a bounding box expr
 
 ###  Bounding box definition with longitude and latitude
 
-Define the bounding box coordinates in EPSG:4326 and create a polygon from the points.
+We define the bounding box coordinates in EPSG:4326 (WGS 84) and create a polygon from the points.
 
 ```python
 # Define bounding box coordinates in EPSG:4326
@@ -95,7 +95,7 @@ ax.set_axis_off()
 
 ### CRS change to a projected CRS
 
-Now we change the CRS of the bounding box to a projected CRS in order to match the CRS of the raster file. A projected CRS is a coordinate system that uses a flat, two-dimensional surface to represent the three-dimensional surface of the Earth. This is in contrast to a geographic CRS, which uses angles (latitude and longitude) to represent locations on the Earth's surface. The raster file we are working with in this blog post uses a projected CRS (EPSG:2154), which is a common CRS for maps of France. 
+Now we change the CRS of the bounding box to a projected CRS in order to match the CRS of the raster file. A projected CRS is a coordinate system that uses a flat, two-dimensional surface to represent the three-dimensional surface of the Earth. This is in contrast to a geographic CRS, which uses angles (latitude and longitude) to represent locations on the Earth's surface. The raster file we are working with in this blog post uses a projected CRS (EPSG:2154 - Lambert 93), which is a common CRS for maps of France. 
 
 The `geometry.values[0]` part of the code is used to display the geometry in its new CRS.
 
@@ -402,14 +402,14 @@ point_df
 
 ## Hill shade visualization
 
-In the final section of this blog post, we will explore how to create hillshade visualizations of the enriched DTM using the `hillshade()` function from the [earthpy.spatial](https://earthpy.readthedocs.io/en/latest/api/earthpy.spatial.html ) module.   Hillshading is a technique used to create a shaded relief map that gives the illusion of three-dimensional depth to a two-dimensional surface. I discoved this module thanks to a post from [Nicolas Mondon](https://github.com/nmondon), a data journalist who creates some cool content.
+In the final section of this blog post, we will explore how to create hillshade visualizations of the enriched DTM using the `hillshade()` function from the [earthpy.spatial](https://earthpy.readthedocs.io/en/latest/api/earthpy.spatial.html ) module.   Hillshading is a technique used to create a shaded relief map that gives the illusion of three-dimensional depth to a two-dimensional surface. I discoved this module thanks to a post from [Nicolas Mondon](https://github.com/nmondon), a data journalist who creates some great content.
 
 The `hillshade()` function takes three arguments: the elevation raster, the azimuth angle, and the altitude angle. 
 
 <p align="center">
   <img width="250" src="/img/2024-04-08_01/Azimuth-Altitude_schematic.png" alt="Azimuth-Altitude_schematic">
 </p> 
-**Source :** [wikipedia](https://en.wikipedia.org/wiki/Azimuth#/media/File:Azimuth-Altitude_schematic.svg)
+**Source :** [wikipedia](https://en.wikipedia.org/wiki/Azimuth#/media/File:Azimuth-Altitude_schematic.svg) CC BY-SA 3.0
  
 In the first example, we set the azimuth angle to 90 degrees and the altitude angle to 45 degrees. 
 
