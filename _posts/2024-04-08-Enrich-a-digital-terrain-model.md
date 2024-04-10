@@ -419,7 +419,7 @@ altitude = 45
 
 hillshade = es.hillshade(elevation, azimuth=azimuth, altitude=altitude)
 
-# Plot the hillshade layer with the modified azimuth
+# Plot the hillshade layer with the specified azimuth and altitude
 _ = ep.plot_bands(
     hillshade,
     cbar=False,
@@ -440,7 +440,7 @@ altitude = 0
 
 hillshade = es.hillshade(elevation, azimuth=azimuth, altitude=altitude)
 
-# Plot the hillshade layer with the modified azimuth
+# Plot the hillshade layer with the specified azimuth and altitude
 _ = ep.plot_bands(
     hillshade,
     cbar=False,
