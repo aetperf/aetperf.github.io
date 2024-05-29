@@ -5,9 +5,19 @@ comments: true
 author: François Pacull
 tags: 
 - Python
+- DuckDB
+- Hybrid Information Retriever
+- Semantic search
+- Lexical search
+- Hybris search
+- sentence_transformers
+- semchunk
+- Sementic chunking
+- BM25
+- Full text search
 ---
 
-When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be usefull. 
+When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be useful. 
 
 In this post, we'll implement an hybrid search in Python with [DuckDB](https://duckdb.org/), and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine the respective scores to return the top $k$ matching results.
 
@@ -32,7 +42,7 @@ This post is largely motivated by the paper by Sebastian Bruch, Siyu Gai and Ami
 
 ## Hybrid search<a name="hybrid_search"></a>
 
-Let’s briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two disctinct processes: semantic search over a dense vectorstore and lexical search over a sparse index. The result rankings from both searchs are then combined in a process called fusion, leading to the hybrid ranking.
+Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The result rankings from both searches are then combined in a process called fusion, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
 
 <p align="center">
   <img width="900" src="/img/2024-05-28_01/hybrid_search_overview.png" alt="hybrid_search_overview">
@@ -149,6 +159,7 @@ Here is a short introduction to the BM25 algoruthm from the [wikipedia page](htt
 
 We are going to use the [full text search extension](https://duckdb.org/docs/extensions/full_text_search) of DuckDB. The retrieval function is the [BM25 macro](https://duckdb.org/docs/extensions/full_text_search#match_bm25-function).
 
+As mentioned  by James Briggs in [this article [4]](#bib04) there are other fancier sparse search methods, such as [SPLADE](https://arxiv.org/abs/2107.05720).
 
 ## The Dataset<a name="the_dataset"></a>
 
@@ -158,11 +169,11 @@ We use the [dbpedia_14 dataset](https://huggingface.co/datasets/fancyzhx/dbpedia
   <img width="900" src="/img/2024-05-28_01/dataset_card_HF.png" alt="dataset_card_HF">
 </p>
 
-The dataset has a total number of rows of 630000 and the size of the dataset files is 119 MB. Here is a brief description of the dataset from the Hugging Face [dataset page](https://huggingface.co/datasets/fancyzhx/dbpedia_14):
+The dataset has a total number of rows of 630000 and the total size of the files is 119 MB. Here is a brief description of the dataset from the Hugging Face [dataset page](https://huggingface.co/datasets/fancyzhx/dbpedia_14):
 
 > The DBpedia ontology classification dataset is constructed by picking 14 non-overlapping classes from DBpedia 2014. They are listed in classes.txt. From each of thse 14 ontology classes, we randomly choose 40,000 training samples and 5,000 testing samples. Therefore, the total size of the training dataset is 560,000 and testing dataset 70,000. There are 3 columns in the dataset (same for train and test splits), corresponding to class index (1 to 14), title and content.
 
-We access the dataset using the great [`datasets`](https://huggingface.co/docs/datasets/index) library by Hugging Face.
+We access the dataset using the [`datasets`](https://huggingface.co/docs/datasets/index) library by Hugging Face.
 
 ```python
 import re
@@ -221,6 +232,25 @@ print(df.content_word_count.describe())
 	Name: content_word_count, dtype: float64
 
 So we observe that most of the text content is relatively short except for a few entries. Most of the time, the content is already below the input size of the model. In fact, only 76 new text chunks were created by the splits over 600,000 entries. The maximum number of chunks for a single text entry was 8. 
+
+Note that we could have queried directly the dataset hosted by Hugging Face from DuckDB using the [httpfs extension](https://duckdb.org/docs/extensions/httpfs/overview.html). See this post more more details : [Access 150k+ Datasets from Hugging Face with DuckDB](https://duckdb.org/2024/05/29/access-150k-plus-datasets-from-hugging-face-with-duckdb).
+
+```python
+con = duckdb.connect()
+
+con.sql("INSTALL httpfs;")
+con.sql("LOAD httpfs;")
+
+query = """
+SELECT *
+FROM 'hf://datasets/fancyzhx/dbpedia_14/dbpedia_14/train-00000-of-00001.parquet';"""
+train_df = con.sql(query).df()
+train_df["split"] = "train"
+print(f"train_df.shape : {train_df.shape}")
+
+con.close()
+```
+
 
 ## Implementation with DuckDB<a name="implementation_with_duckdb"></a>
 
@@ -529,10 +559,10 @@ $$\Phi_{\mbox{TPP}} = \frac{s - m_t}{M-m_t}$$
 
 where:
 - $s$ is the score function,
-- $m_t$ is the theoretical miminum of $s$ (-1 for the semantic score, 0 for the lexical search),
+- $m_t$ is the theoretical minimum of $s$ (-1 for the semantic score, 0 for the lexical search),
 - $M$ is the maximum value of $s$ returned for the current query.
 
-This normalization process is tricky for the lexical score, since the score range depends on the number of words in the query, the global vocabulary, the content entries... Here is a mention of this difficulty by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
+This normalization process is tricky for the lexical score, since the score range depends on the number of words in the query, the global vocabulary, the content entries... Here is a mention of this challenge by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
 
 > Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
 
@@ -687,11 +717,11 @@ while True:
 ### Example results<a name="example_results"></a>
 
 In the following examples, we also included the content of the best matching entry after displaying the ranking with the five best results. The following scores are displayed:
-- sem_sc : semantic score
-- sem_sc_n : normalized semantic score
-- lex_sc : lexical score
-- lex_sc_n : normalized lexical score
-- convex_sc : convex/hybrid score
+- `sem_sc` : semantic score
+- `sem_sc_n` : normalized semantic score
+- `lex_sc` : lexical score
+- `lex_sc_n` : normalized lexical score
+- `convex_sc` : convex/hybrid score
 
 
 ```
@@ -781,7 +811,7 @@ sem/lex search elapsed time : 0.5780/0.1205 s
  Balady citron (Arabic: أترج بلدي‎) or Palestinian citron (Hebrew: הָאֶתְרוֹג הַפַּלֶשְׂתִּינִי‎) is a variety of citron or etrog grown in Israel for Jewish ritual purposes.
 ```
 
-We made a typo in the search and entered citron instead of citroen or citroën. The semantic search get it right : the Citroën C5 antry get the maximum semantic score. However the lexical search returns 0 for this entry and 1 for a lemon fruit entry, which get the first match with the combined score. Maybe we should impose a minimum value for the normalized semantic score in order to avoid this kind of situation. 
+We made a mistake in the search query by typing "citron" instead of "citroen" or "citroën". Despite the error, the semantic search was able to correctly identify the Citroën C5 as the most relevant result, with the highest semantic score. However, the lexical search returned a score of 0 for this entry and a score of 1 for a lemon fruit entry, which ended up being the top result with the combined score. To prevent this kind of situation in the future, we could consider imposing a minimum threshold for the normalized semantic score. 
 
 
 ## References<a name="references"></a>
