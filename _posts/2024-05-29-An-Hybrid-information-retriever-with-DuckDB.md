@@ -19,9 +19,9 @@ tags:
 
 When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be useful. 
 
-In this post, we'll implement an hybrid search in Python with [DuckDB](https://duckdb.org/), and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine the respective scores to return the top $k$ matching results.
+In this post, we'll implement an hybrid search function in Python with [DuckDB](https://duckdb.org/), and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine the respective scores to return the top $k$ matching results.
 
-This post is largely motivated by the paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval* [1]](#bib01).
+This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
 **Outline**
 - [Hybrid search](#hybrid_search)
@@ -43,17 +43,17 @@ This post is largely motivated by the paper by Sebastian Bruch, Siyu Gai and Ami
 
 ## Hybrid search<a name="hybrid_search"></a>
 
-Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The result rankings from both searches are then combined in a process called fusion, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
+Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The resulting rankings from both searches are then combined in a fusion process, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
 
 <p align="center">
   <img width="900" src="/img/2024-05-29_01/hybrid_search_overview.png" alt="hybrid_search_overview">
 </p>
 
-Let's start by describing each of these search modules: semantic and lexical search. Note that hybrid search could also be used to mix only distinct semantic approaches.
+Let's start by describing each of these search modules: semantic and lexical search. Note that hybrid search could also be used to mix distinct semantic approaches.
 
 ### Semantic search<a name="semantic-search"></a>
 
-Semantic search is a method that seeks to understand the meaning and context of a search query. It uses natural language processing and machine learning techniques to analyze the relationships between words and concepts. Semantic search can be particularly useful for complex or ambiguous queries. Because it works by comparing dense vectors with a compact fixed size, we may refer to it as a *dense retriever*. Here is a brief description of dense embedding retrievers by [Jaehyung Seo et al. [2]](#bib02):
+Semantic search is a method that seeks to understand the meaning and context of a search query. It uses natural language processing and machine learning techniques to analyze the relationships between words and concepts. It can be particularly useful for complex or ambiguous queries. Because it works by comparing dense vectors with a compact fixed size, we may refer to it as a *dense retriever*. Here is a brief description of dense embedding retrievers by [Jaehyung Seo et al. [2]](#bib02):
 
 > Dense-embedding-based information retrieval compares the semantic similarity between a query 
 and a search target database in a latent space expressed as a continuous real value. Since this 
@@ -74,16 +74,16 @@ paragraph "Python is an interpreted, high-level and general-purpose programming
 language. Python’s design philosophy …". For asymmetric tasks, flipping the 
 query and the entries in your corpus usually does not make sense.
 
-As advised by the latter website, we use a [Pre-Trained MS MARCO Model](https://www.sbert.net/docs/pretrained-models/msmarco-v3.html). The exact version is : [msmarco-distilbert-base-tas-b](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) available on [HuggingFace](https://huggingface.co). Here is a short description from the Hugging Face model card:
+As advised by this sentence-transformers website, we use a [Pre-Trained MS MARCO Model](https://www.sbert.net/docs/pretrained-models/msmarco-v3.html). The exact version is : [msmarco-distilbert-base-tas-b](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) available on [HuggingFace](https://huggingface.co). Here is a short description from the Hugging Face model card:
 
 > DistilBert for Dense Passage Retrieval trained with Balanced Topic Aware Sampling (TAS-B)  
 > We provide a retrieval trained DistilBert-based model (we call the dual-encoder then dot-product scoring architecture BERT_Dot) trained with Balanced Topic Aware Sampling on MSMARCO-Passage.
 
-The embedding dimension of the dense vectors is 768, with also a rather small token input size of 512. 
+Although this model has been tuned for dot-product, we are going to use it for cosine similarity. The embedding dimension of the dense vectors is 768, with also a rather small token input size of 512. 
 
 #### Sentence transformers<a name="sentence_transformers"></a>
 
-In the following, we use the great Python package [sentence-transformers](https://sbert.net/) to access the model from Hugging Face. Here is a short example:
+In the following, we use the Python package [sentence-transformers](https://sbert.net/) to access the model from Hugging Face. Here is a short example of model instantiation with sentence-transformers:
 
 ```python
 import numpy as np
@@ -172,9 +172,9 @@ where:
 - $\tilde{s}_{\mbox{lexical}}$ the normalized lexical search score. 
 - $\alpha$ is a constant parameter between 0 and 1.
 
-The normalization of the scores is an important part since it ensures that we combine scores with values between 0 and 1. The Theoretical min-max scaling is used:
+The normalization of the scores is an important part since it ensures that we combine scores with values between 0 and 1. The theoretical min-max scaling $\Phi_{\mbox{TMM}}$ is used:
 
-$$\Phi_{\mbox{TPP}} = \frac{s - m_t}{M-m_t}$$
+$$\tilde{s} = \Phi_{\mbox{TMM}}(s) = \frac{s - m_t}{M-m_t}$$
 
 where:
 - $s$ is the score function,
@@ -185,7 +185,7 @@ This normalization process is tricky for the lexical score, since the score rang
 
 > Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
 
-An alternative to convex combination is Reciprocal Rank Fusion (RRF) [[6]](#bib06). Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01)
+Finally, an alternative to convex combination with theoretical minimum-maximum normalization (TM2C2) is Reciprocal Rank Fusion (RRF) [[6]](#bib06). Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01)
 
 > We found that RRF is sensitive to its parameters. We also observed empirically that convex
 combination of normalized scores outperforms RRF on in-domain and out-of-domain datasets [...].  
