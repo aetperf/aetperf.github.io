@@ -23,13 +23,14 @@ In this post, we'll implement an hybrid search in Python with [DuckDB](https://d
 
 This post is largely motivated by the paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval* [1]](#bib01).
 
-**Table of content**
+**Outline**
 - [Hybrid search](#hybrid_search)
 	- [Semantic search](#semantic-search)
 		- [Asymmetric semantic search](#asymmetric_semantic_search)
 		- [Sentence transformers](#sentence_transformers)
 		- [Semantic chunking](#Semantic_chunking)
 	- [Lexical search](#lexical_search)
+	- [Fused score](#fused_score)
 - [The Dataset](#the_dataset)
 - [Implementation with DuckDB](#implementation_with_duckdb)
 	- [Load and process the dataset](#load_and_process_the_dataset_implem)
@@ -157,9 +158,41 @@ Here is a short introduction to the BM25 algoruthm from the [wikipedia page](htt
 
 > BM25 is a bag-of-words retrieval function that ranks a set of documents based on the query terms appearing in each document, regardless of their proximity within the document.
 
-We are going to use the [full text search extension](https://duckdb.org/docs/extensions/full_text_search) of DuckDB. The retrieval function is the [BM25 macro](https://duckdb.org/docs/extensions/full_text_search#match_bm25-function).
+We are going to use the [full text search extension](https://duckdb.org/docs/extensions/full_text_search) of DuckDB. The retrieval function is the [BM25 macro](https://duckdb.org/docs/extensions/full_text_search#match_bm25-function). As mentioned  by James Briggs in [this article [4]](#bib04) there are other fancier sparse search methods, such as [SPLADE](https://arxiv.org/abs/2107.05720).
 
-As mentioned  by James Briggs in [this article [4]](#bib04) there are other fancier sparse search methods, such as [SPLADE](https://arxiv.org/abs/2107.05720).
+## Fused score<a name="fused_score"></a>
+
+As advised in [Sebastian Bruch et al. [1]](#bib01), we use a convex combination to fuse both scores:
+
+$$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + (1-\alpha) \tilde{s}_{\mbox{lexical}}$$
+
+where: 
+- $s_{\mbox{hybrid}}$ is the hybrid score, 
+- $\tilde{s}_{\mbox{semantic}}$ the normalized semantic search score, and 
+- $\tilde{s}_{\mbox{lexical}}$ the normalized lexical search score. 
+- $\alpha$ is a constant parameter between 0 and 1.
+
+The normalization of the scores is an important part since it ensures that we combine scores with values between 0 and 1. The Theoretical min-max scaling is used:
+
+$$\Phi_{\mbox{TPP}} = \frac{s - m_t}{M-m_t}$$
+
+where:
+- $s$ is the score function,
+- $m_t$ is the theoretical minimum of $s$ (-1 for the semantic score, 0 for the lexical search),
+- $M$ is the maximum value of $s$ returned for the current query.
+
+This normalization process is tricky for the lexical score, since the score range depends on the number of words in the query, the global vocabulary, the content entries... Here is a mention of this challenge by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
+
+> Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
+
+An alternative to convex combination is Reciprocal Rank Fusion (RRF) [[6]](#bib06). Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01)
+
+> We found that RRF is sensitive to its parameters. We also observed empirically that convex
+combination of normalized scores outperforms RRF on in-domain and out-of-domain datasets [...].  
+> We believe that a convex combination with theoretical minimum-maximum normalization
+(TM2C2) indeed enjoys properties that are important in a fusion function. Its parameter, too,
+can be tuned sample-efficiently or set to a reasonable value based on domain knowledge.
+
 
 ## The Dataset<a name="the_dataset"></a>
 
@@ -348,8 +381,6 @@ load_and_process_dbpedia_14(DUCKDB_FILE_PATH)
 
 ### Create the embeddings<a name="create_the_embeddings_implem"></a>
 
-This step is rather long. It may take more than an hour on a CPU...
-
 ```python
 EMBEDDING_DIMENSION = 768
 
@@ -410,6 +441,8 @@ con.close()
 	│ 10 rows                                                                                                                                                     3 columns │
 	└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
+
+This step is rather long. It may take more than an hour on a CPU... Note that is possible to perform it on multiple CPUs or GPUs with [`start_multi_process_pool`](https://www.sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html#sentence_transformers.SentenceTransformer.start_multi_process_pool).
 
 We can now perform a semantic search with the following function:
 
@@ -486,7 +519,7 @@ con.execute(query)
 con.close()
 ```
 
-We can now perform a lexical search with this function:
+The index creation takes a few seconds for the 600000 entries of the dataset. We can now perform a lexical search with this function:
 
 ```python
 def full_text_search(
@@ -542,29 +575,6 @@ full_text_search(DUCKDB_FILE_PATH, search_txt)
 ### Hybrid search<a name="hybrid_search_implem"></a>
 
 We now combine both approaches in a single function for hybrid search. The function first gets the dense vector representation of the query using the embedding model. It then performs a semantic search by querying the vectorstore using the cosine similarity between the query vector and the dense vector representations stored in the embedding_column. The results are sorted by cosine similarity in descending order and limited to `k_dense=100` results. The function then performs a lexical search by querying the full-text search index using the BM25 similarity between the query text and the documents stored in the table. The results are sorted by BM25 similarity in descending order and limited to `k_sparse=100` results.
-
-As advised in [Sebastian Bruch et al. [1]](#bib01), we use a convex combination to fuse both scores:
-
-$$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + (1-\alpha) \tilde{s}_{\mbox{lexical}}$$
-
-where: 
-- $s_{\mbox{hybrid}}$ is the hybrid score, 
-- $\tilde{s}_{\mbox{semantic}}$ the normalized semantic search score, and 
-- $\tilde{s}_{\mbox{lexical}}$ the normalized lexical search score. 
-- $\alpha$ is a constant parameter between 0 and 1.
-
-The normalization of the scores is an important part since it ensures that we combine scores with values between 0 and 1. The Theoretical min-max scaling is used:
-
-$$\Phi_{\mbox{TPP}} = \frac{s - m_t}{M-m_t}$$
-
-where:
-- $s$ is the score function,
-- $m_t$ is the theoretical minimum of $s$ (-1 for the semantic score, 0 for the lexical search),
-- $M$ is the maximum value of $s$ returned for the current query.
-
-This normalization process is tricky for the lexical score, since the score range depends on the number of words in the query, the global vocabulary, the content entries... Here is a mention of this challenge by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
-
-> Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
 
 The final scores are sorted in descending order and limited to `n_results=5` results. By default we use a convex combination parameter $\alpha=0.8$.
 
@@ -825,3 +835,5 @@ We made a mistake in the search query by typing "citron" instead of "citroen" or
 [4] James Briggs - *Getting Started with Hybrid Search* [https://www.pinecone.io/learn/hybrid-search-intro/](https://www.pinecone.io/learn/hybrid-search-intro/)<a name="bib04"></a>
 
 [5] Quentin Herreros, Thomas Veasey - *Improving information retrieval in the Elastic Stack: Hybrid retrieval*, [https://www.elastic.co/blog/improving-information-retrieval-elastic-stack-hybrid](https://www.elastic.co/blog/improving-information-retrieval-elastic-stack-hybrid)<a name="bib05"></a>
+
+[6] Gordon V. Cormack, Charles L A Clarke, and Stefan Buettcher. 2009. *Reciprocal rank fusion outperforms condorcet and individual rank learning methods*. In Proceedings of the 32nd international ACM SIGIR conference on Research and development in information retrieval (SIGIR '09). Association for Computing Machinery, New York, NY, USA, 758–759. [https://doi.org/10.1145/1571941.1572114](https://doi.org/10.1145/1571941.1572114)<a name="bib06"></a>
