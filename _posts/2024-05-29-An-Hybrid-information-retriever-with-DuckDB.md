@@ -19,7 +19,7 @@ tags:
 
 When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be useful. 
 
-In this post, we'll implement an hybrid search function in Python with [DuckDB](https://duckdb.org/), and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine the respective scores to return the top $k$ matching results.
+In this post, we'll explore the implementation of search functions in Python with [DuckDB](https://duckdb.org/), and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine scores to return the top $k$ matching results.
 
 This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
@@ -43,7 +43,7 @@ This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siy
 
 ## Hybrid search<a name="hybrid_search"></a>
 
-Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The resulting rankings from both searches are then combined in a fusion process, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
+Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The resulting rankings/scores from both searches are then combined in a fusion process, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
 
 <p align="center">
   <img width="900" src="/img/2024-05-29_01/hybrid_search_overview.png" alt="hybrid_search_overview">
@@ -154,7 +154,7 @@ Here is a brief description of sparse retrievers by [Isabelle Nguyen [3]](#bib03
 
 > Sparse retrievers produce vectors whose length equals the size of the vocabulary. Because every document in the corpus only contains a fraction of all the words in the corpus, these vectors are typically sparse: long, with many zeroes, and only few non-zero values. The sparse retrieval algorithm most commonly used today is BM25, an improved version of the classic Tf-Idf. 
 
-Here is a short introduction to the BM25 algoruthm from the [wikipedia page](https://en.wikipedia.org/wiki/Okapi_BM25):
+Here is a short introduction to the BM25 algorithm from the [wikipedia page](https://en.wikipedia.org/wiki/Okapi_BM25):
 
 > BM25 is a bag-of-words retrieval function that ranks a set of documents based on the query terms appearing in each document, regardless of their proximity within the document.
 
@@ -179,13 +179,13 @@ $$\tilde{s} = \Phi_{\mbox{TMM}}(s) = \frac{s - m_t}{M-m_t}$$
 where:
 - $s$ is the score function,
 - $m_t$ is the theoretical minimum of $s$ (-1 for the semantic score, 0 for the lexical search),
-- $M$ is the maximum value of $s$ returned for the current query.
+- $M$ is the maximum value of $s$ returned for the current query over all the documents.
 
-This normalization process is tricky for the lexical score, since the score range depends on the number of words in the query, the global vocabulary, the content entries... Here is a mention of this challenge by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
+This normalization process is tricky for the lexical score, since the score range may vary a lot... Here is a mention of this challenge by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
 
 > Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
 
-Finally, an alternative to convex combination with theoretical minimum-maximum normalization (TM2C2) is Reciprocal Rank Fusion (RRF) [[6]](#bib06). Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01)
+However, as described in [[1]](#bib01), the normalization function described above seem to give satisfying results. Finally, an alternative to convex combination with theoretical minimum-maximum normalization (TM2C2) is Reciprocal Rank Fusion (RRF) [[6]](#bib06). Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01)
 
 > We found that RRF is sensitive to its parameters. We also observed empirically that convex
 combination of normalized scores outperforms RRF on in-domain and out-of-domain datasets [...].  
@@ -269,6 +269,8 @@ So we observe that most of the text content is relatively short except for a few
 Note that we could have queried directly the dataset hosted by Hugging Face from DuckDB using the [httpfs extension](https://duckdb.org/docs/extensions/httpfs/overview.html). See this post more more details : [Access 150k+ Datasets from Hugging Face with DuckDB](https://duckdb.org/2024/05/29/access-150k-plus-datasets-from-hugging-face-with-duckdb).
 
 ```python
+import duckdb
+
 con = duckdb.connect()
 
 con.sql("INSTALL httpfs;")
@@ -574,7 +576,7 @@ full_text_search(DUCKDB_FILE_PATH, search_txt)
 
 ### Hybrid search<a name="hybrid_search_implem"></a>
 
-We now combine both approaches in a single function for hybrid search. The function first gets the dense vector representation of the query using the embedding model. It then performs a semantic search by querying the vectorstore using the cosine similarity between the query vector and the dense vector representations stored in the embedding_column. The results are sorted by cosine similarity in descending order and limited to `k_dense=100` results. The function then performs a lexical search by querying the full-text search index using the BM25 similarity between the query text and the documents stored in the table. The results are sorted by BM25 similarity in descending order and limited to `k_sparse=100` results.
+We now combine both approaches in a single function for hybrid search. The function first gets the dense vector representation of the query using the embedding model, and then performs a semantic search by querying the vectorstore using the cosine similarity between the query vector and the dense vector representations stored in the embedding_column. The results are sorted by cosine similarity in descending order and limited to `k_dense=100` results. The function then proceeds to the lexical search by querying the full-text search index using the BM25 similarity between the query text and the documents stored in the table. The results are sorted by BM25 similarity in descending order and limited to `k_sparse=100` results.
 
 The final scores are sorted in descending order and limited to `n_results=5` results. By default we use a convex combination parameter $\alpha=0.8$.
 
@@ -748,7 +750,9 @@ sem/lex search elapsed time : 0.7070/0.1034 s
 4       206331   0.844     0.973   6.369     0.927      0.964  Citroën CX   The Citroën CX is an...  MeanOfTransportation
 
  The Citroën C5 is a large family car produced by the French manufacturer Citroën since early 2001 and now in its second generation. The C5 replaced the Citroën Xantia in the large family car class.
+```
 
+```
 Enter your search query (or type 'ESC' to exit) and then press 'RETURN': 
 Python programming
 
@@ -762,7 +766,9 @@ sem/lex search elapsed time : 0.5871/0.1001 s
 4       375975   0.768     0.951   6.778     0.712      0.903         Children's python   Children's python (A...       Animal
 
  Learning Python is a tutorial book for the Python programming language and is published by O'Reilly.
+```
 
+```
 Enter your search query (or type 'ESC' to exit) and then press 'RETURN': 
 most venomous snakes
 
@@ -776,7 +782,9 @@ sem/lex search elapsed time : 0.5777/0.0973 s
 4       389393   0.796     0.982   8.934     0.983      0.982               Grass snake   The grass snake (Nat...  Animal
 
  Common name: two-headed snakes.Chilorhinophis is a genus of venomous snakes found in Africa. Currently three species are recognized.
+```
 
+```
 Enter your search query (or type 'ESC' to exit) and then press 'RETURN': 
 tallest cathedral
 
@@ -789,7 +797,9 @@ sem/lex search elapsed time : 0.5819/0.0949 s
 4       265368   0.816     0.974   6.158     0.890      0.957  Immaculate Heart of M...   The Immaculate Heart...  Building
 
  Lincoln Cathedral (in full The Cathedral Church of the Blessed Virgin Mary of Lincoln or sometimes St. Mary's Cathedral) is a cathedral located in Lincoln in England and seat of the Bishop of Lincoln in the Church of England. Building commenced in 1088 and continued in several phases throughout the medieval period. It was reputedly the tallest building in the world for 238 years (1311–1549). The central spire collapsed in 1549 and was not rebuilt.
+```
 
+```
 Enter your search query (or type 'ESC' to exit) and then press 'RETURN': 
 famous french movie from the 1990s
 
@@ -821,8 +831,7 @@ sem/lex search elapsed time : 0.5780/0.1205 s
  Balady citron (Arabic: أترج بلدي‎) or Palestinian citron (Hebrew: הָאֶתְרוֹג הַפַּלֶשְׂתִּינִי‎) is a variety of citron or etrog grown in Israel for Jewish ritual purposes.
 ```
 
-We made a mistake in the search query by typing "citron" instead of "citroen" or "citroën". Despite the error, the semantic search was able to correctly identify the Citroën C5 as the most relevant result, with the highest semantic score. However, the lexical search returned a score of 0 for this entry and a score of 1 for a lemon fruit entry, which ended up being the top result with the combined score. To prevent this kind of situation in the future, we could consider imposing a minimum threshold for the normalized semantic score. 
-
+We made a mistake in the search query by typing "citron" instead of "citroen" or "citroën". Despite the error, the semantic search was able to correctly identify the Citroën C5 as the most relevant result, with the highest semantic score. However, the lexical search returned a score of 0 for this entry and a score of 1 for a lemon fruit entry, which ended up being the top result with the combined score. To prevent this kind of situation, we could maybe consider imposing a minimum threshold for the normalized semantic score. 
 
 ## References<a name="references"></a>
 
