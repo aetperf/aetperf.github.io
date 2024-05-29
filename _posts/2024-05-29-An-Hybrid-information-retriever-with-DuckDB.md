@@ -1,5 +1,5 @@
 ---
-title: An Hybrid Information Retriever with DuckDB WIP
+title: An Hybrid information retriever with DuckDB WIP
 layout: post
 comments: true
 author: François Pacull
