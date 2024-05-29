@@ -46,7 +46,7 @@ This post is largely motivated by the paper by Sebastian Bruch, Siyu Gai and Ami
 Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The result rankings from both searches are then combined in a process called fusion, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
 
 <p align="center">
-  <img width="900" src="/img/2024-05-28_01/hybrid_search_overview.png" alt="hybrid_search_overview">
+  <img width="900" src="/img/2024-05-29_01/hybrid_search_overview.png" alt="hybrid_search_overview">
 </p>
 
 Let's start by describing each of these search modules: semantic and lexical search. Note that hybrid search could also be used to mix only distinct semantic approaches.
@@ -199,7 +199,7 @@ can be tuned sample-efficiently or set to a reasonable value based on domain kno
 We use the [dbpedia_14 dataset](https://huggingface.co/datasets/fancyzhx/dbpedia_14) from Hugging Face. Here is the model card from Hugging Face:
 
 <p align="center">
-  <img width="900" src="/img/2024-05-28_01/dataset_card_HF.png" alt="dataset_card_HF">
+  <img width="900" src="/img/2024-05-29_01/dataset_card_HF.png" alt="dataset_card_HF">
 </p>
 
 The dataset has a total number of rows of 630000 and the total size of the files is 119 MB. Here is a brief description of the dataset from the Hugging Face [dataset page](https://huggingface.co/datasets/fancyzhx/dbpedia_14):
