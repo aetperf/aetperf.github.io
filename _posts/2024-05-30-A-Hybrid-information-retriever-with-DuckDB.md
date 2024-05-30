@@ -1,15 +1,16 @@
 ---
-title: An Hybrid information retriever with DuckDB
+title: A Hybrid information retriever with DuckDB
 layout: post
 comments: true
 author: François Pacull
 tags: 
 - Python
 - DuckDB
-- Hybrid Information Retriever
+- Hybrid information retriever
 - Semantic search
 - Lexical search
-- Hybris search
+- Hybrid search
+- Fusion score
 - sentence_transformers
 - semchunk
 - Sementic chunking
