@@ -18,6 +18,10 @@ tags:
 - Full text search
 ---
 
+<p align="center">
+  <img width="900" src="/img/2024-05-30_01/duck.png" alt="duck">
+</p>
+
 When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be useful. 
 
 In this post, we'll explore the implementation of search functions in Python with [DuckDB](https://duckdb.org/), open-source embedding models, and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine scores to return the top $k$ matching results. 
