@@ -1,5 +1,5 @@
 ---
-title: An Hybrid information retriever with DuckDB WIP
+title: An Hybrid information retriever with DuckDB
 layout: post
 comments: true
 author: François Pacull
@@ -112,7 +112,7 @@ np.linalg.norm(embedding, ord=2)
 
 We observe that the embeddings are not normalized. This implies that in DuckDB, the cosine similarity function ([`array_cross_product(array1, array2)`](https://duckdb.org/docs/sql/functions/array#array_cosine_similarityarray1-array2)) will be used instead of the lighter inner product ([`array_inner_product(array1, array2)`](https://duckdb.org/docs/sql/functions/array#array_inner_productarray1-array2)).
 
-The model weights are being cached on the local disk on the first use by `sentence-transformers`. The PyTorch model binary file is about 265 MB size, this is a small model.  If you want to use your GPU, you just need to [install PyTorch for GPU](https://pytorch.org/get-started/locally/#start-locally) first in your environment. Beware that it requires specific versions of CUDA on your system (e.g. 11.8 or 12.1).
+The model weights are being cached on the local disk on the first use by `sentence-transformers`. The PyTorch model binary file is about 265 MB size, this is a small model.  If you want to use your GPU, you just need to [install PyTorch for GPU](https://pytorch.org/get-started/locally/#start-locally) first in your environment. Beware that it requires specific versions of CUDA on your system.
 
 #### Semantic chunking<a name="Semantic_chunking"></a>
 
@@ -289,6 +289,20 @@ con.close()
 
 
 ## Implementation with DuckDB<a name="implementation_with_duckdb"></a>
+
+### Versions
+
+We are operating on Python version 3.11.8 and running on a Linux x86_64 machine.
+
+
+    numpy                 : 1.26.4
+    sentence_transformers : 3.0.0 
+    semchunk              : 0.3.1
+    datasets              : 2.19.1
+    pandas                : 2.2.0
+    duckdb                : 0.10.3
+    pynput                : 1.7.7
+
 
 ### Load and process the dataset<a name="load_and_process_the_dataset_implem"></a>
 
