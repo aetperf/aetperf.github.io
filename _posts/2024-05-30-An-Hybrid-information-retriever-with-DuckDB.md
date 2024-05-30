@@ -814,7 +814,7 @@ sem/lex search elapsed time : 0.5715/0.1181 s
  Bernie is a 1996 movie from French director and actor Albert Dupontel.
 ```
 
-Let's see an example where the search is not working the expected result:
+Let's see an example where the search is not working so well:
 
 ```
 Enter your search query (or type 'ESC' to exit) and then press 'RETURN': 
