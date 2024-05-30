@@ -19,7 +19,7 @@ tags:
 
 When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be useful. 
 
-In this post, we'll explore the implementation of search functions in Python with [DuckDB](https://duckdb.org/), and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine scores to return the top $k$ matching results.
+In this post, we'll explore the implementation of search functions in Python with [DuckDB](https://duckdb.org/), open-source embedding models, and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine scores to return the top $k$ matching results. 
 
 This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
@@ -38,6 +38,7 @@ This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siy
 	- [Create Full Text Search index](#create_full_text_search_index_implem)
 	- [Hybrid search](#hybrid_search_implem)
 	- [Example results](#example_results)
+- [Final remarks](#final_remarks)
 - [References](#references)
 
 
@@ -46,7 +47,7 @@ This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siy
 Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The resulting rankings/scores from both searches are then combined in a fusion process, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
 
 <p align="center">
-  <img width="900" src="/img/2024-05-29_01/hybrid_search_overview.png" alt="hybrid_search_overview">
+  <img width="900" src="/img/2024-05-30_01/hybrid_search_overview.png" alt="hybrid_search_overview">
 </p>
 
 Let's start by describing each of these search modules: semantic and lexical search. Note that hybrid search could also be used to mix distinct semantic approaches.
@@ -74,12 +75,12 @@ paragraph "Python is an interpreted, high-level and general-purpose programming
 language. Python’s design philosophy …". For asymmetric tasks, flipping the 
 query and the entries in your corpus usually does not make sense.
 
-As advised by this sentence-transformers website, we use a [Pre-Trained MS MARCO Model](https://www.sbert.net/docs/pretrained-models/msmarco-v3.html). The exact version is : [msmarco-distilbert-base-tas-b](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) available on [HuggingFace](https://huggingface.co). Here is a short description from the Hugging Face model card:
+As advised by the sentence-transformers website, we use a [Pre-Trained MS MARCO Model](https://www.sbert.net/docs/pretrained-models/msmarco-v3.html). The exact version is : [msmarco-distilbert-base-tas-b](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) available on [HuggingFace](https://huggingface.co). Here is a short description from the Hugging Face model card:
 
 > DistilBert for Dense Passage Retrieval trained with Balanced Topic Aware Sampling (TAS-B)  
 > We provide a retrieval trained DistilBert-based model (we call the dual-encoder then dot-product scoring architecture BERT_Dot) trained with Balanced Topic Aware Sampling on MSMARCO-Passage.
 
-Although this model has been tuned for dot-product, we are going to use it for cosine similarity. The embedding dimension of the dense vectors is 768, with also a rather small token input size of 512. 
+Although this model has been tuned for dot-product, we are going to use it for cosine similarity. The embedding dimension of the dense vectors is 768, with a rather small token input size of 512. 
 
 #### Sentence transformers<a name="sentence_transformers"></a>
 
@@ -148,13 +149,13 @@ df = df.explode("chunk")
 
 ### Lexical search<a name="lexical_search"></a>
 
-Lexical search, on the other hand, is a more traditional approach that relies on exact keyword matching. It uses algorithms to scan through a database of text, looking for instances of the search query or related terms. Lexical search can be very fast and efficient, but may not always deliver the most relevant or accurate results, particularly for complex or ambiguous queries. 
+Lexical search, on the other hand, is a more traditional approach that relies on exact keyword matching. It can be very fast and efficient, but may not always deliver the most relevant or accurate results, particularly for complex or ambiguous queries. 
 
 Here is a brief description of sparse retrievers by [Isabelle Nguyen [3]](#bib03):
 
 > Sparse retrievers produce vectors whose length equals the size of the vocabulary. Because every document in the corpus only contains a fraction of all the words in the corpus, these vectors are typically sparse: long, with many zeroes, and only few non-zero values. The sparse retrieval algorithm most commonly used today is BM25, an improved version of the classic Tf-Idf. 
 
-Here is a short introduction to the BM25 algorithm from the [wikipedia page](https://en.wikipedia.org/wiki/Okapi_BM25):
+Here is a short introduction to the BM25 retrieval algorithm from the [wikipedia page](https://en.wikipedia.org/wiki/Okapi_BM25):
 
 > BM25 is a bag-of-words retrieval function that ranks a set of documents based on the query terms appearing in each document, regardless of their proximity within the document.
 
@@ -162,7 +163,7 @@ We are going to use the [full text search extension](https://duckdb.org/docs/ext
 
 ## Fused score<a name="fused_score"></a>
 
-As advised in [Sebastian Bruch et al. [1]](#bib01), we use a convex combination to fuse both scores:
+As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:
 
 $$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + (1-\alpha) \tilde{s}_{\mbox{lexical}}$$
 
@@ -185,7 +186,7 @@ This normalization process is tricky for the lexical score, since the score rang
 
 > Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
 
-However, as described in [[1]](#bib01), the normalization function described above seem to give satisfying results. Finally, an alternative to convex combination with theoretical minimum-maximum normalization (TM2C2) is Reciprocal Rank Fusion (RRF) [[6]](#bib06). Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01)
+However, as described in [[1]](#bib01), the normalization function described above seems to give satisfying results. An alternative to this convex combination with theoretical minimum-maximum normalization (TM2C2) would be Reciprocal Rank Fusion (RRF) [[6]](#bib06), but the former method appears to be more robust. Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01) : 
 
 > We found that RRF is sensitive to its parameters. We also observed empirically that convex
 combination of normalized scores outperforms RRF on in-domain and out-of-domain datasets [...].  
@@ -199,7 +200,7 @@ can be tuned sample-efficiently or set to a reasonable value based on domain kno
 We use the [dbpedia_14 dataset](https://huggingface.co/datasets/fancyzhx/dbpedia_14) from Hugging Face. Here is the model card from Hugging Face:
 
 <p align="center">
-  <img width="900" src="/img/2024-05-29_01/dataset_card_HF.png" alt="dataset_card_HF">
+  <img width="900" src="/img/2024-05-30_01/dataset_card_HF.png" alt="dataset_card_HF">
 </p>
 
 The dataset has a total number of rows of 630000 and the total size of the files is 119 MB. Here is a brief description of the dataset from the Hugging Face [dataset page](https://huggingface.co/datasets/fancyzhx/dbpedia_14):
@@ -266,7 +267,7 @@ print(df.content_word_count.describe())
 
 So we observe that most of the text content is relatively short except for a few entries. Most of the time, the content is already below the input size of the model. In fact, only 76 new text chunks were created by the splits over 600,000 entries. The maximum number of chunks for a single text entry was 8. 
 
-Note that we could have queried directly the dataset hosted by Hugging Face from DuckDB using the [httpfs extension](https://duckdb.org/docs/extensions/httpfs/overview.html). See this post more more details : [Access 150k+ Datasets from Hugging Face with DuckDB](https://duckdb.org/2024/05/29/access-150k-plus-datasets-from-hugging-face-with-duckdb).
+Note that we could have directly queried the dataset hosted by Hugging Face from DuckDB using the [httpfs extension](https://duckdb.org/docs/extensions/httpfs/overview.html). See this post more more details : [Access 150k+ Datasets from Hugging Face with DuckDB](https://duckdb.org/2024/05/29/access-150k-plus-datasets-from-hugging-face-with-duckdb).
 
 ```python
 import duckdb
@@ -675,10 +676,15 @@ def query_hybrid(
     return df
 ```
 
-We also included in this function some timing measures of the semantic and lexical searches.
+The following scores are computed:
+- `sem_sc` : semantic score
+- `sem_sc_n` : normalized semantic score
+- `lex_sc` : lexical score
+- `lex_sc_n` : normalized lexical score
+- `convex_sc` : convex/hybrid score
 
-The hybrid search function can be called in an interactive manner using the following piece of code:
-
+We also included in this function some timing measures of the semantic and lexical searches. The hybrid search function can be called in an interactive manner using the following piece of code:
+ 
 ```python
 from pynput import keyboard
 
@@ -728,13 +734,7 @@ while True:
 
 ### Example results<a name="example_results"></a>
 
-In the following examples, we also included the content of the best matching entry after displaying the ranking with the five best results. The following scores are displayed:
-- `sem_sc` : semantic score
-- `sem_sc_n` : normalized semantic score
-- `lex_sc` : lexical score
-- `lex_sc_n` : normalized lexical score
-- `convex_sc` : convex/hybrid score
-
+In the following examples, we also included the content of the best matching entry after displaying the ranking with the five best results. 
 
 ```
 Enter your search query (or type 'ESC' to exit) and then press 'RETURN': 
@@ -831,7 +831,13 @@ sem/lex search elapsed time : 0.5780/0.1205 s
  Balady citron (Arabic: أترج بلدي‎) or Palestinian citron (Hebrew: הָאֶתְרוֹג הַפַּלֶשְׂתִּינִי‎) is a variety of citron or etrog grown in Israel for Jewish ritual purposes.
 ```
 
-We made a mistake in the search query by typing "citron" instead of "citroen" or "citroën". Despite the error, the semantic search was able to correctly identify the Citroën C5 as the most relevant result, with the highest semantic score. However, the lexical search returned a score of 0 for this entry and a score of 1 for a lemon fruit entry, which ended up being the top result with the combined score. To prevent this kind of situation, we could maybe consider imposing a minimum threshold for the normalized semantic score. 
+We made a mistake in the search query by typing "citron" instead of "citroen" or "citroën". Despite the error, the semantic search was able to correctly identify the Citroën C5 as the most relevant result, with the highest semantic score. However, the lexical search returned a score of 0 for this entry and a score of 1 for a "citron" lemon fruit entry, which ended up being the top result with the combined score. To prevent this kind of situation, we could maybe consider imposing a minimum threshold for the normalized semantic score. 
+
+## Final remarks<a name="final_remarks"></a>
+
+- The quality of the search results is really difficult to evaluate since we did not use any retrieval validation dataset, to compare the results against. The convex combination method with theoretical minimum-maximum normalization appears to produce accurate and relevant matching results, based on our preliminary testing and analysis.
+
+- The chosen hybrid search method is straightforward to implement with DuckDB and sentence_transformers, to create an on-premise information retrieval prototype. It can be a good starting point for exploring more information retrieval techniques. Hugging Faces is such a great asset for anyone interested in natural language processing.
 
 ## References<a name="references"></a>
 
