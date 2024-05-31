@@ -292,6 +292,8 @@ print(f"train_df.shape : {train_df.shape}")
 con.close()
 ```
 
+	train_df.shape : (560000, 4)
+
 
 ## Implementation with DuckDB<a name="implementation_with_duckdb"></a>
 
