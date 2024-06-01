@@ -466,7 +466,7 @@ con.close()
 	└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
 
-This step is rather long. It may take more than an hour on a CPU... Note that is possible to perform it on multiple CPUs or GPUs with [`start_multi_process_pool`](https://www.sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html#sentence_transformers.SentenceTransformer.start_multi_process_pool).
+This step is rather long. It may take more than an hour on a CPU... Note that is possible to perform it on multiple CPUs or GPUs with [`start_multi_process_pool`](https://www.sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html#sentence_transformers.SentenceTransformer.start_multi_process_pool). Also, we could bulk update by creating another table with all the embeddings and merge.
 
 We can now perform a semantic search with the following function:
 
@@ -628,7 +628,7 @@ def query_hybrid(
         if document_identifier not in columns:
             columns.append(document_identifier)
 
-        # sementic search
+        # semantic search
         # ---------------
 
         # Get the embedding of the search query
@@ -862,17 +862,23 @@ We made a mistake in the search query by typing "citron" instead of "citroen" or
 
 ## References<a name="references"></a>
 
-[1] Sebastian Bruch, Siyu Gai, and Amir Ingber. 2023. *An Analysis of Fusion Functions for Hybrid Retrieval*. ACM Trans. Inf. Syst. 42, 1, Article 20 (January 2024), 35 pages. [https://doi.org/10.1145/3596512](https://doi.org/10.1145/3596512)<a name="bib01"></a>
+<a name="bib01"></a>
+[1] Sebastian Bruch, Siyu Gai, and Amir Ingber. 2023. *An Analysis of Fusion Functions for Hybrid Retrieval*. ACM Trans. Inf. Syst. 42, 1, Article 20 (January 2024), 35 pages. [https://doi.org/10.1145/3596512](https://doi.org/10.1145/3596512)
 
-[2] Seo Jaehyung, Taemin Lee, Hyeonseok Moon, Chanjun Park, Sugyeong Eo, Imatitikua D. Aiyanyo, Kinam Park, Aram So, Sungmin Ahn, and Jeongbae Park. 2022. *Dense-to-Question and Sparse-to-Answer: Hybrid Retriever System for Industrial Frequently Asked Questions*, Mathematics 10, no. 8: 1335. [https://doi.org/10.3390/math10081335](https://doi.org/10.3390/math10081335)<a name="bib02"></a>
+<a name="bib02"></a>
+[2] Seo Jaehyung, Taemin Lee, Hyeonseok Moon, Chanjun Park, Sugyeong Eo, Imatitikua D. Aiyanyo, Kinam Park, Aram So, Sungmin Ahn, and Jeongbae Park. 2022. *Dense-to-Question and Sparse-to-Answer: Hybrid Retriever System for Industrial Frequently Asked Questions*, Mathematics 10, no. 8: 1335. [https://doi.org/10.3390/math10081335](https://doi.org/10.3390/math10081335)
 
-[3] Isabelle Nguyen - *Hybrid Document Retrieval* [https://haystack.deepset.ai/blog/hybrid-retrieval](https://haystack.deepset.ai/blog/hybrid-retrieval)<a name="bib03"></a>
+<a name="bib03"></a>
+[3] Isabelle Nguyen - *Hybrid Document Retrieval* [https://haystack.deepset.ai/blog/hybrid-retrieval](https://haystack.deepset.ai/blog/hybrid-retrieval)
 
-[4] James Briggs - *Getting Started with Hybrid Search* [https://www.pinecone.io/learn/hybrid-search-intro/](https://www.pinecone.io/learn/hybrid-search-intro/)<a name="bib04"></a>
+<a name="bib04"></a>
+[4] James Briggs - *Getting Started with Hybrid Search* [https://www.pinecone.io/learn/hybrid-search-intro/](https://www.pinecone.io/learn/hybrid-search-intro/)
 
-[5] Quentin Herreros, Thomas Veasey - *Improving information retrieval in the Elastic Stack: Hybrid retrieval*, [https://www.elastic.co/blog/improving-information-retrieval-elastic-stack-hybrid](https://www.elastic.co/blog/improving-information-retrieval-elastic-stack-hybrid)<a name="bib05"></a>
+<a name="bib05"></a>
+[5] Quentin Herreros, Thomas Veasey - *Improving information retrieval in the Elastic Stack: Hybrid retrieval*, [https://www.elastic.co/blog/improving-information-retrieval-elastic-stack-hybrid](https://www.elastic.co/blog/improving-information-retrieval-elastic-stack-hybrid)
 
-[6] Gordon V. Cormack, Charles L A Clarke, and Stefan Buettcher. 2009. *Reciprocal rank fusion outperforms condorcet and individual rank learning methods*. In Proceedings of the 32nd international ACM SIGIR conference on Research and development in information retrieval (SIGIR '09). Association for Computing Machinery, New York, NY, USA, 758–759. [https://doi.org/10.1145/1571941.1572114](https://doi.org/10.1145/1571941.1572114)<a name="bib06"></a>
+<a name="bib06"></a>
+[6] Gordon V. Cormack, Charles L A Clarke, and Stefan Buettcher. 2009. *Reciprocal rank fusion outperforms condorcet and individual rank learning methods*. In Proceedings of the 32nd international ACM SIGIR conference on Research and development in information retrieval (SIGIR '09). Association for Computing Machinery, New York, NY, USA, 758–759. [https://doi.org/10.1145/1571941.1572114](https://doi.org/10.1145/1571941.1572114)
 
 
 {% if page.comments %}
