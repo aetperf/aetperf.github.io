@@ -21,7 +21,7 @@ This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siy
 	- [Hybrid search](#hybrid_search_implem)
 	- [Example results](#example_results)
 - [Final remarks](#final_remarks)
-- [References](#references)
+- <a href="#references">References</a> 
 
 
 ## Hybrid search<a id="hybrid-search"></a>
@@ -837,7 +837,7 @@ We made a mistake in the search query by typing "citron" instead of "citroen" or
 
 - The chosen hybrid search method is straightforward to implement with DuckDB and sentence_transformers, to create an on-premise information retrieval prototype. It can be a good starting point for exploring more information retrieval techniques. Hugging Faces is such a great asset for anyone interested in natural language processing.
 
-## References<a name="references"></a>
+## References<a id="references"></a>
 
 <a name="bib01"></a>
 [1] Sebastian Bruch, Siyu Gai, and Amir Ingber. 2023. *An Analysis of Fusion Functions for Hybrid Retrieval*. ACM Trans. Inf. Syst. 42, 1, Article 20 (January 2024), 35 pages. [https://doi.org/10.1145/3596512](https://doi.org/10.1145/3596512)
