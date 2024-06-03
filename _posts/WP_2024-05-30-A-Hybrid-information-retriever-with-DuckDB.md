@@ -6,7 +6,7 @@ In this post, we'll explore the implementation of search functions in Python wit
 This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
 **Outline**
-- [Hybrid search](#hybrid-search)
+- [Hybrid search]<a href="#hybrid_search"></a> 
 	- [Semantic search](#semantic-search)
 		- [Asymmetric semantic search](#asymmetric_semantic_search)
 		- [Sentence transformers](#sentence_transformers)
