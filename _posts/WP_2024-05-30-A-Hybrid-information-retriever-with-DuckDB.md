@@ -1,8 +1,4 @@
 
-<p align="center">
-  <img width="900" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-05-30_01/duck.png" alt="duck">
-</p>
-
 When it comes to information retrieval, vector search methods have demonstrated some good performance, especially when the embedding models have been fine-tuned on the target domain. However, these models can struggle when faced with "out-of-domain" tasks, where the data content is significantly different from what the model was trained on. When fine-tuning is not an option, full text search, which rely on lexical matching, can be effective. This is why some hybrid search approaches that combine the strengths of both semantic and lexical methods might be useful. 
 
 In this post, we'll explore the implementation of search functions in Python with [DuckDB](https://duckdb.org/), open-source embedding models, and use it on a [DBpedia](https://www.dbpedia.org/) text dataset. We will also look at how we can combine scores to return the top $k$ matching results. 
@@ -54,8 +50,8 @@ representation and the linguistic knowledge learned by the model during the pre-
 Symmetric semantic search is used when the query and the entries in the corpus are similar in length and content, while asymmetric semantic search is used when the query is shorter and more focused than the entries in the corpus. In our case, we choose an asymmetric model. Here is a good explanation that can be found on the [sentence-transformers](https://www.sbert.net/examples/applications/semantic-search/README.html#symmetric-vs-asymmetric-semantic-search) website:
 
 > For symmetric semantic search your query and the entries in your corpus are of about the same length and have the same amount of content. An example would be searching for similar questions: Your query could for example be "How to learn Python online?" and you want to find an entry like "How to learn Python on the web?". For symmetric tasks, you could potentially flip the query and the entries in your corpus.  
-> For asymmetric semantic search, you usually have a short query (like a question 
-or some keywords) and you want to find a longer paragraph answering the query. 
+> For asymmetric semantic search, you usually have a short query [like a question 
+or some keywords] and you want to find a longer paragraph answering the query. 
 An example would be a query like "What is Python" and you want to find the 
 paragraph "Python is an interpreted, high-level and general-purpose programming 
 language. Python’s design philosophy …". For asymmetric tasks, flipping the 
@@ -64,7 +60,7 @@ query and the entries in your corpus usually does not make sense.
 As advised by the sentence-transformers website, we use a [Pre-Trained MS MARCO Model](https://www.sbert.net/docs/pretrained-models/msmarco-v3.html). The exact version is : [msmarco-distilbert-base-tas-b](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) available on [HuggingFace](https://huggingface.co). Here is a short description from the Hugging Face model card:
 
 > DistilBert for Dense Passage Retrieval trained with Balanced Topic Aware Sampling (TAS-B)  
-> We provide a retrieval trained DistilBert-based model (we call the dual-encoder then dot-product scoring architecture BERT_Dot) trained with Balanced Topic Aware Sampling on MSMARCO-Passage.
+> We provide a retrieval trained DistilBert-based model [we call the dual-encoder then dot-product scoring architecture BERT_Dot] trained with Balanced Topic Aware Sampling on MSMARCO-Passage.
 
 Although this model has been tuned for dot-product, we are going to use it for cosine similarity. The embedding dimension of the dense vectors is 768, with a rather small token input size of 512. 
 
