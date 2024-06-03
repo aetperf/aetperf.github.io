@@ -6,7 +6,7 @@ In this post, we'll explore the implementation of search functions in Python wit
 This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
 **Outline**
-- [Hybrid search](#hybrid_search)
+- [Hybrid search](#hybrid-search)
 	- [Semantic search](#semantic-search)
 		- [Asymmetric semantic search](#asymmetric_semantic_search)
 		- [Sentence transformers](#sentence_transformers)
@@ -59,7 +59,7 @@ query and the entries in your corpus usually does not make sense.
 
 As advised by the sentence-transformers website, we use a [Pre-Trained MS MARCO Model](https://www.sbert.net/docs/pretrained-models/msmarco-v3.html). The exact version is : [msmarco-distilbert-base-tas-b](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) available on [HuggingFace](https://huggingface.co). Here is a short description from the Hugging Face model card:
 
-> DistilBert for Dense Passage Retrieval trained with Balanced Topic Aware Sampling (TAS-B)  
+> DistilBert for Dense Passage Retrieval trained with Balanced Topic Aware Sampling [TAS-B]  
 > We provide a retrieval trained DistilBert-based model [we call the dual-encoder then dot-product scoring architecture BERT_Dot] trained with Balanced Topic Aware Sampling on MSMARCO-Passage.
 
 Although this model has been tuned for dot-product, we are going to use it for cosine similarity. The embedding dimension of the dense vectors is 768, with a rather small token input size of 512. 
@@ -147,7 +147,7 @@ We are going to use the [full text search extension](https://duckdb.org/docs/ext
 
 As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:
 
-$$s_\{\mbox{hybrid}\} = \alpha \tilde{s}_\{\mbox{semantic}\} + (1-\alpha) \tilde{s}_\{\mbox{lexical}\}$$
+$$s\_\{\mbox{hybrid}\} = \alpha \tilde{s}\_\{\mbox{semantic}\} + (1-\alpha) \tilde{s}\_\{\mbox{lexical}\}$$
 
 where: 
 - $s_{\mbox{hybrid}}$ is the hybrid score, 
