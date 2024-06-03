@@ -147,7 +147,7 @@ We are going to use the [full text search extension](https://duckdb.org/docs/ext
 
 As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:
 
-$$s\_\{\mbox{hybrid}\} = \alpha \tilde{s}\_\{\mbox{semantic}\} + (1-\alpha) \tilde{s}\_\{\mbox{lexical}\}$$
+$$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + \left(1-\alpha\right) \tilde{s}_{\mbox{lexical}}$$
 
 where: 
 - $s_{\mbox{hybrid}}$ is the hybrid score, 
@@ -161,19 +161,19 @@ $$\tilde{s} = \Phi_{\mbox{TMM}}(s) = \frac{s - m_t}{M-m_t}$$
 
 where:
 - $s$ is the score function,
-- $m_t$ is the theoretical minimum of $s$ (-1 for the semantic score, 0 for the lexical search),
+- $m_t$ is the theoretical minimum of $s$ [-1 for the semantic score, 0 for the lexical search],
 - $M$ is the maximum value of $s$ returned for the current query over all the documents.
 
 This normalization process is tricky for the lexical score, since the score range may vary a lot... Here is a mention of this challenge by [Quentin Herreros and Thomas Veasey in [5]](#bib05)
 
 > Normalization is essential for comparing scores between different data sets and models, as scores can vary a lot without it. It is not always easy to do, especially for Okapi BM25, where the range of scores is unknown until queries are made. Dense model scores are easier to normalize, as their vectors can be normalized. However, it is worth noting that some dense models are trained without normalization and may perform better with dot products. 
 
-However, as described in [[1]](#bib01), the normalization function described above seems to give satisfying results. An alternative to this convex combination with theoretical minimum-maximum normalization (TM2C2) would be Reciprocal Rank Fusion (RRF) [[6]](#bib06), but the former method appears to be more robust. Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01) : 
+However, as described in [[1]](#bib01), the normalization function described above seems to give satisfying results. An alternative to this convex combination with theoretical minimum-maximum normalization [TM2C2] would be Reciprocal Rank Fusion [RRF] [[6]](#bib06), but the former method appears to be more robust. Here is an except from the conclusion from [Sebastian Bruch et al. [1]](#bib01) : 
 
 > We found that RRF is sensitive to its parameters. We also observed empirically that convex
 combination of normalized scores outperforms RRF on in-domain and out-of-domain datasets [...].  
 > We believe that a convex combination with theoretical minimum-maximum normalization
-(TM2C2) indeed enjoys properties that are important in a fusion function. Its parameter, too,
+[TM2C2] indeed enjoys properties that are important in a fusion function. Its parameter, too,
 can be tuned sample-efficiently or set to a reasonable value based on domain knowledge.
 
 
@@ -187,7 +187,7 @@ We use the [dbpedia_14 dataset](https://huggingface.co/datasets/fancyzhx/dbpedia
 
 The dataset has a total number of rows of 630000 and the total size of the files is 119 MB. Here is a brief description of the dataset from the Hugging Face [dataset page](https://huggingface.co/datasets/fancyzhx/dbpedia_14):
 
-> The DBpedia ontology classification dataset is constructed by picking 14 non-overlapping classes from DBpedia 2014. They are listed in classes.txt. From each of thse 14 ontology classes, we randomly choose 40,000 training samples and 5,000 testing samples. Therefore, the total size of the training dataset is 560,000 and testing dataset 70,000. There are 3 columns in the dataset (same for train and test splits), corresponding to class index (1 to 14), title and content.
+> The DBpedia ontology classification dataset is constructed by picking 14 non-overlapping classes from DBpedia 2014. They are listed in classes.txt. From each of thse 14 ontology classes, we randomly choose 40,000 training samples and 5,000 testing samples. Therefore, the total size of the training dataset is 560,000 and testing dataset 70,000. There are 3 columns in the dataset [same for train and test splits], corresponding to class index [1 to 14], title and content.
 
 We access the dataset using the [`datasets`](https://huggingface.co/docs/datasets/index) library by Hugging Face.
 
@@ -500,7 +500,7 @@ query_embeddings(DUCKDB_FILE_PATH, MODEL_NAME, EMBEDDING_DIMENSION, search_txt)
 
 In this particular case, we did not create an index to speed up the semantic search. This is because the number of entries is less than one million, and the search time is already quite fast, at just a few tenths of a second.
 
-However, if you're working with a larger dataset or need even faster search times, you could consider using an HNSW (Hierarchical Navigable Small Worlds) index. This type of index is available in the [vss extension](https://duckdb.org/2024/05/03/vector-similarity-search-vss.html) for DuckDB.
+However, if you're working with a larger dataset or need even faster search times, you could consider using an HNSW [Hierarchical Navigable Small Worlds] index. This type of index is available in the [vss extension](https://duckdb.org/2024/05/03/vector-similarity-search-vss.html) for DuckDB.
 
 
 ### Create Full Text Search index<a name="create_full_text_search_index_implem"></a>
