@@ -147,7 +147,7 @@ We are going to use the [full text search extension](https://duckdb.org/docs/ext
 
 As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:
 
-$$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + \left(1-\alpha\right) \tilde{s}_{\mbox{lexical}}$$
+$$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + \left\(1-\alpha\right\) \tilde{s}_{\mbox{lexical}}$$
 
 where: 
 - $s_{\mbox{hybrid}}$ is the hybrid score, 
@@ -837,7 +837,7 @@ We made a mistake in the search query by typing "citron" instead of "citroen" or
 
 - The chosen hybrid search method is straightforward to implement with DuckDB and sentence_transformers, to create an on-premise information retrieval prototype. It can be a good starting point for exploring more information retrieval techniques. Hugging Faces is such a great asset for anyone interested in natural language processing.
 
-## References<a id="references"></a>
+## References<a name="references"></a>
 
 <a name="bib01"></a>
 [1] Sebastian Bruch, Siyu Gai, and Amir Ingber. 2023. *An Analysis of Fusion Functions for Hybrid Retrieval*. ACM Trans. Inf. Syst. 42, 1, Article 20 (January 2024), 35 pages. [https://doi.org/10.1145/3596512](https://doi.org/10.1145/3596512)
