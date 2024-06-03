@@ -6,7 +6,7 @@ In this post, we'll explore the implementation of search functions in Python wit
 This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
 **Outline**
-- <a href="#hybrid_search">Hybrid search</a> 
+- <a href="#hybrid-search">Hybrid search</a> 
 	- [Semantic search](#semantic-search)
 		- [Asymmetric semantic search](#asymmetric_semantic_search)
 		- [Sentence transformers](#sentence_transformers)
@@ -24,7 +24,7 @@ This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siy
 - [References](#references)
 
 
-## Hybrid search<a name="hybrid_search"></a>
+## Hybrid search<a id="hybrid-search"></a>
 
 Let us briefly describe the hybrid search flow. The process starts with a user query, which represents what the user is searching for, which leads to two distinct processes: semantic search over a dense vector store and lexical search over a sparse index. The resulting rankings/scores from both searches are then combined in a fusion process, leading to the hybrid ranking. Here is a schematic view of the hybrid search process:
 
