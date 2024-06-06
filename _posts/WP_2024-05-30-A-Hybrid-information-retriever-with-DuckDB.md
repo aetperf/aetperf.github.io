@@ -148,9 +148,7 @@ We are going to use the [full text search extension](https://duckdb.org/docs/ext
 As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:  
 
 $$
-\begin{equation}
 s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + (1-\alpha) \tilde{s}_{\mbox{lexical}}
-\end{equation}
 $$
 
 where: 
