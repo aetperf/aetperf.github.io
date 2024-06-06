@@ -145,9 +145,9 @@ We are going to use the [full text search extension](https://duckdb.org/docs/ext
 
 ## Fused score<a name="fused_score"></a>
 
-As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:
+As advised by Sebastian Bruch et al. in [[1]](#bib01), we use a convex combination to fuse both scores:  
 
-$$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + \tilde{s}_{\mbox{lexical}}$$  
+$s_{\mbox{hybrid}} = \alpha \tilde{s}_{\mbox{semantic}} + (1-\alpha) \tilde{s}_{\mbox{lexical}}$
 
 
 where: 
