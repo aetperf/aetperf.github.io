@@ -597,7 +597,7 @@ def query_hybrid(
     k_sparse: int = 100,
     alpha: float = 0.8,
     n_results: int = 5,
-) -> None:
+) -> pd.DataFrame:
 
     inf_sem_score = -1.0
     inf_lex_score = 0.0
