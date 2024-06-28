@@ -657,9 +657,9 @@ def query_hybrid(
         # ------------------
 
         df = pd.merge(
-            df_dense[["chunk_index", "sem_sc", "sem_sc_n"]],
-            df_sparse[["chunk_index", "lex_sc", "lex_sc_n"]],
-            on="chunk_index",
+            df_dense[[document_identifier, "sem_sc", "sem_sc_n"]],
+            df_sparse[[document_identifier, "lex_sc", "lex_sc_n"]],
+            on=document_identifier,
             how="outer",
         )
         df = df.fillna(0.0)
