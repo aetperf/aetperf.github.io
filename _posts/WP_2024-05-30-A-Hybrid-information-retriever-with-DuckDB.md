@@ -6,22 +6,22 @@ In this post, we'll explore the implementation of search functions in Python wit
 This post is largely motivated by [[1]](#bib01), a paper by Sebastian Bruch, Siyu Gai and Amir Ingber : [*An Analysis of Fusion Functions for Hybrid Retrieval*](#bib01).
 
 **Outline**
-- Hybrid search 
-	- Semantic search
-		- Asymmetric semantic search
-		- Sentence transformers
-		- Semantic chunking
-	- Lexical search
-	- Fused score
-- The Dataset
-- Implementation with DuckDB
-	- Load and process the dataset
-	- Create the embeddings
-	- Create Full Text Search index
-	- Hybrid search
-	- Example results
-- Final remarks
-- References 
+- Hybrid search  
+	- Semantic search  
+		- Asymmetric semantic search  
+		- Sentence transformers  
+		- Semantic chunking  
+	- Lexical search  
+	- Fused score  
+- The Dataset  
+- Implementation with DuckDB  
+	- Load and process the dataset  
+	- Create the embeddings  
+	- Create Full Text Search index  
+	- Hybrid search  
+	- Example results  
+- Final remarks  
+- References  
 
 
 ## Hybrid search<a id="hybrid-search"></a>
