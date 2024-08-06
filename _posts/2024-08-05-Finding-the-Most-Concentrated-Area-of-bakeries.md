@@ -69,6 +69,7 @@ top_left = (min_lon, max_lat)
 
 # Create a Shapely Polygon object from the bounding box coordinates
 polygon = Polygon([bottom_left, bottom_right, top_right, top_left])
+polygon
 ```
     
 <p align="center">
@@ -99,7 +100,7 @@ bakeries_gdf.shape
 
 We successfully retrieved 394 rows. Each entry includes 123 data columns containing information from OpenStreetMap.
 
-To ensure accurate spatial calculations and analysis, we reprojected the bakeries GeoDataFrame from the original geographic coordinate system to the projected coordinate system: *EPSG:2154*.
+To ensure accurate spatial calculations and analysis, we reproject the bakeries GeoDataFrame from the original geographic coordinate system to the projected coordinate system: *EPSG:2154*.
 
 ```python
 bakeries_gdf = bakeries_gdf.to_crs("EPSG:2154")
@@ -343,7 +344,7 @@ plt.imshow(density, extent=[x_min, x_max, y_min, y_max], origin="lower", cmap="Y
 ax = plt.gca()
 ax = bakeries_gdf.plot(markersize=4, ax=ax, alpha=0.25)
 for i in range(n_hotspots): 
-    plt.plot(coords[i][0], coords[i][1], marker="*", markersize=10, color="grey")
+    plt.plot(coords[i][0], coords[i][1], marker="*", markersize=8, color="grey")
 cx.add_basemap(
     ax,
     source=xyz.CartoDB.Positron,
