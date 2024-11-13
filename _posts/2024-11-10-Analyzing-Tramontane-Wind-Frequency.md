@@ -861,7 +861,7 @@ $$P(X=k) = \beta \; e^{-\alpha \; k}, \; k \geq 1$$
 
 To normalize the distribution, we use the following identity:
 
-$$\sum_{i=1}^{\infty} P(X=k) = \frac{\beta}{e^{\alpha}-1} = 1$$
+$$\sum_{k=1}^{\infty} P(X=k) = \frac{\beta}{e^{\alpha}-1} = 1$$
 
 This results in a simplified formula:
 
