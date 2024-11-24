@@ -13,11 +13,18 @@ tags:
 ---
 
 
-The Ulam spiral arranges integers in a spiral and highlights prime numbers, revealing some diagonal alignment patterns. This post shows how to generate and visualize the Ulam spiral in Python, with a prime-checking implementation using Cython.
+The Ulam spiral arranges integers in a spiral and highlights prime numbers, revealing some diagonal alignment patterns. This post shows how to generate and visualize the Ulam spiral in Python, with a simple prime-checking implementation using Cython.
 
 As described in the [Wikipedia article on the Ulam spiral](https://en.wikipedia.org/wiki/Ulam_spiral#History):
 
-> According to Gardner, Ulam discovered the spiral in 1963 while doodling during the presentation of "a long and very boring paper" at a scientific meeting. These hand calculations amounted to "a few hundred points". Shortly afterwards, Ulam, with collaborators Myron Stein and Mark Wells, used MANIAC II at Los Alamos Scientific Laboratory to extend the calculation to about 100,000 points. The group also computed the density of primes among numbers up to 10,000,000 along some of the prime-rich lines as well as along some of the prime-poor lines. Images of the spiral up to 65,000 points were displayed on "a scope attached to the machine" and then photographed. The Ulam spiral was described in Martin Gardner's March 1964 Mathematical Games column in Scientific American and featured on the front cover of that issue. Some of the photographs of Stein, Ulam, and Wells were reproduced in the column.
+> According to Gardner, Ulam discovered the spiral in 1963 while doodling during the presentation of "a long and very boring paper" at a scientific meeting. These hand calculations amounted to "a few hundred points". Shortly afterwards, Ulam, with collaborators Myron Stein and Mark Wells, used MANIAC II at Los Alamos Scientific Laboratory to extend the calculation to about 100,000 points. The group also computed the density of primes among numbers up to 10,000,000 along some of the prime-rich lines as well as along some of the prime-poor lines.
+
+<p align="center">
+  <img width="400" src="/img/2024-11-24_01/STAN_ULAM_HOLDING_THE_FERMIAC.jpg" alt="Ulam">
+</p>
+<p align="center">
+  <a href="https://commons.wikimedia.org/wiki/File:STAN_ULAM_HOLDING_THE_FERMIAC.jpg">Originally uploaded by Deer*lake (Transferred by Deer*lake)</a>, Public domain, via Wikimedia Commons
+</p>
 
 ## Imports
 
@@ -195,6 +202,8 @@ cpdef generate_ulam_spiral(int size):
     return grid
 ```
 
+Note that in order to properly display the Ulam spiral, the 2D grid is flipped upside down in the following line: `grid[size - y - 1, x] = 1`.
+
 ## Computing the Grid Size for the Ulam Spiral
 
 The `compute_grid_size` function calculates the minimal odd-sized square grid required to represent the first `n` integers in the Ulam spiral. It ensures that the grid size is large enough to accommodate the given range of numbers and is always odd, as required for the spiral’s center to align properly.
@@ -211,7 +220,7 @@ def compute_grid_size(n=100):
     return size
 ```
 
-The `plot_ulam_spiral` function generates and visualizes the Ulam spiral by plotting prime numbers in a spiral pattern. It takes either a specified grid size or the number of integers `n` to determine the minimal grid size, and then uses the `generate_ulam_spiral` function to create and display the spiral.
+The `plot_ulam_spiral` function generates and visualizes the Ulam spiral. It takes either a specified grid size or the number of integers `n` to determine the minimal grid size, and then uses the `generate_ulam_spiral` function to create and display the spiral.
 
 ```python
 def plot_ulam_spiral(size=None, n=None, figsize=(8, 8)):
