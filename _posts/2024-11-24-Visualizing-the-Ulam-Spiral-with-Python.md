@@ -10,6 +10,7 @@ tags:
 - numpy
 - prime numbers
 - visualization
+- primes
 ---
 
 
@@ -20,7 +21,7 @@ As described in the [Wikipedia article on the Ulam spiral](https://en.wikipedia.
 > According to Gardner, Ulam discovered the spiral in 1963 while doodling during the presentation of "a long and very boring paper" at a scientific meeting. These hand calculations amounted to "a few hundred points". Shortly afterwards, Ulam, with collaborators Myron Stein and Mark Wells, used MANIAC II at Los Alamos Scientific Laboratory to extend the calculation to about 100,000 points. The group also computed the density of primes among numbers up to 10,000,000 along some of the prime-rich lines as well as along some of the prime-poor lines.
 
 <p align="center">
-  <img width="400" src="/img/2024-11-24_01/STAN_ULAM_HOLDING_THE_FERMIAC.jpg" alt="Ulam">
+  <img width="300" src="/img/2024-11-24_01/STAN_ULAM_HOLDING_THE_FERMIAC.jpg" alt="Ulam">
 </p>
 <p align="center">
   <a href="https://commons.wikimedia.org/wiki/File:STAN_ULAM_HOLDING_THE_FERMIAC.jpg">Originally uploaded by Deer*lake (Transferred by Deer*lake)</a>, Public domain, via Wikimedia Commons
@@ -202,7 +203,7 @@ cpdef generate_ulam_spiral(int size):
     return grid
 ```
 
-Note that in order to properly display the Ulam spiral, the 2D grid is flipped upside down in the following line: `grid[size - y - 1, x] = 1`.
+Note that in order to properly display the Ulam spiral, the 2D grid is flipped upside down in the following code line: `grid[size - y - 1, x] = 1`.
 
 ## Computing the Grid Size for the Ulam Spiral
 
@@ -299,6 +300,92 @@ plot_ulam_spiral(n=1_000_000, figsize=FS)
 
 ## Prime Numbers in Diagonal Lines of the Ulam Spiral
 
-We can observe that prime numbers tend to collect along diagonal lines. According to the [Ulam spiral's page](https://en.wikipedia.org/wiki/Ulam_spiral#Explanation):
+We can observe that prime numbers tend to collect along diagonal lines. According to the [Ulam spiral's wikipedia page](https://en.wikipedia.org/wiki/Ulam_spiral#Explanation):
 
-> Diagonal, horizontal, and vertical lines in the number spiral correspond to polynomials of the form $f(n)=4n^{2}+bn+c$ where $b$ and $c$ are integer constants. When $b$ is even, the lines are diagonal, and either all numbers are odd, or all are even, depending on the value of $c$. It is therefore no surprise that all primes other than 2 lie in alternate diagonals of the Ulam spiral. Some polynomials, such as $4n^{2}+8n+3$, while producing only odd values, factorize over the integers $(4n^{2}+8n+3)=(2n+1)(2n+3)$ and are therefore never prime except possibly when one of the factors equals 1. Such examples correspond to diagonals that are devoid of primes or nearly so.
+> Diagonal, horizontal, and vertical lines in the number spiral correspond to polynomials of the form $f(n)=4n^2+bn+c$ where $b$ and $c$ are integer constants. When $b$ is even, the lines are diagonal, and either all numbers are odd, or all are even, depending on the value of $c$. It is therefore no surprise that all primes other than 2 lie in alternate diagonals of the Ulam spiral. Some polynomials, such as $4n^{2}+8n+3$, while producing only odd values, factorize over the integers $(4n^{2}+8n+3)=(2n+1)(2n+3)$ and are therefore never prime except possibly when one of the factors equals 1. Such examples correspond to diagonals that are devoid of primes or nearly so.
+
+
+Let's visualize some of the prime-rich quadratic polynomials. The following code defines two functions: `is_quadratic`, which checks if a number satisfies a given quadratic polynomial equation, and `plot_quadratic_lines`, which generates and plots an Ulam spiral, marking prime numbers in grey and overlaying quadratic polynomial points as black dots on the spiral.
+
+
+```python
+def is_quadratic(num, a=4, b=8, c=3, eps=1.e-10):
+    coeff = [a, b, c - num]
+    n_1, _ = np.roots(coeff)
+    if np.isreal(n_1):
+        if (np.abs(n_1-np.round(n_1)) < eps):
+            return 1
+    return 0
+
+
+def plot_quadratic_lines(size=101, a=4, b=8, c=3, figsize=(8,8)):
+    """Plot the Ulam spiral with quadratic polynomial points marked as dots."""
+
+    spiral = generate_ulam_spiral(size)
+    grid = np.zeros((size, size), dtype=bool)
+
+    num = 1  # start numbering from 1
+    step_size = 1  # number of steps to take in the current direction
+    x = size // 2
+    y = size // 2  # start at the center
+
+    directions = [(0, 1), (-1, 0), (0, -1), (1, 0)]
+    direction_index = 0
+    quadratic_points = []  # to store coordinates of quadratic points
+
+    # generate the grid and mark primes and quadratic points
+    while num <= size * size:
+        for _ in range(2):  # repeat for two turns for each step size
+            for _ in range(step_size):  # move in the current direction
+                if 0 <= x < size and 0 <= y < size:
+                    if is_quadratic(num, a=a, b=b, c=c):
+                        quadratic_points.append((x, size - y - 1))  # store the coordinates of quadratic points
+                    if is_prime(num):  # check if number is prime
+                        grid[size - y - 1, x] = 1  # mark primes with 1
+                x += directions[direction_index][0]
+                y += directions[direction_index][1]
+                num += 1
+                if num > size * size:  # stop if we've filled the grid
+                    break
+            direction_index = np.mod(direction_index + 1, 4)  # change direction
+        step_size += 1  # increase the step size after every two turns
+
+    n = 1
+    
+    
+    # plot the spiral using binary colormap
+    plt.figure(figsize=figsize)
+    plt.imshow(grid, cmap="binary", interpolation="nearest", alpha=0.2)
+    plt.axis("off")
+
+    # overlay quadratic polynomial points as crosses
+    for point in quadratic_points:
+        plt.scatter(point[0], point[1], color='k', s=20, marker='.')  
+
+    plt.show()
+```
+
+Let's visualize the diagonal that is devoid of primes or nearly so, corresponding to $f(n)=4n^2+8n+3$:
+
+
+```python
+plot_quadratic_lines(size=101, a=4, b=8, c=3, figsize=FS)
+```
+
+<p align="center">
+  <img width="1000" src="/img/2024-11-24_01/output_19_0.png" alt="empty_diag">
+</p>
+
+We have $f(0)=3$, which is the only prime belonging to the dotted line in the above figure. Let's check Euler's prime-generating polynomial $f(n)=n^2−n+41$:
+
+<p align="center">
+  <img width="1000" src="/img/2024-11-24_01/output_21_0.png" alt="Euler">
+</p>
+
+Lastly, there is also Legendre's polynomial $f(n)=n^2+n+17$:
+
+<p align="center">
+  <img width="1000" src="/img/2024-11-24_01/output_27_0.png" alt="Legendre">
+</p>
+
+See this [Wolfram's web page](https://mathworld.wolfram.com/Prime-GeneratingPolynomial.html) for a list of prime-generating polynomials.
