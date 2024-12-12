@@ -57,7 +57,6 @@ To check for prime numbers, we use a method described in the [Wikipedia article 
 The implementation below uses this approach to determine primality:
 
 ```python
-
 def is_prime(n):
 
     if n <= 1:
