@@ -266,7 +266,7 @@ img
   <img width="900" src="/img/2024-12-12_01/output_23_0.png" alt="Italy">
 </p>
 
-Italy unsurprisingly hosts a dense network of pizzerias. Major cities like Naples, Rome, Milan, and Turin stand out as hotspots.
+Major italian cities like Naples, Rome, Milan, and Turin stand out as pizzeria hotspots.
 
 ### Lyon Croix-Rousse
 
