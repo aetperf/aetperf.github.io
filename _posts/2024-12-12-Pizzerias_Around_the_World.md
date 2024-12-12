@@ -11,6 +11,7 @@ tags:
 - pizza
 ---
 
+
 In November 2024, Foursquare released a new dataset called [Foursquare Open Source Places](https://location.foursquare.com/resources/blog/products/foursquare-open-source-places-a-new-foundational-dataset-for-the-geospatial-community/). This dataset is a comprehensive global collection of Points of Interest (POIs), providing detailed information about venues, including their categories, attributes, and geospatial details. 
 
 In this post, we are going to play a little bit with this dataset by fetching and plotting all the pizzerias of the world.
@@ -384,4 +385,4 @@ The dataset for Lyon Croix-Rousse appears reasonably accurate, but there are som
 - Fictional entry: at least one pizzeria seems entirely fictional.
 - Missing entries: two pizzerias are missing.
 
-Overall, I estimate the dataset's accuracy at around 90% for downtown area. However, it’s possible that the data is more reliable in other regions, or countries.
+Overall, I estimate the dataset's accuracy at around 90% for the downtown area. However, it’s possible that the data is more reliable in other regions, or countries.
