@@ -157,7 +157,7 @@ df_all.columns
 The columns prefixed with `F` relate to wind speed, `D` to wind direction, `H` to time, and `Q` to data quality. We select the following columns for our analysis: 
 - `NOM_USUEL` : place name
 - `AAAAMMJJ` : date (YYYYMMDD)
-- `FXI` : daily maximum of the peak hourly instantaneous wind force at 10 meters (in m/s and tenths)*
+- `FXI` : daily maximum of the peak hourly instantaneous wind force at 10 meters (in m/s and tenths)
 - `DXI` : direction of FXI (in 360° compass rose format)
 
 
