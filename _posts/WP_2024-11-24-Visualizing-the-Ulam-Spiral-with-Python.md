@@ -9,7 +9,7 @@ As described in the [Wikipedia article on the Ulam spiral](https://en.wikipedia.
   <img width="300" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-11-24_01/STAN_ULAM_HOLDING_THE_FERMIAC.jpg" alt="Ulam">
 </p>
 <p align="center">
-  <a href="https://commons.wikimedia.org/wiki/File:STAN_ULAM_HOLDING_THE_FERMIAC.jpg">Originally uploaded by Deer*lake (Transferred by Deer*lake)</a>, Public domain, via Wikimedia Commons
+  <a href="https://commons.wikimedia.org/wiki/File:STAN_ULAM_HOLDING_THE_FERMIAC.jpg">Originally uploaded by Deer*lake [Transferred by Deer*lake]</a>, Public domain, via Wikimedia Commons
 </p>
 
 ## Imports
@@ -95,7 +95,7 @@ for n in range(100):
 
 The function `is_prime_cython` implements the same logic as our Python version but is optimized with Cython's `cdef` declarations for fixed-size integers. 
 
-The `generate_ulam_spiral` function creates a 2D array representing the Ulam spiral. The grid starts at the center and spirals outward, marking cells as prime or non-prime using the `is_prime_cython` function. The `directions` sequence defines the movement pattern for generating the Ulam spiral, specifying steps in the order: **up**, **left**, **down**, and **right**, with each direction represented as a pair of `(dx, dy)` offsets. Each step size is used twice, once for each direction pair ("up" and "left", or "down" and "right") before increasing the step size, maintaining the spiral's consistent growth pattern. 
+The `generate_ulam_spiral` function creates a 2D array representing the Ulam spiral. The grid starts at the center and spirals outward, marking cells as prime or non-prime using the `is_prime_cython` function. The `directions` sequence defines the movement pattern for generating the Ulam spiral, specifying steps in the order: **up**, **left**, **down**, and **right**, with each direction represented as a pair of `(dx, dy)` offsets. Each step size is used twice, once for each direction pair ["up" and "left", or "down" and "right"] before increasing the step size, maintaining the spiral's consistent growth pattern. 
 
 <p align="center">
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2024-11-24_01/schema_01.png" alt="schema_01">
