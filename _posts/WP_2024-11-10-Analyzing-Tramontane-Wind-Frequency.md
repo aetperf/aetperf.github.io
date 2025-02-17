@@ -22,10 +22,10 @@ I should clarify that I am not an expert in atmospheric or climate science.
 
 ## Data source<a name="data_source"></a>
 
-We begin by downloading four CSV files from the French open weather data website ([https://meteo.data.gouv.fr/](https://meteo.data.gouv.fr/)). These files are organized by two distinct periods and two regions:
+We begin by downloading four CSV files from the French open weather data website [[https://meteo.data.gouv.fr/](https://meteo.data.gouv.fr/)]. These files are organized by two distinct periods and two regions:
 
 - **Time Periods:** 1950-2022 and 2023-2024
-- **Regions (French departments):** Pyrénées-Orientales (66) and Aude (11)
+- **Regions [French departments]:** Pyrénées-Orientales [66] and Aude [11]
 
 The CSV files are named as follows:
 - `Q_66_previous-1950-2022_RR-T-Vent.csv`
@@ -35,9 +35,9 @@ The CSV files are named as follows:
 
 To access these files on the site, follow these steps:
 
-1. Navigate to **"Données climatologiques de base"** (Basic Climate Data).
-2. Select **"Données quotidiennes"** (Daily Data).
-3. Choose either **Pyrénées-Orientales (66)** or **Aude (11)**.
+1. Navigate to **"Données climatologiques de base"** [Basic Climate Data].
+2. Select **"Données quotidiennes"** [Daily Data].
+3. Choose either **Pyrénées-Orientales [66]** or **Aude [11]**.
 4. Download data for the respective periods: **1950-2022** and **2023-2024**.
 
 ## Imports and system<a name="imports_and_system"></a>
@@ -143,9 +143,9 @@ df_all.columns
 
 The columns prefixed with `F` relate to wind speed, `D` to wind direction, `H` to time, and `Q` to data quality. We select the following columns for our analysis: 
 - `NOM_USUEL` : place name
-- `AAAAMMJJ` : date (YYYYMMDD)
+- `AAAAMMJJ` : date [YYYYMMDD]
 - `FXI` : daily maximum of the peak hourly instantaneous wind force at 10 meters (in m/s and tenths)*
-- `DXI` : direction of FXI (in 360° compass rose format)
+- `DXI` : direction of FXI [in 360° compass rose format]
 
 
 ```python
