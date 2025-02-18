@@ -243,7 +243,7 @@ df.head()
 
 
 
-The response time is kind of large because we are querying a rather large CSV file, it would be more efficient to query a Parquet file.
+The response time is kind of long because we are querying a rather large CSV file, it would be more efficient to query a Parquet file.
 
 For some reason, we could also remove the secret from DuckDB to revoke access in the following way:
 
