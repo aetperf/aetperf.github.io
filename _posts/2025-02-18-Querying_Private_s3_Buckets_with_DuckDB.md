@@ -6,6 +6,9 @@ author: François Pacull
 tags: 
 - Python
 - DuckDB
+- secrets
+- AWS
+- s3 buckets
 ---
 
 <p align="center">
@@ -14,7 +17,7 @@ tags:
 
 [DuckDB](https://duckdb.org/) is an in-process SQL database that allows you to query data from various sources, including private AWS s3 buckets. This Python notebook demonstrates how to use DuckDB's "secrets" feature to manage authentication credentials for querying private s3 data.
 
-Imagine you need to access a private compressed CSV file located at the following s3 URI:
+Imagine you need to access a private compressed CSV file located at the following path:
 
 ```python
 s3_FILE_PATH = "s3://ap-dvf-data/dvf_zip/full2014.csv.gz"
@@ -41,7 +44,7 @@ Package versions:
 
 ## Recover AWS credentials programmatically
 
-The credentials are sourced from the AWS profile configured on your computer. Ensure that the user profile has read access to the targeted s3 bucket, for example with `aws cli`:
+The credentials are sourced from the AWS profile configured on your computer. Ensure that the user profile has correct permissions (s3:GetObject", "s3:ListBucket", ...) on the targeted s3 bucket, for example with `aws cli`:
 
 ```bash
 aws s3 ls s3://ap-dvf-data/dvf_zip/
@@ -49,6 +52,7 @@ aws s3 ls s3://ap-dvf-data/dvf_zip/
     2025-02-12 11:25:45   71732630 full2014.csv.gz
     2025-02-12 11:25:53   77832978 full2015.csv.gz
 
+So let's fetch the credentials:
 
 ```python
 session = boto3.Session()
@@ -58,14 +62,13 @@ aws_access_key_id = current_credentials.access_key
 aws_secret_access_key = current_credentials.secret_key
 ```
 
-
 We could have chosen another AWS profile than the default one with the argument `--profile`:
 
 ```bash
 aws s3 ls s3://ap-dvf-data/dvf_zip/ --profile john_doe
 ```
 
-Then we need to create a boto3 session using the specified profile:
+Then we would also create a boto3 session using the specified profile:
 
 ```python
 session = boto3.Session(profile_name=john_doe)
@@ -73,7 +76,7 @@ session = boto3.Session(profile_name=john_doe)
 
 ## Create and use a DuckDB secret
 
-We establish a connection to a new DuckDB database in the in-memory mode:
+We establish a connection to a new DuckDB database in the *in-memory* mode:
 
 ```python
 con = duckdb.connect()
@@ -119,9 +122,9 @@ By default the secret is temporary. `CREATE SECRET` is equivalent to `CREATE TEM
 <p align="center">
   <img width="900" src="/img/2025-02-18_01/create_secret.png" alt="create_secret">
 </p>
-Image from DuckDB's [documentation](https://duckdb.org/docs/sql/statements/create_secret.html)
+**Credits:** figure from DuckDB's [documentation](https://duckdb.org/docs/sql/statements/create_secret.html)
 
-Secret Provider needs to be provided with the `TYPE` argument. In the present case this is `S3`, but others are supported, for example `GCS`, `R2`, or `AZURE`. The `REGION` argument is mandatory for `S3`. 
+Secret Provider needs to be provided with the `TYPE` argument. In the present case this is `S3`, but others are supported, for example `GCS`, `R2`, or `AZURE`. The `REGION` argument is important for `S3`. 
 
 Note that the `SCOPE` is optional. Here is its description from DuckDB's [documentation](https://duckdb.org/docs/configuration/secrets_manager.html#types-of-secrets):
 
@@ -240,9 +243,9 @@ df.head()
 
 
 
-The response time is kind of large because we are querying a CSV file, it would be more efficient to query a Parquet file.
+The response time is kind of large because we are querying a rather large CSV file, it would be more efficient to query a Parquet file.
 
-Now we could also remove the secret from DuckDB to revoke access in the following way:
+For some reason, we could also remove the secret from DuckDB to revoke access in the following way:
 
 ```python
 sql_drop_secret = "DROP SECRET s3_dvf;"
