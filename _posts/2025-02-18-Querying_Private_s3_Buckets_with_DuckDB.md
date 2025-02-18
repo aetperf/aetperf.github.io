@@ -62,7 +62,7 @@ aws_access_key_id = current_credentials.access_key
 aws_secret_access_key = current_credentials.secret_key
 ```
 
-We could have chosen another AWS profile than the default one with the argument `--profile`:
+We could have chosen another AWS profile than the default one. This can be done with the `--profile` argument in aws cli, for example:
 
 ```bash
 aws s3 ls s3://ap-dvf-data/dvf_zip/ --profile john_doe
