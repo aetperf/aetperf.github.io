@@ -245,7 +245,7 @@ df.head()
 
 The response time is kind of long because we are querying a rather large CSV file, it would be more efficient to query a Parquet file.
 
-For some reason, we could also remove the secret from DuckDB to revoke access in the following way:
+Finally, for some reason, we could also remove the secret from DuckDB to revoke access in the following way:
 
 ```python
 sql_drop_secret = "DROP SECRET s3_dvf;"
