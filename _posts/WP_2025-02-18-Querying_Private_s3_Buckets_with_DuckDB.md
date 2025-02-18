@@ -110,7 +110,7 @@ By default the secret is temporary. `CREATE SECRET` is equivalent to `CREATE TEM
 <p align="center">
   <img width="900" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-02-18_01/create_secret.png" alt="create_secret">
 </p>
-**Credits:** figure from DuckDB's [documentation](https://duckdb.org/docs/sql/statements/create_secret.html)
+Credits: figure from DuckDB's [documentation](https://duckdb.org/docs/sql/statements/create_secret.html)
 
 Secret Provider needs to be provided with the `TYPE` argument. In the present case this is `S3`, but others are supported, for example `GCS`, `R2`, or `AZURE`. The `REGION` argument is important for `S3`. 
 
