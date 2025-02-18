@@ -44,7 +44,7 @@ Package versions:
 
 ## Recover AWS credentials programmatically
 
-The credentials are sourced from the AWS profile configured on your computer. Ensure that the user profile has correct permissions (s3:GetObject", "s3:ListBucket", ...) on the targeted s3 bucket, for example with `aws cli`:
+The credentials are sourced from the AWS profile configured on your computer. Ensure that the user profile has the necessary permissions (s3:GetObject", "s3:ListBucket", ...) on the targeted s3 bucket. We can check the ListBucket permission with `aws cli`:
 
 ```bash
 aws s3 ls s3://ap-dvf-data/dvf_zip/
