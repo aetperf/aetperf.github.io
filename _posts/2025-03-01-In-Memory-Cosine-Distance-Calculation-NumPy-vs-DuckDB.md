@@ -12,7 +12,7 @@ tags:
 - Cosine distance
 ---
 
-This Jupyter notebook compares the performance of NumPy and DuckDB for computing cosine distances on the same dataset.
+This notebook compares the performance of NumPy and DuckDB for computing cosine distances on the same dataset.
 
 The dataset is [dbpedia_14](https://huggingface.co/datasets/fancyzhx/dbpedia_14) with 630,073 embedded text chunks of wikipedia text. The embedding model is [distilbert-dot-tas_b-b256-msmarco](https://huggingface.co/sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco) with an embedding dimension of 768. Check this post to see how the embedding vectors were created:
 [A Hybrid information retriever with DuckDB](https://aetperf.github.io/2024/05/30/A-Hybrid-information-retriever-with-DuckDB.html#create_the_embeddings_implem).
@@ -89,6 +89,8 @@ con.sql(query)
     └──────────────┘
 
 
+So we have 630073 vectors of size 768:
+
 ```python
 query = """
 SELECT data_type 
@@ -110,7 +112,7 @@ con.sql(query)
 
 ### Normalize the embedding vectors in-place<a name="load_duckdb"></a>
 
-We first normalize the embedding vectors by dividing them by their L2 norm. While this process is computationally expensive, it is performed only once and eliminates redundant calculations during similarity searches.
+We first normalize the embedding vectors by dividing them by their L2 norm. While this process is computationally expensive, it is performed only once and eliminates redundant calculations during later similarity searches.
 
 Checking the L2 norm confirms that the vectors are unnormalized, with the first vector of the column:
 
@@ -122,7 +124,7 @@ np.linalg.norm(search_embedding, 2)
 
     np.float32(11.047098)
 
-The normalization is done as a two-step process. First, we compute the L2 norm of each vetor and store it in the `l2_norm` column:
+The normalization is done here as a two-step process. First, we compute the L2 norm of each vector and store it in the `l2_norm` column:
 
 ```python
 %%time
@@ -153,7 +155,7 @@ con.sql(query)
 
 ### Select the element to search against<a name="select_duckdb"></a>
 
-To perform a similarity search, we first select a reference embedding from the dataset. Here, we retrieve the entry with `chunk_index = 0`:
+To perform a similarity search, we first select an element from the dataset so that we can find the 5 most similar vectors in the table, i.e. with the smallest cosine distance value. We retrieve the entry with `chunk_index = 0`:
 
 ```python
 query = "SELECT chunk_index, title FROM dbpedia_14 WHERE chunk_index = 0"
@@ -313,13 +315,13 @@ np.linalg.norm(embeddings[0, :], 2)
 
 ### Normalize the embedding vectors<a name="normalize_numpy"></a>
 
-Note that we could have used the normalized vectors from DuckDB that are already in memory. We instead start from the data on disk and apply NumPy’s approach to normalization. 
+Note that we could have used the normalized vectors from DuckDB that are already in memory. We instead start from the data on disk and normalize with NumPy. 
 
 
 ```python
 %%time
 norms = np.linalg.norm(embeddings, axis=1)
-normalized_embeddings = embeddings / norms[:, np.newaxis]
+embeddings /= norms[:, np.newaxis]
 ```
 
     CPU times: user 451 ms, sys: 2.64 s, total: 3.09 s
@@ -328,7 +330,7 @@ normalized_embeddings = embeddings / norms[:, np.newaxis]
 
 
 ```python
-np.linalg.norm(normalized_embeddings[0, :], 2)
+np.linalg.norm(embeddings[0, :], 2)
 ```
 
 
@@ -341,7 +343,7 @@ np.linalg.norm(normalized_embeddings[0, :], 2)
 We use the same reference element as before, now extracted from the NumPy array of normalized embeddings:
 
 ```python
-search_embedding = normalized_embeddings[0]
+search_embedding = embeddings[0]
 ```
 
 ### Cosine distance query<a name="query_numpy"></a>
@@ -349,14 +351,14 @@ search_embedding = normalized_embeddings[0]
 We calculate the cosine distance using the formula $D(u,v)=1− u \cdot v$:
 
 ```python
-cosine_distances = 1.0 - np.dot(normalized_embeddings, search_embedding)
+cosine_distances = 1.0 - np.dot(embeddings, search_embedding)
 ```
 
 To efficiently retrieve the top 5 closest results, we use `np.argpartition` to find the indices of the smallest cosine distances, and then sort those indices to get the final results:
 
 ```python
 %%timeit -r 10 -n 1
-cosine_distances = 1.0 - np.dot(normalized_embeddings, search_embedding)
+cosine_distances = 1.0 - np.dot(embeddings, search_embedding)
 k = 5
 smallest_indices = np.argpartition(cosine_distances, k)[:k]
 smallest_indices = smallest_indices[np.argsort(cosine_distances[smallest_indices])]
@@ -432,8 +434,7 @@ con.close()
 
 ## Results<a name="results"></a>
 
-We compared the elapsed times for computing the cosine distance using both DuckDB and NumPy on the same in-memory data. As shown in the bar chart below, NumPy performs the computation faster than DuckDB. However, these are two different tools with very distinct purposes. NumPy is highly optimized for linear algebra computations, which likely explains the observed performance difference.
-
+We compared the elapsed times for computing the cosine distance using both DuckDB and NumPy on the same in-memory data. As shown in the bar chart below, NumPy performs the computation faster than DuckDB. 
 ```python
 timings = pd.Series({"DuckDB": 165, "NumPy": 36.1}).to_frame("elapsed_time_s")
 ax = timings.plot.bar(alpha=0.7, grid=True, legend=False, rot=45)
@@ -444,6 +445,9 @@ _ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs Nu
 <p align="center">
   <img width="600" src="/img/2025-03-01_01/output_35_0.png" alt="Comparison">
 </p>
+
+
+However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering.
 
 
 {% if page.comments %}
