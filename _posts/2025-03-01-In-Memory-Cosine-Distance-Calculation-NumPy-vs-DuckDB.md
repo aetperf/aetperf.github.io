@@ -315,12 +315,12 @@ np.linalg.norm(embeddings[0, :], 2)
 
 ### Normalize the embedding vectors<a name="normalize_numpy"></a>
 
-Note that we could have used the normalized vectors from DuckDB that are already in memory. We instead start from the data on disk and normalize with NumPy. 
+Note that we could have used the normalized vectors from DuckDB that are already in memory. We instead started independently from the data on disk and normalize the NumPy way: 
 
 
 ```python
 %%time
-norms = np.linalg.norm(embeddings, axis=1)
+norms = np.linalg.norm(embeddings, ord=2, axis=1)
 embeddings /= norms[:, np.newaxis]
 ```
 
@@ -447,7 +447,7 @@ _ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs Nu
 </p>
 
 
-However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering.
+However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But of course, for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering, and so on... This post is only meant for benchmarking.
 
 
 {% if page.comments %}
