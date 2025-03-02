@@ -447,7 +447,7 @@ _ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs Nu
 </p>
 
 
-However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But of course, for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering, and so on... This post is only meant for benchmarking.
+However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But of course, for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering, and so on... This post is only meant for benchmarking computational time.
 
 
 {% if page.comments %}
