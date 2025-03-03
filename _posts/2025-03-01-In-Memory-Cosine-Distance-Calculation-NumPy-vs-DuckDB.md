@@ -109,7 +109,6 @@ con.sql(query)
     └────────────┘
 
 
-
 ### Normalize the embedding vectors in-place<a name="load_duckdb"></a>
 
 We first normalize the embedding vectors by dividing them by their L2 norm. While this process is computationally expensive, it is performed only once and eliminates redundant calculations during later similarity searches.
@@ -422,7 +421,7 @@ pd.DataFrame({"chunk_index": smallest_indices, "cosine_distance": smallest_value
 </div>
 
 
-The top 5 closest elements are the same chunk indexes as those found earlier with DuckDB, with same distance. 
+The top 5 closest elements are the same chunk indexes as those found earlier with DuckDB, with same distance. We can directly compare the chunk index from the database table with the NumPy array index because the embeddings were loaded using `ORDER BY` chunk_index, and it contains contiguous integers starting at 0.
 
 Finally, we ensure that the database is properly detached from DuckDB, and the connection is closed.
 
@@ -447,7 +446,7 @@ _ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs Nu
 </p>
 
 
-However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But of course, for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering, and so on... This post is only meant for benchmarking.
+However, these are two different tools with very distinct purposes. NumPy is based on highly optimized linear algebra libraries, which likely explains the observed performance difference in this small brute-force search example. But of course, for any real-world vector search application, a database with vector support is essential: disk-based storage with persistence, advanced indexing techniques, memory mapping to handle large datasets efficiently, while enabling concurrent queries and filtering, and so on... This post is only meant for benchmarking computational time.
 
 
 {% if page.comments %}
