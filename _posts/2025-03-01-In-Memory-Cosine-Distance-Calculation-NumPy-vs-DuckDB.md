@@ -435,9 +435,9 @@ con.close()
 
 We compared the elapsed times for computing the cosine distance using both DuckDB and NumPy on the same in-memory data. As shown in the bar chart below, NumPy performs the computation faster than DuckDB. 
 ```python
-timings = pd.Series({"DuckDB": 165, "NumPy": 36.1}).to_frame("elapsed_time_s")
+timings = pd.Series({"DuckDB": 165, "NumPy": 36.1}).to_frame("elapsed_time_ms")
 ax = timings.plot.bar(alpha=0.7, grid=True, legend=False, rot=45)
-_ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs NumPy on the dbpedia_14 Dataset", ylabel="Elapsed time (s)")
+_ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs NumPy on the dbpedia_14 Dataset", ylabel="Elapsed time (ms)")
 ```
 
 
