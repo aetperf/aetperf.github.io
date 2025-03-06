@@ -137,7 +137,7 @@ img
 
 
 <p align="center">
-  <img width="900" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-04-01_01/output_14_1.png" alt="Datashader">
+  <img width="900" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-04_01/output_14_1.png" alt="Datashader">
 </p>
 
 
@@ -223,7 +223,7 @@ _ = plt.axis("off")
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-04-01_01/output_27_0.png" alt="Selected_points">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-04_01/output_27_0.png" alt="Selected_points">
 </p>
 
 
@@ -353,7 +353,7 @@ _ = plt.axis("off")
 
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-04-01_01/output_39_0.png" alt="missing_points">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-04_01/output_39_0.png" alt="missing_points">
 </p>
 
 Note that without any index, both queries, `ST_DWithin` and `ST_Intersects`, takes the same amount of time [around 1.38s].
@@ -426,7 +426,7 @@ _ = plt.axis("off")
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-04-01_01/output_47_0.png" alt="k_ring">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-04_01/output_47_0.png" alt="k_ring">
 </p>
 
     
@@ -496,7 +496,7 @@ _ = ax.set(title="Spatial query elapsed time", ylabel="Elapsed time (ms)")
 
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-04-01_01/output_54_0.png" alt="with_and_without_index">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-04_01/output_54_0.png" alt="with_and_without_index">
 </p>
 
 
@@ -506,5 +506,5 @@ _ = ax.set(title="Spatial query elapsed time with index", ylabel="Elapsed time (
 ```
 
 <p align="center">
-  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-04-01_01/output_55_0.png" alt="with_index">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-04_01/output_55_0.png" alt="with_index">
 </p>
