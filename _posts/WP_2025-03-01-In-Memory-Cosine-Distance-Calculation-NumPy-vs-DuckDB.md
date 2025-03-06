@@ -403,7 +403,7 @@ _ = ax.set(title="Comparing cosine distance computation in-memory:\nDuckDB vs Nu
 
 
 <p align="center">
-  <img width="600" src="/img/2025-03-01_01/output_35_0.png" alt="Comparison">
+  <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-03-01_01/output_35_0.png" alt="Comparison">
 </p>
 
 
