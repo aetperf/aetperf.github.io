@@ -259,7 +259,7 @@ The spatial index is not used with `ST_DWithin`.
 
 Here is what the Spatial extension's [documentation](https://duckdb.org/docs/stable/extensions/spatial/r-tree_indexes#what-are-the-limitations-of-r-tree-indexes-in-duckdb) says:
 
-> The R-tree index will only be used to perform "index scans" when the table is filtered (using a `WHERE` clause) with one of the following spatial predicate functions (as they all imply intersection): `ST_Equals`, `ST_Intersects`, `ST_Touches`, `ST_Crosses`, `ST_Within`, `ST_Contains`, `ST_Overlaps`, `ST_Covers`, `ST_CoveredBy`, `ST_ContainsProperly`.
+> The R-tree index will only be used to perform "index scans" when the table is filtered [using a `WHERE` clause] with one of the following spatial predicate functions [as they all imply intersection]: `ST_Equals`, `ST_Intersects`, `ST_Touches`, `ST_Crosses`, `ST_Within`, `ST_Contains`, `ST_Overlaps`, `ST_Covers`, `ST_CoveredBy`, `ST_ContainsProperly`.
 
 We switch to using `ST_Intersects` along with `ST_Buffer`:
 
