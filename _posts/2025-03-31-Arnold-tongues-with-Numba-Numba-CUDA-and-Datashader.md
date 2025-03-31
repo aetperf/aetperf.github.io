@@ -90,7 +90,7 @@ $\Omega$ and $\hat{K}$ are fixed parameters. We start with $\theta_0 = 0$.
 
 Because we are dealing with a circle map, $\theta_{n}$ is computed modulo 1. This ensures:
 
-$$0 \leq \theta_n \leq 1$$
+$$0 \leq \theta_n < 1$$
 
 We compute the rotation number $\omega$, or also called the winding number, which is defined as:
 
@@ -594,7 +594,7 @@ k_values, omega_values, rotation_numbers = compute_all_gpu(
     CPU times: user 10min 32s, sys: 609 ms, total: 10min 33s
     Wall time: 10min 33s
 
-Even with 200 million parameter combinations (20,000 × 10,000), the GPU computation completes in 10 minutes.
+Even with 200 million parameter combinations (20,000 × 10,000) and 10,000 iteration per parameter couple, the GPU computation completes in 10 minutes.
 
 ```python
 %%time
