@@ -23,7 +23,7 @@ In simpler terms, Arnold tongues represent regions where two oscillating systems
 
 Within the tongue-shaped regions, the original oscillator synchronizes with the forcing oscillator, either matching its frequency exactly or locking onto a rational multiple of it. This phenomenon is known as frequency locking or mode locking. These rational frequency ratio $p/q$ are such that the integers $p$ and $q$ are relative primes.
 
-These tongues are named Vladimir Arnold, a great Russian mathematician known for his contributions to many fields.
+These tongues are named after Vladimir Arnold, a great Russian mathematician known for his contributions to many fields.
 
 <p align="center">
   <img width="600" src="/img/2025-03-31_01/Arnold_1963.jpg" alt="Vladimir Arnold in 1963">
