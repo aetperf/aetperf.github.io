@@ -646,7 +646,7 @@ plt.tight_layout()
   <img width="900" src="/img/2025-05-11_01/output_30_0.png" alt="Zipf">
 </p>
 
-Looking at the visualizations, we can observe that Zipf's law doesn't fit very well for the highest-ranked words ("de", "la", "le", "à", "et", ...). The most frequent words tend to be less frequent than what the simple power law predicts. And because we gave these words the largest weights in the regression, this deteriorates the fit. Maybe the Zipf-Mandelbrot law might provide a better fit. It is a more general formula that includes an additional parameter:
+Looking at the visualization, we can observe that Zipf's law doesn't fit very well for the highest-ranked words ("de", "la", "le", "à", "et", ...). The most frequent words tend to be less frequent than what the simple power law predicts. And because we gave these words the largest weights in the regression, this deteriorates the fit. Maybe the Zipf-Mandelbrot law might provide a better fit. It is a more general formula that includes an additional parameter:
 
 $$f(r) = \frac{C}{(r + q)^{\alpha}}$$
 
