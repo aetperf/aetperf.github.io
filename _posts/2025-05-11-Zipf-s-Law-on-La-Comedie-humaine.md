@@ -546,8 +546,8 @@ We have a "vocabulary" size of around 20000 words. This gives us a dataset large
 
 
 ```python
-def plot_limited_frequencies(freq, rank_start=0, rank_end=10):
-    selected_words = freq.iloc[rank_start:rank_end]
+def plot_limited_frequencies(freq, rank_start=1, rank_end=11):
+    selected_words = freq.iloc[rank_start-1:rank_end-1]
     ax = selected_words.plot.scatter(
         "rank", "frequency", alpha=0.7, edgecolors="k", figsize=(9, 7)
     )
