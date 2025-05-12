@@ -8,7 +8,8 @@ tags:
 - scraping
 - scikit-learn
 - natural language
-- empirical
+- empirical law
+- power law
 ---
 
 In this Python notebook, we're going to explore Zipf's law as applied to words.
@@ -23,7 +24,7 @@ Where:
 - $f(r)$ is the frequency of a word with rank $r$
 - $r$ is the rank of the word when all words are arranged by decreasing frequency
 
-It's worth noting that this law was first investigated by the French stenographer Jean-Baptiste Estoup (left) in 1916 and later extended and widely popularized by the American linguist George Kingsley Zipf (right).
+It's worth noting that this law was first investigated by the French stenographer Jean-Baptiste Estoup (left/top) in 1916 and later extended and widely popularized by the American linguist George Kingsley Zipf (right/bottom).
 
 <div align="center" style="margin: 20px 0;">
   <img style="height: 200px; margin: 0 10px;" src="/img/2025-05-11_01/Estoup.png" alt="Estoup">
