@@ -1,12 +1,12 @@
 
 This Python notebook explores [Arnold tongues](https://en.wikipedia.org/wiki/Arnold_tongue). Here is a short description from [wikipedia](https://en.wikipedia.org/wiki/Arnold_tongue):
 
-> In mathematics, particularly in dynamical systems, Arnold tongues (named after Vladimir Arnold) are a pictorial phenomenon that occur when visualizing how the rotation number of a dynamical system, or other related invariant property thereof, changes according to two or more of its parameters. The regions of constant rotation number have been observed, for some dynamical systems, to form geometric shapes that resemble tongues, in which case they are called Arnold tongues.
+> In mathematics, particularly in dynamical systems, Arnold tongues [named after Vladimir Arnold] are a pictorial phenomenon that occur when visualizing how the rotation number of a dynamical system, or other related invariant property thereof, changes according to two or more of its parameters. The regions of constant rotation number have been observed, for some dynamical systems, to form geometric shapes that resemble tongues, in which case they are called Arnold tongues.
 
 In simpler terms, Arnold tongues represent regions where two oscillating systems synchronize in interesting ways. So an oscillator with its natural frequency may be forced by another oscillator at a different frequency, depending on the forcing parameters. On a parameter plot:
 
 - The horizontal axis represents the frequency of the forcing oscillator  
-- The vertical axis represents the amplitude (strength) of the forcing  
+- The vertical axis represents the amplitude [strength] of the forcing  
 
 Within the tongue-shaped regions, the original oscillator synchronizes with the forcing oscillator, either matching its frequency exactly or locking onto a rational multiple of it. This phenomenon is known as frequency locking or mode locking. These rational frequency ratio $p/q$ are such that the integers $p$ and $q$ are relative primes.
 
