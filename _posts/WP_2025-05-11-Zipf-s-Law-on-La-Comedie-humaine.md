@@ -11,7 +11,7 @@ Where:
 - $f(r)$ is the frequency of a word with rank $r$
 - $r$ is the rank of the word when all words are arranged by decreasing frequency
 
-It's worth noting that this law was first investigated by the French stenographer Jean-Baptiste Estoup (left/top) in 1916 and later extended and widely popularized by the American linguist George Kingsley Zipf (right/bottom).
+It's worth noting that this law was first investigated by the French stenographer Jean-Baptiste Estoup [left/top] in 1916 and later extended and widely popularized by the American linguist George Kingsley Zipf [right/bottom].
 
 <div align="center" style="margin: 20px 0;">
   <img style="height: 200px; margin: 0 10px;" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-05-11_01/Estoup.png" alt="Estoup">
@@ -20,7 +20,7 @@ It's worth noting that this law was first investigated by the French stenographe
 
 This low applied to words may suggest that language follows a principle of least effort, where communicators balance the desire for precision ($r$ is large) with efficiency ($r$ is small). Zipf wrote:
 
-> The power laws in linguistics and in other human systems reflect an economical rule: everything carried out by human beings and other biological entities must be done with least effort (at least statistically)
+> The power laws in linguistics and in other human systems reflect an economical rule: everything carried out by human beings and other biological entities must be done with least effort [at least statistically]
 
 More generally, the relationship is written as:
 
@@ -34,7 +34,7 @@ In a log-log plot, Zipf's law appears as a straight line with slope $-\alpha$:
 
 $$\log(f(r)) = \log(C) - \alpha \log(r)$$
 
-Let's check how this applies to a text corpus. For this, we are using Honoré de Balzac's extensive series of books called "La Comédie Humaine" (in French). It's a collection of many novels depicting French society, written between 1829 and 1850.
+Let's check how this applies to a text corpus. For this, we are using Honoré de Balzac's extensive series of books called "La Comédie Humaine" [in French]. It's a collection of many novels depicting French society, written between 1829 and 1850.
 
 Here is the outline of the post:
 - [Imports and package versions](#imports)
@@ -595,7 +595,7 @@ plt.tight_layout()
   <img width="900" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-05-11_01/output_30_0.png" alt="Zipf">
 </p>
 
-Looking at the visualization, we can observe that Zipf's law doesn't fit very well for the highest-ranked words ("de", "la", "le", "à", "et", ...). The most frequent words tend to be less frequent than what the simple power law predicts. And because we gave these words the largest weights in the regression, this deteriorates the fit. Maybe the Zipf-Mandelbrot law might provide a better fit. It is a more general formula that includes an additional parameter:
+Looking at the visualization, we can observe that Zipf's law doesn't fit very well for the highest-ranked words ["de", "la", "le", "à", "et", ...]. The most frequent words tend to be less frequent than what the simple power law predicts. And because we gave these words the largest weights in the regression, this deteriorates the fit. Maybe the Zipf-Mandelbrot law might provide a better fit. It is a more general formula that includes an additional parameter:
 
 $$f(r) = \frac{C}{(r + q)^{\alpha}}$$
 
