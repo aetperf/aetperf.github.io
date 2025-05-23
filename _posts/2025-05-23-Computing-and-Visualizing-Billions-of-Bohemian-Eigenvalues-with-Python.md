@@ -55,7 +55,7 @@ So instead of computing all possible matrices, we are only going to sample 1 bil
   <img width="300" src="/img/2025-05-23_01/Random_5x5_1_gallery@2x.jpg" alt="bhime_original">
 </p>
 
-Although I like the resulting plot, the main point of this Python notebook is to be able to compute and visualize these 5 billion eigenvalues smoothly. My laptop has 32GB of RAM and a 20-thread Intel i9 CPU. And for that, we are going to use some great packages: numpy, numba, pyarrow, dask and datashader. Note that I tried to perform the eigenvalue computations with PyTorch but it did not really improve the overall efficiency for these very small matrices as compared to numba.
+Although I like the resulting plot, the main point of this Python notebook is to be able to compute and visualize these 5 billion eigenvalues smoothly. My laptop has 32GB of RAM and a 20-thread Intel i9 CPU. And for that, we are going to use some great packages: [numpy](https://numpy.org/), [numba](https://numba.pydata.org/), [pyarrow](https://arrow.apache.org/docs/python/index.html), [dask](https://www.dask.org/) and [datashader](https://datashader.org/). Note that I tried to perform the eigenvalue computations with PyTorch but it did not really improve the overall efficiency for these very small matrices as compared to numba.
 
 
 We are going to process by batch for the eigenvalues computation and the visualization. This workflow has two distinct steps:
