@@ -193,7 +193,7 @@ cmap = palette["kgy"]
 bg_col = "black"
 ```
 
-We filter out real eigenvalues nearly on the real axis (those with imaginary parts `eps` close to zero) to focus on the complex structure. We also remove potential eigenvalues outside the square box $-3\leq x\leq3$ and $-3\leq y\leq3$.
+We filter out real eigenvalues nearly on the real axis (those with imaginary parts `eps` close to zero) to focus on the complex structure. We also remove potential eigenvalues outside the square box $-3\leq x\leq3$ and $-3\leq y\leq3$. The `max_points` parameter caps pixel density values to prevent oversaturation.
 
 
 ```python
