@@ -170,7 +170,6 @@ compute_and_save_eigenvalues(
 )
 ```
 
-      0%|                                                                                                                                                   | 0/100 [00:00<?, ?it/s]OMP: Info #276: omp_set_nested routine deprecated, please use omp_set_max_active_levels instead.
     100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [19:49<00:00, 11.90s/it]
 
     CPU times: user 4h 14min 28s, sys: 1min 22s, total: 4h 15min 51s
