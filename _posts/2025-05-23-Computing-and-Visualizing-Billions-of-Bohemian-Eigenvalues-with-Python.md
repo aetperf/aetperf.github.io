@@ -55,14 +55,14 @@ So instead of computing all possible matrices, we are only going to sample 1 bil
   <img width="300" src="/img/2025-05-23_01/Random_5x5_1_gallery@2x.jpg" alt="bhime_original">
 </p>
 
-Although I like the resulting plot, the main point of this Python notebook is to be able to compute and visualize these 5 billion eigenvalues smoothly. My laptop has 32GB of RAM and a 20-thread Intel i9 CPU. And for that, we are going to use some great packages: [numpy](https://numpy.org/), [numba](https://numba.pydata.org/), [pyarrow](https://arrow.apache.org/docs/python/index.html), [dask](https://www.dask.org/) and [datashader](https://datashader.org/). Note that I tried to perform the eigenvalue computations with PyTorch but it did not really improve the overall efficiency for these very small matrices as compared to numba.
+Although I like the resulting plot, the main point of this Python notebook is to be able to compute and visualize these 5 billion eigenvalues smoothly. My laptop has 32GB of RAM and a 20-cores Intel i9 CPU. And for that, we are going to use some great packages: [numpy](https://numpy.org/), [numba](https://numba.pydata.org/), [pyarrow](https://arrow.apache.org/docs/python/index.html), [dask](https://www.dask.org/) and [datashader](https://datashader.org/). Note that I tried to perform the eigenvalue computations with PyTorch on my GPU but it did not improve the overall efficiency for these very small matrices as compared to numba.
 
 
 We are going to process by batch for the eigenvalues computation and the visualization. This workflow has two distinct steps:
 
 1. **Generate, compute and store**: We generate matrices in batches, compute eigenvalues in parallel using Numba's `njit`, and write the eigenvalues incrementally to a Parquet file.
 
-2. **Load and visualize**: We use Dask to load data from the Parquet file in chunks, distributing points into partition buckets for out-of-core visualization with Datashader.
+2. **Load and visualize**: We use dask to load data from the Parquet file in chunks, distributing points into partition buckets for out-of-core visualization with Datashader.
 
 This *chunk* approach allows us to process billions of eigenvalues without overwhelming system memory.
 
@@ -192,7 +192,7 @@ cmap = palette["kgy"]
 bg_col = "black"
 ```
 
-We filter out real eigenvalues nearly on the real axis (those with imaginary parts `eps` close to zero) to focus on the complex structure. We also remove potential eigenvalues outside the square box $-3\leq x\leq3$ and $-3\leq y\leq3$. The `max_points` parameter caps pixel density values to prevent oversaturation.
+We filter out real eigenvalues located near the real axis (those with imaginary part magnitude smaller than `eps`) to focus on the complex structure. We also remove potential eigenvalues outside the square box $-3\leq x\leq3$ and $-3\leq y\leq3$. The `max_points` parameter caps pixel density values to prevent oversaturation.
 
 
 ```python
