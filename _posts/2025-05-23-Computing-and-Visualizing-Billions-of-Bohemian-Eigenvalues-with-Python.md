@@ -254,7 +254,7 @@ visualize(
 
 
 <p align="center">
-  <img width="900" src="/img/2025-05-23_01/output_10_1.png" alt="bhime">
+  <img width="900" src="/img/2025-05-23_01/output_10_1.jpg" alt="bhime">
 </p>
 
 {% if page.comments %}
