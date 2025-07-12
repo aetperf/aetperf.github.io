@@ -14,7 +14,7 @@ tags:
 ---
 
 
-In this Python notebook, we are going to analyze *git* commit timestamps across multiple repositories to identify temporal patterns in a git user coding activity (me actually).
+In this Python notebook, we are going to analyze *git commit* timestamps across multiple repositories to identify temporal patterns in a git user coding activity (me, actually).
 
 **Outline**
 - [Imports and package versions](#imports)
