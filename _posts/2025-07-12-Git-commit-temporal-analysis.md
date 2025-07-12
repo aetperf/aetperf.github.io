@@ -519,7 +519,7 @@ plt.tight_layout()
 </p>
 
 
-So it seems that 4 pm is my most productive hour!
+So it seems that friday 4 pm is my most productive hour of the week!
 
 
 {% if page.comments %}
