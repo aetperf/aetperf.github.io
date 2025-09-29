@@ -159,7 +159,7 @@ compute_and_save_eigenvalues(
 
 ## Second part : visualization with Datashader
 
-Datashader handles large datasets efficiently when used with dask by processing data in chunks and creating density plots without loading all points into memory, only the final raster (the image) is kept in memory.  
+Datashader handles large datasets efficiently when used with dask by processing data in chunks and creating density plots without loading all points into memory, only the final raster - the image - is kept in memory.  
 
 
 ```python
