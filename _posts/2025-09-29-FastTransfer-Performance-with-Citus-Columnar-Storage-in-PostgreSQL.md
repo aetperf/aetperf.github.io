@@ -49,7 +49,7 @@ One aspect we particularly appreciate about FastTransfer is its range of paralle
 
 For this analysis, we focus on three methods that we've found most effective in PostgreSQL environments: **Ctid**, **Ntile**, and **RangeId**. Each offers distinct advantages depending on your specific use case.
 
-Also not that in more recent versions of FastTransfer (v0.13.8) a new method was introduced `Physloc` parallel method for SQL Server sources.
+Also not that in more recent versions of FastTransfer (v0.13.8) a new method was introduced **Physloc** parallel method for SQL Server sources.
 
 ## Understanding Citus Columnar Storage
 
@@ -411,36 +411,6 @@ The following charts illustrate the performance characteristics we observed acro
 
 ### Citus Columnar → PostgreSQL Transfer Performance
 <img src="/img/2025-09-29_01/transfer_citus_to_pg.jpg" alt="Chart showing transfer performance from Citus Columnar to PostgreSQL, comparing Ntile and RangeId methods with both LOGGED and UNLOGGED target tables. RangeId with UNLOGGED tables shows the best performance at 3.9 seconds with 8 threads." width="900">
-
-## Practical Recommendations
-
-Based on our testing, here are some practical guidelines for optimizing your data transfers:
-
-### Choosing the Right Method
-
-1. **For PostgreSQL to PostgreSQL transfers**: Start with the Ctid method if you have access to physical row locations. It consistently delivered the best performance in our tests.
-
-2. **When Ctid isn't available**: Consider RangeId as your next option, especially if you have sequential numeric keys. It offers good performance with broader compatibility.
-
-3. **For maximum portability**: Use Ntile when you need to ensure compatibility across different database systems, though expect some performance trade-off.
-
-### Optimizing Parallelization
-
-- **Start with 4 threads**: This typically provides the best balance between speed and resource efficiency
-- **Monitor efficiency**: If efficiency drops below 50%, consider reducing thread count
-- **Test in your environment**: Our results on local hardware may differ from your production setup
-
-### Working with Columnar Storage
-
-- **Expect write overhead**: Plan for approximately 20-30% slower writes to columnar tables
-- **Leverage read benefits**: Take advantage of faster reads when columnar is your source
-- **Consider UNLOGGED tables**: For non-critical data migrations, UNLOGGED target tables can provide significant speed improvements
-
-### Configuration Considerations
-
-- **Compression choice**: LZ4 provides a good balance of speed and compression for most workloads
-- **Stripe size tuning**: Adjust stripe_row_count based on your typical query patterns
-- **Batch size optimization**: Experiment with FastTransfer's batch size parameters for your specific data characteristics
 
 ## Key Takeaways
 
