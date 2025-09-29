@@ -49,6 +49,8 @@ One aspect we particularly appreciate about FastTransfer is its range of paralle
 
 For this analysis, we focus on three methods that we've found most effective in PostgreSQL environments: **Ctid**, **Ntile**, and **RangeId**. Each offers distinct advantages depending on your specific use case.
 
+Also not that in more recent versions of FastTransfer (v0.13.8) a new method was introduced `Physloc` parallel method for SQL Server sources.
+
 ## Understanding Citus Columnar Storage
 
 Before diving into the performance results, it's worth understanding what makes columnar storage particularly interesting for data migration scenarios. [Citus](https://docs.citusdata.com/en/v13.0/) is an open-source PostgreSQL extension that adds distributed database capabilities and columnar storage options.
