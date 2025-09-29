@@ -93,7 +93,7 @@ FastTransfer version: 0.13.12
   --loadmode "Truncate" --method "Ctid" --degree 128
 ```
 
-Note the `Maximum Pool Size`=150 in the connection string, increased from the default 100 to support 128 parallel threads..
+Note the `Maximum Pool Size`=150 in the connection string, increased from the default 100 to support 128 parallel threads.
 
 ## Performance Results
 
