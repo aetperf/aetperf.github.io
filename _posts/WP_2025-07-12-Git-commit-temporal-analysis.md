@@ -1,20 +1,9 @@
 
-In this Python notebook, we are going to analyze *git commit* timestamps across multiple repositories to identify temporal patterns in a git user coding activity (me, actually).
-
-**Outline**
-- [Imports and package versions](#imports)
-- [Repository Discovery and Data Extraction](#discovery)
-    - [Data Collection](#collection)
-    - [Data Preprocessing](#preprocessing)
-- [Visualizations](#visualizations)
-    - [Weekly Distribution](#weekly)
-    - [Hourly Distribution (Linear)](#hourly_linear)
-    - [Hourly Distribution (Polar)](#hourly_polar)
-    - [Temporal Heatmap](#heatmap)
+In this Python notebook, we are going to analyze *git commit* timestamps across multiple repositories to identify temporal patterns in a git user coding activity - me, actually.
 
 ## Imports and Package Versions<a name="imports"></a>
 
-`BASE_DIR` is the root folder containing all the git repositories. The `USER_FILTERS` list contains substrings to match against git author names for filtering commits from a specific user with various names (github, gitlab from various organizations). You can adapt these two variables with your own directory and git user names.
+`BASE_DIR` is the root folder containing all the git repositories. The `USER_FILTERS` list contains substrings to match against git author names for filtering commits from a specific user with various names - github, gitlab from various organizations. You can adapt these two variables with your own directory and git user names.
 
 
 ```python
@@ -156,19 +145,6 @@ hour_df.head(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -218,19 +194,6 @@ weekday_df.head(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -398,19 +361,6 @@ heatmap_normalized.head(3)
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
