@@ -80,7 +80,7 @@ In our tests, we chose LZ4 compression with custom stripe sizing based on our ex
 
 ## Experimental Setup
 
-To provide practical, reproducible results, we conducted our tests in a controlled environment that many developers might relate to—a local development setup. While production environments will naturally differ, the relative performance patterns we observed should translate to larger scales.
+To provide practical, reproducible results, we conducted our tests in a controlled environment that many developers might relate to "a local development setup". While production environments will naturally differ, the relative performance patterns we observed should translate to larger scales.
 
 ### Test Environment
 
@@ -121,7 +121,7 @@ SELECT version();
 
 ### Test Data: TPCH Orders Table
 
-For our benchmarks, we selected the TPCH benchmark's `orders` table at scale factor 10, which provides a realistic dataset of 15 million rows. This table represents a common pattern in analytical workloads—a mix of numeric, date, and text fields that you might encounter in real-world scenarios:
+For our benchmarks, we selected the TPCH benchmark's `orders` table at scale factor 10, which provides a realistic dataset of 15 million rows. This table represents a common pattern in analytical workloads, that is, a mix of numeric, date, and text fields that you might encounter in real-world scenarios:
 
 ```sql
 SELECT COUNT(*) FROM tpch_10.orders;
@@ -204,7 +204,7 @@ For comparison:
 These baseline results reveal important trade-offs:
 - Writing to columnar storage with custom parameters adds approximately 19% overhead compared to standard tables
 - Default columnar parameters increase this overhead to about 32%
-- However, the storage benefits are substantial: columnar storage (default parameters) uses only 454MB compared to 1.9GB for standard tables—a 76% reduction
+- However, the storage benefits are substantial: columnar storage (default parameters) uses only 454MB compared to 1.9GB for standard tables, a 76% reduction
 
 This trade-off between write performance and storage efficiency is a recurring theme in our analysis.
 
@@ -490,7 +490,7 @@ We observed that writing to columnar storage introduces approximately 19% overhe
 - Data reorganization into columnar format (stripes and chunks)
 - Additional metadata management
 
-However, it's important to remember that this overhead delivers significant storage savings—in our case, a 76% reduction in disk usage.
+However, it's important to remember that this overhead delivers significant storage savings, in our case, a 76% reduction in disk usage.
 
 #### Read Performance Benefits
 
