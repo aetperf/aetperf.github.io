@@ -66,13 +66,15 @@ FastTransfer version: 0.13.12
 ```bash
 ./FastTransfer \
   --sourceconnectiontype "pgcopy" \
-  --sourceconnectstring "Host=localhost;Port=5432;Database=tpch;Username=fasttransfer;Password=******" \
+  --sourceconnectstring "Host=localhost;Port=5432;Database=tpch;Trust Server Certificate=True;Application Name=FastTransfer;Maximum Pool Size=150;Timeout=15;Command Timeout=10800;Username=fasttransfer;Password=******" \
   --sourceschema "tpch_100" --sourcetable "lineitem" \
   --targetconnectiontype "pgcopy" \
-  --targetconnectstring "Host=10.10.0.50;Port=5432;Database=tpch;Username=fasttransfer;Password=******" \
+  --targetconnectstring "Host=10.10.0.50;Port=5432;Database=tpch;Trust Server Certificate=True;Application Name=FastTransfer;Maximum Pool Size=150;Timeout=15;Command Timeout=10800;Username=fasttransfer;Password=******" \
   --targetschema "tpch_100" --targettable "lineitem" \
   --loadmode "Truncate" --method "Ctid" --degree 128
 ```
+
+Note the `Maximum Pool Size`=150 in the connection string, increased from the default 100 to support 128 parallel threads.
 
 ## Performance Results
 
