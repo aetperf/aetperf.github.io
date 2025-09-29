@@ -7,10 +7,12 @@ categories: [database, performance]
 tags:
 - FastTransfer
 - PostgreSQL replication
-- OVH high-performance computing
+- OVH 
+- High-performance
 - Database migration speed
 - TPC-H benchmark
 - 20 Gbps network
+- c3-256
 - PostgreSQL parallel transfer
 ---
 
