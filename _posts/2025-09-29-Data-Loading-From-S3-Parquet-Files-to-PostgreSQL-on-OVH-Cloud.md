@@ -1,5 +1,5 @@
 ---
-title: Data Loading from S3 Parquet Files to PostgreSQL on OVH Cloud
+title: Data Loading from S3 Parquet Files to PostgreSQL on OVH Cloud WIP
 layout: post
 comments: true
 author: François Pacull
