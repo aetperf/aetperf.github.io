@@ -82,7 +82,7 @@ Let's break down the key components and understand what each parameter does:
 - **`--query`**: The DuckDB SQL that leverages the `read_parquet()` function to directly access Parquet files from S3, with `filename=true` to capture file origins for distribution
 
 ### Target Configuration
-- **`--targetconnectiontype "pgcopy"`**: Uses PostgreSQL's native COPY protocol, the fastest method for bulk loading data into PostgreSQL
+- **`--targetconnectiontype "pgcopy"`**: Uses PostgreSQL's native COPY protocol, a fast method for bulk loading data into PostgreSQL
 - **`--targetserver "localhost:5432"`**: Standard PostgreSQL connection details
 - **`--targetuser` and `--targetpassword`**: Database authentication credentials
 
@@ -167,30 +167,7 @@ Best scaling - achieves 8.7x speedup at 16 workers, finally hitting network band
 
 The comparison reveals how primary keys and WAL logging independently bottleneck performance. WITHOUT PK/UNLOGGED achieves the best scaling (8.7x at 16 workers), while WITH PK/LOGGED caps at 3.1x. The intermediate configurations show each factor's impact: removing the primary key or disabling WAL each provide significant improvements, with their combination delivering maximum performance.
 
-## Practical Insights and Trade-offs
-
-### When to Use Each Configuration
-
-**WITH PK / LOGGED** (Production with constraints)
-- Production tables requiring immediate data integrity and durability
-- When both constraint enforcement and crash recovery are critical
-
-**WITH PK / UNLOGGED** (Fast loading with constraints)
-- Staging tables where constraints matter but crash recovery doesn't
-- Temporary tables with unique requirements that can be rebuilt from source
-
-**WITHOUT PK / LOGGED** (Production bulk loads)
-- Initial data loads to production where constraints will be added afterward
-- Append-only tables where uniqueness is guaranteed at the source
-
-**WITHOUT PK / UNLOGGED** (Maximum performance)
-- ETL staging environments
-- Temporary transformation tables
-- Development and testing
-
-UNLOGGED tables lose data on crashes but excel when source data remains available for rebuilding.
-
-### Network and I/O Considerations
+## Network and I/O Considerations
 
 Different configurations reveal different bottlenecks:
 
@@ -199,28 +176,7 @@ Different configurations reveal different bottlenecks:
 - **WITHOUT PK / LOGGED**: WAL contention plateaus at 5.2x
 - **WITHOUT PK / UNLOGGED**: Best scaling at 8.7x (467.8 MiB in 5.1s ≈ 92 MB/s)
 
-At 92 MB/s with 4 Gbps network (~500 MB/s) and 1465 MiB/s local NVMe capacity, neither network nor disk I/O are the bottleneck. The limitation could come from several sources: S3 object storage throughput, DuckDB Parquet parsing overhead, or PostgreSQL's internal coordination when multiple workers write concurrently to the same table (page allocations, table extensions, shared buffer management).
-
-### Optimal Parallelism Settings
-
-- **WITH PK / LOGGED**: degree 8 (peaks at 3.1x)
-- **WITH PK / UNLOGGED**: degree 16+ (continues scaling to 5.9x)
-- **WITHOUT PK / LOGGED**: degree 8 (plateaus at 5.2x)
-- **WITHOUT PK / UNLOGGED**: degree 16+ (scales to 8.7x)
-
-Start with degree 8 as baseline, increase to 16 for UNLOGGED configurations.
-
-## Key Takeaways
-
-1. **Primary keys and WAL logging independently limit performance** - Each factor roughly halves maximum speedup, with their combination creating the worst bottleneck
-
-2. **UNLOGGED tables unlock network-bound performance** - WITHOUT PK/UNLOGGED achieves 8.7x speedup, finally saturating the 4 Gbps connection
-
-3. **Optimal parallelism varies by configuration** - LOGGED tables plateau at degree 8, while UNLOGGED configurations scale to 16+
-
-4. **Choose configuration based on recovery requirements** - Production durability vs. rebuild-from-source staging determines the right trade-off
-
-5. **FastTransfer's DataDriven distribution prevents worker contention** - File-based work assignment ensures PostgreSQL internals, not distribution overhead, determine the bottleneck
+At 92 MB/s with 4 Gbps network (~500 MB/s) and 1465 MiB/s local NVMe capacity, neither network nor disk I/O are the bottleneck. The limitation could come from several sources: S3 object storage throughput, DuckDB Parquet parsing overhead, or PostgreSQL's internal coordination when multiple workers write concurrently to the same table.
 
 ## Conclusion
 
