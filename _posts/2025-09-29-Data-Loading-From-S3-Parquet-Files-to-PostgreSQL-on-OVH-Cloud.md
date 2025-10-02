@@ -30,8 +30,6 @@ For our testing environment, we deployed PostgreSQL on an OVH c3-64 instance in 
 - **Source Engine**: DuckDB v1.3.2 (for Parquet reading and streaming)
 - **Target Database**: PostgreSQL 16.10
 
-These versions represent current stable releases, with PostgreSQL 16 bringing improved parallel query performance and DuckDB offering exceptional Parquet reading capabilities.
-
 ### Hardware Configuration
 - **Compute**: 32 vCores @ 2.3 GHz with 64 GB RAM
 - **Storage**: 400 GB local NVMe where PostgreSQL's data directory resides
@@ -40,7 +38,7 @@ These versions represent current stable releases, with PostgreSQL 16 bringing im
 
 The local NVMe delivers strong sequential write performance at 1465 MiB/s (measured with fio), providing ample disk bandwidth for our data loading workloads.
 
-This configuration represents a practical mid-range setup - not the smallest instance that would struggle with parallel workloads, nor an oversized machine that would mask performance characteristics. In my experience, this sweet spot helps identify real bottlenecks rather than just throwing hardware at the problem.
+This configuration represents a practical mid-range setup, not the smallest instance that would struggle with parallel workloads, nor an oversized machine that would mask performance characteristics. 
 
 ### The Data: TPC-H Orders Table
 
@@ -49,7 +47,7 @@ We're using the TPC-H benchmark's orders table at scale factor 10, which gives u
 - Total dataset size: 467.8 MiB
 - 15 million rows with mixed data types (integers, decimals, dates, and varchar)
 
-The data resides in an OVH S3-compatible object storage bucket in the Gravelines region, and each file contains roughly 937,500 rows. This distribution allows us to test parallel loading strategies effectively - there's enough data to see performance differences, but not so much that individual test runs become impractical.
+The data resides in an OVH S3-compatible object storage bucket in the Gravelines region, and each file contains roughly 937,500 rows. This distribution allows us to test parallel loading strategies effectively.
 
 ## FastTransfer in Action: The Command That Does the Heavy Lifting
 
@@ -79,7 +77,7 @@ Here's the actual command we use to load data:
 Let's break down the key components and understand what each parameter does:
 
 ### Source Configuration
-- **`--sourceconnectiontype "duckdbstream"`**: Uses DuckDB's memory-efficient streaming connection, optimized for large datasets and better memory management compared to the standard `duckdb` connection type
+- **`--sourceconnectiontype "duckdbstream"`**: Uses DuckDB's memory-efficient streaming connection
 - **`--sourceserver ":memory:"`**: Runs DuckDB in-memory mode for temporary data processing without persisting to disk
 - **`--query`**: The DuckDB SQL that leverages the `read_parquet()` function to directly access Parquet files from S3, with `filename=true` to capture file origins for distribution
 
@@ -89,7 +87,7 @@ Let's break down the key components and understand what each parameter does:
 - **`--targetuser` and `--targetpassword`**: Database authentication credentials
 
 ### Parallelization Strategy
-- **`--method "DataDriven"`**: Distributes work based on distinct values in a specified column - in our case, each worker processes specific files
+- **`--method "DataDriven"`**: Distributes work based on distinct values in a specified column, in our case each worker processes specific files
 - **`--distributeKeyColumn "filename"`**: Uses the filename column to assign work to workers, ensuring each file is processed by exactly one worker
 - **`--datadrivenquery`**: Overrides the default distinct value selection with an explicit file list using `glob()`, giving us precise control over work distribution
 - **`--degree 16`**: Creates 16 parallel workers. FastTransfer supports 1-1024 workers, or negative values for CPU-adaptive scaling (e.g., `-2` uses half available CPUs)
@@ -101,7 +99,7 @@ Let's break down the key components and understand what each parameter does:
 
 ### About FastTransfer
 
-FastTransfer is designed specifically for efficient data movement between different database systems, particularly excelling with large datasets (>1 million cells). The tool requires the target table to pre-exist and supports various database types including ClickHouse, MySQL, Oracle, PostgreSQL, and SQL Server. Its strength lies in intelligent work distribution - whether using file-based distribution like our DataDriven approach, or other methods like CTID (PostgreSQL-specific), RangeId (numeric ranges), or Random (modulo-based distribution).
+FastTransfer is designed specifically for efficient data movement between different database systems, particularly excelling with large datasets (>1 million cells). The tool requires the target table to pre-exist and supports various database types including ClickHouse, MySQL, Oracle, PostgreSQL, and SQL Server. Its strength lies in intelligent work distribution, whether using file-based distribution like our DataDriven approach, or other methods like CTID (PostgreSQL-specific), RangeId (numeric ranges), or Random (modulo-based distribution).
 
 ## Performance Analysis: Where Theory Meets Reality
 
