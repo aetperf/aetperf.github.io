@@ -22,7 +22,7 @@ Loading data efficiently from cloud storage into databases remains a critical ch
 
 For our testing environment, we deployed PostgreSQL on an OVH c3-64 instance in their Gravelines datacenter. Here's what we're working with:
 
-<img src="/img/2025-09-29_02/architecture.png" alt="Architecture diagram." width="900">
+<img src="/img/2025-09-29_02/architecture.jpg" alt="Architecture diagram." width="900">
 
 ### Software Versions
 - **FastTransfer**: Version 0.13.12.0 (X64 architecture, .NET 8.0.20)
