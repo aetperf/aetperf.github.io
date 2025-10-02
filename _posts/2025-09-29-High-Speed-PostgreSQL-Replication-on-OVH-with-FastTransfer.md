@@ -1,5 +1,5 @@
 ---
-title: High-Speed PostgreSQL Replication on OVH with FastTransfer
+title: High-Speed PostgreSQL Replication on OVH with FastTransfer WIP
 layout: post
 comments: true
 author: François Pacull

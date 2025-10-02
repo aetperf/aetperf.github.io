@@ -1,5 +1,5 @@
 ---
-title: FastTransfer Performance with Citus Columnar Storage in PostgreSQL
+title: FastTransfer Performance with Citus Columnar Storage in PostgreSQL WIP
 layout: post
 comments: true
 author: François Pacull
