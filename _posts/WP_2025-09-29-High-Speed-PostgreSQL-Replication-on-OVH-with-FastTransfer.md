@@ -12,7 +12,7 @@ For our testing environment, we deployed PostgreSQL on two OVH c3-256 instances 
 - **PostgreSQL**: Version 16
 - **Dataset**: TPC-H SF100 lineitem table (~600M rows, ~113GB)
 
-<img src="/img/2025-09-29_03/architecture.jpg" alt="Architecture diagram." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-09-29_03/architecture.jpg" alt="Architecture diagram." width="900">
 
 ## PostgreSQL Configuration
 
