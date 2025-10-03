@@ -4,11 +4,15 @@ PostgreSQL-to-PostgreSQL replication at scale requires tools that can fully leve
 
 ## Infrastructure Setup
 
+For our testing environment, we deployed PostgreSQL on two OVH c3-256 instances in the Paris datacenter. Here's what we're working with:
+
 - **OVH Instances**: c3-256 (256GB RAM, 128 vCores @2.3GHz, 400GB NVMe)
 - **Network**: 20 Gbit/s vrack, Paris datacenter (eu-west-par-c)
 - **OS**: Ubuntu 24
 - **PostgreSQL**: Version 16
 - **Dataset**: TPC-H SF100 lineitem table (~600M rows, ~113GB)
+
+<img src="/img/2025-09-29_03/architecture.jpg" alt="Architecture diagram." width="900">
 
 ## PostgreSQL Configuration
 
