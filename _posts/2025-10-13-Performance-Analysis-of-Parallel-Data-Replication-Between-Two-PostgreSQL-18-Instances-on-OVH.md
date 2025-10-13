@@ -63,13 +63,11 @@ The test environment consists of two identical OVH cloud instances designed for 
 - **Disk Random Read**: 313 MB/s, 80,200 IOPS (FIO, 4K blocks)
 - **Disk Random Write**: 88.2 MB/s, 22,600 IOPS (FIO, 4K blocks)
 
----
-
 ## Executive Summary
 
 FastTransfer achieves strong absolute performance, transferring 113GB in just 67 seconds at degree 128—equivalent to **1.69 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128), representing a **13.1x speedup**. While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
-<img src="/img/2025-10-13_01/elapsed_time_by_degree" alt="Elapsed time by degree." width="900">
+<img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
 **Figure 2: Total Elapsed Time by Degree of Parallelism** - Wall-clock time improves continuously across all tested degrees, from 878 seconds (degree 1) to 67 seconds (degree 128). Performance gains remain positive throughout, though the rate of improvement diminishes beyond degree 32 due to increasing lock contention. 
 
@@ -86,8 +84,6 @@ FastTransfer achieves strong absolute performance, transferring 113GB in just 67
 5. **Network**: Saturates at ~2,450 MB/s (98% of capacity) only at degree 128 during active bursts. Degrees 1-64 operate well below capacity, so network doesn't appear to explain scaling behavior across most of the tested range.
 
 6. **Disk**: Does not appear to be a bottleneck. Average utilization is only 24.3% at degree 128, with 76% idle capacity remaining.
-
----
 
 ## 1. CPU Usage Analysis
 
@@ -131,8 +127,6 @@ FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (
 
 **Figure 7: CPU Efficiency (CPU per Degree)** - Lower values indicate better scaling. Source PostgreSQL (blue) drops significantly from 93% at degree 1 to 8.7% at degree 128, indicating processes spend most time waiting rather than working due to backpressure. Target PostgreSQL (red) drops from 69% at degree 64 to 26% at degree 128, reflecting reduced CPU utilization per worker despite achieving the best absolute performance (67s elapsed time). 
 
----
-
 ## 2. The Lock Contention Problem: System CPU Analysis
 
 ### 2.1 System CPU
@@ -165,8 +159,6 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 3. **Free Space Map (FSM) Locks**: All 128 writers query and update the FSM to find pages with free space, creating constant FSM thrashing.
 
----
-
 ## 3. Distribution and Time Series Analysis
 
 ### 3.1 CPU Distribution
@@ -197,8 +189,6 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 **Figure 14: CPU Over Time at Degree 128** - Target PostgreSQL (red) exhibits oscillations with wild CPU swings, suggesting significant lock thrashing. Source (blue) and FastTransfer (green) show variability reflecting downstream backpressure.
 
----
-
 ## 4. Performance Scaling Analysis: Degrees 64 to 128
 
 ### 4.1 Continued Performance Improvement at Extreme Parallelism
@@ -225,8 +215,6 @@ At degree 64 (no network limitation): All 64 streams simultaneously bombard the 
 At degree 128 (network-limited): Network throughput plateaus at ~2,450 MB/s during active bursts (98% of 2.5 GB/s capacity). Data delivery is paced by network capacity, moderating lock contention intensity. Processes spend more time in I/O wait rather than lock spinning. System CPU drops to 63.0% with nearly double the user CPU (1,219% vs 741%).
 
 **Critical Caveat:** This doesn't mean network bottlenecks are desirable. Network saturation occurs **only at degree 128** and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range.
-
----
 
 ## 5. Disk I/O and Network Analysis
 
@@ -306,8 +294,6 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 4. **Backpressure suggests target bottleneck**: Source can produce 1,684 MB/s but target can only consume 1,088 MB/s. Source processes use only 0.11 cores/process, suggesting they're blocked waiting for target acknowledgments.
 
----
-
 ## 6. Conclusions
 
 ### 6.1 Performance Achievement and Bottleneck Analysis
@@ -330,9 +316,7 @@ The bottleneck appears to be **architectural**, not configurational:
 
 No configuration parameter appears able to eliminate these fundamental coordination requirements.
 
-# 
-
----
+--- 
 
 ## Appendix A: PostgreSQL Configuration
 
