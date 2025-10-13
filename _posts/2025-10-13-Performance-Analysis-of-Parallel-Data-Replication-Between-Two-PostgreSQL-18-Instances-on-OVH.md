@@ -65,7 +65,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 ## Executive Summary
 
-FastTransfer achieves strong absolute performance, transferring 113GB in just 67 seconds at degree 128—equivalent to **1.69 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128), representing a **13.1x speedup**. While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
+FastTransfer achieves strong absolute performance, transferring 113GB in just 67 seconds at degree 128, equivalent to **1.69 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128), representing a **13.1x speedup**. While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
 <img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
@@ -77,7 +77,7 @@ FastTransfer achieves strong absolute performance, transferring 113GB in just 67
 
 2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.2% at degree 64, meaning only 16.8% of CPU time performs productive work while 83.2% appears spent on lock contention. Interestingly, mean CPU decreases from 4,410% (degree 64) to 3,294% (degree 128) despite doubling parallelism, as network saturation moderates lock contention intensity.
 
-3. **FastTransfer**: Does not appear to be a bottleneck. Operates with binary COPY protocol (`pgcopy` mode for both source and target), batch size 1,048,576 rows. Achieves 20.2x speedup with 15.8% efficiency—the best scaling efficiency among all components.
+3. **FastTransfer**: Does not appear to be a bottleneck. Operates with binary COPY protocol (`pgcopy` mode for both source and target), batch size 1,048,576 rows. Achieves 20.2x speedup with 15.8% efficiency, the best scaling efficiency among all components.
 
 4. **Source PostgreSQL**: Appears to be a victim of backpressure, not an independent bottleneck. At degree 128, 105 processes use only 11.7 cores (0.11 cores/process), suggesting they're blocked waiting for target acknowledgments rather than actively contending for resources.
 
@@ -193,7 +193,7 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 ### 4.1 Continued Performance Improvement at Extreme Parallelism
 
-Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64—a meaningful **1.37x speedup** that brings total throughput to 1.69 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
+Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful **1.37x speedup** that brings total throughput to 1.69 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
 
 Interestingly, mean CPU decreases 25.3% (4,410% → 3,294%) despite doubling parallelism, while peak CPU increases 21.7% (5,727% → 6,969%). This apparent paradox occurs because network saturation at degree 128 moderates lock contention intensity, allowing the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
 
@@ -267,13 +267,13 @@ At degree 128 (network-limited): Network throughput plateaus at ~2,450 MB/s duri
 | 64     | 1,033 MB/s | 41.3%                  | Well below capacity                 |
 | 128    | 1,088 MB/s | 43.5%                  | **~2,450 MB/s (98%) during bursts** |
 
-Network saturation occurs **only at degree 128** during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64—target CPU lock contention remains the primary bottleneck.
+Network saturation occurs **only at degree 128** during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64, target CPU lock contention remains the primary bottleneck.
 
 ### 5.4 Cross-Degree Scaling Analysis
 
 <img src="/img/2025-10-13_01/cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
 
-**Figure 19: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128)—only 12.3x improvement for 128x parallelism (9.6% efficiency).
+**Figure 19: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
 
 <img src="/img/2025-10-13_01/cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
 
