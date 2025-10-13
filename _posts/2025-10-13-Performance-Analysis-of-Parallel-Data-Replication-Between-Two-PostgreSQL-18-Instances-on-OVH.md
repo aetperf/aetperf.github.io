@@ -29,8 +29,6 @@ The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~113GB)
 
 Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's io_uring support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that severe lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
----
-
 ## OVH Infrastructure Setup
 
 The test environment consists of two identical OVH cloud instances designed for high-performance workloads:
@@ -315,8 +313,6 @@ The bottleneck appears to be **architectural**, not configurational:
 - FSM access requires serialization to maintain consistency
 
 No configuration parameter appears able to eliminate these fundamental coordination requirements.
-
---- 
 
 ## Appendix A: PostgreSQL Configuration
 
