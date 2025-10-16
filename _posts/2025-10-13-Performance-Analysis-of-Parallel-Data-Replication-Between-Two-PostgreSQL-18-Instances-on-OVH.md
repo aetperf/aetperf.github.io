@@ -53,6 +53,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 - **OS**: Ubuntu 24.04.3 LTS with Linux kernel 6.8
 - **PostgreSQL**: Version 18 with io_uring, huge pages (vm.nr_hugepages=45000), autovacuum_worker_slots
+- **FastTransfer**: Version 0.13.12
 
 **Infrastructure Performance Baseline:**
 
