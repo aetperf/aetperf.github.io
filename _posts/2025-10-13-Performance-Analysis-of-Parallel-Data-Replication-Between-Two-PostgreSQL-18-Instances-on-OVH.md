@@ -371,6 +371,69 @@ random_page_cost = 1.1             # NVMe SSD
 effective_cache_size = 192GB       # ~75% of RAM
 ```
 
+### Source PostgreSQL Configuration (Key Settings)
+
+The source instance is optimized for fast parallel reads to support high-throughput data extraction:
+
+```ini
+# Memory allocation
+shared_buffers = 80GB              # ~31% of 256GB RAM
+huge_pages = on                    # vm.nr_hugepages=45000
+work_mem = 256MB
+maintenance_work_mem = 4GB         # Lower than target (16GB)
+
+# Durability disabled (benchmark only, NOT production)
+synchronous_commit = off
+fsync = off
+full_page_writes = off
+
+# WAL configuration
+wal_level = minimal
+wal_buffers = -1                   # Auto-sized
+max_wal_size = 32GB                # Smaller than target (128GB)
+checkpoint_timeout = 60min         # Longer than target (15min)
+checkpoint_completion_target = 0.9
+
+# Background writer
+bgwriter_delay = 50ms              # Less aggressive than target (10ms)
+bgwriter_lru_maxpages = 1000       # Half of target (2000)
+bgwriter_lru_multiplier = 4.0      # Half of target (8.0)
+bgwriter_flush_after = 2MB
+
+# I/O configuration (PostgreSQL 18 optimizations)
+backend_flush_after = 0
+effective_io_concurrency = 400     # Identical to target
+maintenance_io_concurrency = 400
+io_method = io_uring               # NEW PG18: async I/O
+io_max_concurrency = 512           # NEW PG18
+io_workers = 8                     # NEW PG18
+
+# Worker processes
+max_connections = 500              # Higher than target for parallel readers
+max_worker_processes = 128
+max_parallel_workers_per_gather = 64
+max_parallel_workers = 128
+
+# Query tuning (optimized for parallel reads)
+enable_partitionwise_join = on
+enable_partitionwise_aggregate = on
+random_page_cost = 1.1             # Block Storage (not NVMe)
+effective_cache_size = 192GB       # ~75% of RAM
+default_statistics_target = 500
+
+# Autovacuum (PostgreSQL 18)
+autovacuum = on
+autovacuum_worker_slots = 32       # NEW PG18: runtime adjustment
+autovacuum_max_workers = 16
+autovacuum_vacuum_cost_delay = 0   # No throttling
+```
+
+**Key Differences from Target:**
+- **Connection limit**: 500 vs target's default, accommodating parallel reader connections
+- **Background writer**: Less aggressive settings since source focuses on reads, not writes
+- **Checkpoint timeout**: 60 minutes vs target's 15 minutes, reducing checkpoint overhead during reads
+- **Storage**: Block Storage (random_page_cost = 1.1) vs target's NVMe
+
 ### Table Configuration
 
 The target table eliminates all overhead sources:
