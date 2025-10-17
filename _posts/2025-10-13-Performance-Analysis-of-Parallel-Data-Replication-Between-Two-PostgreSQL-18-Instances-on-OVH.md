@@ -27,7 +27,9 @@ Parallel data replication between PostgreSQL instances presents unique challenge
 
 The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~113GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Testing was performed at eight parallelism degrees: 1, 2, 4, 8, 16, 32, 64, and 128.
 
-Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's io_uring support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that severe lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
+Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's io_uring support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
+
+**Note on Statistical Rigor:** Each configuration was run only once rather than following standard statistical practice (running each configuration 5+ times minimum, reporting mean, standard deviation, and confidence intervals). This decision was made because preliminary observations showed very small variations between successive runs, suggesting the results are stable and reproducible under these controlled conditions.
 
 ## OVH Infrastructure Setup
 
@@ -74,7 +76,7 @@ FastTransfer achieves strong absolute performance, transferring 113GB in just 67
 
 1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds (1.69 GB/s) at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
 
-2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.2% at degree 64, meaning only 16.8% of CPU time performs productive work while 83.2% appears spent on lock contention. Interestingly, mean CPU decreases from 4,410% (degree 64) to 3,294% (degree 128) despite doubling parallelism, as network saturation moderates lock contention intensity.
+2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work. Mean CPU decreases from 4,596% (degree 64) to 4,230% (degree 128) despite doubling parallelism, as network saturation moderates lock contention intensity.
 
 3. **FastTransfer**: Does not appear to be a bottleneck. Operates with binary COPY protocol (`pgcopy` mode for both source and target), batch size 1,048,576 rows. Achieves 20.2x speedup with 15.8% efficiency, the best scaling efficiency among all components.
 
@@ -96,7 +98,7 @@ FastTransfer achieves strong absolute performance, transferring 113GB in just 67
 <img src="/img/2025-10-13_01/plot_02_peak_cpu.png" alt="Plot 02: peak CPU." width="900">
 
 
-**Figure 4: Peak CPU Usage by Component** - Target PostgreSQL exhibits extremely high peak values (~6,969% at degree 128). The dramatic spikes combined with relatively lower mean values indicate high variance, characteristic of processes alternating between lock contention and productive work. The variance between peak (~6,969%) and mean (~3,294%) at degree 128 suggests lock queue buildup: processes stall waiting in queues, then burst with intense CPU activity when they finally acquire locks.
+**Figure 4: Peak CPU Usage by Component** - Target PostgreSQL exhibits extremely high peak values (~6,969% at degree 128). The large spikes combined with relatively lower mean values indicate high variance, characteristic of processes alternating between lock contention and productive work. The variance between peak (~6,969%) and mean (~3,294%) at degree 128 suggests lock queue buildup: processes stall waiting in queues, then burst with intense CPU activity when they finally acquire locks.
 
 **Component Scaling Summary:**
 
@@ -132,7 +134,7 @@ FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (
 
 <img src="/img/2025-10-13_01/plot_06_system_cpu_percentage.png" alt="Plot 6: System CPU as % of Total CPU." width="900">
 
-**Figure 8: System CPU as % of Total CPU** - Target PostgreSQL (red line) crosses the 50% warning threshold at degree 16, exceeds 70% critical threshold at degree 32, and peaks at 83.2% at degree 64. At this maximum, only 16.8% of CPU time performs productive work while 83.2% appears spent on lock contention and kernel overhead.
+**Figure 8: System CPU as % of Total CPU** - Target PostgreSQL (red line) crosses the 50% warning threshold at degree 16, exceeds 70% at degree 32, and peaks at 83.9% at degree 64. At this maximum, only 16.2% of CPU time performs productive work while 83.9% appears spent on lock contention and kernel overhead.
 
 CPU time divides into two categories: **User CPU** (application code performing actual data insertion) and **System CPU** (kernel operations handling locks, synchronization, context switches, I/O). A healthy system maintains system CPU below 30%.
 
@@ -142,11 +144,11 @@ CPU time divides into two categories: **User CPU** (application code performing 
 | ------ | --------- | -------- | ---------- | -------- | ------------------------- |
 | 1      | 98%       | 80%      | 18%        | 18.2%    | Healthy baseline          |
 | 16     | 1,342%    | 496%     | 846%       | 63.0%    | Warning threshold crossed |
-| 32     | 2,436%    | 602%     | 1,834%     | 75.3%    | Critical contention       |
-| 64     | 4,410%    | 741%     | 3,670%     | 83.2%    | **Maximum contention**    |
-| 128    | 3,294%    | 1,219%   | 2,075%     | 63.0%    | Warning threshold crossed |
+| 32     | 2,436%    | 602%     | 1,834%     | 75.3%    | High contention           |
+| 64     | 4,596%    | 743%     | 3,854%     | 83.9%    | **Maximum contention**    |
+| 128    | 4,230%    | 1,248%   | 2,982%     | 70.5%    | Reduced contention        |
 
-At degree 64, processes appear to spend 83.2% of time managing locks rather than inserting data. By degree 128, total CPU actually decreases despite doubled parallelism, suggesting the system cannot fully utilize additional workers due to excessive contention.
+At degree 64, processes appear to spend 83.9% of time managing locks rather than inserting data. By degree 128, system CPU percentage decreases to 70.5% as network saturation acts as a rate governor, though absolute performance continues to improve.
 
 ### 2.2 Root Causes of Lock Contention
 
@@ -172,7 +174,7 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 <img src="/img/2025-10-13_01/plot_9_distribution_degree_128.png" alt="Plot 9: CPU Distribution at Degree 128." width="900">
 
-**Figure 11: CPU Distribution at Degree 128** - Target PostgreSQL (red) spans nearly 0-10000%, indicating highly variable behavior. Some processes are nearly starved (near 0%) while others burn massive CPU on lock spinning (>8000%). This pathological distribution suggests severe lock thrashing.
+**Figure 11: CPU Distribution at Degree 128** - Target PostgreSQL (red) spans nearly 0-10000%, indicating highly variable behavior. Some processes are nearly starved (near 0%) while others burn high CPU on lock spinning (>8000%). This wide distribution suggests lock thrashing.
 
 ### 3.2 CPU Time Series
 
@@ -194,26 +196,42 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful **1.37x speedup** that brings total throughput to 1.69 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
 
-Interestingly, mean CPU decreases 25.3% (4,410% → 3,294%) despite doubling parallelism, while peak CPU increases 21.7% (5,727% → 6,969%). This apparent paradox occurs because network saturation at degree 128 moderates lock contention intensity, allowing the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
+Total CPU decreases 8.0% (4,596% → 4,230%) despite doubling parallelism, while system CPU percentage improves from 83.9% to 70.5%. This occurs because network saturation at degree 128 moderates lock contention intensity, allowing the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
 
 ### 4.2 Network Bottleneck as Accidental Governor
 
-A fascinating paradox: degree 128 exhibits **lower system CPU overhead** (63.0%) than degree 64 (83.2%) despite doubling parallelism. This occurs because network saturation acts as an accidental rate governor.
+Degree 128 exhibits a counterintuitive result: **lower system CPU overhead** (70.5%) than degree 64 (83.9%) despite doubling parallelism, while total CPU actually **decreases by 8.0%** (4,596% → 4,230%). User CPU efficiency improves by 82.1% (16.2% → 29.5% of total CPU), meaning nearly double the proportion of CPU time goes to productive work rather than lock contention. This occurs because network saturation acts as an accidental rate governor that paces data arrival and moderates lock contention intensity.
 
 **The Comparative Analysis:**
 
-| Transition      | Elapsed Time | Speedup                  | System CPU          | User CPU per Total    |
-| --------------- | ------------ | ------------------------ | ------------------- | --------------------- |
-| Degree 32 → 64  | 106s → 92s   | 1.15x (57.5% efficiency) | 83.2% at degree 64  | 16.8% productive work |
-| Degree 64 → 128 | 92s → 67s    | 1.37x (68.7% efficiency) | 63.0% at degree 128 | 37.0% productive work |
+| Metric                  | Degree 64            | Degree 128           | Change               |
+| ----------------------- | -------------------- | -------------------- | -------------------- |
+| Elapsed Time            | 92s                  | 67s                  | 1.37x speedup        |
+| Total CPU               | 4,596% (46.0 cores)  | 4,230% (42.3 cores)  | **-8.0%**            |
+| User CPU                | 743% (16.2% of total)| 1,248% (29.5% of total) | **+68.0%, +82.1% efficiency** |
+| System CPU              | 3,854% (83.9% of total) | 2,982% (70.5% of total) | **-22.6%**       |
+| Network Throughput      | 1,033 MB/s mean      | 1,088 MB/s mean      | +5.3%                |
+| Network Peak            | 2,335 MB/s (93.4%)   | 2,904 MB/s (116.2%)  | **Saturation**       |
+| Disk Throughput         | 759 MB/s             | 1,099 MB/s           | +44.8%               |
+
+**The Counterintuitive Result:**
+
+Doubling parallelism from 64 to 128 processes produces unexpected improvements:
+
+1. **Reduced Total CPU Usage**: Despite increasing from ~64 to 88 processes, total CPU decreased by 8.0%
+2. **Improved Efficiency**: User CPU as % of total increased from 16.2% to 29.5% (82.1% relative improvement)
+3. **Reduced Lock Contention**: System CPU decreased from 83.9% to 70.5% (13.4 percentage point reduction) despite more processes competing for locks
+4. **Increased Throughput**: Network +5.3%, disk +44.8%, achieving 1.37x speedup with less CPU
 
 **The Governor Effect:**
 
-At degree 64 (no network limitation): All 64 streams simultaneously bombard the target, creating massive lock queue buildup. System CPU reaches 83.2% as processes spin on locks.
+At degree 64 (no network limitation): All 64 streams simultaneously bombard the target, creating lock queue buildup. System CPU reaches 83.9% as processes spin on locks, with only 16.2% of CPU time performing productive work (User CPU).
 
-At degree 128 (network-limited): Network throughput plateaus at ~2,450 MB/s during active bursts (98% of 2.5 GB/s capacity). Data delivery is paced by network capacity, moderating lock contention intensity. Processes spend more time in I/O wait rather than lock spinning. System CPU drops to 63.0% with nearly double the user CPU (1,219% vs 741%).
+At degree 128 (network-limited): Network throughput saturates, peaking at 2,904 MB/s (116.2% of capacity). This saturation acts as a pacing mechanism—data delivery is rate-limited by network capacity, preventing all 128 processes from simultaneously contending for locks. Processes spend more time waiting for network I/O rather than spinning on locks. System CPU drops to 70.5%, while User CPU improves to 29.5% of total (nearly double the efficiency).
 
-**Critical Caveat:** This doesn't mean network bottlenecks are desirable. Network saturation occurs **only at degree 128** and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range.
+The network bottleneck, typically considered negative, paradoxically improves efficiency by preventing the lock thrashing observed at degree 64.
+
+**Note:** This doesn't mean network bottlenecks are desirable. Network saturation occurs **only at degree 128** and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range.
 
 ## 5. Disk I/O and Network Analysis
 
@@ -243,13 +261,13 @@ At degree 128 (network-limited): Network throughput plateaus at ~2,450 MB/s duri
 
 This section examines source PostgreSQL disk I/O behavior to provide concrete evidence that the source is experiencing backpressure from the target bottleneck rather than being disk-limited.
 
-#### The Dramatic Transformation
+#### Negative Scaling Behavior
 
-Source disk I/O undergoes a striking transformation across parallelism degrees, providing clear evidence of backpressure:
+Source disk I/O exhibits negative scaling across parallelism degrees, providing clear evidence of backpressure:
 
 <img src="/img/2025-10-13_01/source_disk_read_throughput_by_degree.png" alt="Source Disk Read Throughput by Degree." width="900">
 
-**Figure 16: Source Disk Read Throughput by Degree** - Demonstrates severe negative scaling. Read throughput collapses from 90.5 MB/s at degree 1 to just 0.1 MB/s at degree 128, a 99.9% decrease despite 128x more parallelism. This is the opposite of expected scaling behavior and proves the source is constrained by downstream backpressure.
+**Figure 16: Source Disk Read Throughput by Degree** - Demonstrates negative scaling. Read throughput collapses from 90.5 MB/s at degree 1 to just 0.1 MB/s at degree 128, a 99.9% decrease despite 128x more parallelism. This is the opposite of expected scaling behavior and proves the source is constrained by downstream backpressure.
 
 **Scaling Metrics:**
 
@@ -269,78 +287,54 @@ The source instance has 256GB RAM, and the lineitem table is ~113GB. An importan
 
 **At degrees 2-128**: Essentially zero disk activity—the entire table remains cached in memory from the initial load.
 
-However, the cache effect alone doesn't explain the backpressure evidence. Even when reading from cache, actively working processes should show near-zero await times. The observed high await times with minimal activity prove processes are sleeping/blocked.
-
-#### The Backpressure Paradox
-
-The "smoking gun" evidence of backpressure comes from analyzing disk await time alongside disk activity:
-
-<img src="/img/2025-10-13_01/source_disk_read_await_by_degree.png" alt="Source Disk Read Await by Degree." width="900">
-
-**Figure 17: Source Disk Read Await Time by Degree** - Reveals the paradox: await times remain high (150-300ms) despite minimal disk activity at high parallelism degrees. At degree 128, the combination of 302ms await time with only 0.1 MB/s throughput and 0.0% utilization is physically impossible if processes were actively reading. This proves processes are blocked/sleeping, waiting for target acknowledgments rather than waiting for disk I/O.
-
-**The Physical Impossibility:**
-
-If processes were actively reading (even from RAM cache):
-- Await time would be near-zero (~0.001ms for RAM access)
-- CPU usage would be high (processes actively working)
-- Either disk would be active OR cache hits would show minimal latency
-
-What we actually observe:
-- Await time: 300ms (process sleeping in system call)
-- CPU usage: 0.11 cores/process (processes sleeping)
-- Disk I/O: 0.1 MB/s (not even trying to read)
-
-This combination is only possible when processes are **blocked waiting for downstream acknowledgments**, not when they're actively reading data.
-
 #### Time Series Evidence
 
 <img src="/img/2025-10-13_01/source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
 
-**Figure 18: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
+**Figure 17: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
 #### The Evidence Chain
 
-The source disk analysis reveals a clear causal chain of backpressure:
+The source disk analysis reveals the interplay between caching and backpressure:
 
 ```
-Target Lock Contention (83.2% system CPU at degree 64)
+Table Cached in RAM (256GB RAM, 113GB table)
+    ↓
+Source Disk Becomes Idle (0.1 MB/s, 0.0% utilization at degrees 2-128)
+    ↓
+Meanwhile: Target Lock Contention (83.9% system CPU at degree 64)
     ↓
 Target Can't Consume Data Fast Enough (1,088 MB/s vs 1,684 MB/s source TX)
     ↓
 FastTransfer Batches Block (waiting for target acknowledgment)
     ↓
 Source Processes Sleep (0.11 cores/process, blocked in system calls)
-    ↓
-Source Disk Becomes Idle (0.1 MB/s, 0.0% utilization)
-    ↓
-High Await Time Despite No Activity (The Smoking Gun: 300ms await with 0.1 MB/s)
 ```
 
 #### Conclusion
 
-**Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits dramatically different behavior depending on parallelism:
+**Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits different behavior depending on parallelism:
 
 - **Degree 1**: Brief initial disk load (~10 seconds), then reads from RAM cache
 - **Degrees 2-128**: Table fully cached in memory (256GB available, 113GB table)
 
-The combination of **high await time (300ms) with minimal disk activity (0.1 MB/s, 0.0% utilization)** at high parallelism degrees provides definitive proof that source processes are sleeping/blocked waiting for target acknowledgments rather than being limited by disk I/O capability. This confirms that resolving target CPU lock contention would automatically improve source performance, as the source has substantial unused capacity waiting to be unlocked.
+The near-zero disk utilization (<1%) at high parallelism degrees confirms the disk is idle and not limiting performance. This indicates that source processes are constrained by downstream backpressure rather than local disk I/O capacity. Resolving target CPU lock contention would automatically improve source performance, as the source has substantial unused capacity waiting to be unlocked.
 
 ### 5.3 Target Disk I/O Time Series
 
 <img src="/img/2025-10-13_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
 
-**Figure 19: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
+**Figure 18: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
 
 <img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
-**Figure 20: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
+**Figure 19: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
 
 ### 5.4 Network Throughput Analysis
 
 <img src="/img/2025-10-13_01/target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
 
-**Figure 21: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
+**Figure 20: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
 
 **Network Scaling Summary:**
 
@@ -359,18 +353,18 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 <img src="/img/2025-10-13_01/cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
 
-**Figure 22: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
+**Figure 21: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
 
 <img src="/img/2025-10-13_01/cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
 
-**Figure 23: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
+**Figure 22: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
 
-**Technical Note on TX/RX Discrepancy:** The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.2% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
+**Technical Note on TX/RX Discrepancy:** The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.9% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
 
 <img src="/img/2025-10-13_01/cross_degree_disk_utilization.png" alt="Cross Degree Disk Utilization." width="900">
 
 
-**Figure 24: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
+**Figure 23: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
 
 ### 5.6 I/O Analysis Conclusions
 
@@ -378,7 +372,7 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 2. **Network does not appear to be the bottleneck for degrees 1-64**: Utilization remains below 42% through degree 64. Saturation occurs only at degree 128 during active bursts (~2,450 MB/s plateau).
 
-3. **Target CPU lock contention appears to be the root cause**: Low disk utilization + network saturation only at degree 128 + poor scaling efficiency throughout + high system CPU percentage (83.2% at degree 64) all point to the same conclusion.
+3. **Target CPU lock contention appears to be the root cause**: Low disk utilization + network saturation only at degree 128 + poor scaling efficiency throughout + high system CPU percentage (83.9% at degree 64) all point to the same conclusion.
 
 4. **Backpressure suggests target bottleneck**: Source can produce 1,684 MB/s but target can only consume 1,088 MB/s. Source processes use only 0.11 cores/process, suggesting they're blocked waiting for target acknowledgments.
 
@@ -388,7 +382,7 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 FastTransfer successfully demonstrates strong absolute performance, achieving a 13.1x speedup that reduces 113GB transfer time from approximately 15 minutes (878s) to just over 1 minute (67s). This represents practical, production-ready performance with sustained throughput of 1.69 GB/s at degree 128. The system delivers continuous performance improvements across all tested parallelism degrees, confirming that parallel replication provides meaningful benefits even when facing coordination challenges.
 
-The primary scaling limitation appears to be target PostgreSQL lock contention beyond degree 32. System CPU grows to 83.2% at degree 64, meaning only 16.8% of CPU performs productive work. Interestingly, degree 128 continues to improve absolute performance (67s vs 92s) even as total CPU decreases from 4,410% to 3,294%, with network saturation acting as an accidental rate governor that moderates lock contention intensity.
+The primary scaling limitation appears to be target PostgreSQL lock contention beyond degree 32. System CPU grows to 83.9% at degree 64, meaning only 16.2% of CPU performs productive work. Degree 128 continues to improve absolute performance (67s vs 92s) even as total CPU decreases from 4,596% to 4,230%, with network saturation acting as an accidental rate governor that moderates lock contention intensity.
 
 Source PostgreSQL and FastTransfer appear to be victims of backpressure rather than independent bottlenecks. FastTransfer demonstrates the best scaling efficiency (20.2x speedup, 15.8% efficiency), while source processes spend most time waiting for target acknowledgments. Resolving target lock contention would likely improve their performance further.
 
@@ -533,7 +527,7 @@ The target table eliminates all overhead sources:
 - **No constraints**: No foreign key, check, or unique validation
 - **No triggers**: No trigger execution overhead
 
-This represents the absolute minimum overhead possible. The fact that severe lock contention persists suggests the bottleneck lies in PostgreSQL's buffer management and relation extension architecture rather than higher-level features.
+This represents the absolute minimum overhead possible. The fact that lock contention persists suggests the bottleneck lies in PostgreSQL's buffer management and relation extension architecture rather than higher-level features.
 
 ### PostgreSQL 18 New Features Utilized
 
@@ -543,6 +537,22 @@ This represents the absolute minimum overhead possible. The fact that severe loc
 - **autovacuum_worker_slots**: Dynamic autovacuum worker management without restart
 
 These PostgreSQL 18 enhancements provide measurable I/O efficiency improvements, but the fundamental architectural limitation of concurrent writes to a single table persists.
+
+---
+
+## Future Work: PostgreSQL Instrumentation Analysis
+
+While this analysis relied on system-level metrics (CPU, disk, network via `sar`, `iostat`, `pidstat`), a follow-up study will use PostgreSQL's internal instrumentation to definitively identify bottlenecks at the database engine level. This will provide direct evidence of lock contention and wait events rather than inferring them from system CPU percentages.
+
+**Planned Instrumentation:**
+
+- **`pg_stat_activity` sampling**: Capture every 1 second during tests to track process states (`state`, `wait_event_type`, `wait_event`) in real-time
+- **Wait event analysis**: Log and aggregate wait events to quantify time spent in different wait states (Lock, LWLock, BufferPin, IO, etc.)
+- **`pg_stat_io` statistics**: Monitor I/O operations at the PostgreSQL level (shared buffer hits/misses, relation extension operations, FSM access patterns)
+- **`pg_stat_database` metrics**: Track transaction commits, buffer operations, and temporary file usage across parallelism degrees
+- **`pg_locks` monitoring**: Capture actual lock acquisition and contention events to identify specific lock types (relation extension, buffer content, etc.)
+
+This instrumentation will validate the lock contention hypothesis presented in this analysis and provide quantitative breakdowns of where PostgreSQL processes spend their time. The results will be the subject of a future blog post.
 
 ---
 
