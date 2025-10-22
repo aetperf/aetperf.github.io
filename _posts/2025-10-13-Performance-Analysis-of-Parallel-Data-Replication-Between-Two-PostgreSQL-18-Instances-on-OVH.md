@@ -33,7 +33,7 @@ Both instances were tuned for bulk loading operations, with all durability featu
 
 ## OVH Infrastructure Setup
 
-The test environment consists of two identical OVH cloud instances designed for high-performance workloads:
+The test environment consists of two identical OVH cloud instances designed for heavy workloads:
 
 <img src="/img/2025-10-13_01/architecture.png" alt="Architecture diagram." width="900">
 
@@ -66,7 +66,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 ## Executive Summary
 
-FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to **1.15 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128), representing a **13.1x speedup**. While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
+FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to **1.15 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
 <img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
@@ -325,17 +325,6 @@ The near-zero disk utilization (<1%) at high parallelism degrees confirms the di
 <img src="/img/2025-10-13_01/target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
 
 **Figure 19: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
-
-**Network Scaling Summary:**
-
-| Degree | Mean RX    | % of 2.5 GB/s Capacity | Active Burst Plateau                |
-| ------ | ---------- | ---------------------- | ----------------------------------- |
-| 1      | 122 MB/s   | 4.9%                   | Well below capacity                 |
-| 8      | 631 MB/s   | 25.3%                  | Well below capacity                 |
-| 16     | 769 MB/s   | 30.8%                  | Well below capacity                 |
-| 32     | 911 MB/s   | 36.4%                  | Well below capacity                 |
-| 64     | 1,033 MB/s | 41.3%                  | Well below capacity                 |
-| 128    | 1,088 MB/s | 43.5%                  | **~2,450 MB/s (98%) during bursts** |
 
 Network saturation occurs **only at degree 128** during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64, target CPU lock contention remains the primary bottleneck.
 
