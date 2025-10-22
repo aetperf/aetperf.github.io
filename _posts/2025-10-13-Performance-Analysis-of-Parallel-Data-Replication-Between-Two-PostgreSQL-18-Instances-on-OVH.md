@@ -76,7 +76,7 @@ FastTransfer achieves strong absolute performance, transferring 113GB in just 67
 
 1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds (1.69 GB/s) at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
 
-2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work. Mean CPU decreases from 4,596% (degree 64) to 4,230% (degree 128) despite doubling parallelism, as network saturation moderates lock contention intensity.
+2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work. Mean CPU decreases from 4,596% (degree 64) to 4,230% (degree 128) despite doubling parallelism, though the reason for this unexpected improvement remains unclear.
 
 3. **FastTransfer**: Does not appear to be a bottleneck. Operates with binary COPY protocol (`pgcopy` mode for both source and target), batch size 1,048,576 rows. Achieves 20.2x speedup with 15.8% efficiency, the best scaling efficiency among all components.
 
@@ -148,7 +148,7 @@ CPU time divides into two categories: **User CPU** (application code performing 
 | 64     | 4,596%    | 743%     | 3,854%     | 83.9%    | **Maximum contention**    |
 | 128    | 4,230%    | 1,248%   | 2,982%     | 70.5%    | Reduced contention        |
 
-At degree 64, processes appear to spend 83.9% of time managing locks rather than inserting data. By degree 128, system CPU percentage decreases to 70.5% as network saturation acts as a rate governor, though absolute performance continues to improve.
+At degree 64, processes appear to spend 83.9% of time managing locks rather than inserting data. By degree 128, system CPU percentage unexpectedly decreases to 70.5% for unclear reasons, though absolute performance continues to improve.
 
 ### 2.2 Root Causes of Lock Contention
 
@@ -196,11 +196,11 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful **1.37x speedup** that brings total throughput to 1.69 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
 
-Total CPU decreases 8.0% (4,596% → 4,230%) despite doubling parallelism, while system CPU percentage improves from 83.9% to 70.5%. This occurs because network saturation at degree 128 moderates lock contention intensity, allowing the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
+Total CPU decreases 8.0% (4,596% → 4,230%) despite doubling parallelism, while system CPU percentage improves from 83.9% to 70.5%. The reason for this unexpected efficiency improvement remains unclear, though it allows the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
 
-### 4.2 Network Bottleneck as Accidental Governor
+### 4.2 Unexpected Efficiency Improvements at Degree 128
 
-Degree 128 exhibits a counterintuitive result: **lower system CPU overhead** (70.5%) than degree 64 (83.9%) despite doubling parallelism, while total CPU actually **decreases by 8.0%** (4,596% → 4,230%). User CPU efficiency improves by 82.1% (16.2% → 29.5% of total CPU), meaning nearly double the proportion of CPU time goes to productive work rather than lock contention. This occurs because network saturation acts as an accidental rate governor that paces data arrival and moderates lock contention intensity.
+Degree 128 exhibits a counterintuitive result: **lower system CPU overhead** (70.5%) than degree 64 (83.9%) despite doubling parallelism, while total CPU actually **decreases by 8.0%** (4,596% → 4,230%). User CPU efficiency improves by 82.1% (16.2% → 29.5% of total CPU), meaning nearly double the proportion of CPU time goes to productive work rather than lock contention. The reason for these improvements remains unclear.
 
 **The Comparative Analysis:**
 
@@ -223,15 +223,19 @@ Doubling parallelism from 64 to 128 processes produces unexpected improvements:
 3. **Reduced Lock Contention**: System CPU decreased from 83.9% to 70.5% (13.4 percentage point reduction) despite more processes competing for locks
 4. **Increased Throughput**: Network +5.3%, disk +44.8%, achieving 1.37x speedup with less CPU
 
-**The Governor Effect:**
+**Open Question: Why Does Efficiency Improve at Degree 128?**
 
-At degree 64 (no network limitation): All 64 streams simultaneously bombard the target, creating lock queue buildup. System CPU reaches 83.9% as processes spin on locks, with only 16.2% of CPU time performing productive work (User CPU).
+The improvement from degree 64 to 128 is puzzling for several reasons:
 
-At degree 128 (network-limited): Network throughput saturates, peaking at 2,904 MB/s (116.2% of capacity). This saturation acts as a pacing mechanism—data delivery is rate-limited by network capacity, preventing all 128 processes from simultaneously contending for locks. Processes spend more time waiting for network I/O rather than spinning on locks. System CPU drops to 70.5%, while User CPU improves to 29.5% of total (nearly double the efficiency).
+1. **Why does network bandwidth increase by 5.3%** (1,033 MB/s → 1,088 MB/s) when adding more parallelism to an already saturated network? At degree 128, network peaks at 2,904 MB/s (116.2% of capacity), yet mean throughput still increases.
 
-The network bottleneck, typically considered negative, paradoxically improves efficiency by preventing the lock thrashing observed at degree 64.
+2. **Why does system CPU overhead decrease** from 83.9% to 70.5% despite doubling parallelism? More processes should create more lock contention, not less.
 
-**Note:** This doesn't mean network bottlenecks are desirable. Network saturation occurs **only at degree 128** and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range.
+3. **Why does user CPU efficiency nearly double** (16.2% → 29.5% of total) when adding 64 more processes competing for the same resources?
+
+One hypothesis is that network saturation at degree 128 acts as a pacing mechanism, rate-limiting data delivery and preventing all 128 processes from simultaneously contending for locks. However, this doesn't fully explain why network throughput itself increases, nor why the efficiency gains are so substantial. The interaction between network saturation, lock contention, and process scheduling appears more complex than initially understood.
+
+**Note:** Network saturation occurs **only at degree 128** and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range. The degree 128 improvements, while beneficial, represent an unexplained anomaly rather than the dominant scaling pattern.
 
 ## 5. Disk I/O and Network Analysis
 
@@ -261,37 +265,23 @@ The network bottleneck, typically considered negative, paradoxically improves ef
 
 This section examines source PostgreSQL disk I/O behavior to provide concrete evidence that the source is experiencing backpressure from the target bottleneck rather than being disk-limited.
 
-#### Negative Scaling Behavior
+#### The Cache Effect and First-Run Impact
 
-Source disk I/O exhibits negative scaling across parallelism degrees, providing clear evidence of backpressure:
+The source instance has 256GB RAM, and the lineitem table is ~113GB. An important detail explains the disk behavior across test runs:
 
-<img src="/img/2025-10-13_01/source_disk_read_throughput_by_degree.png" alt="Source Disk Read Throughput by Degree." width="900">
-
-**Figure 16: Source Disk Read Throughput by Degree** - Demonstrates negative scaling. Read throughput collapses from 90.5 MB/s at degree 1 to just 0.1 MB/s at degree 128, a 99.9% decrease despite 128x more parallelism. This is the opposite of expected scaling behavior and proves the source is constrained by downstream backpressure.
-
-**Scaling Metrics:**
-
-| Metric | Degree 1 | Degree 128 | Change | Expected Behavior |
-|--------|----------|------------|--------|-------------------|
-| Read Throughput | 90.5 MB/s | 0.1 MB/s | **-99.9%** | Should increase with parallelism |
-| Read IOPS | 725 ops/sec | 1 op/sec | **-99.9%** | Should increase with parallelism |
-| Disk Utilization | 9.1% (avg) | 0.0% (avg) | **Near zero** | Disk idle 99.5% of time |
-
-#### The Cache Effect
-
-The source instance has 256GB RAM, and the lineitem table is ~113GB. An important detail explains part of the disk behavior:
+**Degree 1 was the first test run** with no prior warm-up or cold run to pre-load the table into cache. During this first run:
 
 **At degree 1 (first ~10 seconds)**: Heavy disk activity (500 MB/s, 100% utilization) loads the table into memory (shared_buffers + OS page cache).
 
 **At degree 1 (remaining ~860 seconds)**: Near-zero disk activity—the table is fully cached in RAM, no disk reads needed.
 
-**At degrees 2-128**: Essentially zero disk activity—the entire table remains cached in memory from the initial load.
+**At degrees 2-128**: Essentially zero disk activity—the entire table remains cached in memory from the initial degree 1 load.
 
-#### Time Series Evidence
+**This explains why degree 2 is more than twice as fast as degree 1**: The degree 1 run includes the initial table-loading overhead (~10 seconds of intensive disk I/O), while degree 2 benefits from the already-cached table with no disk loading required. The speedup from degree 1 to 2 reflects both the doubling of parallelism AND the elimination of the initial cache-loading penalty.
 
 <img src="/img/2025-10-13_01/source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
 
-**Figure 17: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
+**Figure 16: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
 #### The Evidence Chain
 
@@ -324,17 +314,17 @@ The near-zero disk utilization (<1%) at high parallelism degrees confirms the di
 
 <img src="/img/2025-10-13_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
 
-**Figure 18: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
+**Figure 17: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
 
 <img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
-**Figure 19: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
+**Figure 18: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
 
 ### 5.4 Network Throughput Analysis
 
 <img src="/img/2025-10-13_01/target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
 
-**Figure 20: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
+**Figure 19: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
 
 **Network Scaling Summary:**
 
@@ -353,18 +343,18 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 <img src="/img/2025-10-13_01/cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
 
-**Figure 21: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
+**Figure 20: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
 
 <img src="/img/2025-10-13_01/cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
 
-**Figure 22: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
+**Figure 21: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
 
 **Technical Note on TX/RX Discrepancy:** The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.9% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
 
 <img src="/img/2025-10-13_01/cross_degree_disk_utilization.png" alt="Cross Degree Disk Utilization." width="900">
 
 
-**Figure 23: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
+**Figure 22: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
 
 ### 5.6 I/O Analysis Conclusions
 
@@ -382,7 +372,7 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 FastTransfer successfully demonstrates strong absolute performance, achieving a 13.1x speedup that reduces 113GB transfer time from approximately 15 minutes (878s) to just over 1 minute (67s). This represents practical, production-ready performance with sustained throughput of 1.69 GB/s at degree 128. The system delivers continuous performance improvements across all tested parallelism degrees, confirming that parallel replication provides meaningful benefits even when facing coordination challenges.
 
-The primary scaling limitation appears to be target PostgreSQL lock contention beyond degree 32. System CPU grows to 83.9% at degree 64, meaning only 16.2% of CPU performs productive work. Degree 128 continues to improve absolute performance (67s vs 92s) even as total CPU decreases from 4,596% to 4,230%, with network saturation acting as an accidental rate governor that moderates lock contention intensity.
+The primary scaling limitation appears to be target PostgreSQL lock contention beyond degree 32. System CPU grows to 83.9% at degree 64, meaning only 16.2% of CPU performs productive work. Degree 128 continues to improve absolute performance (67s vs 92s) even as total CPU decreases from 4,596% to 4,230%, though the reason for this unexpected efficiency improvement remains unclear.
 
 Source PostgreSQL and FastTransfer appear to be victims of backpressure rather than independent bottlenecks. FastTransfer demonstrates the best scaling efficiency (20.2x speedup, 15.8% efficiency), while source processes spend most time waiting for target acknowledgments. Resolving target lock contention would likely improve their performance further.
 
