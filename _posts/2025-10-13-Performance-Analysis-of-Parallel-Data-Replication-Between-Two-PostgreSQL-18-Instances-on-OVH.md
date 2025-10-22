@@ -21,11 +21,11 @@ tags:
 
 ## Introduction
 
-Parallel data replication between PostgreSQL instances presents unique challenges at scale, particularly when attempting to maximize throughput on high-performance cloud infrastructure. [FastTransfer](https://aetperf.github.io/FastTransfer-Documentation/) is a commercial data migration tool designed to leverage advanced parallelization strategies for efficient data movement. This post provides an in-depth performance analysis of FastTransfer transferring 113GB of data between two PostgreSQL 18 instances on OVH c3-256 servers, examining CPU, disk I/O, and network bottlenecks across parallelism degrees from 1 to 128.
+Parallel data replication between PostgreSQL instances presents unique challenges at scale, particularly when attempting to maximize throughput on high-performance cloud infrastructure. [FastTransfer](https://aetperf.github.io/FastTransfer-Documentation/) is a commercial data migration tool designed to leverage advanced parallelization strategies for efficient data movement. This post provides an in-depth performance analysis of FastTransfer transferring 77GB of data between two PostgreSQL 18 instances on OVH c3-256 servers, examining CPU, disk I/O, and network bottlenecks across parallelism degrees from 1 to 128.
 
 ## Test Configuration
 
-The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~113GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Testing was performed at eight parallelism degrees: 1, 2, 4, 8, 16, 32, 64, and 128.
+The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Testing was performed at eight parallelism degrees: 1, 2, 4, 8, 16, 32, 64, and 128.
 
 Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's io_uring support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
@@ -37,7 +37,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 <img src="/img/2025-10-13_01/architecture.png" alt="Architecture diagram." width="900">
 
-**Figure 1: OVH Infrastructure Architecture** - The test setup consists of two identical c3-256 instances (128 vCores, 256GB RAM, 400GB NVMe) running PostgreSQL 18 on Ubuntu 24.04. The source instance contains the TPC-H SF100 lineitem table (~600M rows, 113GB). FastTransfer orchestrates parallel data replication across a 20 Gbit/s vrack private network connection to the target instance. Both instances are located in the Paris datacenter (eu-west-par-c) for minimal network latency.
+**Figure 1: OVH Infrastructure Architecture** - The test setup consists of two identical c3-256 instances (128 vCores, 256GB RAM, 400GB NVMe) running PostgreSQL 18 on Ubuntu 24.04. The source instance contains the TPC-H SF100 lineitem table (~600M rows, 77GB). FastTransfer orchestrates parallel data replication across a 20 Gbit/s vrack private network connection to the target instance. Both instances are located in the Paris datacenter (eu-west-par-c) for minimal network latency.
 
 **Hardware Configuration:**
 
@@ -66,7 +66,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 ## Executive Summary
 
-FastTransfer achieves strong absolute performance, transferring 113GB in just 67 seconds at degree 128, equivalent to **1.69 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128), representing a **13.1x speedup**. While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
+FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to **1.15 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128), representing a **13.1x speedup**. While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
 <img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
@@ -74,7 +74,7 @@ FastTransfer achieves strong absolute performance, transferring 113GB in just 67
 
 **Key Findings:**
 
-1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds (1.69 GB/s) at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
+1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds (1.15 GB/s) at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
 
 2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work. Mean CPU decreases from 4,596% (degree 64) to 4,230% (degree 128) despite doubling parallelism, though the reason for this unexpected improvement remains unclear.
 
@@ -194,7 +194,7 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 ### 4.1 Continued Performance Improvement at Extreme Parallelism
 
-Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful **1.37x speedup** that brings total throughput to 1.69 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
+Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful **1.37x speedup** that brings total throughput to 1.15 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
 
 Total CPU decreases 8.0% (4,596% → 4,230%) despite doubling parallelism, while system CPU percentage improves from 83.9% to 70.5%. The reason for this unexpected efficiency improvement remains unclear, though it allows the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
 
@@ -267,7 +267,7 @@ This section examines source PostgreSQL disk I/O behavior to provide concrete ev
 
 #### The Cache Effect and First-Run Impact
 
-The source instance has 256GB RAM, and the lineitem table is ~113GB. An important detail explains the disk behavior across test runs:
+The source instance has 256GB RAM, and the lineitem table is ~77GB. An important detail explains the disk behavior across test runs:
 
 **Degree 1 was the first test run** with no prior warm-up or cold run to pre-load the table into cache. During this first run:
 
@@ -288,7 +288,7 @@ The source instance has 256GB RAM, and the lineitem table is ~113GB. An importan
 The source disk analysis reveals the interplay between caching and backpressure:
 
 ```
-Table Cached in RAM (256GB RAM, 113GB table)
+Table Cached in RAM (256GB RAM, 77GB table)
     ↓
 Source Disk Becomes Idle (0.1 MB/s, 0.0% utilization at degrees 2-128)
     ↓
@@ -306,7 +306,7 @@ Source Processes Sleep (0.11 cores/process, blocked in system calls)
 **Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits different behavior depending on parallelism:
 
 - **Degree 1**: Brief initial disk load (~10 seconds), then reads from RAM cache
-- **Degrees 2-128**: Table fully cached in memory (256GB available, 113GB table)
+- **Degrees 2-128**: Table fully cached in memory (256GB available, 77GB table)
 
 The near-zero disk utilization (<1%) at high parallelism degrees confirms the disk is idle and not limiting performance. This indicates that source processes are constrained by downstream backpressure rather than local disk I/O capacity. Resolving target CPU lock contention would automatically improve source performance, as the source has substantial unused capacity waiting to be unlocked.
 
@@ -370,7 +370,7 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 ### 6.1 Performance Achievement and Bottleneck Analysis
 
-FastTransfer successfully demonstrates strong absolute performance, achieving a 13.1x speedup that reduces 113GB transfer time from approximately 15 minutes (878s) to just over 1 minute (67s). This represents practical, production-ready performance with sustained throughput of 1.69 GB/s at degree 128. The system delivers continuous performance improvements across all tested parallelism degrees, confirming that parallel replication provides meaningful benefits even when facing coordination challenges.
+FastTransfer successfully demonstrates strong absolute performance, achieving a 13.1x speedup that reduces 77GB transfer time from approximately 15 minutes (878s) to just over 1 minute (67s). This represents practical, production-ready performance with sustained throughput of 1.15 GB/s at degree 128. The system delivers continuous performance improvements across all tested parallelism degrees, confirming that parallel replication provides meaningful benefits even when facing coordination challenges.
 
 The primary scaling limitation appears to be target PostgreSQL lock contention beyond degree 32. System CPU grows to 83.9% at degree 64, meaning only 16.2% of CPU performs productive work. Degree 128 continues to improve absolute performance (67s vs 92s) even as total CPU decreases from 4,596% to 4,230%, though the reason for this unexpected efficiency improvement remains unclear.
 
