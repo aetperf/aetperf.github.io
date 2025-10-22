@@ -376,9 +376,9 @@ The primary scaling limitation appears to be target PostgreSQL lock contention b
 
 Source PostgreSQL and FastTransfer appear to be victims of backpressure rather than independent bottlenecks. FastTransfer demonstrates the best scaling efficiency (20.2x speedup, 15.8% efficiency), while source processes spend most time waiting for target acknowledgments. Resolving target lock contention would likely improve their performance further.
 
-### 6.2 Why Additional Tuning Cannot Help
+### 6.2 Why Additional Tuning should not Help
 
-The target table is already optimally configured (UNLOGGED, no indexes, no constraints, no triggers). PostgreSQL configuration includes all recommended bulk loading optimizations (80GB shared_buffers, huge pages, io_uring, fsync=off). Despite this, system CPU remains at 70-84% at high degrees.
+The target table is rather optimally configured (UNLOGGED, no indexes, no constraints, no triggers). PostgreSQL configuration includes all recommended bulk loading optimizations (80GB shared_buffers, huge pages, io_uring, fsync=off). Despite this, system CPU remains at 70-84% at high degrees.
 
 The bottleneck appears to be **architectural**, not configurational:
 
@@ -390,7 +390,7 @@ No configuration parameter appears able to eliminate these fundamental coordinat
 
 ## Appendix A: PostgreSQL Configuration
 
-Both PostgreSQL 18 instances were aggressively tuned for maximum bulk loading performance. The configuration represents state-of-the-art optimization with every available parameter tuned for performance.
+Both PostgreSQL 18 instances were tuned for maximum bulk loading performance.
 
 ### Target PostgreSQL Configuration (Key Settings)
 
@@ -528,21 +528,9 @@ This represents the absolute minimum overhead possible. The fact that lock conte
 
 These PostgreSQL 18 enhancements provide measurable I/O efficiency improvements, but the fundamental architectural limitation of concurrent writes to a single table persists.
 
----
-
 ## Future Work: PostgreSQL Instrumentation Analysis
 
-While this analysis relied on system-level metrics (CPU, disk, network via `sar`, `iostat`, `pidstat`), a follow-up study will use PostgreSQL's internal instrumentation to definitively identify bottlenecks at the database engine level. This will provide direct evidence of lock contention and wait events rather than inferring them from system CPU percentages.
-
-**Planned Instrumentation:**
-
-- **`pg_stat_activity` sampling**: Capture every 1 second during tests to track process states (`state`, `wait_event_type`, `wait_event`) in real-time
-- **Wait event analysis**: Log and aggregate wait events to quantify time spent in different wait states (Lock, LWLock, BufferPin, IO, etc.)
-- **`pg_stat_io` statistics**: Monitor I/O operations at the PostgreSQL level (shared buffer hits/misses, relation extension operations, FSM access patterns)
-- **`pg_stat_database` metrics**: Track transaction commits, buffer operations, and temporary file usage across parallelism degrees
-- **`pg_locks` monitoring**: Capture actual lock acquisition and contention events to identify specific lock types (relation extension, buffer content, etc.)
-
-This instrumentation will validate the lock contention hypothesis presented in this analysis and provide quantitative breakdowns of where PostgreSQL processes spend their time. The results will be the subject of a future blog post.
+While this analysis relied on system-level metrics, a follow-up study will use PostgreSQL's internal instrumentation to provide direct evidence of lock contention and wait events. This will validate the hypotheses presented in this analysis using database engine-level metrics.
 
 ---
 
