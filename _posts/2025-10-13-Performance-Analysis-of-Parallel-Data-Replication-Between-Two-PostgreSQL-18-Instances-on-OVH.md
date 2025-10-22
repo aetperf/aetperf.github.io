@@ -29,7 +29,7 @@ The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~113GB)
 
 Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's io_uring support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
-**Note on Statistical Rigor:** Each configuration was run only once rather than following standard statistical practice (running each configuration 5+ times minimum, reporting mean, standard deviation, and confidence intervals). This decision was made because preliminary observations showed very small variations between successive runs, suggesting the results are stable and reproducible under these controlled conditions.
+**Note on Statistical Rigor:** Each configuration was run only once rather than following standard statistical practice : running each configuration several times minimum, reporting mean, standard deviation, and confidence intervals. This decision was made because preliminary observations showed very small variations between successive runs, suggesting the results are stable and reproducible under these controlled conditions.
 
 ## OVH Infrastructure Setup
 
@@ -54,7 +54,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 **Software Stack:**
 
 - **OS**: Ubuntu 24.04.3 LTS with Linux kernel 6.8
-- **PostgreSQL**: Version 18 with io_uring, huge pages (vm.nr_hugepages=45000), autovacuum_worker_slots
+- **PostgreSQL**: Version 18.0, with io_uring, huge pages (vm.nr_hugepages=45000)
 - **FastTransfer**: Version 0.13.12
 
 **Infrastructure Performance Baseline:**
