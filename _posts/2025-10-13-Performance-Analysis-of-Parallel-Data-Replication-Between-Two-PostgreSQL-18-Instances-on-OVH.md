@@ -84,7 +84,7 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 
 5. **Network**: Saturates at ~2,450 MB/s (98% of capacity) only at degree 128 during active bursts. Degrees 1-64 operate well below capacity, so network doesn't appear to explain scaling behavior across most of the tested range.
 
-6. **Disk**: Does not appear to be a bottleneck. Average utilization is only 24.3% at degree 128, with most idle capacity remaining.
+6. **Disk**: Does not appear to be a bottleneck. Average utilization is only 24.3% at degree 128.
 
 ## 1. CPU Usage Analysis
 
@@ -98,17 +98,17 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 <img src="/img/2025-10-13_01/plot_02_peak_cpu.png" alt="Plot 02: peak CPU." width="900">
 
 
-**Figure 4: Peak CPU Usage by Component** - Target PostgreSQL exhibits extremely high peak values (~6,969% at degree 128). The large spikes combined with relatively lower mean values indicate high variance, characteristic of processes alternating between lock contention and productive work. The variance between peak (~6,969%) and mean (~3,294%) at degree 128 suggests lock queue buildup: processes stall waiting in queues, then burst with intense CPU activity when they finally acquire locks.
+**Figure 4: Peak CPU Usage by Component** - Target PostgreSQL exhibits high peak values (~6,969% at degree 128). The large spikes combined with relatively lower mean values indicate high variance, characteristic of processes alternating between lock contention and productive work.
 
 **Component Scaling Summary:**
 
 | Component         | Degree 1         | Degree 128          | Speedup | Efficiency |
 | ----------------- | ---------------- | ------------------- | ------- | ---------- |
-| Source PostgreSQL | 93% (0.93 cores) | 1,110% (11.1 cores) | 11.9x   | 9.3%       |
-| FastTransfer      | 31% (0.31 cores) | 631% (6.3 cores)    | 20.1x   | 15.7%      |
-| Target PostgreSQL | 98% (0.98 cores) | 3,294% (32.9 cores) | 33.6x   | 26.3%      |
+| Source PostgreSQL | 93% | 1,110% | 11.9x   | 9.3%       |
+| FastTransfer      | 31% | 631%   | 20.1x   | 15.7%      |
+| Target PostgreSQL | 98% | 3,294% | 33.6x   | 26.3%      |
 
-Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol (1,048,576 rows/batch) means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working.
+Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working.
 
 ### 1.2 FastTransfer Architecture
 
