@@ -66,7 +66,7 @@ The source instance PostgreSQL data directory resides on attached OVH Block Stor
 
 ## Executive Summary
 
-FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to **1.15 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
+FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to 1.15 GB/s sustained throughput. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). The system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
 <img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
@@ -74,17 +74,17 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 
 **Key Findings:**
 
-1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds (1.15 GB/s) at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
+1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
 
-2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work. Mean CPU decreases from 4,596% (degree 64) to 4,230% (degree 128) despite doubling parallelism, though the reason for this unexpected improvement remains unclear.
+2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work.
 
-3. **FastTransfer**: Does not appear to be a bottleneck. Operates with binary COPY protocol (`pgcopy` mode for both source and target), batch size 1,048,576 rows. Achieves 20.2x speedup with 15.8% efficiency, the best scaling efficiency among all components.
+3. **FastTransfer**: Does not appear to be a bottleneck. Achieves 20.2x speedup with 15.8% efficiency, the best scaling efficiency among all components.
 
 4. **Source PostgreSQL**: Appears to be a victim of backpressure, not an independent bottleneck. At degree 128, 105 processes use only 11.7 cores (0.11 cores/process), suggesting they're blocked waiting for target acknowledgments rather than actively contending for resources.
 
 5. **Network**: Saturates at ~2,450 MB/s (98% of capacity) only at degree 128 during active bursts. Degrees 1-64 operate well below capacity, so network doesn't appear to explain scaling behavior across most of the tested range.
 
-6. **Disk**: Does not appear to be a bottleneck. Average utilization is only 24.3% at degree 128, with 76% idle capacity remaining.
+6. **Disk**: Does not appear to be a bottleneck. Average utilization is only 24.3% at degree 128, with most idle capacity remaining.
 
 ## 1. CPU Usage Analysis
 
