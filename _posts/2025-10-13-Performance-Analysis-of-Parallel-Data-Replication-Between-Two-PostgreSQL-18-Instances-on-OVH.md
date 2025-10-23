@@ -21,15 +21,15 @@ tags:
 
 ## Introduction
 
-Parallel data replication between PostgreSQL instances presents unique challenges at scale, particularly when attempting to maximize throughput on high-performance cloud infrastructure. [FastTransfer](https://aetperf.github.io/FastTransfer-Documentation/) is a commercial data migration tool designed to leverage advanced parallelization strategies for efficient data movement. This post provides an in-depth performance analysis of FastTransfer transferring 77GB of data between two PostgreSQL 18 instances on OVH c3-256 servers, examining CPU, disk I/O, and network bottlenecks across parallelism degrees from 1 to 128.
+Parallel data replication between PostgreSQL instances presents unique challenges at scale, particularly when attempting to maximize throughput on high-performance cloud infrastructure. [FastTransfer](https://aetperf.github.io/FastTransfer-Documentation/) is a commercial data migration tool designed to leverage advanced parallelization strategies for efficient data movement. This post provides a performance analysis of FastTransfer transferring 77GB of data between two PostgreSQL 18 instances on OVH c3-256 servers, examining CPU, disk I/O, and network bottlenecks across parallelism degrees from 1 to 128.
 
 ## Test Configuration
 
 The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Testing was performed at eight parallelism degrees: 1, 2, 4, 8, 16, 32, 64, and 128.
 
-Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's io_uring support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
+Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
-**Note on Statistical Rigor:** Each configuration was run only once rather than following standard statistical practice : running each configuration several times minimum, reporting mean, standard deviation, and confidence intervals. This decision was made because preliminary observations showed very small variations between successive runs, suggesting the results are stable and reproducible under these controlled conditions.
+Each configuration was run only once, deviating from the standard practice of multiple runs with statistical reporting. This decision was made after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results. As the sole user on both instances during testing, environmental consistency was maintained.
 
 ## OVH Infrastructure Setup
 
@@ -49,12 +49,12 @@ The test environment consists of two identical OVH cloud instances designed for 
   - **Source**: OVH Block Storage (high-speed-gen2, 1.95 TiB, 30 IOPS/GB up to 20,000 IOPS max, 0.5 MB/s/GB up to 1 GB/s max)
 - **Network**: 20 Gbit/s vrack (2.5 GB/s)
 
-**Note on Storage Configuration**: The source instance PostgreSQL data directory resides on attached OVH Block Storage rather than local NVMe. This asymmetric storage configuration does not affect the analysis conclusions, as the source PostgreSQL instance exhibits backpressure behavior (low CPU utilization at 0.11 cores/process at degree 128) rather than storage-limited performance, confirming that the target instance lock contention remains the primary bottleneck.
+The source instance PostgreSQL data directory resides on attached OVH Block Storage rather than local NVMe. This asymmetric storage configuration does not affect the analysis conclusions, as the source PostgreSQL instance exhibits backpressure behavior rather than storage-limited performance.
 
 **Software Stack:**
 
 - **OS**: Ubuntu 24.04.3 LTS with Linux kernel 6.8
-- **PostgreSQL**: Version 18.0, with io_uring, huge pages (vm.nr_hugepages=45000)
+- **PostgreSQL**: Version 18.0, with `io_uring`, huge pages (`vm.nr_hugepages=45000`)
 - **FastTransfer**: Version 0.13.12
 
 **Infrastructure Performance Baseline:**
@@ -66,7 +66,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 ## Executive Summary
 
-FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to **1.15 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at extreme parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
+FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to **1.15 GB/s sustained throughput**. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). While this represents 10.2% efficiency relative to the theoretical 128x maximum, the system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
 <img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
@@ -367,7 +367,7 @@ Source PostgreSQL and FastTransfer appear to be victims of backpressure rather t
 
 ### 6.2 Why Additional Tuning should not Help
 
-The target table is rather optimally configured (UNLOGGED, no indexes, no constraints, no triggers). PostgreSQL configuration includes all recommended bulk loading optimizations (80GB shared_buffers, huge pages, io_uring, fsync=off). Despite this, system CPU remains at 70-84% at high degrees.
+The target table is rather optimally configured (UNLOGGED, no indexes, no constraints, no triggers). PostgreSQL configuration includes all recommended bulk loading optimizations (80GB shared_buffers, huge pages, `io_uring`, fsync=off). Despite this, system CPU remains at 70-84% at high degrees.
 
 The bottleneck appears to be **architectural**, not configurational:
 
