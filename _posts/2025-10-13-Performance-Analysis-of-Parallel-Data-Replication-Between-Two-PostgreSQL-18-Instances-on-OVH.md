@@ -29,7 +29,7 @@ The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB),
 
 Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
-Each configuration was run only once, deviating from the standard practice of multiple runs with statistical reporting. This decision was made after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results. As the sole user on both instances during testing, environmental consistency was maintained.
+Each configuration was run only once, deviating from the standard practice of multiple runs with statistical reporting. This choice was made after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results. As the sole user on both instances during testing, environmental consistency was maintained.
 
 ## OVH Infrastructure Setup
 
@@ -37,7 +37,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 
 <img src="/img/2025-10-13_01/architecture.png" alt="Architecture diagram." width="900">
 
-**Figure 1: OVH Infrastructure Architecture** - The test setup consists of two identical c3-256 instances (128 vCores, 256GB RAM, 400GB NVMe) running PostgreSQL 18 on Ubuntu 24.04. The source instance contains the TPC-H SF100 lineitem table (~600M rows, 77GB). FastTransfer orchestrates parallel data replication across a 20 Gbit/s vrack private network connection to the target instance. Both instances are located in the Paris datacenter (eu-west-par-c) for minimal network latency.
+**Figure 1: OVH Infrastructure Architecture** - The test setup consists of two identical c3-256 instances (128 vCores, 256GB RAM, 400GB NVMe) running PostgreSQL 18 on Ubuntu 24.04. The source instance contains the TPC-H SF100 lineitem table. FastTransfer orchestrates parallel data replication across a 20 Gbit/s vrack private network connection to the target instance. Both instances are located in the Paris datacenter (eu-west-par-c) for minimal network latency.
 
 **Hardware Configuration:**
 
@@ -110,23 +110,13 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 
 Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working.
 
-### 1.2 FastTransfer Architecture
+### 1.2 FastTransfer
 
 <img src="/img/2025-10-13_01/plot_03_fasttransfer_user_system.png" alt="Plot 3: FastTransfer User vs System CPU." width="900">
 
 **Figure 5: FastTransfer User vs System CPU** - At degree 128, FastTransfer uses 419% user CPU (66%) and 212% system CPU (34%). The system CPU proportion is appropriate for network I/O intensive applications.
 
 FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (`--sourceconnectiontype "pgcopy"` and `--targetconnectiontype "pgcopy"`). Data flows directly from source PostgreSQL's COPY TO BINARY through FastTransfer to target PostgreSQL's COPY FROM BINARY without data transformation. FastTransfer acts as an intelligent network proxy coordinating parallel streams and batch acknowledgments, explaining its relatively low CPU usage.
-
-### 1.3 Process Counts and CPU Efficiency
-
-<img src="/img/2025-10-13_01/plot_04_thread_process_counts.png" alt="Plot 4: Thread/Process Counts." width="900">
-
-**Figure 6: Thread/Process Counts** - FastTransfer (green) maintains 1 process across all degrees using internal threading. PostgreSQL components (blue=source, red=target) scale linearly with their process-per-connection model. At degree 128, source spawns 105 processes, target spawns 88 processes.
-
-<img src="/img/2025-10-13_01/plot_05_cpu_efficiency.png" alt="Plot 5: CPU Efficiency." width="900">
-
-**Figure 7: CPU Efficiency (CPU per Degree)** - Lower values indicate better scaling. Source PostgreSQL (blue) drops significantly from 93% at degree 1 to 8.7% at degree 128, indicating processes spend most time waiting rather than working due to backpressure. Target PostgreSQL (red) drops from 69% at degree 64 to 26% at degree 128, reflecting reduced CPU utilization per worker despite achieving the best absolute performance (67s elapsed time). 
 
 ## 2. The Lock Contention Problem: System CPU Analysis
 
@@ -273,9 +263,9 @@ The source instance has 256GB RAM, and the lineitem table is ~77GB. An important
 
 **At degree 1 (first ~10 seconds)**: Heavy disk activity (500 MB/s, 100% utilization) loads the table into memory (shared_buffers + OS page cache).
 
-**At degree 1 (remaining ~860 seconds)**: Near-zero disk activity—the table is fully cached in RAM, no disk reads needed.
+**At degree 1 (remaining ~860 seconds)**: Near-zero disk activity; the table is fully cached in RAM, no disk reads needed.
 
-**At degrees 2-128**: Essentially zero disk activity—the entire table remains cached in memory from the initial degree 1 load.
+**At degrees 2-128**: Essentially zero disk activity; the entire table remains cached in memory from the initial degree 1 load.
 
 **This explains why degree 2 is more than twice as fast as degree 1**: The degree 1 run includes the initial table-loading overhead (~10 seconds of intensive disk I/O), while degree 2 benefits from the already-cached table with no disk loading required. The speedup from degree 1 to 2 reflects both the doubling of parallelism AND the elimination of the initial cache-loading penalty.
 
