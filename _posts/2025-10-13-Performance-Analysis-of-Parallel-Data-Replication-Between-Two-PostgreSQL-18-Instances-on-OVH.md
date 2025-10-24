@@ -124,7 +124,7 @@ FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (
 
 <img src="/img/2025-10-13_01/plot_06_system_cpu_percentage.png" alt="Plot 6: System CPU as % of Total CPU." width="900">
 
-**Figure 8: System CPU as % of Total CPU** - Target PostgreSQL (red line) crosses the 50% warning threshold at degree 16, exceeds 70% at degree 32, and peaks at 83.9% at degree 64. At this maximum, only 16.2% of CPU time performs productive work while 83.9% appears spent on lock contention and kernel overhead.
+**Figure 6: System CPU as % of Total CPU** - Target PostgreSQL (red line) crosses the 50% warning threshold at degree 16, exceeds 70% at degree 32, and peaks at 83.9% at degree 64. At this maximum, only 16.2% of CPU time performs productive work while 83.9% appears spent on lock contention and kernel overhead.
 
 CPU time divides into two categories: **User CPU** (application code performing actual data insertion) and **System CPU** (kernel operations handling locks, synchronization, context switches, I/O). A healthy system maintains system CPU below 30%.
 
@@ -156,29 +156,29 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 <img src="/img/2025-10-13_01/plot_7_distribution_degree_4.png" alt="Plot 7: CPU Distribution at Degree 4." width="900">
 
-**Figure 9: CPU Distribution at Degree 4** - Tight, healthy distributions with small standard deviations. All components operate consistently without significant contention.
+**Figure 7: CPU Distribution at Degree 4** - Tight, healthy distributions with small standard deviations. All components operate consistently without significant contention.
 
 <img src="/img/2025-10-13_01/plot_8_distribution_degree_32.png" alt="Plot 8: CPU Distribution at Degree 32." width="900">
 
-**Figure 10: CPU Distribution at Degree 32** - Target PostgreSQL (red) becomes bimodal with wide spread (1000-3000% range), indicating some samples capture waiting processes while others capture active processes. Source (blue) remains relatively tight.
+**Figure 8: CPU Distribution at Degree 32** - Target PostgreSQL (red) becomes bimodal with wide spread (1000-3000% range), indicating some samples capture waiting processes while others capture active processes. Source (blue) remains relatively tight.
 
 <img src="/img/2025-10-13_01/plot_9_distribution_degree_128.png" alt="Plot 9: CPU Distribution at Degree 128." width="900">
 
-**Figure 11: CPU Distribution at Degree 128** - Target PostgreSQL (red) spans nearly 0-10000%, indicating highly variable behavior. Some processes are nearly starved (near 0%) while others burn high CPU on lock spinning (>8000%). This wide distribution suggests lock thrashing.
+**Figure 9: CPU Distribution at Degree 128** - Target PostgreSQL (red) spans nearly 0-10000%, indicating highly variable behavior. Some processes are nearly starved (near 0%) while others burn high CPU on lock spinning (>8000%). This wide distribution suggests lock thrashing.
 
 ### 3.2 CPU Time Series
 
 <img src="/img/2025-10-13_01/plot_10_timeseries_degree_4.png" alt="Plot 10: Time Series at Degree 4." width="900">
 
-**Figure 12: CPU Over Time at Degree 4** - All components show stable, smooth CPU usage with minimal oscillations throughout the test duration.
+**Figure 10: CPU Over Time at Degree 4** - All components show stable, smooth CPU usage with minimal oscillations throughout the test duration.
 
 <img src="/img/2025-10-13_01/plot_11_timeseries_degree_32.png" alt="Plot 11: Time Series at Degree 32." width="900">
 
-**Figure 13: CPU Over Time at Degree 32** - Target PostgreSQL (red) shows increasing variability and oscillations, indicating periods of successful lock acquisition alternating with blocking periods.
+**Figure 11: CPU Over Time at Degree 32** - Target PostgreSQL (red) shows increasing variability and oscillations, indicating periods of successful lock acquisition alternating with blocking periods.
 
 <img src="/img/2025-10-13_01/plot_12_timeseries_degree_128.png" alt="Plot 12: Time Series at Degree 128." width="900">
 
-**Figure 14: CPU Over Time at Degree 128** - Target PostgreSQL (red) exhibits oscillations with wild CPU swings, suggesting significant lock thrashing. Source (blue) and FastTransfer (green) show variability reflecting downstream backpressure.
+**Figure 12: CPU Over Time at Degree 128** - Target PostgreSQL (red) exhibits oscillations with wild CPU swings, suggesting significant lock thrashing. Source (blue) and FastTransfer (green) show variability reflecting downstream backpressure.
 
 ## 4. Performance Scaling Analysis: Degrees 64 to 128
 
@@ -233,11 +233,11 @@ One hypothesis is that network saturation at degree 128 acts as a pacing mechani
 
 <img src="/img/2025-10-13_01/disk_fio_vs_postgresql_bandwidth.png" alt="Disk Bandwidth Comparison." width="900">
 
-**Figure 15a: FIO Benchmark vs PostgreSQL Actual Performance (Bandwidth)** - PostgreSQL achieves 3,759 MB/s peak (100.5% of FIO's 3,741 MB/s), demonstrating it can saturate disk during bursts. However, average is only 170 MB/s (4.5% of peak), revealing highly bursty behavior with long idle periods.
+**Figure 13a: FIO Benchmark vs PostgreSQL Actual Performance (Bandwidth)** - PostgreSQL achieves 3,759 MB/s peak (100.5% of FIO's 3,741 MB/s), demonstrating it can saturate disk during bursts. However, average is only 170 MB/s (4.5% of peak), revealing highly bursty behavior with long idle periods.
 
 <img src="/img/2025-10-13_01/disk_fio_vs_postgresql_iops.png" alt="Disk IOPS Comparison." width="900">
 
-**Figure 15b: FIO Benchmark vs PostgreSQL Actual Performance (IOPS)** - Peak IOPS reaches 55,501 operations per second during intensive bursts, but average IOPS is only 207 operations per second, further confirming the bursty pattern with most time spent idle or at low activity levels.
+**Figure 13b: FIO Benchmark vs PostgreSQL Actual Performance (IOPS)** - Peak IOPS reaches 55,501 operations per second during intensive bursts, but average IOPS is only 207 operations per second, further confirming the bursty pattern with most time spent idle or at low activity levels.
 
 **FIO Results:**
 
@@ -271,7 +271,7 @@ The source instance has 256GB RAM, and the lineitem table is ~77GB. An important
 
 <img src="/img/2025-10-13_01/source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
 
-**Figure 16: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
+**Figure 14: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
 #### The Evidence Chain
 
@@ -304,17 +304,17 @@ The near-zero disk utilization (<1%) at high parallelism degrees confirms the di
 
 <img src="/img/2025-10-13_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
 
-**Figure 17: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
+**Figure 15: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
 
 <img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
-**Figure 18: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
+**Figure 16: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
 
 ### 5.4 Network Throughput Analysis
 
 <img src="/img/2025-10-13_01/target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
 
-**Figure 19: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
+**Figure 17: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
 
 Network saturation occurs **only at degree 128** during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64, target CPU lock contention remains the primary bottleneck.
 
@@ -322,18 +322,18 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 <img src="/img/2025-10-13_01/cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
 
-**Figure 20: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
+**Figure 18: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
 
 <img src="/img/2025-10-13_01/cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
 
-**Figure 21: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
+**Figure 19: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
 
 **Technical Note on TX/RX Discrepancy:** The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.9% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
 
 <img src="/img/2025-10-13_01/cross_degree_disk_utilization.png" alt="Cross Degree Disk Utilization." width="900">
 
 
-**Figure 22: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
+**Figure 20: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
 
 ### 5.6 I/O Analysis Conclusions
 
