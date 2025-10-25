@@ -12,7 +12,7 @@ Testing was performed at eight parallelism degrees, executed sequentially in a p
 
 The test environment consists of two identical OVH cloud instances designed for heavy workloads:
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//architecture.png" alt="Architecture diagram." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/architecture.png" alt="Architecture diagram." width="900">
 
 **Figure 1: OVH Infrastructure Architecture** - The test setup consists of two identical c3-256 instances (128 vCores, 256GB RAM, 400GB NVMe) running PostgreSQL 18 on Ubuntu 24.04. The source instance contains the TPC-H SF100 lineitem table. FastTransfer orchestrates parallel data replication across a 20 Gbit/s vrack private network connection to the target instance. Both instances are located in the Paris datacenter (eu-west-par-c) for minimal network latency.
 
@@ -44,7 +44,7 @@ The source instance PostgreSQL data directory resides on attached OVH Block Stor
 
 FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to 1.15 GB/s sustained throughput. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). The system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance appears to increasingly limit scaling efficiency beyond degree 32.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
 **Figure 2: Total Elapsed Time by Degree of Parallelism** - Wall-clock time improves continuously across all tested degrees, from 878 seconds (degree 1) to 67 seconds (degree 128). Performance gains remain positive throughout, though the rate of improvement diminishes beyond degree 32 due to increasing lock contention. 
 
@@ -52,12 +52,12 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 
 ### 1.1 Mean and Peak CPU Usage
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_01_mean_cpu.png" alt="Plot 01: mean CPU." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_01_mean_cpu.png" alt="Plot 01: mean CPU." width="900">
 
 
 **Figure 3: Mean CPU Usage by Component** - Target PostgreSQL (red) dominates resource consumption at high parallelism, while source PostgreSQL (blue) reaches around 12 cores.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_02_peak_cpu.png" alt="Plot 02: peak CPU." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_02_peak_cpu.png" alt="Plot 02: peak CPU." width="900">
 
 
 **Figure 4: Peak CPU Usage by Component** - Target PostgreSQL exhibits high peak values (~6,969% at degree 128). The large spikes combined with relatively lower mean values indicate high variance, characteristic of processes alternating between lock contention and productive work.
@@ -76,7 +76,7 @@ Note also that FastTransfer uses PostgreSQL's Ctid pseudo-column for table parti
 
 ### 1.2 FastTransfer
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_03_fasttransfer_user_system.png" alt="Plot 3: FastTransfer User vs System CPU." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_03_fasttransfer_user_system.png" alt="Plot 3: FastTransfer User vs System CPU." width="900">
 
 **Figure 5: FastTransfer User vs System CPU** - At degree 128, FastTransfer uses 419% user CPU (66%) and 212% system CPU (34%).
 
@@ -86,7 +86,7 @@ FastTransfer uses in the present case PostgreSQL's binary COPY protocol for both
 
 ### 2.1 System CPU
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_06_system_cpu_percentage.png" alt="Plot 6: System CPU as % of Total CPU." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_06_system_cpu_percentage.png" alt="Plot 6: System CPU as % of Total CPU." width="900">
 
 **Figure 6: System CPU as % of Total CPU** - Target PostgreSQL (red line) crosses the 50% warning threshold at degree 16, exceeds 70% at degree 32, and peaks at 83.9% at degree 64. At this maximum, only 16.2% of CPU time performs productive work while 83.9% appears spent on lock contention and kernel overhead.
 
@@ -118,29 +118,29 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 ### 3.1 CPU Distribution
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_7_distribution_degree_4.png" alt="Plot 7: CPU Distribution at Degree 4." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_7_distribution_degree_4.png" alt="Plot 7: CPU Distribution at Degree 4." width="900">
 
 **Figure 7: CPU Distribution at Degree 4** - Tight, healthy distributions with small standard deviations. All components operate consistently without significant contention.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_8_distribution_degree_32.png" alt="Plot 8: CPU Distribution at Degree 32." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_8_distribution_degree_32.png" alt="Plot 8: CPU Distribution at Degree 32." width="900">
 
 **Figure 8: CPU Distribution at Degree 32** - Target PostgreSQL (red) becomes bimodal with wide spread (1000-3000% range), indicating some samples capture waiting processes while others capture active processes. Source (blue) remains relatively tight.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_9_distribution_degree_128.png" alt="Plot 9: CPU Distribution at Degree 128." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_9_distribution_degree_128.png" alt="Plot 9: CPU Distribution at Degree 128." width="900">
 
 **Figure 9: CPU Distribution at Degree 128** - Target PostgreSQL (red) spans nearly 0-10000%, indicating highly variable behavior. Some processes are nearly starved (near 0%) while others burn high CPU on lock spinning (>8000%). This wide distribution suggests lock thrashing.
 
 ### 3.2 CPU Time Series
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_10_timeseries_degree_4.png" alt="Plot 10: Time Series at Degree 4." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_10_timeseries_degree_4.png" alt="Plot 10: Time Series at Degree 4." width="900">
 
 **Figure 10: CPU Over Time at Degree 4** - All components show stable, smooth CPU usage with minimal oscillations throughout the test duration.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_11_timeseries_degree_32.png" alt="Plot 11: Time Series at Degree 32." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_11_timeseries_degree_32.png" alt="Plot 11: Time Series at Degree 32." width="900">
 
 **Figure 11: CPU Over Time at Degree 32** - Target PostgreSQL (red) shows increasing variability and oscillations, indicating periods of successful lock acquisition alternating with blocking periods.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//plot_12_timeseries_degree_128.png" alt="Plot 12: Time Series at Degree 128." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/plot_12_timeseries_degree_128.png" alt="Plot 12: Time Series at Degree 128." width="900">
 
 **Figure 12: CPU Over Time at Degree 128** - Target PostgreSQL (red) exhibits oscillations with wild CPU swings, suggesting significant lock thrashing. Source (blue) and FastTransfer (green) show variability reflecting downstream backpressure.
 
@@ -186,7 +186,7 @@ The source instance has 256GB RAM with a Postgres `effective_cache_size` of 192G
 
 Degree 1 was the first test run with no prior warm-up or cold run to pre-load the table into cache. During this first run at degree 1, there is a heavy disk activity (500 MB/s, ~50% peak utilization) where the table is loaded into memory (shared_buffers + OS page cache). At degrees 2-128, there is essentially zero disk activity; the entire table remains cached in memory from the initial degree 1 load. This explains why degree 2 is more than twice as fast as degree 1: the degree 1 run includes the initial table-loading overhead, while degree 2 benefits from the already-cached table with no disk loading required. The speedup from degree 1 to 2 reflects both the doubling of parallelism and the elimination of the initial cache-loading penalty.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
 
 **Figure 13: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
@@ -194,17 +194,17 @@ Disk utilization measures the percentage of time the disk is busy serving I/O re
 
 ### 5.2 Target Disk I/O Time Series
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
 
 **Figure 14: Target Disk Write Throughput Over Time** - Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
 **Figure 15: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This suggests disk I/O is not the bottleneck.
 
 ### 5.3 Network Throughput Analysis
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
 
 **Figure 16: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
 
@@ -212,11 +212,11 @@ Network saturation only occurs at degree 128 during active bursts. Therefore, ne
 
 ### 5.4 Cross-Degree Scaling Analysis
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
 
 **Figure 17: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
 
-<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img//img/2025-10-25_01//cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
+<img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-10-25_01/cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
 
 **Figure 18: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
 
