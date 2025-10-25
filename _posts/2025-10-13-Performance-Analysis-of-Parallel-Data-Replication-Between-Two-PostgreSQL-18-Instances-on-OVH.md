@@ -25,11 +25,9 @@ Parallel data replication between PostgreSQL instances presents unique challenge
 
 ## Test Configuration
 
-The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Testing was performed at eight parallelism degrees: 1, 2, 4, 8, 16, 32, 64, and 128.
+The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
-Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
-
-Each configuration was run only once, deviating from the standard practice of multiple runs with statistical reporting. This choice was made after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results. As the sole user on both instances during testing, environmental consistency was maintained.
+Testing was performed at eight parallelism degrees, executed sequentially in a progressive loading pattern: 1, 2, 4, 8, 16, 32, 64, and 128, with each step doubling to systematically increase load. Each configuration was run only once rather than following standard statistical practice of multiple runs with mean, standard deviation, and confidence intervals. This single-run approach was adopted after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results under these controlled conditions.
 
 ## OVH Infrastructure Setup
 
@@ -60,9 +58,8 @@ The source instance PostgreSQL data directory resides on attached OVH Block Stor
 **Infrastructure Performance Baseline:**
 
 - **Network**: 20.5 Gbit/s (2.56 GB/s) verified with iperf3
-- **Disk Sequential Write**: 3,741 MB/s (FIO benchmark with 128K blocks)
-- **Disk Random Read**: 313 MB/s, 80,200 IOPS (FIO, 4K blocks)
-- **Disk Random Write**: 88.2 MB/s, 22,600 IOPS (FIO, 4K blocks)
+- **Target Disk Sequential Write**: 3,741 MB/s (FIO benchmark with 128K blocks)
+- **Target Disk Random Write**: 88.2 MB/s, 22,600 IOPS (FIO, 4K blocks)
 
 ## Executive Summary
 
@@ -114,7 +111,7 @@ Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer
 
 <img src="/img/2025-10-13_01/plot_03_fasttransfer_user_system.png" alt="Plot 3: FastTransfer User vs System CPU." width="900">
 
-**Figure 5: FastTransfer User vs System CPU** - At degree 128, FastTransfer uses 419% user CPU (66%) and 212% system CPU (34%). The system CPU proportion is appropriate for network I/O intensive applications.
+**Figure 5: FastTransfer User vs System CPU** - At degree 128, FastTransfer uses 419% user CPU (66%) and 212% system CPU (34%).
 
 FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (`--sourceconnectiontype "pgcopy"` and `--targetconnectiontype "pgcopy"`). Data flows directly from source PostgreSQL's COPY TO BINARY through FastTransfer to target PostgreSQL's COPY FROM BINARY without data transformation. FastTransfer acts as an intelligent network proxy coordinating parallel streams and batch acknowledgments, explaining its relatively low CPU usage.
 
@@ -142,9 +139,9 @@ At degree 64, processes appear to spend 83.9% of time managing locks rather than
 
 ### 2.2 Root Causes of Lock Contention
 
-The target table was already optimized for bulk loading (UNLOGGED, no indexes, no constraints, no triggers), eliminating all standard overhead sources. The remaining contention appears to stem from PostgreSQL's fundamental architecture:
+The target table was already optimized for bulk loading (UNLOGGED, no indexes, no constraints, no triggers), eliminating all standard overhead sources. So the contention could stem from PostgreSQL's fundamental architecture:
 
-1. **Shared Buffer Pool Locks**: All 128 parallel connections compete for buffer pool partition locks to read/modify/write pages. PostgreSQL's buffer manager has inherent limitations for concurrent write parallelism.
+1. **Shared Buffer Pool Locks**: All 128 parallel connections compete for buffer pool partition locks to read/modify/write pages.
 
 2. **Relation Extension Locks**: When the table grows, PostgreSQL requires an exclusive lock (only one process at a time). 
 
@@ -184,34 +181,23 @@ The target table was already optimized for bulk loading (UNLOGGED, no indexes, n
 
 ### 4.1 Continued Performance Improvement at Extreme Parallelism
 
-Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful **1.37x speedup** that brings total throughput to 1.15 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
-
-Total CPU decreases 8.0% (4,596% → 4,230%) despite doubling parallelism, while system CPU percentage improves from 83.9% to 70.5%. The reason for this unexpected efficiency improvement remains unclear, though it allows the system to maintain productivity despite the coordination challenges inherent in managing 128 parallel streams.
+Degree 128 achieves the best absolute performance in the test suite, completing the transfer in 67 seconds compared to 92 seconds at degree 64, a meaningful 1.37x speedup that brings total throughput to 1.15 GB/s. While this represents 68.7% efficiency for the doubling operation (rather than the theoretical 2x), the continued improvement demonstrates that the system remains functional and beneficial even at extreme parallelism levels.
 
 ### 4.2 Unexpected Efficiency Improvements at Degree 128
 
-Degree 128 exhibits a counterintuitive result: **lower system CPU overhead** (70.5%) than degree 64 (83.9%) despite doubling parallelism, while total CPU actually **decreases by 8.0%** (4,596% → 4,230%). User CPU efficiency improves by 82.1% (16.2% → 29.5% of total CPU), meaning nearly double the proportion of CPU time goes to productive work rather than lock contention. The reason for these improvements remains unclear.
+Degree 128 exhibits a counterintuitive result: lower system CPU overhead (70.5%) than degree 64 (83.9%) despite doubling parallelism, while total CPU actually decreases by 8.0% (4,596% → 4,230%). User CPU efficiency improves by 82.1% (16.2% → 29.5% of total CPU), meaning nearly double the proportion of CPU time goes to productive work rather than lock contention. The reason for these improvements remains unclear.
 
 **The Comparative Analysis:**
 
 | Metric                  | Degree 64            | Degree 128           | Change               |
 | ----------------------- | -------------------- | -------------------- | -------------------- |
 | Elapsed Time            | 92s                  | 67s                  | 1.37x speedup        |
-| Total CPU               | 4,596% (46.0 cores)  | 4,230% (42.3 cores)  | **-8.0%**            |
-| User CPU                | 743% (16.2% of total)| 1,248% (29.5% of total) | **+68.0%, +82.1% efficiency** |
+| Total CPU               | 4,596%               | 4,230%               | **-8.0%**            |
+| User CPU                | 743% (16.2% of total)| 1,248% (29.5% of total) | **+68.0%** |
 | System CPU              | 3,854% (83.9% of total) | 2,982% (70.5% of total) | **-22.6%**       |
 | Network Throughput      | 1,033 MB/s mean      | 1,088 MB/s mean      | +5.3%                |
 | Network Peak            | 2,335 MB/s (93.4%)   | 2,904 MB/s (116.2%)  | **Saturation**       |
 | Disk Throughput         | 759 MB/s             | 1,099 MB/s           | +44.8%               |
-
-**The Counterintuitive Result:**
-
-Doubling parallelism from 64 to 128 processes produces unexpected improvements:
-
-1. **Reduced Total CPU Usage**: Despite increasing from ~64 to 88 processes, total CPU decreased by 8.0%
-2. **Improved Efficiency**: User CPU as % of total increased from 16.2% to 29.5% (82.1% relative improvement)
-3. **Reduced Lock Contention**: System CPU decreased from 83.9% to 70.5% (13.4 percentage point reduction) despite more processes competing for locks
-4. **Increased Throughput**: Network +5.3%, disk +44.8%, achieving 1.37x speedup with less CPU
 
 **Open Question: Why Does Efficiency Improve at Degree 128?**
 
@@ -225,7 +211,7 @@ The improvement from degree 64 to 128 is puzzling for several reasons:
 
 One hypothesis is that network saturation at degree 128 acts as a pacing mechanism, rate-limiting data delivery and preventing all 128 processes from simultaneously contending for locks. However, this doesn't fully explain why network throughput itself increases, nor why the efficiency gains are so substantial. The interaction between network saturation, lock contention, and process scheduling appears more complex than initially understood.
 
-**Note:** Network saturation occurs **only at degree 128** and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range. The degree 128 improvements, while beneficial, represent an unexplained anomaly rather than the dominant scaling pattern.
+**Note:** Network saturation only occurs at degree 128 and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range. The degree 128 improvements, while beneficial, represent an unexplained anomaly rather than the dominant scaling pattern.
 
 ## 5. Disk I/O and Network Analysis
 
