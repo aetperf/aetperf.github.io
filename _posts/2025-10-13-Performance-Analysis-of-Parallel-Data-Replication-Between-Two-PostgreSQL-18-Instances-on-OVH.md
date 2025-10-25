@@ -23,13 +23,13 @@ tags:
 
 Parallel data replication between PostgreSQL instances presents unique challenges at scale, particularly when attempting to maximize throughput on high-performance cloud infrastructure. [FastTransfer](https://aetperf.github.io/FastTransfer-Documentation/) is a commercial data migration tool designed to leverage advanced parallelization strategies for efficient data movement. This post provides a performance analysis of FastTransfer transferring 77GB of data between two PostgreSQL 18 instances on OVH c3-256 servers, examining CPU, disk I/O, and network bottlenecks across parallelism degrees from 1 to 128.
 
-## Test Configuration
+### Test Configuration
 
 The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
 
 Testing was performed at eight parallelism degrees, executed sequentially in a progressive loading pattern: 1, 2, 4, 8, 16, 32, 64, and 128, with each step doubling to systematically increase load. Each configuration was run only once rather than following standard statistical practice of multiple runs with mean, standard deviation, and confidence intervals. This single-run approach was adopted after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results under these controlled conditions.
 
-## OVH Infrastructure Setup
+### OVH Infrastructure Setup
 
 The test environment consists of two identical OVH cloud instances designed for heavy workloads:
 
@@ -61,7 +61,7 @@ The source instance PostgreSQL data directory resides on attached OVH Block Stor
 - **Target Disk Sequential Write**: 3,741 MB/s (FIO benchmark with 128K blocks)
 - **Target Disk Random Write**: 88.2 MB/s, 22,600 IOPS (FIO, 4K blocks)
 
-## Summary
+### Overall Performance
 
 FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to 1.15 GB/s sustained throughput. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). The system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
@@ -402,15 +402,6 @@ The target table eliminates all overhead sources:
 - **No triggers**: No trigger execution overhead
 
 This represents the absolute minimum overhead possible. The fact that lock contention persists suggests the bottleneck lies in PostgreSQL's buffer management and relation extension architecture rather than higher-level features.
-
-### PostgreSQL 18 New Features Utilized
-
-- **io_uring**: Improved async I/O on Linux kernel 5.1+ (Ubuntu 24.04 ships with kernel 6.8)
-- **io_max_concurrency**: Fine-grained I/O parallelism control, utilizing all 128 vCPUs
-- **io_workers**: Increased from default 3 to 8 for better NVMe parallelism
-- **autovacuum_worker_slots**: Dynamic autovacuum worker management without restart
-
-These PostgreSQL 18 enhancements provide measurable I/O efficiency improvements, but the fundamental architectural limitation of concurrent writes to a single table persists.
 
 ---
 
