@@ -1,5 +1,5 @@
 ---
-title: Performance Analysis of Parallel Data Replication Between Two PostgreSQL 18 Instances on OVH WIP
+title: Performance Analysis of Parallel Data Replication Between Two PostgreSQL 18 Instances on OVH
 layout: post
 comments: true
 author: François Pacull
