@@ -69,20 +69,6 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 
 **Figure 2: Total Elapsed Time by Degree of Parallelism** - Wall-clock time improves continuously across all tested degrees, from 878 seconds (degree 1) to 67 seconds (degree 128). Performance gains remain positive throughout, though the rate of improvement diminishes beyond degree 32 due to increasing lock contention. 
 
-**Key Findings:**
-
-1. **Overall Performance**: The system achieves consistent performance improvements across all parallelism degrees, with the fastest transfer time of 67 seconds at degree 128. This represents practical value for production workloads, reducing transfer time from ~15 minutes to just over 1 minute.
-
-2. **Target PostgreSQL**: Appears to be the primary scaling limitation. System CPU reaches 83.9% at degree 64, meaning only 16.2% of CPU time performs productive work.
-
-3. **FastTransfer**: Does not appear to be a bottleneck. Achieves 20.2x speedup with 15.8% efficiency, the best scaling efficiency among all components.
-
-4. **Source PostgreSQL**: Appears to be a victim of backpressure, not an independent bottleneck. At degree 128, 105 processes use only 11.7 cores (0.11 cores/process), suggesting they're blocked waiting for target acknowledgments rather than actively contending for resources.
-
-5. **Network**: Saturates at ~2,450 MB/s (98% of capacity) only at degree 128 during active bursts. Degrees 1-64 operate well below capacity, so network doesn't appear to explain scaling behavior across most of the tested range.
-
-6. **Disk**: Does not appear to be a bottleneck. Average utilization is only 24.3% at degree 128.
-
 ## 1. CPU Usage Analysis
 
 ### 1.1 Mean and Peak CPU Usage
@@ -105,7 +91,7 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 | FastTransfer      | 31% | 631%   | 20.1x   | 15.7%      |
 | Target PostgreSQL | 98% | 3,294% | 33.6x   | 26.3%      |
 
-Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working. The 105 active processes (rather than 128) reflects FastTransfer's use of PostgreSQL's Ctid pseudo-column for table partitioning, which doesn't allow perfect distribution—some partitions are smaller than others, causing processes to complete and exit before others.
+Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working. The 105 active processes (rather than 128) reflects FastTransfer's use of PostgreSQL's Ctid pseudo-column for table partitioning, which doesn't allow perfect distribution, some partitions are smaller than others, causing processes to complete and exit before others.
 
 ### 1.2 FastTransfer
 
@@ -279,15 +265,9 @@ Source PostgreSQL and FastTransfer appear to be victims of backpressure rather t
 
 The target table is rather optimally configured (UNLOGGED, no indexes, no constraints, no triggers). PostgreSQL configuration includes all recommended bulk loading optimizations (80GB shared_buffers, huge pages, `io_uring`, fsync=off). Despite this, system CPU remains at 70-84% at high degrees.
 
-The bottleneck appears to be **architectural**, not configurational:
+The bottleneck appears to be more architectural than configurational, with bffer pool partition locks, relation extension lock, FSM access... No configuration parameter appears able to eliminate these fundamental coordination requirements.
 
-- Buffer pool partition locks are hardcoded, not tunable
-- Relation extension lock is a single exclusive lock per table by design
-- FSM access requires serialization to maintain consistency
-
-No configuration parameter appears able to eliminate these fundamental coordination requirements.
-
-## 6.3 Future Work: PostgreSQL Instrumentation Analysis
+### 6.3 Future Work: PostgreSQL Instrumentation Analysis
 
 While this analysis relied on system-level metrics, a follow-up study will use PostgreSQL's internal instrumentation to provide direct evidence of lock contention and wait events. This will validate the hypotheses presented in this analysis using database engine-level metrics.
 
