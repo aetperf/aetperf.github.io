@@ -101,11 +101,11 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 
 | Component         | Degree 1         | Degree 128          | Speedup | Efficiency |
 | ----------------- | ---------------- | ------------------- | ------- | ---------- |
-| Source PostgreSQL | 93% | 1,110% | 11.9x   | 9.3%       |
+| Source PostgreSQL | 93% | 1,175% | 11.9x   | 9.3%       |
 | FastTransfer      | 31% | 631%   | 20.1x   | 15.7%      |
 | Target PostgreSQL | 98% | 3,294% | 33.6x   | 26.3%      |
 
-Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working.
+Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working. The 105 active processes (rather than 128) reflects FastTransfer's use of PostgreSQL's Ctid pseudo-column for table partitioning, which doesn't allow perfect distribution—some partitions are smaller than others, causing processes to complete and exit before others.
 
 ### 1.2 FastTransfer
 
@@ -229,7 +229,7 @@ Disk utilization measures the percentage of time the disk is busy serving I/O re
 
 <img src="/img/2025-10-13_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
 
-**Figure 14: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
+**Figure 14: Target Disk Write Throughput Over Time** - Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
 
 <img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
