@@ -233,6 +233,8 @@ The source instance has 256GB RAM, and the lineitem table is ~77GB. An important
 
 **Figure 13: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
+Disk utilization measures the percentage of time the disk is busy serving I/O requests.
+
 **Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits different behavior depending on parallelism:
 
 - **Degree 1**: Brief initial disk load (~10 seconds), then reads from RAM cache
@@ -249,24 +251,6 @@ The near-zero disk utilization (<1%) at high parallelism degrees confirms the di
 <img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
 **Figure 15: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
-
-Disk utilization measures the percentage of time the disk is busy serving I/O requests.
-
-The disk analysis reveals the interplay between caching and backpressure:
-
-```
-Table Cached in RAM (256GB RAM, 77GB table)
-    ↓
-Source Disk Becomes Idle (0.1 MB/s, 0.0% utilization at degrees 2-128)
-    ↓
-Meanwhile: Target Lock Contention (83.9% system CPU at degree 64)
-    ↓
-Target Can't Consume Data Fast Enough (1,088 MB/s vs 1,684 MB/s source TX)
-    ↓
-FastTransfer Batches Block (waiting for target acknowledgment)
-    ↓
-Source Processes Sleep (0.11 cores/process, blocked in system calls)
-```
 
 ### 5.3 Network Throughput Analysis
 
@@ -286,12 +270,7 @@ Network saturation occurs **only at degree 128** during active bursts. Therefore
 
 **Figure 18: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
 
-**Technical Note on TX/RX Discrepancy:** The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.9% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
-
-<img src="/img/2025-10-13_01/cross_degree_disk_utilization.png" alt="Cross Degree Disk Utilization." width="900">
-
-
-**Figure 19: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
+The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.9% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
 
 ### 5.5 I/O Analysis Conclusions
 
@@ -324,6 +303,11 @@ The bottleneck appears to be **architectural**, not configurational:
 - FSM access requires serialization to maintain consistency
 
 No configuration parameter appears able to eliminate these fundamental coordination requirements.
+
+## 6.3 Future Work: PostgreSQL Instrumentation Analysis
+
+While this analysis relied on system-level metrics, a follow-up study will use PostgreSQL's internal instrumentation to provide direct evidence of lock contention and wait events. This will validate the hypotheses presented in this analysis using database engine-level metrics.
+
 
 ## Appendix A: PostgreSQL Configuration
 
@@ -464,10 +448,6 @@ This represents the absolute minimum overhead possible. The fact that lock conte
 - **autovacuum_worker_slots**: Dynamic autovacuum worker management without restart
 
 These PostgreSQL 18 enhancements provide measurable I/O efficiency improvements, but the fundamental architectural limitation of concurrent writes to a single table persists.
-
-## Future Work: PostgreSQL Instrumentation Analysis
-
-While this analysis relied on system-level metrics, a follow-up study will use PostgreSQL's internal instrumentation to provide direct evidence of lock contention and wait events. This will validate the hypotheses presented in this analysis using database engine-level metrics.
 
 ---
 
