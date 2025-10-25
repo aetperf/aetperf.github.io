@@ -217,28 +217,13 @@ One hypothesis is that network saturation at degree 128 acts as a pacing mechani
 
 The source instance has 256GB RAM with a Postgres `effective_cache_size` of 192GB, and the lineitem table is ~77GB. An important detail explains the disk behavior across test runs:
 
-**Degree 1 was the first test run** with no prior warm-up or cold run to pre-load the table into cache. During this first run:
-
-**At degree 1 (first ~10 seconds)**: Heavy disk activity (500 MB/s, 100% utilization) loads the table into memory (shared_buffers + OS page cache).
-
-**At degree 1 (remaining ~860 seconds)**: Near-zero disk activity; the table is fully cached in RAM, no disk reads needed.
-
-**At degrees 2-128**: Essentially zero disk activity; the entire table remains cached in memory from the initial degree 1 load.
-
-**This explains why degree 2 is more than twice as fast as degree 1**: The degree 1 run includes the initial table-loading overhead (~10 seconds of intensive disk I/O), while degree 2 benefits from the already-cached table with no disk loading required. The speedup from degree 1 to 2 reflects both the doubling of parallelism AND the elimination of the initial cache-loading penalty.
+Degree 1 was the first test run with no prior warm-up or cold run to pre-load the table into cache. During this first run at degree 1, there is a heavy disk activity (500 MB/s, ~50% peak utilization) where the table is loaded into memory (shared_buffers + OS page cache). At degrees 2-128, there is essentially zero disk activity; the entire table remains cached in memory from the initial degree 1 load. This explains why degree 2 is more than twice as fast as degree 1: the degree 1 run includes the initial table-loading overhead, while degree 2 benefits from the already-cached table with no disk loading required. The speedup from degree 1 to 2 reflects both the doubling of parallelism and the elimination of the initial cache-loading penalty.
 
 <img src="/img/2025-10-13_01/source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
 
 **Figure 13: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
-Disk utilization measures the percentage of time the disk is busy serving I/O requests.
-
-**Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits different behavior depending on parallelism:
-
-- **Degree 1**: Brief initial disk load (~10 seconds), then reads from RAM cache
-- **Degrees 2-128**: Table fully cached in memory (256GB available, 77GB table)
-
-The near-zero disk utilization (<1%) at high parallelism degrees confirms the disk is idle and not limiting performance. This indicates that source processes are constrained by downstream backpressure rather than local disk I/O capacity. Resolving target CPU lock contention would automatically improve source performance, as the source has substantial unused capacity waiting to be unlocked.
+Disk utilization measures the percentage of time the disk is busy serving I/O requests. Source disk I/O is not a bottleneck at any parallelism degree. 
 
 ### 5.2 Target Disk I/O Time Series
 
