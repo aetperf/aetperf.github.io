@@ -61,7 +61,7 @@ The source instance PostgreSQL data directory resides on attached OVH Block Stor
 - **Target Disk Sequential Write**: 3,741 MB/s (FIO benchmark with 128K blocks)
 - **Target Disk Random Write**: 88.2 MB/s, 22,600 IOPS (FIO, 4K blocks)
 
-## Executive Summary
+## Summary
 
 FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to 1.15 GB/s sustained throughput. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). The system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
 
@@ -137,7 +137,7 @@ CPU time divides into two categories: **User CPU** (application code performing 
 
 At degree 64, processes appear to spend 83.9% of time managing locks rather than inserting data. By degree 128, system CPU percentage unexpectedly decreases to 70.5% for unclear reasons, though absolute performance continues to improve.
 
-### 2.2 Root Causes of Lock Contention
+### 2.2 Possible Causes of Lock Contention
 
 The target table was already optimized for bulk loading (UNLOGGED, no indexes, no constraints, no triggers), eliminating all standard overhead sources. So the contention could stem from PostgreSQL's fundamental architecture:
 
@@ -211,13 +211,11 @@ The improvement from degree 64 to 128 is puzzling for several reasons:
 
 One hypothesis is that network saturation at degree 128 acts as a pacing mechanism, rate-limiting data delivery and preventing all 128 processes from simultaneously contending for locks. However, this doesn't fully explain why network throughput itself increases, nor why the efficiency gains are so substantial. The interaction between network saturation, lock contention, and process scheduling appears more complex than initially understood.
 
-**Note:** Network saturation only occurs at degree 128 and doesn't explain poor scaling from degree 1-64. The primary bottleneck causing poor scaling efficiency (13.1x instead of 128x) remains target CPU lock contention across the entire tested range. The degree 128 improvements, while beneficial, represent an unexplained anomaly rather than the dominant scaling pattern.
-
 ## 5. Disk I/O and Network Analysis
 
 ### 5.1 Source Disk I/O Analysis
 
-The source instance has 256GB RAM, and the lineitem table is ~77GB. An important detail explains the disk behavior across test runs:
+The source instance has 256GB RAM with a Postgres `effective_cache_size` of 192GB, and the lineitem table is ~77GB. An important detail explains the disk behavior across test runs:
 
 **Degree 1 was the first test run** with no prior warm-up or cold run to pre-load the table into cache. During this first run:
 
