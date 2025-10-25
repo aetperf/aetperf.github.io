@@ -25,7 +25,7 @@ Parallel data replication between PostgreSQL instances presents unique challenge
 
 ### Test Configuration
 
-The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, fundamentally limiting scalability.
+The test dataset consists of the TPC-H SF100 lineitem table (~600M rows, ~77GB), configured as an UNLOGGED table without indexes, constraints, or triggers. Both instances were tuned for bulk loading operations, with all durability features disabled, large memory allocations, and PostgreSQL 18's `io_uring` support enabled (configuration details in Appendix A). Despite this comprehensive optimization, it appears that lock contention emerges at high parallelism degrees, limiting scalability.
 
 Testing was performed at eight parallelism degrees, executed sequentially in a progressive loading pattern: 1, 2, 4, 8, 16, 32, 64, and 128, with each step doubling to systematically increase load. Each configuration was run only once rather than following standard statistical practice of multiple runs with mean, standard deviation, and confidence intervals. This single-run approach was adopted after preliminary tests showed minimal variation between successive runs, indicating stable and reproducible results under these controlled conditions.
 
@@ -44,7 +44,7 @@ The test environment consists of two identical OVH cloud instances designed for 
 - **CPU**: 128 vCores @ 2.3 GHz
 - **Storage**:
   - **Target**: 400GB local NVMe SSD
-  - **Source**: OVH Block Storage (high-speed-gen2, 1.95 TiB, 30 IOPS/GB up to 20,000 IOPS max, 0.5 MB/s/GB up to 1 GB/s max)
+  - **Source**: OVH Block Storage (high-speed-gen2 with ~2TB, Bandwidth : 1 GB/s, Performance : 20,000 IOPS)
 - **Network**: 20 Gbit/s vrack (2.5 GB/s)
 
 The source instance PostgreSQL data directory resides on attached OVH Block Storage rather than local NVMe. This asymmetric storage configuration does not affect the analysis conclusions, as the source PostgreSQL instance exhibits backpressure behavior rather than storage-limited performance.
@@ -63,7 +63,7 @@ The source instance PostgreSQL data directory resides on attached OVH Block Stor
 
 ### Overall Performance
 
-FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to 1.15 GB/s sustained throughput. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). The system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance increasingly limits scaling efficiency beyond degree 32.
+FastTransfer achieves strong absolute performance, transferring 77GB in just 67 seconds at degree 128, equivalent to 1.15 GB/s sustained throughput. The parallel replication process scales continuously across all tested degrees, with total elapsed time decreasing from 878 seconds (degree 1) to 67 seconds (degree 128). The system delivers consistent real-world performance improvements even at large parallelism levels, though lock contention on the target PostgreSQL instance appears to increasingly limit scaling efficiency beyond degree 32.
 
 <img src="/img/2025-10-13_01/elapsed_time_by_degree.png" alt="Elapsed time by degree." width="900">
 
@@ -91,7 +91,9 @@ FastTransfer achieves strong absolute performance, transferring 77GB in just 67 
 | FastTransfer      | 31% | 631%   | 20.1x   | 15.7%      |
 | Target PostgreSQL | 98% | 3,294% | 33.6x   | 26.3%      |
 
-Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, 105 source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working. The 105 active processes (rather than 128) reflects FastTransfer's use of PostgreSQL's Ctid pseudo-column for table partitioning, which doesn't allow perfect distribution, some partitions are smaller than others, causing processes to complete and exit before others.
+Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer's batch-and-wait protocol means source processes send a batch, then block waiting for target acknowledgment. When the target cannot consume data quickly due to lock contention, this delay propagates backward. At degree 128, the source processes collectively use only 11.7 cores (0.11 cores/process), suggesting they're waiting rather than actively working. 
+
+Note also that FastTransfer uses PostgreSQL's Ctid pseudo-column for table partitioning, which doesn't allow a perfect distribution, some partitions are smaller than others, causing processes to complete and exit before others.
 
 ### 1.2 FastTransfer
 
@@ -99,7 +101,7 @@ Source PostgreSQL's poor scaling appears to stem from backpressure: FastTransfer
 
 **Figure 5: FastTransfer User vs System CPU** - At degree 128, FastTransfer uses 419% user CPU (66%) and 212% system CPU (34%).
 
-FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (`--sourceconnectiontype "pgcopy"` and `--targetconnectiontype "pgcopy"`). Data flows directly from source PostgreSQL's COPY TO BINARY through FastTransfer to target PostgreSQL's COPY FROM BINARY without data transformation. FastTransfer acts as an intelligent network proxy coordinating parallel streams and batch acknowledgments, explaining its relatively low CPU usage.
+FastTransfer uses in the present case PostgreSQL's binary COPY protocol for both source and target (`--sourceconnectiontype "pgcopy"` and `--targetconnectiontype "pgcopy"`). Data flows directly from source PostgreSQL's COPY TO BINARY through FastTransfer to target PostgreSQL's COPY FROM BINARY without data transformation. FastTransfer acts as an intelligent network proxy coordinating parallel streams and batch acknowledgments, explaining its relatively low CPU usage. This would less be the case if we were transfering data between distinct RDBMS types.
 
 ## 2. The Lock Contention Problem: System CPU Analysis
 
@@ -109,7 +111,7 @@ FastTransfer uses PostgreSQL's binary COPY protocol for both source and target (
 
 **Figure 6: System CPU as % of Total CPU** - Target PostgreSQL (red line) crosses the 50% warning threshold at degree 16, exceeds 70% at degree 32, and peaks at 83.9% at degree 64. At this maximum, only 16.2% of CPU time performs productive work while 83.9% appears spent on lock contention and kernel overhead.
 
-CPU time divides into two categories: **User CPU** (application code performing actual data insertion) and **System CPU** (kernel operations handling locks, synchronization, context switches, I/O). A healthy system maintains system CPU below 30%.
+CPU time divides into two categories: User CPU (application code performing actual data insertion) and System CPU (kernel operations handling locks, synchronization, context switches, I/O). A healthy system maintains system CPU below 30%.
 
 **System CPU Progression:**
 
@@ -178,11 +180,11 @@ Degree 128 exhibits a counterintuitive result: lower system CPU overhead (70.5%)
 | Metric                  | Degree 64            | Degree 128           | Change               |
 | ----------------------- | -------------------- | -------------------- | -------------------- |
 | Elapsed Time            | 92s                  | 67s                  | 1.37x speedup        |
-| Total CPU               | 4,596%               | 4,230%               | **-8.0%**            |
-| User CPU                | 743% (16.2% of total)| 1,248% (29.5% of total) | **+68.0%** |
-| System CPU              | 3,854% (83.9% of total) | 2,982% (70.5% of total) | **-22.6%**       |
+| Total CPU               | 4,596%               | 4,230%               | -8.0%            |
+| User CPU                | 743% (16.2% of total)| 1,248% (29.5% of total) | +68.0% |
+| System CPU              | 3,854% (83.9% of total) | 2,982% (70.5% of total) | -22.6%       |
 | Network Throughput      | 1,033 MB/s mean      | 1,088 MB/s mean      | +5.3%                |
-| Network Peak            | 2,335 MB/s (93.4%)   | 2,904 MB/s (116.2%)  | **Saturation**       |
+| Network Peak            | 2,335 MB/s (93.4%)   | 2,904 MB/s (116.2%)  | Saturation       |
 | Disk Throughput         | 759 MB/s             | 1,099 MB/s           | +44.8%               |
 
 **Open Question: Why Does Efficiency Improve at Degree 128?**
@@ -219,7 +221,7 @@ Disk utilization measures the percentage of time the disk is busy serving I/O re
 
 <img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
 
-**Figure 15: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
+**Figure 15: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This suggests disk I/O is not the bottleneck.
 
 ### 5.3 Network Throughput Analysis
 
@@ -227,7 +229,7 @@ Disk utilization measures the percentage of time the disk is busy serving I/O re
 
 **Figure 16: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
 
-Network saturation occurs **only at degree 128** during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64, target CPU lock contention remains the primary bottleneck.
+Network saturation only occurs at degree 128 during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64, target CPU lock contention remains the primary bottleneck.
 
 ### 5.4 Cross-Degree Scaling Analysis
 
@@ -258,8 +260,6 @@ The apparent 35% violation of flow conservation is explained by TCP retransmissi
 FastTransfer successfully demonstrates strong absolute performance, achieving a 13.1x speedup that reduces 77GB transfer time from approximately 15 minutes (878s) to just over 1 minute (67s). This represents practical, production-ready performance with sustained throughput of 1.15 GB/s at degree 128. The system delivers continuous performance improvements across all tested parallelism degrees, confirming that parallel replication provides meaningful benefits even when facing coordination challenges.
 
 The primary scaling limitation appears to be target PostgreSQL lock contention beyond degree 32. System CPU grows to 83.9% at degree 64, meaning only 16.2% of CPU performs productive work. Degree 128 continues to improve absolute performance (67s vs 92s) even as total CPU decreases from 4,596% to 4,230%, though the reason for this unexpected efficiency improvement remains unclear.
-
-Source PostgreSQL and FastTransfer appear to be victims of backpressure rather than independent bottlenecks. FastTransfer demonstrates the best scaling efficiency (20.2x speedup, 15.8% efficiency), while source processes spend most time waiting for target acknowledgments. Resolving target lock contention would likely improve their performance further.
 
 ### 6.2 Why Additional Tuning should not Help
 
@@ -385,12 +385,6 @@ autovacuum_max_workers = 16
 autovacuum_vacuum_cost_delay = 0   # No throttling
 ```
 
-**Key Differences from Target:**
-- **Connection limit**: 500 vs target's default, accommodating parallel reader connections
-- **Background writer**: Less aggressive settings since source focuses on reads, not writes
-- **Checkpoint timeout**: 60 minutes vs target's 15 minutes, reducing checkpoint overhead during reads
-- **Storage**: Block Storage (random_page_cost = 1.1) vs target's NVMe
-
 ### Table Configuration
 
 The target table eliminates all overhead sources:
@@ -401,7 +395,7 @@ The target table eliminates all overhead sources:
 - **No constraints**: No foreign key, check, or unique validation
 - **No triggers**: No trigger execution overhead
 
-This represents the absolute minimum overhead possible. The fact that lock contention persists suggests the bottleneck lies in PostgreSQL's buffer management and relation extension architecture rather than higher-level features.
+This represents the absolute minimum overhead possible.
 
 ---
 
