@@ -18,6 +18,8 @@ tags:
 - PostgreSQL parallel transfer
 ---
 
+<img src="/img/2025-10-25_01/2019_DEC_FR_ROUBAIX_IMAGE_0242_BD.jpg" alt="OVH datacenter." width="900">
+
 
 ## Introduction
 
