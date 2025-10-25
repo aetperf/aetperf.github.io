@@ -215,33 +215,7 @@ One hypothesis is that network saturation at degree 128 acts as a pacing mechani
 
 ## 5. Disk I/O and Network Analysis
 
-### 5.1 FIO Disk Benchmarks vs PostgreSQL Performance
-
-<img src="/img/2025-10-13_01/disk_fio_vs_postgresql_bandwidth.png" alt="Disk Bandwidth Comparison." width="900">
-
-**Figure 13a: FIO Benchmark vs PostgreSQL Actual Performance (Bandwidth)** - PostgreSQL achieves 3,759 MB/s peak (100.5% of FIO's 3,741 MB/s), demonstrating it can saturate disk during bursts. However, average is only 170 MB/s (4.5% of peak), revealing highly bursty behavior with long idle periods.
-
-<img src="/img/2025-10-13_01/disk_fio_vs_postgresql_iops.png" alt="Disk IOPS Comparison." width="900">
-
-**Figure 13b: FIO Benchmark vs PostgreSQL Actual Performance (IOPS)** - Peak IOPS reaches 55,501 operations per second during intensive bursts, but average IOPS is only 207 operations per second, further confirming the bursty pattern with most time spent idle or at low activity levels.
-
-**FIO Results:**
-
-- Sequential Write (128K): 3,741 MB/s, 29,900 IOPS
-- Random Read (4K): 313 MB/s, 80,200 IOPS
-- Random Write (4K): 88.2 MB/s, 22,600 IOPS
-
-**PostgreSQL Actual:**
-
-- Peak Write: 3,759 MB/s, 55,501 IOPS (matches FIO sequential)
-- Mean Write: 170 MB/s, 207 IOPS (only 4.5% of peak)
-- Mean Disk Utilization: 14.6% (disk idle 85% of the time)
-
-### 5.2 Source Disk I/O Analysis
-
-This section examines source PostgreSQL disk I/O behavior to provide concrete evidence that the source is experiencing backpressure from the target bottleneck rather than being disk-limited.
-
-#### The Cache Effect and First-Run Impact
+### 5.1 Source Disk I/O Analysis
 
 The source instance has 256GB RAM, and the lineitem table is ~77GB. An important detail explains the disk behavior across test runs:
 
@@ -257,11 +231,28 @@ The source instance has 256GB RAM, and the lineitem table is ~77GB. An important
 
 <img src="/img/2025-10-13_01/source_disk_utilization_timeseries.png" alt="Source Disk Utilization Time Series." width="900">
 
-**Figure 14: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
+**Figure 13: Source Disk Utilization Over Time** - Shows disk utilization across all test runs (vertical lines mark test boundaries for degrees 1, 2, 4, 8, 16, 32, 64, 128). At degree 1, utilization peaks at ~50% during the initial table load, then drops to near-zero. At higher degrees (2-128), utilization remains below 1% throughout, confirming the disk is idle and not limiting performance.
 
-#### The Evidence Chain
+**Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits different behavior depending on parallelism:
 
-The source disk analysis reveals the interplay between caching and backpressure:
+- **Degree 1**: Brief initial disk load (~10 seconds), then reads from RAM cache
+- **Degrees 2-128**: Table fully cached in memory (256GB available, 77GB table)
+
+The near-zero disk utilization (<1%) at high parallelism degrees confirms the disk is idle and not limiting performance. This indicates that source processes are constrained by downstream backpressure rather than local disk I/O capacity. Resolving target CPU lock contention would automatically improve source performance, as the source has substantial unused capacity waiting to be unlocked.
+
+### 5.2 Target Disk I/O Time Series
+
+<img src="/img/2025-10-13_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
+
+**Figure 14: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
+
+<img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
+
+**Figure 15: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
+
+Disk utilization measures the percentage of time the disk is busy serving I/O requests.
+
+The disk analysis reveals the interplay between caching and backpressure:
 
 ```
 Table Cached in RAM (256GB RAM, 77GB table)
@@ -277,51 +268,32 @@ FastTransfer Batches Block (waiting for target acknowledgment)
 Source Processes Sleep (0.11 cores/process, blocked in system calls)
 ```
 
-#### Conclusion
-
-**Source disk I/O is NOT a bottleneck at any parallelism degree.** The source exhibits different behavior depending on parallelism:
-
-- **Degree 1**: Brief initial disk load (~10 seconds), then reads from RAM cache
-- **Degrees 2-128**: Table fully cached in memory (256GB available, 77GB table)
-
-The near-zero disk utilization (<1%) at high parallelism degrees confirms the disk is idle and not limiting performance. This indicates that source processes are constrained by downstream backpressure rather than local disk I/O capacity. Resolving target CPU lock contention would automatically improve source performance, as the source has substantial unused capacity waiting to be unlocked.
-
-### 5.3 Target Disk I/O Time Series
-
-<img src="/img/2025-10-13_01/target_disk_write_throughput_timeseries.png" alt="Target Disk Write Throughput Time Series." width="900">
-
-**Figure 15: Target Disk Write Throughput Over Time** - Vertical lines mark test boundaries (degrees 1, 2, 4, 8, 16, 32, 64, 128). Throughput exhibits bursty behavior with spikes to 2000-3759 MB/s followed by drops to near zero. Sustained baseline varies from ~100 MB/s (low degrees) to ~300 MB/s (degree 128) but never sustains disk capacity.
-
-<img src="/img/2025-10-13_01/target_disk_utilization_timeseries.png" alt="Target Disk Utilization Time Series." width="900">
-
-**Figure 16: Target Disk Utilization Over Time** - Mean utilization remains below 25% across all degrees. Spikes reach 70-90% during bursts but quickly return to low baseline. This strongly suggests disk I/O is not the bottleneck.
-
-### 5.4 Network Throughput Analysis
+### 5.3 Network Throughput Analysis
 
 <img src="/img/2025-10-13_01/target_network_rx_timeseries.png" alt="Target Network RX Time Series." width="900">
 
-**Figure 17: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
+**Figure 16: Target Network Ingress Over Time** - At degree 128, throughput plateaus at ~2,450 MB/s (98% of capacity) during active bursts, but averages only 1,088 MB/s (43.5%) due to alternating active/idle periods. At degrees 1-64, network remains well below capacity.
 
 Network saturation occurs **only at degree 128** during active bursts. Therefore, network doesn't explain poor scaling from degree 1 through 64, target CPU lock contention remains the primary bottleneck.
 
-### 5.5 Cross-Degree Scaling Analysis
+### 5.4 Cross-Degree Scaling Analysis
 
 <img src="/img/2025-10-13_01/cross_degree_disk_write_mean.png" alt="Cross Degree Mean Disk Write." width="900">
 
-**Figure 18: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
+**Figure 17: Mean Disk Write Throughput by Degree** - Scales from 90 MB/s (degree 1) to 1,099 MB/s (degree 128), only 12.3x improvement for 128x parallelism (9.6% efficiency).
 
 <img src="/img/2025-10-13_01/cross_degree_network_comparison.png" alt="Cross Degree Network Comparison." width="900">
 
-**Figure 19: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
+**Figure 18: Network Throughput Comparison: Source TX vs Target RX** - At degree 128, source transmits 1,684 MB/s while target receives only 1,088 MB/s, creating a 596 MB/s (35%) deficit. This suggests the target cannot keep pace with source data production, likely due to CPU lock contention.
 
 **Technical Note on TX/RX Discrepancy:** The apparent 35% violation of flow conservation is explained by TCP retransmissions. The source TX counter (measured via `sar -n DEV`) counts both original packets and retransmitted packets, while the target RX counter only counts successfully received unique packets. When the target is overloaded with CPU lock contention (83.9% system CPU at degree 64), it cannot drain receive buffers fast enough, causing packet drops that trigger TCP retransmissions. The 596 MB/s "deficit" is actually retransmitted data counted twice at the source but only once at the target, providing quantitative evidence of the target's inability to keep pace with source data production.
 
 <img src="/img/2025-10-13_01/cross_degree_disk_utilization.png" alt="Cross Degree Disk Utilization." width="900">
 
 
-**Figure 20: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
+**Figure 19: Disk Utilization by Degree** - Mean utilization increases from 2.2% (degree 1) to only 24.3% (degree 128), remaining far below the 80% saturation threshold at all degrees. This strongly indicates disk I/O is not the bottleneck.
 
-### 5.6 I/O Analysis Conclusions
+### 5.5 I/O Analysis Conclusions
 
 1. **Disk does not appear to be the bottleneck**: 24% average utilization at degree 128 with 76% idle capacity. PostgreSQL matches FIO peak (3,759 MB/s) but sustains only 170 MB/s average.
 
