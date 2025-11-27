@@ -23,7 +23,7 @@ In this post, we walk through building a basic **ETL (Extract-Transform-Load)** 
 
 The stack we used:
 
-- **[dlt](https://dlthub.com/product/dlt) (data load tool)**: Handles both extraction (pulling data from Yahoo Finance into DuckDB) and loading (pushing transformed data to SQL Server)
+- **[dlt](https://dlthub.com/product/dlt) (data load tool)**: Handles both extraction, pulling data from Yahoo Finance into DuckDB, and loading, pushing transformed data to SQL Server
 - **[SQLMesh](https://www.tobikodata.com/sqlmesh)**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
 - **[DuckDB](https://duckdb.org/)**: Serves as our in-process analytical database, no server setup required
 
@@ -107,6 +107,7 @@ import duckdb
 import pandas as pd
 import polars as pl
 import yfinance as yf
+from sqlmesh import Context
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -218,14 +219,7 @@ def yfinance_eod_prices(tickers: list[str], start_date: str, end_date: str):
                 rows_yielded += 1
 
     print(f"Yielded {rows_yielded} rows with OHLCV data")
-
-
-print("dlt resource 'yfinance_eod_prices' defined successfully!")
-print("Columns: ticker, date, open_price, high_price, low_price, close_price, volume")
 ```
-
-    dlt resource 'yfinance_eod_prices' defined successfully!
-    Columns: ticker, date, open_price, high_price, low_price, close_price, volume
 
 
 
@@ -269,7 +263,6 @@ print(load_info)
     1 load package(s) were loaded to destination duckdb and into dataset raw
     The duckdb destination used duckdb:////home/francois/Workspace/posts/pipeline_duckdb/./financial_etl_dlt.duckdb location to store data
     Load package 1764251419.3941712 is LOADED and contains no failed jobs
-
 
 
 ```python
@@ -404,14 +397,11 @@ dlt_sqlmesh_project/
 
 Let's examine the three essential files that define our SQLMesh project.
 
+#### 1. `config.py` - Database connection configuration
+
+FILE: dlt_sqlmesh_project/config.py"
 
 ```python
-# 1. config.py - Database connection configuration
-print("=" * 60)
-print("FILE: dlt_sqlmesh_project/config.py")
-print("=" * 60)
-
-config_content = """
 from sqlmesh.core.config import Config, DuckDBConnectionConfig, ModelDefaultsConfig
 
 config = Config(
@@ -424,47 +414,18 @@ config = Config(
     default_gateway="duckdb_local",
     model_defaults=ModelDefaultsConfig(dialect="duckdb"),
 )
-"""
-print(config_content)
-
-print("\nKey settings:")
-print("  - connection: Points to the DuckDB file created by dlt")
-print("  - state_connection: Where SQLMesh stores its metadata (same file)")
-print("  - dialect: SQL dialect for parsing/generating queries")
 ```
 
-    ============================================================
-    FILE: dlt_sqlmesh_project/config.py
-    ============================================================
-    
-    from sqlmesh.core.config import Config, DuckDBConnectionConfig, ModelDefaultsConfig
-    
-    config = Config(
-        gateways={
-            "duckdb_local": {
-                "connection": DuckDBConnectionConfig(database="../financial_etl_dlt.duckdb"),
-                "state_connection": DuckDBConnectionConfig(database="../financial_etl_dlt.duckdb"),
-            }
-        },
-        default_gateway="duckdb_local",
-        model_defaults=ModelDefaultsConfig(dialect="duckdb"),
-    )
-    
-    
-    Key settings:
-      - connection: Points to the DuckDB file created by dlt
-      - state_connection: Where SQLMesh stores its metadata (same file)
-      - dialect: SQL dialect for parsing/generating queries
+Key settings:
+- connection: Points to the DuckDB file created by dlt
+- state_connection: Where SQLMesh stores its metadata (same file)
+- dialect: SQL dialect for parsing/generating queries
 
+#### 2. external_models.yaml - Schema for tables NOT managed by SQLMesh (i.e., dlt tables)
 
+FILE: dlt_sqlmesh_project/external_models.yaml
 
-```python
-# 2. external_models.yaml - Schema for tables NOT managed by SQLMesh (i.e., dlt tables)
-print("=" * 60)
-print("FILE: dlt_sqlmesh_project/external_models.yaml")
-print("=" * 60)
-
-external_models_content = """
+```yaml
 - name: raw.eod_prices_raw
   description: Raw OHLCV stock prices loaded by dlt from Yahoo Finance
   columns:
@@ -477,51 +438,21 @@ external_models_content = """
     volume: bigint
     _dlt_load_id: text
     _dlt_id: text
-"""
-print(external_models_content)
-
-print("Purpose:")
-print("  - Tells SQLMesh about tables it doesn't manage (external sources)")
-print("  - dlt creates 'raw.eod_prices_raw' - SQLMesh needs to know its schema")
-print("  - OHLCV = Open, High, Low, Close, Volume (standard financial data)")
-print("  - Includes dlt metadata columns (_dlt_load_id, _dlt_id)")
-print("  - Equivalent to 'sources' in dbt")
 ```
 
-    ============================================================
-    FILE: dlt_sqlmesh_project/external_models.yaml
-    ============================================================
-    
-    - name: raw.eod_prices_raw
-      description: Raw OHLCV stock prices loaded by dlt from Yahoo Finance
-      columns:
-        ticker: text
-        date: date
-        open_price: double
-        high_price: double
-        low_price: double
-        close_price: double
-        volume: bigint
-        _dlt_load_id: text
-        _dlt_id: text
-    
-    Purpose:
-      - Tells SQLMesh about tables it doesn't manage (external sources)
-      - dlt creates 'raw.eod_prices_raw' - SQLMesh needs to know its schema
-      - OHLCV = Open, High, Low, Close, Volume (standard financial data)
-      - Includes dlt metadata columns (_dlt_load_id, _dlt_id)
-      - Equivalent to 'sources' in dbt
+Purpose:
+- Tells SQLMesh about tables it doesn't manage (external sources)
+- dlt creates `raw.eod_prices_raw` : SQLMesh needs to know its schema
+- OHLCV = Open, High, Low, Close, Volume (standard financial data)
+- Includes dlt metadata columns (_dlt_load_id, _dlt_id)
+- Equivalent to `sources` in dbt
+
+#### 3. models/marts/stock_metrics.sql - The transformation model with technical indicators
+
+FILE: dlt_sqlmesh_project/models/marts/stock_metrics.sql
 
 
-
-```python
-# 3. models/marts/stock_metrics.sql - The transformation model with technical indicators
-print("=" * 60)
-print("FILE: dlt_sqlmesh_project/models/marts/stock_metrics.sql")
-print("=" * 60)
-
-print(
-    """
+```sql
 MODEL (
   name marts.stock_metrics,
   kind INCREMENTAL_BY_TIME_RANGE (time_column trade_date, batch_size 30),
@@ -559,65 +490,13 @@ atr_14_day = AVG(true_range) OVER 14 days
 daily_return_pct  = (close - prev_close) / prev_close * 100
 price_range_pct   = (high - low) / close * 100           -- Uses high, low, close
 volume_ratio      = volume / AVG(volume) OVER 20 days
-"""
-)
-
-print("\nKey features:")
-print("  - ATR uses 3 columns (high_price, low_price, close_price)")
-print("  - price_range_pct also uses multiple columns")
-print("  - WINDOW clauses for efficient computation")
-print("  - CTEs for intermediate calculations (gains, losses, true_range)")
 ```
 
-    ============================================================
-    FILE: dlt_sqlmesh_project/models/marts/stock_metrics.sql
-    ============================================================
-    
-    MODEL (
-      name marts.stock_metrics,
-      kind INCREMENTAL_BY_TIME_RANGE (time_column trade_date, batch_size 30),
-      start '2020-01-01',
-      cron '@daily',
-      grain [ticker, trade_date],
-      audits (...)
-    );
-    
-    -- Technical indicators calculated using SQL window functions:
-    
-    -- 1. SIMPLE MOVING AVERAGES (single column: close_price)
-    sma_20_day = AVG(close_price) OVER (... ROWS BETWEEN 19 PRECEDING AND CURRENT ROW)
-    sma_50_day = AVG(close_price) OVER (... ROWS BETWEEN 49 PRECEDING AND CURRENT ROW)
-    
-    -- 2. BOLLINGER BANDS (single column: close_price)
-    bollinger_upper = SMA20 + 2 * STDDEV(close_price)
-    bollinger_lower = SMA20 - 2 * STDDEV(close_price)
-    
-    -- 3. RSI - Relative Strength Index (single column: close_price)
-    rsi_14_day = 100 - (100 / (1 + avg_gain / avg_loss))
-    
-    -- 4. MACD - Moving Average Convergence Divergence (single column: close_price)
-    macd_line = SMA_12_day - SMA_26_day
-    
-    -- 5. ATR - Average True Range [MULTI-COLUMN: high, low, close]
-    true_range = GREATEST(
-        high - low,                    -- Intraday range
-        ABS(high - prev_close),        -- Gap up
-        ABS(low - prev_close)          -- Gap down
-    )
-    atr_14_day = AVG(true_range) OVER 14 days
-    
-    -- 6. DAILY METRICS [MULTI-COLUMN]
-    daily_return_pct  = (close - prev_close) / prev_close * 100
-    price_range_pct   = (high - low) / close * 100           -- Uses high, low, close
-    volume_ratio      = volume / AVG(volume) OVER 20 days
-    
-    
-    Key features:
-      - ATR uses 3 columns (high_price, low_price, close_price)
-      - price_range_pct also uses multiple columns
-      - WINDOW clauses for efficient computation
-      - CTEs for intermediate calculations (gains, losses, true_range)
-
+Key features:
+- ATR uses 3 columns (high_price, low_price, close_price)
+- price_range_pct also uses multiple columns
+- WINDOW clauses for efficient computation
+- CTEs for intermediate calculations (gains, losses, true_range)
 
 ## Transform: Run SQLMesh Pipeline<a name="transform"></a>
 
@@ -730,10 +609,7 @@ except subprocess.CalledProcessError as e:
 
 **A note on the output:** The `prod` environment represents the current "deployed" state. When we run the plan, it compares our model code against `prod` and shows a diff of what changed — similar to how Git works. In this case, we added new audits, so SQLMesh detected a metadata change but recognized that the underlying transformation logic was unchanged. That's why it skipped reprocessing the data (`No physical layer updates`) and only ran the new audits against the existing data.
 
-
-### Virtual Data Environments (VDE)
-
-One concept that helped me understand SQLMesh better is its two-layer architecture:
+One concept that helped us understand SQLMesh better is its two-layer architecture:
 
 ```
 Physical Layer (Versioned Tables)          Virtual Layer (Views)
@@ -863,7 +739,6 @@ df_multi
 
 ```python
 # Explore column lineage using SQLMesh Python API
-from sqlmesh import Context
 
 # Initialize SQLMesh context
 ctx = Context(paths=[SQLMESH_PROJECT_DIR])
