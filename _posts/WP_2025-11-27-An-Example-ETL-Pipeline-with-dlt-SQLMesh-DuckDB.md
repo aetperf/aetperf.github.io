@@ -1,14 +1,12 @@
 # An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
-In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline, which is a common pattern for moving and transforming data between systems. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
+In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
 
 The stack we used:
 
-- **[dlt](https://dlthub.com/product/dlt) (data load tool)**: Handles both extraction, pulling data from Yahoo Finance into DuckDB, and loading, pushing transformed data to SQL Server
-- **[SQLMesh](https://www.tobikodata.com/sqlmesh)**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
-- **[DuckDB](https://duckdb.org/)**: Serves as our in-process analytical database, no server setup required
+The stack we used: **[dlt](https://dlthub.com/product/dlt) (data load tool)**, **[SQLMesh](https://www.tobikodata.com/sqlmesh)** and **[DuckDB](https://duckdb.org/)**
 
-**A note before we begin**: I'm familiar with DuckDB and SQLGlot, the SQL parser that SQLMesh is using under the hood I guess, but I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook.
+**A note before we begin**: I'm familiar with DuckDB and SQLGlot, the SQL parser that SQLMesh is using under the hood, but I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook.
 
 **Outline**
 - [About the Tools](#about_the_tools)
@@ -33,7 +31,6 @@ Here is a basic diagram showing the pipeline architecture
 │  (yfinance      │      │  (DuckDB Engine) │      │  (DuckDB →      │
 │   → DuckDB)     │      │                  │      │   SQL Server)   │
 │                 │      │  raw → marts     │      │                 │
-│                 │      │  (50-day SMA)    │      │                 │
 └─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
 
@@ -367,7 +364,7 @@ Let's examine the three essential files that define our SQLMesh project.
 
 #### 1. `config.py` - Database connection configuration
 
-**FILE:** dlt_sqlmesh_project/config.py
+**FILE:** `dlt_sqlmesh_project/config.py`
 
 ```python
 from sqlmesh.core.config import Config, DuckDBConnectionConfig, ModelDefaultsConfig
@@ -385,13 +382,13 @@ config = Config(
 ```
 
 Key settings:
-- connection: Points to the DuckDB file created by dlt
-- state_connection: Where SQLMesh stores its metadata (same file)
-- dialect: SQL dialect for parsing/generating queries
+- `connection`: Points to the DuckDB file created by dlt
+- `state_connection`: Where SQLMesh stores its metadata (same file)
+- `dialect`: SQL dialect for parsing/generating queries
 
 #### 2. `external_models.yaml` - Schema for tables NOT managed by SQLMesh (i.e., dlt tables)
 
-**FILE:** dlt_sqlmesh_project/external_models.yaml
+**FILE:** `dlt_sqlmesh_project/external_models.yaml`
 
 ```yaml
 - name: raw.eod_prices_raw
@@ -412,12 +409,12 @@ Purpose:
 - Tells SQLMesh about tables it doesn't manage (external sources)
 - dlt creates `raw.eod_prices_raw` : SQLMesh needs to know its schema
 - OHLCV = Open, High, Low, Close, Volume (standard financial data)
-- Includes dlt metadata columns (_dlt_load_id, _dlt_id)
+- Includes dlt metadata columns (`_dlt_load_id`, `_dlt_id`)
 - Equivalent to `sources` in dbt
 
 #### 3. `models/marts/stock_metrics.sql` - The transformation model with technical indicators
 
-**FILE:** dlt_sqlmesh_project/models/marts/stock_metrics.sql
+**FILE:** `dlt_sqlmesh_project/models/marts/stock_metrics.sql`
 
 ```sql
 MODEL (
@@ -461,7 +458,7 @@ volume_ratio      = volume / AVG(volume) OVER 20 days
 
 Key features:
 - ATR uses 3 columns (high_price, low_price, close_price)
-- price_range_pct also uses multiple columns
+- `price_range_pct` also uses multiple columns
 - WINDOW clauses for efficient computation
 - CTEs for intermediate calculations (gains, losses, true_range)
 
