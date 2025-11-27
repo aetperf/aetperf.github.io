@@ -17,7 +17,7 @@ tags:
 - open source
 ---
 
-<figure align="center">
+<figure style="text-align: center;">
   <img width="400" src="/img/2025-11-27_01/postmodern.jpg" alt="A Typical postmodern painting, AI generated">
   <figcaption><em>The post-modern data stack, by Juan Romano Chucalescu</em></figcaption>
 </figure>
