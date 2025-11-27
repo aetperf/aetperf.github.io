@@ -666,8 +666,6 @@ df_transformed
 
 
 
-
-
 <div><style>
 .dataframe > thead > tr,
 .dataframe > tbody > tr {
