@@ -548,7 +548,7 @@ except subprocess.CalledProcessError as e:
     SQLMesh transformation completed successfully!
 
 
-**A note on the output:** The `prod` environment represents the current "deployed" state. When we run the plan, it compares our model code against `prod` and shows a diff of what changed — similar to how Git works. In this case, we added new audits, so SQLMesh detected a metadata change but recognized that the underlying transformation logic was unchanged. That's why it skipped reprocessing the data (`No physical layer updates`) and only ran the new audits against the existing data.
+**A note on the output:** The `prod` environment represents the current "deployed" state. When we run the plan, it compares our model code against `prod` and shows a diff of what changed, similar to how Git works. In this case, we added new audits, so SQLMesh detected a metadata change but recognized that the underlying transformation logic was unchanged. That's why it skipped reprocessing the data (`No physical layer updates`) and only ran the new audits against the existing data.
 
 One concept that helped us understand SQLMesh better is its two-layer architecture:
 
