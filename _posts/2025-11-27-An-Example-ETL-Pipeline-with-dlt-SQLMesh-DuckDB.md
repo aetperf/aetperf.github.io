@@ -27,6 +27,8 @@ The stack we used:
 - **[SQLMesh](https://www.tobikodata.com/sqlmesh)**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
 - **[DuckDB](https://duckdb.org/)**: Serves as our in-process analytical database, no server setup required
 
+**A note before we begin**: I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook. 
+
 **Outline**
 - [About the Tools](#about_the_tools)
 - [Setup & Configuration](#setup_configuration)
@@ -399,7 +401,7 @@ Let's examine the three essential files that define our SQLMesh project.
 
 #### 1. `config.py` - Database connection configuration
 
-FILE: dlt_sqlmesh_project/config.py"
+**FILE:** dlt_sqlmesh_project/config.py
 
 ```python
 from sqlmesh.core.config import Config, DuckDBConnectionConfig, ModelDefaultsConfig
@@ -423,7 +425,7 @@ Key settings:
 
 #### 2. external_models.yaml - Schema for tables NOT managed by SQLMesh (i.e., dlt tables)
 
-FILE: dlt_sqlmesh_project/external_models.yaml
+**FILE:** dlt_sqlmesh_project/external_models.yaml
 
 ```yaml
 - name: raw.eod_prices_raw
@@ -449,8 +451,7 @@ Purpose:
 
 #### 3. models/marts/stock_metrics.sql - The transformation model with technical indicators
 
-FILE: dlt_sqlmesh_project/models/marts/stock_metrics.sql
-
+**FILE:** dlt_sqlmesh_project/models/marts/stock_metrics.sql
 
 ```sql
 MODEL (
