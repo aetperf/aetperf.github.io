@@ -27,7 +27,7 @@ The stack we used:
 - **[SQLMesh](https://www.tobikodata.com/sqlmesh)**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
 - **[DuckDB](https://duckdb.org/)**: Serves as our in-process analytical database, no server setup required
 
-**A note before we begin**: I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook. 
+**A note before we begin**: I'm familiar with DuckDB and SQLGlot, the SQL parser that SQLMesh is built upon, but I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook.
 
 **Outline**
 - [About the Tools](#about_the_tools)
@@ -358,8 +358,6 @@ loads
 
 
 
-
-
 <div><style>
 .dataframe > thead > tr,
 .dataframe > tbody > tr {
@@ -423,7 +421,7 @@ Key settings:
 - state_connection: Where SQLMesh stores its metadata (same file)
 - dialect: SQL dialect for parsing/generating queries
 
-#### 2. external_models.yaml - Schema for tables NOT managed by SQLMesh (i.e., dlt tables)
+#### 2. `external_models.yaml` - Schema for tables NOT managed by SQLMesh (i.e., dlt tables)
 
 **FILE:** dlt_sqlmesh_project/external_models.yaml
 
@@ -449,7 +447,7 @@ Purpose:
 - Includes dlt metadata columns (_dlt_load_id, _dlt_id)
 - Equivalent to `sources` in dbt
 
-#### 3. models/marts/stock_metrics.sql - The transformation model with technical indicators
+#### 3. `models/marts/stock_metrics.sql` - The transformation model with technical indicators
 
 **FILE:** dlt_sqlmesh_project/models/marts/stock_metrics.sql
 
@@ -882,13 +880,9 @@ dlt_sqlmesh_project/
 
 Custom audits return rows that **violate** the condition. If any rows are returned, the audit fails.
 
+Example Custom Audit: valid_ohlc_prices.sql
 
-```python
-# Show a custom audit file example
-print("Example Custom Audit: valid_ohlc_prices.sql")
-print("=" * 60)
-
-audit_content = """
+```sql
 AUDIT (
   name valid_ohlc_prices,
   dialect duckdb
@@ -923,52 +917,10 @@ WHERE high_price < low_price
    OR high_price < close_price
    OR low_price > open_price
    OR low_price > close_price
-"""
-print(audit_content)
 
-print("Note: @this_model is a macro that refers to the model being audited.")
 ```
 
-    Example Custom Audit: valid_ohlc_prices.sql
-    ============================================================
-    
-    AUDIT (
-      name valid_ohlc_prices,
-      dialect duckdb
-    );
-    
-    /*
-     * OHLC Price Sanity Check (Multi-Column Audit)
-     * Validates relationships between Open, High, Low, Close prices:
-     *   - High must be >= Low
-     *   - High must be >= Open and Close
-     *   - Low must be <= Open and Close
-     * Returns rows that violate these constraints.
-     */
-    
-    SELECT
-      ticker,
-      trade_date,
-      open_price,
-      high_price,
-      low_price,
-      close_price,
-      CASE
-        WHEN high_price < low_price THEN 'high < low'
-        WHEN high_price < open_price THEN 'high < open'
-        WHEN high_price < close_price THEN 'high < close'
-        WHEN low_price > open_price THEN 'low > open'
-        WHEN low_price > close_price THEN 'low > close'
-      END AS violation_reason
-    FROM @this_model
-    WHERE high_price < low_price
-       OR high_price < open_price
-       OR high_price < close_price
-       OR low_price > open_price
-       OR low_price > close_price
-    
-    Note: @this_model is a macro that refers to the model being audited.
-
+Note: `@this_model` is a macro that refers to the model being audited.
 
 
 ```python
@@ -1156,60 +1108,11 @@ else:
     Load package 1764251428.6438282 is LOADED and contains no failed jobs
 
 
+We can check that the data is in SQL Server:
 
-```python
-# Verify data in SQL Server (if loaded)
-if creds_loaded:
-    try:
-        from urllib.parse import quote_plus
-
-        import pandas as pd
-        from sqlalchemy import create_engine, text
-
-        ODBC_DRIVER = "ODBC Driver 18 for SQL Server"
-
-        conn_str = (
-            f"Driver={{{ODBC_DRIVER}}};"
-            f"Server={creds['server']},{creds['port']};"
-            f"Database={creds['database']};"
-            f"Uid={creds['username']};"
-            f"Pwd={creds['password']};"
-            f"TrustServerCertificate=yes"
-        )
-
-        encoded_conn_str = quote_plus(conn_str)
-        engine = create_engine(f"mssql+pyodbc:///?odbc_connect={encoded_conn_str}")
-
-        print("Verifying data in SQL Server...")
-        print("=" * 50)
-
-        with engine.connect() as conn:
-            # Note: dlt creates tables with the resource name
-            result = conn.execute(
-                text(f"SELECT COUNT(*) as cnt FROM {TARGET_SCHEMA}.stock_metrics")
-            )
-            count = result.fetchone()[0]
-            print(f"  Rows in {TARGET_SCHEMA}.stock_metrics: {count:,}")
-
-        # Show sample
-        print(f"\nSample data from SQL Server:")
-        df_sample = pd.read_sql(
-            f"SELECT TOP 10 * FROM {TARGET_SCHEMA}.stock_metrics ORDER BY trade_date DESC",
-            engine,
-        )
-        display(df_sample)
-
-    except Exception as e:
-        print(f"Could not verify SQL Server data: {e}")
+```sql
+SELECT TOP 10 * FROM dbo.stock_metrics ORDER BY trade_date DESC",
 ```
-
-    Verifying data in SQL Server...
-    ==================================================
-      Rows in dbo.stock_metrics: 10,395
-    
-    Sample data from SQL Server:
-
-
 
 <div>
 <style scoped>
@@ -1498,66 +1401,6 @@ if creds_loaded:
 <p>10 rows × 21 columns</p>
 </div>
 
-
-## Summary<a name="summary"></a>
-
-That completes the pipeline. Here's a recap of what we built:
-
-### Pipeline Flow
-
-```
-Yahoo Finance API (OHLCV data)
-       |
-       v
-  [dlt Extract]
-  @dlt.resource(yfinance_eod_prices)
-       |
-       v
-  DuckDB (raw.eod_prices_raw)
-  - Open, High, Low, Close, Volume
-       |
-       v
-  [SQLMesh Transform]
-  marts.stock_metrics with technical indicators:
-  - SMA (20-day, 50-day)
-  - Bollinger Bands
-  - RSI (14-day)
-  - MACD
-  - ATR (14-day) ← multi-column
-  - Daily metrics ← multi-column
-       |
-       v
-  DuckDB (marts.stock_metrics)
-       |
-       v
-  [dlt Load]
-  sql_database source -> mssql destination
-       |
-       v
-  SQL Server (dbo.stock_metrics)
-```
-
-### Technical Indicators Computed
-
-For reference, here are the technical indicators computed in the transformation layer:
-
-| Indicator | Columns Used | Description |
-|-----------|--------------|-------------|
-| **SMA** | close | Simple Moving Average (20, 50 day) |
-| **Bollinger Bands** | close | SMA ± 2 standard deviations |
-| **RSI** | close | Relative Strength Index (overbought/oversold) |
-| **MACD** | close | Moving Average Convergence Divergence |
-| **ATR** | high, low, close | Average True Range (volatility) |
-| **Price Range %** | high, low, close | Intraday volatility as % |
-| **Volume Ratio** | volume | Current vs 20-day average |
-
-### What we Found Useful
-
-| Component | What helped |
-|-----------|--------|
-| **dlt** | Declarative pipelines, automatic schema evolution, load tracking |
-| **SQLMesh** | Version-controlled transformations, column-level lineage, audits |
-
 ## Production Deployment: Logging & Return Codes<a name="production_deployment"></a>
 
 The pipeline above works well for development, but deploying to production with a scheduler (cron, Airflow, Prefect, etc.) requires a few additional considerations. We found that proper logging and return codes are essential for monitoring and debugging issues.
@@ -1572,7 +1415,7 @@ The pipeline above works well for development, but deploying to production with 
 
 ### Logging Setup
 
-Replace `print()` with Python's `logging` module for production:
+Replace `print()` with Python's `logging` module for production, or [loguru](https://loguru.readthedocs.io/en/stable/):
 
 ```python
 import logging
