@@ -1387,7 +1387,7 @@ dlt's automatic schema evolution is a helpful feature, but managing it thoughtfu
 While DuckDB is efficient for local development and moderate data volumes, larger-scale deployments may require thinking about cost and resource tradeoffs.
 
 -   **Compute vs. Storage**: For cloud environments, understand the trade-offs between compute and storage costs. DuckDB is compute-bound locally; in a cloud data warehouse, query complexity and data scanned directly impact costs.
--   **Incremental Processing**: `SQLMesh`'s incremental models are critical for cost optimization. By only processing new or changed data, you significantly reduce compute resources and execution time compared to full table rebuilds.
+-   **Incremental Processing**: SQLMesh's incremental models are critical for cost optimization. By only processing new or changed data, you significantly reduce compute resources and execution time compared to full table rebuilds.
 -   **Resource Allocation**: Fine-tune resource allocation (CPU, memory) for pipeline execution environments, especially when running on orchestrators like Airflow.
 -   **Cloud-Native Alternatives**: If the DuckDB file grows excessively large or requires distributed processing, consider migrating to cloud-native data warehouses or data lake solutions that offer scalable compute and storage.
 

@@ -1,5 +1,10 @@
 # An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
+<figure style="text-align: center;">
+  <img width="400" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-11-27_01/postmodern.jpg" alt="A Typical postmodern painting, AI generated" style="display: block; margin: 0 auto;">
+  <figcaption><em>The post-modern data stack, by Juan Romano Chucalescu</em></figcaption>
+</figure>
+
 In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
 
 The stack we used:
@@ -1332,7 +1337,7 @@ dlt's automatic schema evolution is a helpful feature, but managing it thoughtfu
 While DuckDB is efficient for local development and moderate data volumes, larger-scale deployments may require thinking about cost and resource tradeoffs.
 
 -   **Compute vs. Storage**: For cloud environments, understand the trade-offs between compute and storage costs. DuckDB is compute-bound locally; in a cloud data warehouse, query complexity and data scanned directly impact costs.
--   **Incremental Processing**: `SQLMesh`'s incremental models are critical for cost optimization. By only processing new or changed data, you significantly reduce compute resources and execution time compared to full table rebuilds.
+-   **Incremental Processing**: SQLMesh's incremental models are critical for cost optimization. By only processing new or changed data, you significantly reduce compute resources and execution time compared to full table rebuilds.
 -   **Resource Allocation**: Fine-tune resource allocation (CPU, memory) for pipeline execution environments, especially when running on orchestrators like Airflow.
 -   **Cloud-Native Alternatives**: If the DuckDB file grows excessively large or requires distributed processing, consider migrating to cloud-native data warehouses or data lake solutions that offer scalable compute and storage.
 
