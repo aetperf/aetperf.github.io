@@ -1317,9 +1317,9 @@ There are a few more topics worth considering as you move toward production. The
 
 While dlt and SQLMesh provide solid foundations, production-grade pipelines typically need more comprehensive error handling and observability.
 
--   **Centralized Logging**: Beyond basic file logging, integrate with centralized logging systems (e.g., ELK Stack, Splunk, Datadog) for easier searching, aggregation, and analysis of logs across multiple pipeline runs.
--   **Alerting**: Configure alerts based on log errors, audit failures, or unexpected data volumes. Tools like PagerDuty, Opsgenie, or custom integrations with Slack/email can notify on-call engineers immediately.
--   **Monitoring Dashboards**: Build dashboards (e.g., Grafana, Power BI, Tableau) to visualize pipeline health, execution times, data volumes, and data quality metrics over time. This helps in proactive identification of issues and performance bottlenecks.
+-   **Centralized Logging**: Beyond basic file logging, integrate with centralized logging systems for easier searching, aggregation, and analysis of logs across multiple pipeline runs.
+-   **Alerting**: Configure alerts based on log errors, audit failures, or unexpected data volumes.
+-   **Monitoring Dashboards**: Build dashboards to visualize pipeline health, execution times, data volumes, and data quality metrics over time. This helps in proactive identification of issues and performance bottlenecks.
 -   **Idempotency and Retries**: Design pipelines to be idempotent where possible, allowing safe retries without duplicating data or side effects. `dlt`'s `write_disposition` and `SQLMesh`'s transactional updates aid this. Implement retry mechanisms with exponential backoff for transient errors (e.g., network issues, API rate limits).
 
 ### 2. Schema Evolution Strategy
@@ -1334,21 +1334,21 @@ dlt's automatic schema evolution is a helpful feature, but managing it thoughtfu
 
 While DuckDB is efficient for local development and moderate data volumes, larger-scale deployments may require thinking about cost and resource tradeoffs.
 
--   **Compute vs. Storage**: For cloud environments, understand the trade-offs between compute and storage costs. DuckDB is compute-bound locally; in a cloud data warehouse (e.g., Snowflake, BigQuery), query complexity and data scanned directly impact costs.
+-   **Compute vs. Storage**: For cloud environments, understand the trade-offs between compute and storage costs. DuckDB is compute-bound locally; in a cloud data warehouse, query complexity and data scanned directly impact costs.
 -   **Incremental Processing**: `SQLMesh`'s incremental models are critical for cost optimization. By only processing new or changed data, you significantly reduce compute resources and execution time compared to full table rebuilds.
--   **Resource Allocation**: Fine-tune resource allocation (CPU, memory) for pipeline execution environments, especially when running on orchestrators like Airflow or Kubernetes.
+-   **Resource Allocation**: Fine-tune resource allocation (CPU, memory) for pipeline execution environments, especially when running on orchestrators like Airflow.
 -   **Cloud-Native Alternatives**: If the DuckDB file grows excessively large or requires distributed processing, consider migrating to cloud-native data warehouses or data lake solutions that offer scalable compute and storage.
 
 ### 4. Testability
 
-Beyond SQLMesh audits, I'd recommend considering a broader testing strategy for production pipelines:
+Beyond SQLMesh audits, it is recommended to consider a broader testing strategy for production pipelines:
 
 -   **Unit Tests for dlt Resources**: Write Python unit tests for your custom `dlt` resources (`yfinance_eod_prices` in this example). Mock external dependencies (like the `yfinance` API) to ensure the resource logic works correctly under various conditions.
 -   **SQLMesh Unit Tests**: `SQLMesh supports SQL unit tests for models. These tests define expected outputs for specific input data, ensuring transformation logic is correct and remains so after changes.
 -   **Integration Tests**: Test the full pipeline flow (Extract -> Transform -> Load) in a controlled environment with representative data. This ensures all components work together seamlessly.
 -   **Virtual Data Environments (VDEs) for Development**: Leverage `SQLMesh` VDEs to create isolated environments for feature development. This allows developers to test changes to models without impacting production data or other developers' work. Changes can be validated in a VDE before merging to a shared environment.
 
-By considering these aspects, you can evolve a pipeline like this from a working example into something more suitable for production use. We hope this walkthrough has been helpful in understanding how these tools can work together.
+By considering these aspects, you can evolve a pipeline like this from a working example into something more suitable for production use.
 
 ## References<a name="references"></a>
 
