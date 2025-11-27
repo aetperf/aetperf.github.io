@@ -27,6 +27,19 @@ The stack we used:
 - **[SQLMesh](https://www.tobikodata.com/sqlmesh)**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
 - **[DuckDB](https://duckdb.org/)**: Serves as our in-process analytical database, no server setup required
 
+**Outline**
+- [About the Tools](#about_the_tools)
+- [Setup & Configuration](#setup_configuration)
+- [Extract: dlt + yfinance](#extract)
+- [SQLMesh Project Setup](#sqlmesh_project_setup)
+- [Transform: Run SQLMesh Pipeline](#transform)
+- [Verify: Query Transformed Data](#verify)
+- [Load: dlt to SQL Server](#load)
+- [Summary](#summary)
+- [Production Deployment: Logging & Return Codes](#production_deployment)
+- [Further Engineering Considerations](#further_engineering)
+- [References](#references)
+
 Here is a basic diagram showing the pipeline architecture
 
 ```
@@ -41,7 +54,7 @@ Here is a basic diagram showing the pipeline architecture
 └─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
 
-## About the Tools
+## About the Tools<a name="about_the_tools"></a>
 
 Here's a brief overview of each tool. If you're already familiar with them, feel free to skip ahead to the setup section.
 
@@ -77,7 +90,7 @@ dlt[duckdb,mssql]
 duckdb-engine
 ```
 
-## 1. Setup & Configuration
+## Setup & Configuration<a name="setup_configuration"></a>
 
 Let's start by importing the necessary libraries and defining the configuration. I'm using stock market data as the example dataset; it's freely available via Yahoo Finance and has enough complexity to demonstrate the transformation capabilities.
 
@@ -126,7 +139,7 @@ print(f"  - Date range: {START_DATE} to {END_DATE}")
       - Date range: 2020-01-01 to 2025-11-27
 
 
-## 2. Extract: dlt + yfinance
+## Extract: dlt + yfinance<a name="extract"></a>
 
 With the configuration in place, we can move to the **Extract** phase. Here, we use dlt to pull stock data from Yahoo Finance and load it directly into DuckDB. The data includes **OHLCV** values: Open, High, Low, Close (prices), and Volume, which are standard fields in financial time series data.
 
@@ -362,7 +375,7 @@ loads
 <small>shape: (5, 4)</small><table border="1" class="dataframe"><thead><tr><th>load_id</th><th>schema_name</th><th>status</th><th>inserted_at</th></tr><tr><td>str</td><td>str</td><td>i64</td><td>datetime[μs, Europe/Paris]</td></tr></thead><tbody><tr><td>&quot;1764251419.3941712&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:50:21.208674 CET</td></tr><tr><td>&quot;1764250753.3403895&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:39:14.771508 CET</td></tr><tr><td>&quot;1764249716.0756714&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:21:57.290876 CET</td></tr><tr><td>&quot;1764249510.5065134&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:18:31.900797 CET</td></tr><tr><td>&quot;1764248385.3157668&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 13:59:46.452635 CET</td></tr></tbody></table></div>
 
 
-## 2b. SQLMesh Project Setup
+## SQLMesh Project Setup<a name="sqlmesh_project_setup"></a>
 
 Now that we have raw data in DuckDB, we need to set up SQLMesh for the transformation step. Before running any transformations, you need to initialize a **SQLMesh project**. This is typically a one-time setup using the `sqlmesh init` command:
 
@@ -606,7 +619,7 @@ print("  - CTEs for intermediate calculations (gains, losses, true_range)")
       - CTEs for intermediate calculations (gains, losses, true_range)
 
 
-## 3. Transform: Run SQLMesh Pipeline
+## Transform: Run SQLMesh Pipeline<a name="transform"></a>
 
 With the project configured, we can now run **SQLMesh** to transform the raw data. This is where we found SQLMesh particularly helpful: it handles the complexity of incremental processing and keeps track of what has already been computed.
 
@@ -736,7 +749,7 @@ Benefits:
 - **Instant promotion**: Swap view pointers, no recomputation
 - **Easy rollbacks**: Point to previous version
 
-## 4. Verify: Query Transformed Data
+## Verify: Query Transformed Data<a name="verify"></a>
 
 Before loading the data to its final destination, it's worth verifying that the transformation worked as expected. Let's query the transformed data from DuckDB and look at some of the technical indicators.
 
@@ -1130,7 +1143,7 @@ summary
 <small>shape: (7, 8)</small><table border="1" class="dataframe"><thead><tr><th>ticker</th><th>rows</th><th>first_date</th><th>last_date</th><th>avg_close</th><th>avg_rsi</th><th>avg_atr</th><th>avg_return_pct</th></tr><tr><td>str</td><td>i64</td><td>date</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>163.22</td><td>52.6</td><td>3.87</td><td>0.1</td></tr><tr><td>&quot;AMZN&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>157.38</td><td>49.0</td><td>4.35</td><td>0.061</td></tr><tr><td>&quot;GOOGL&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>130.83</td><td>52.6</td><td>3.37</td><td>0.116</td></tr><tr><td>&quot;META&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>356.39</td><td>50.6</td><td>10.69</td><td>0.114</td></tr><tr><td>&quot;MSFT&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>313.54</td><td>50.4</td><td>6.64</td><td>0.076</td></tr><tr><td>&quot;NVDA&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>55.65</td><td>54.1</td><td>2.2</td><td>0.265</td></tr><tr><td>&quot;TSLA&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>233.77</td><td>49.7</td><td>12.1</td><td>0.242</td></tr></tbody></table></div>
 
 
-## 5. Load: dlt to SQL Server
+## Load: dlt to SQL Server<a name="load"></a>
 
 With our data transformed and validated, we can move to the final **Load** phase. Here, we use dlt again, this time to export the transformed data from DuckDB to SQL Server. This demonstrates how dlt can work bidirectionally, not just for ingestion but also for exporting data to downstream systems.
 
@@ -1612,7 +1625,7 @@ if creds_loaded:
 </div>
 
 
-## 6. Summary
+## Summary<a name="summary"></a>
 
 That completes the pipeline. Here's a recap of what we built:
 
@@ -1671,7 +1684,7 @@ For reference, here are the technical indicators computed in the transformation 
 | **dlt** | Declarative pipelines, automatic schema evolution, load tracking |
 | **SQLMesh** | Version-controlled transformations, column-level lineage, audits |
 
-## Production Deployment: Logging & Return Codes
+## Production Deployment: Logging & Return Codes<a name="production_deployment"></a>
 
 The pipeline above works well for development, but deploying to production with a scheduler (cron, Airflow, Prefect, etc.) requires a few additional considerations. We found that proper logging and return codes are essential for monitoring and debugging issues.
 
@@ -1787,7 +1800,7 @@ if __name__ == "__main__":
 2024-01-15 06:00:12 - INFO - Pipeline completed successfully
 ```
 
-## Further Engineering Considerations
+## Further Engineering Considerations<a name="further_engineering"></a>
 
 There are a few more topics worth considering as you move toward production. These go beyond the scope of this example, but we wanted to mention them briefly.
 
@@ -1828,7 +1841,7 @@ Beyond SQLMesh audits, I'd recommend considering a broader testing strategy for 
 
 By considering these aspects, you can evolve a pipeline like this from a working example into something more suitable for production use. We hope this walkthrough has been helpful in understanding how these tools can work together.
 
-## References
+## References<a name="references"></a>
 
 - [dlt Documentation](https://dlthub.com/docs/intro)
 - [dlt DuckDB Destination](https://dlthub.com/docs/dlt-ecosystem/destinations/duckdb)
