@@ -1,5 +1,5 @@
 ---
-title: An example ETL Pipeline with dlt + SQLMesh + DuckDB WIP
+title: An example ETL Pipeline with dlt + SQLMesh + DuckDB
 layout: post
 comments: true
 author: François Pacull
@@ -27,7 +27,7 @@ The stack we used:
 - **[SQLMesh](https://www.tobikodata.com/sqlmesh)**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
 - **[DuckDB](https://duckdb.org/)**: Serves as our in-process analytical database, no server setup required
 
-**A note before we begin**: I'm familiar with DuckDB and SQLGlot, the SQL parser that SQLMesh is built upon, but I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook.
+**A note before we begin**: I'm familiar with DuckDB and SQLGlot, the SQL parser that SQLMesh is using under the hood I guess, but I'm a newcomer to both dlt and SQLMesh, so take this as a learning notebook.
 
 **Outline**
 - [About the Tools](#about_the_tools)
@@ -36,8 +36,8 @@ The stack we used:
 - [SQLMesh Project Setup](#sqlmesh_project_setup)
 - [Transform: Run SQLMesh Pipeline](#transform)
 - [Verify: Query Transformed Data](#verify)
+- [Lineage](#lineage)
 - [Load: dlt to SQL Server](#load)
-- [Summary](#summary)
 - [Production Deployment: Logging & Return Codes](#production_deployment)
 - [Further Engineering Considerations](#further_engineering)
 - [References](#references)
@@ -109,6 +109,7 @@ import duckdb
 import pandas as pd
 import polars as pl
 import yfinance as yf
+from sqlglot import lineage
 from sqlmesh import Context
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -663,8 +664,6 @@ df_transformed
     ==================================================
     Sample AAPL data with technical indicators (most recent 15 rows):
 
-
-
 <div><style>
 .dataframe > thead > tr,
 .dataframe > tbody > tr {
@@ -674,68 +673,22 @@ df_transformed
 </style>
 <table border="1" class="dataframe"><thead><tr><th>ticker</th><th>trade_date</th><th>close</th><th>sma20</th><th>sma50</th><th>rsi</th><th>macd</th><th>atr</th><th>bb_upper</th><th>bb_lower</th></tr><tr><td>str</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>2025-11-26</td><td>277.55</td><td>271.13</td><td>271.13</td><td>63.0</td><td>1.02</td><td>5.95</td><td>277.91</td><td>264.34</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-25</td><td>276.97</td><td>270.77</td><td>270.77</td><td>61.6</td><td>0.7</td><td>6.14</td><td>276.98</td><td>264.56</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-24</td><td>275.92</td><td>270.41</td><td>270.41</td><td>60.3</td><td>0.33</td><td>6.11</td><td>275.95</td><td>264.86</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-21</td><td>271.49</td><td>270.06</td><td>270.06</td><td>55.1</td><td>0.14</td><td>5.95</td><td>274.98</td><td>265.14</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-20</td><td>266.25</td><td>269.97</td><td>269.97</td><td>41.4</td><td>0.1</td><td>5.73</td><td>275.0</td><td>264.94</td></tr><tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-12</td><td>273.47</td><td>270.49</td><td>270.49</td><td>63.0</td><td>0.0</td><td>5.46</td><td>275.11</td><td>265.87</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-11</td><td>275.25</td><td>270.12</td><td>270.12</td><td>73.1</td><td>0.0</td><td>5.64</td><td>274.45</td><td>265.79</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-10</td><td>269.43</td><td>269.39</td><td>269.39</td><td>43.6</td><td>0.0</td><td>5.52</td><td>270.72</td><td>268.05</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-07</td><td>268.21</td><td>269.38</td><td>269.38</td><td>26.7</td><td>0.0</td><td>5.4</td><td>270.84</td><td>267.92</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-06</td><td>269.51</td><td>269.61</td><td>269.61</td><td>39.2</td><td>0.0</td><td>5.38</td><td>270.63</td><td>268.6</td></tr></tbody></table></div>
 
+## Lineage<a name="lineage"></a>
 
-
-
-```python
-# Show multi-column indicators (ATR uses high, low, close)
-print("Multi-column technical indicators (ATR, price range):")
-print("=" * 50)
-
-with duckdb.connect(DUCKDB_FILE) as con:
-    query = """
-    SELECT 
-        ticker,
-        trade_date,
-        ROUND(high_price, 2) AS high,
-        ROUND(low_price, 2) AS low,
-        ROUND(close_price, 2) AS close,
-        ROUND(atr_14_day, 2) AS atr_14,
-        ROUND(price_range_pct, 2) AS range_pct,
-        ROUND(daily_return_pct, 2) AS return_pct,
-        volume_ratio
-    FROM marts.stock_metrics
-    WHERE ticker = 'NVDA'  -- NVDA has high volatility, good for showing ATR
-    ORDER BY trade_date DESC
-    LIMIT 10
-    """
-    df_multi = con.execute(query).pl()
-
-print("NVDA with multi-column indicators:")
-print("  - ATR: Average True Range (uses high, low, close)")
-print("  - range_pct: Intraday range as % of close (high-low)/close")
-print("  - return_pct: Daily return %")
-print("  - volume_ratio: Today's volume vs 20-day average\n")
-df_multi
-```
-
-    Multi-column technical indicators (ATR, price range):
-    ==================================================
-    NVDA with multi-column indicators:
-      - ATR: Average True Range (uses high, low, close)
-      - range_pct: Intraday range as % of close (high-low)/close
-      - return_pct: Daily return %
-      - volume_ratio: Today's volume vs 20-day average
-    
-
-
-
-
-
-<div><style>
-.dataframe > thead > tr,
-.dataframe > tbody > tr {
-  text-align: right;
-  white-space: pre-wrap;
-}
-</style>
-<table border="1" class="dataframe"><thead><tr><th>ticker</th><th>trade_date</th><th>high</th><th>low</th><th>close</th><th>atr_14</th><th>range_pct</th><th>return_pct</th><th>volume_ratio</th></tr><tr><td>str</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>&quot;NVDA&quot;</td><td>2025-11-26</td><td>182.91</td><td>178.24</td><td>180.26</td><td>9.02</td><td>2.59</td><td>1.37</td><td>0.83</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-25</td><td>178.16</td><td>169.55</td><td>177.82</td><td>9.46</td><td>4.84</td><td>-2.59</td><td>1.43</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-24</td><td>183.5</td><td>176.48</td><td>182.55</td><td>9.12</td><td>3.85</td><td>2.05</td><td>1.17</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-21</td><td>184.56</td><td>172.93</td><td>178.88</td><td>9.26</td><td>6.5</td><td>-0.97</td><td>1.61</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-20</td><td>196.0</td><td>179.85</td><td>180.64</td><td>9.06</td><td>8.94</td><td>-3.15</td><td>1.66</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-19</td><td>187.86</td><td>182.83</td><td>186.52</td><td>8.33</td><td>2.7</td><td>2.85</td><td>1.25</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-18</td><td>184.8</td><td>179.65</td><td>181.36</td><td>8.47</td><td>2.84</td><td>-2.81</td><td>1.1</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-17</td><td>189.0</td><td>184.32</td><td>186.6</td><td>8.6</td><td>2.51</td><td>-1.88</td><td>0.9</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-14</td><td>191.01</td><td>180.58</td><td>190.17</td><td>8.85</td><td>5.48</td><td>1.77</td><td>0.96</td></tr><tr><td>&quot;NVDA&quot;</td><td>2025-11-13</td><td>191.44</td><td>183.85</td><td>186.86</td><td>8.69</td><td>4.06</td><td>-3.58</td><td>1.07</td></tr></tbody></table></div>
-
-
-
+We can also explore column lineage using SQLMesh Python API:
 
 ```python
-# Explore column lineage using SQLMesh Python API
+def get_source_columns(node):
+    """Recursively extract source column names from lineage node."""
+    sources = []
+    for downstream in node.downstream:
+        if not downstream.downstream:
+            # Leaf node - actual source column
+            sources.append(downstream.name)
+        else:
+            sources.extend(get_source_columns(downstream))
+    return sources
+
 
 # Initialize SQLMesh context
 ctx = Context(paths=[SQLMESH_PROJECT_DIR])
@@ -746,114 +699,41 @@ model = ctx.get_model("marts.stock_metrics")
 print("Column Lineage for marts.stock_metrics")
 print("=" * 60)
 
-print("\nOutput columns and their source dependencies:")
+# Compute actual lineage using SQLGlot
+print(f"\n{'Output Column':20} {'Type':10} {'Source Columns'}")
 print("-" * 60)
 
-# Show all output columns with their types
 for col_name, col_type in model.columns_to_types.items():
-    print(f"  {col_name:20} : {str(col_type):10}")
-
-print("\n" + "=" * 60)
-print("Multi-column indicators (derived from multiple source columns):")
-print("-" * 60)
-print("  atr_14_day       <- high_price, low_price, close_price (prev)")
-print("  price_range_pct  <- high_price, low_price, close_price")
-print("  daily_return_pct <- close_price, close_price (prev)")
-print("  volume_ratio     <- volume (current and 20-day window)")
+    result = lineage.lineage(col_name, model.query)
+    sources = list(dict.fromkeys(get_source_columns(result)))  # dedupe, preserve order
+    source_str = ", ".join(sources) if sources else "N/A"
+    print(f"{col_name:20} {str(col_type):10} {source_str}")
 ```
 
     Column Lineage for marts.stock_metrics
     ============================================================
-    
-    Output columns and their source dependencies:
+
+    Output Column        Type       Source Columns
     ------------------------------------------------------------
-      ticker               : TEXT      
-      trade_date           : DATE      
-      open_price           : DOUBLE    
-      high_price           : DOUBLE    
-      low_price            : DOUBLE    
-      close_price          : DOUBLE    
-      volume               : BIGINT    
-      sma_20_day           : DOUBLE    
-      sma_50_day           : DOUBLE    
-      bollinger_upper      : DOUBLE    
-      bollinger_lower      : DOUBLE    
-      rsi_14_day           : DOUBLE    
-      macd_line            : DOUBLE    
-      sma_9_day            : DOUBLE    
-      atr_14_day           : DOUBLE    
-      daily_return_pct     : DOUBLE    
-      price_range_pct      : DOUBLE    
-      volume_ratio         : DOUBLE    
-      volume_sma_20        : BIGINT    
-    
-    ============================================================
-    Multi-column indicators (derived from multiple source columns):
-    ------------------------------------------------------------
-      atr_14_day       <- high_price, low_price, close_price (prev)
-      price_range_pct  <- high_price, low_price, close_price
-      daily_return_pct <- close_price, close_price (prev)
-      volume_ratio     <- volume (current and 20-day window)
-
-
-
-```python
-# Run SQLMesh audits to validate data quality
-print("Running data quality audits...")
-print("=" * 50)
-
-result = subprocess.run(
-    ["sqlmesh", "audit"],
-    cwd=SQLMESH_PROJECT_DIR,
-    capture_output=True,
-    text=True,
-)
-
-print(result.stdout)
-if result.returncode == 0:
-    print("\nAll audits passed!")
-else:
-    print("\nAudit failures detected:")
-    print(result.stderr)
-
-print("\n" + "=" * 50)
-print("Audits breakdown:")
-print("  Built-in (inline in MODEL):")
-print("    - not_null: Checks for NULL values")
-print("    - unique_combination_of_columns: Checks for duplicates")
-print("  Custom (in audits/ directory):")
-print("    - valid_rsi_range: RSI between 0-100")
-print("    - valid_ohlc_prices: High >= Low, etc.")
-print("    - positive_volume: Volume > 0")
-print("    - valid_atr: ATR >= 0")
-```
-
-    Running data quality audits...
-    ==================================================
-    Found [1m6[0m [1maudit[0m[1m([0ms[1m)[0m.
-    not_null on model marts.stock_metrics ✅ PASS.
-    unique_combination_of_columns on model marts.stock_metrics ✅ PASS.
-    valid_rsi_range on model marts.stock_metrics ✅ PASS.
-    valid_ohlc_prices on model marts.stock_metrics ✅ PASS.
-    positive_volume on model marts.stock_metrics ✅ PASS.
-    valid_atr on model marts.stock_metrics ✅ PASS.
-    
-    Finished with [1m0[0m audit errors and [1m0[0m audits skipped.
-    Done.
-    
-    
-    All audits passed!
-    
-    ==================================================
-    Audits breakdown:
-      Built-in (inline in MODEL):
-        - not_null: Checks for NULL values
-        - unique_combination_of_columns: Checks for duplicates
-      Custom (in audits/ directory):
-        - valid_rsi_range: RSI between 0-100
-        - valid_ohlc_prices: High >= Low, etc.
-        - positive_volume: Volume > 0
-        - valid_atr: ATR >= 0
+    ticker               TEXT       eod_prices_raw.ticker
+    trade_date           DATE       eod_prices_raw.date
+    open_price           DOUBLE     eod_prices_raw.open_price
+    high_price           DOUBLE     eod_prices_raw.high_price
+    low_price            DOUBLE     eod_prices_raw.low_price
+    close_price          DOUBLE     eod_prices_raw.close_price
+    volume               BIGINT     eod_prices_raw.volume
+    sma_20_day           DOUBLE     eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker
+    sma_50_day           DOUBLE     eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker
+    bollinger_upper      DOUBLE     eod_prices_raw.close_price
+    bollinger_lower      DOUBLE     eod_prices_raw.close_price
+    rsi_14_day           DOUBLE     eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker
+    macd_line            DOUBLE     eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker
+    sma_9_day            DOUBLE     eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker
+    atr_14_day           DOUBLE     eod_prices_raw.low_price, eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker, eod_prices_raw.high_price
+    daily_return_pct     DOUBLE     eod_prices_raw.close_price, eod_prices_raw.date, eod_prices_raw.ticker
+    price_range_pct      DOUBLE     eod_prices_raw.high_price, eod_prices_raw.close_price, eod_prices_raw.low_price
+    volume_ratio         DOUBLE     eod_prices_raw.volume
+    volume_sma_20        BIGINT     eod_prices_raw.volume
 
 
 ### SQLMesh Audits
@@ -922,51 +802,43 @@ WHERE high_price < low_price
 
 Note: `@this_model` is a macro that refers to the model being audited.
 
+Let's run all the audits:
 
 ```python
-# Get summary statistics including technical indicators
-print("Summary Statistics with Technical Indicators:")
+# Run SQLMesh audits to validate data quality
+print("Running data quality audits...")
 print("=" * 50)
 
-with duckdb.connect(DUCKDB_FILE) as con:
-    summary = con.execute(
-        """
-        SELECT 
-            ticker,
-            COUNT(*) as rows,
-            MIN(trade_date) as first_date,
-            MAX(trade_date) as last_date,
-            ROUND(AVG(close_price), 2) as avg_close,
-            ROUND(AVG(rsi_14_day), 1) as avg_rsi,
-            ROUND(AVG(atr_14_day), 2) as avg_atr,
-            ROUND(AVG(daily_return_pct), 3) as avg_return_pct
-        FROM marts.stock_metrics
-        GROUP BY ticker
-        ORDER BY ticker
-    """
-    ).pl()
+result = subprocess.run(
+    ["sqlmesh", "audit"],
+    cwd=SQLMESH_PROJECT_DIR,
+    capture_output=True,
+    text=True,
+)
 
-print("\nSummary by Ticker:")
-summary
+print(result.stdout)
+if result.returncode == 0:
+    print("\nAll audits passed!")
+else:
+    print("\nAudit failures detected:")
+    print(result.stderr)
 ```
 
-    Summary Statistics with Technical Indicators:
+    Running data quality audits...
     ==================================================
+    Found [1m6[0m [1maudit[0m[1m([0ms[1m)[0m.
+    not_null on model marts.stock_metrics ✅ PASS.
+    unique_combination_of_columns on model marts.stock_metrics ✅ PASS.
+    valid_rsi_range on model marts.stock_metrics ✅ PASS.
+    valid_ohlc_prices on model marts.stock_metrics ✅ PASS.
+    positive_volume on model marts.stock_metrics ✅ PASS.
+    valid_atr on model marts.stock_metrics ✅ PASS.
     
-    Summary by Ticker:
-
-
-
-
-
-<div><style>
-.dataframe > thead > tr,
-.dataframe > tbody > tr {
-  text-align: right;
-  white-space: pre-wrap;
-}
-</style>
-<table border="1" class="dataframe"><thead><tr><th>ticker</th><th>rows</th><th>first_date</th><th>last_date</th><th>avg_close</th><th>avg_rsi</th><th>avg_atr</th><th>avg_return_pct</th></tr><tr><td>str</td><td>i64</td><td>date</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>163.22</td><td>52.6</td><td>3.87</td><td>0.1</td></tr><tr><td>&quot;AMZN&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>157.38</td><td>49.0</td><td>4.35</td><td>0.061</td></tr><tr><td>&quot;GOOGL&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>130.83</td><td>52.6</td><td>3.37</td><td>0.116</td></tr><tr><td>&quot;META&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>356.39</td><td>50.6</td><td>10.69</td><td>0.114</td></tr><tr><td>&quot;MSFT&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>313.54</td><td>50.4</td><td>6.64</td><td>0.076</td></tr><tr><td>&quot;NVDA&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>55.65</td><td>54.1</td><td>2.2</td><td>0.265</td></tr><tr><td>&quot;TSLA&quot;</td><td>1485</td><td>2020-01-02</td><td>2025-11-26</td><td>233.77</td><td>49.7</td><td>12.1</td><td>0.242</td></tr></tbody></table></div>
+    Finished with 0 audit errors and 0 audits skipped.
+    Done.
+    
+    
+    All audits passed!
 
 
 ## Load: dlt to SQL Server<a name="load"></a>
@@ -1552,7 +1424,7 @@ While DuckDB is efficient for local development and moderate data volumes, large
 Beyond SQLMesh audits, I'd recommend considering a broader testing strategy for production pipelines:
 
 -   **Unit Tests for dlt Resources**: Write Python unit tests for your custom `dlt` resources (`yfinance_eod_prices` in this example). Mock external dependencies (like the `yfinance` API) to ensure the resource logic works correctly under various conditions.
--   **SQLMesh Unit Tests**: `SQLMesh` supports SQL unit tests for models. These tests define expected outputs for specific input data, ensuring transformation logic is correct and remains so after changes.
+-   **SQLMesh Unit Tests**: `SQLMesh supports SQL unit tests for models. These tests define expected outputs for specific input data, ensuring transformation logic is correct and remains so after changes.
 -   **Integration Tests**: Test the full pipeline flow (Extract -> Transform -> Load) in a controlled environment with representative data. This ensures all components work together seamlessly.
 -   **Virtual Data Environments (VDEs) for Development**: Leverage `SQLMesh` VDEs to create isolated environments for feature development. This allows developers to test changes to models without impacting production data or other developers' work. Changes can be validated in a VDE before merging to a shared environment.
 
@@ -1561,8 +1433,30 @@ By considering these aspects, you can evolve a pipeline like this from a working
 ## References<a name="references"></a>
 
 - [dlt Documentation](https://dlthub.com/docs/intro)
-- [dlt DuckDB Destination](https://dlthub.com/docs/dlt-ecosystem/destinations/duckdb)
-- [dlt MSSQL Destination](https://dlthub.com/docs/dlt-ecosystem/destinations/mssql)
-- [SQLMesh + dlt Integration](https://sqlmesh.readthedocs.io/en/stable/integrations/dlt/)
 - [SQLMesh Documentation](https://sqlmesh.readthedocs.io/)
+- [SQLMesh + dlt Integration](https://sqlmesh.readthedocs.io/en/stable/integrations/dlt/)
+- [dlt MSSQL Destination](https://dlthub.com/docs/dlt-ecosystem/destinations/mssql)
 - [DuckDB Documentation](https://duckdb.org/docs/)
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://aetperf-github-io-1.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
