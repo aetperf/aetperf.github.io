@@ -73,7 +73,6 @@ pandas  # for Yahoo Finance data ressource
 yfinance
 pyodbc
 sqlalchemy
-pyarrow
 dlt[duckdb,mssql]
 duckdb-engine
 ```
@@ -713,24 +712,10 @@ except subprocess.CalledProcessError as e:
     
     
     
-    Info:
-    and fails to parse leap day. The default behavior will change in Python 3.15
-    to either always raise an exception or to use a different default year (TBD).
-    To avoid trouble, add a specific year to the input & format.
-    See https://github.com/python/cpython/issues/70647.
-      from sqlmesh.cli.main import cli
-    and fails to parse leap day. The default behavior will change in Python 3.15
-    to either always raise an exception or to use a different default year (TBD).
-    To avoid trouble, add a specific year to the input & format.
-    See https://github.com/python/cpython/issues/70647.
-      sys.exit(cli())
-    and fails to parse leap day. The default behavior will change in Python 3.15
-    to either always raise an exception or to use a different default year (TBD).
-    To avoid trouble, add a specific year to the input & format.
-    See https://github.com/python/cpython/issues/70647.
-      sys.exit(cli())
-    
     SQLMesh transformation completed successfully!
+
+
+**A note on the output:** The `prod` environment represents the current "deployed" state. When we run the plan, it compares our model code against `prod` and shows a diff of what changed — similar to how Git works. In this case, we added new audits, so SQLMesh detected a metadata change but recognized that the underlying transformation logic was unchanged. That's why it skipped reprocessing the data (`No physical layer updates`) and only ran the new audits against the existing data.
 
 
 ### Virtual Data Environments (VDE)
