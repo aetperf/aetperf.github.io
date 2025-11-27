@@ -544,66 +544,40 @@ except subprocess.CalledProcessError as e:
 
     Running SQLMesh transformation plan...
     ==================================================
-    
-    **Summary of differences from `prod`:**
-    
-    **Metadata Updated:**
-    - `marts.stock_metrics`
-    ```diff
-    --- 
-    
-    +++ 
-    
-    @@ [1m-13[0m,[1m7[0m +[1m13[0m,[1m11[0m @@
-    
-       [1m)[0m,
-       audits [1m([0m
-         [1mNOT_NULL[0m[1m([0m'columns' = [1m([0mticker, trade_date, close_price, volume[1m)[0m[1m)[0m,
-    -    [1mUNIQUE_COMBINATION_OF_COLUMNS[0m[1m([0m'columns' = [1m([0mticker, trade_date[1m)[0m[1m)[0m
-    +    [1mUNIQUE_COMBINATION_OF_COLUMNS[0m[1m([0m'columns' = [1m([0mticker, trade_date[1m)[0m[1m)[0m,
-    +    [1mVALID_RSI_RANGE[0m[1m([0m[1m)[0m,
-    +    [1mVALID_OHLC_PRICES[0m[1m([0m[1m)[0m,
-    +    [1mPOSITIVE_VOLUME[0m[1m([0m[1m)[0m,
-    +    [1mVALID_ATR[0m[1m([0m[1m)[0m
-       [1m)[0m,
-       grains [1m([0m[1m)[0m
-     [1m)[0m
-    ```
-    
-    ```
-    
-    [1mMetadata Updated: marts.stock_metrics[0m
-    
-    ```
-    
+
+    Summary of differences from `prod`:
+
+    Metadata Updated:
+    - marts.stock_metrics
+
+      audits (
+        NOT_NULL('columns' = (ticker, trade_date, close_price, volume)),
+    -   UNIQUE_COMBINATION_OF_COLUMNS('columns' = (ticker, trade_date))
+    +   UNIQUE_COMBINATION_OF_COLUMNS('columns' = (ticker, trade_date)),
+    +   VALID_RSI_RANGE(),
+    +   VALID_OHLC_PRICES(),
+    +   POSITIVE_VOLUME(),
+    +   VALID_ATR()
+      ),
+
+    Metadata Updated: marts.stock_metrics
+
     SKIP: No physical layer updates to perform
-    
-    
-    [?25l[1m[[0m [1m1[0m/[1m72[0m[1m][0m marts.stock_metrics   [1m[[0minsert [1m2020[0m-[1m01[0m-[1m01[0m - [1m2020[0m-[1m01[0m-[1m30[0m, audits passed [1m6[0m[1m][0m 
-    [1m0.[0m04s   
-    [1mAuditing models[0m                                         0.0% • pending • 0:00:00
-    marts.stock_metrics .
 
+    [ 1/72] marts.stock_metrics   [insert 2020-01-01 - 2020-01-30, audits passed 6] 0.04s
+    ...
+    [72/72] marts.stock_metrics   [insert 2025-10-31 - 2025-11-26, audits passed 6] 0.03s
 
-    [2K[1A[2K[1m[[0m[1m72[0m/[1m72[0m[1m][0m marts.stock_metrics   [1m[[0minsert [1m2025[0m-[1m10[0m-[1m31[0m - [1m2025[0m-[1m11[0m-[1m26[0m, audits passed [1m6[0m[1m][0m 
-    [1m0.[0m03s   
-    [1mAuditing models[0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  98.6% • 71/72 • 0:00:02
-    marts.stock_metrics ...                                                         
-    [2K[1A[2K[1mAuditing models[0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 72/72 • 0:00:02
-                                                                                    
-    [?25hModel batches executed
-    
-    
+    Auditing models ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 72/72 • 0:00:02
+
+    Model batches executed
+
     SKIP: No model batches to execute
-    [?25l
-    [2K[1mUpdating virtual layer [0m                                 0.0% • pending • 0:00:00
-    [2K[1mUpdating virtual layer [0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 1/1 • 0:00:00
-    [2K[1mUpdating virtual layer [0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 1/1 • 0:00:00
-    [?25h
+
+    Updating virtual layer ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 1/1 • 0:00:00
+
     Virtual layer updated
-    
-    
-    
+
     SQLMesh transformation completed successfully!
 
 
@@ -826,7 +800,7 @@ else:
 
     Running data quality audits...
     ==================================================
-    Found [1m6[0m [1maudit[0m[1m([0ms[1m)[0m.
+    Found 6 audits.
     not_null on model marts.stock_metrics ✅ PASS.
     unique_combination_of_columns on model marts.stock_metrics ✅ PASS.
     valid_rsi_range on model marts.stock_metrics ✅ PASS.

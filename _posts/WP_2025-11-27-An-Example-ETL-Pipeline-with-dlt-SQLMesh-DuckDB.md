@@ -289,14 +289,7 @@ df_raw
 
 
 
-<div><style>
-.dataframe > thead > tr,
-.dataframe > tbody > tr {
-  text-align: right;
-  white-space: pre-wrap;
-}
-</style>
-<table border="1" class="dataframe"><thead><tr><th>ticker</th><th>date</th><th>open_price</th><th>high_price</th><th>low_price</th><th>close_price</th><th>volume</th></tr><tr><td>str</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>i64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>2020-01-02</td><td>71.476615</td><td>72.528597</td><td>71.223274</td><td>72.468277</td><td>135480400</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-03</td><td>71.69616</td><td>72.523746</td><td>71.53933</td><td>71.763718</td><td>146322800</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-06</td><td>70.885487</td><td>72.374177</td><td>70.634554</td><td>72.335571</td><td>118387200</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-07</td><td>72.34522</td><td>72.600975</td><td>71.775804</td><td>71.995369</td><td>108872000</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-08</td><td>71.698574</td><td>73.455087</td><td>71.698574</td><td>73.153488</td><td>132079200</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-09</td><td>74.13066</td><td>74.900342</td><td>73.879735</td><td>74.707321</td><td>170108400</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-10</td><td>74.941371</td><td>75.440821</td><td>74.374363</td><td>74.876221</td><td>140644800</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-13</td><td>75.192313</td><td>76.502459</td><td>75.074081</td><td>76.475914</td><td>121532000</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-14</td><td>76.41317</td><td>76.623082</td><td>75.320175</td><td>75.443222</td><td>161954400</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-15</td><td>75.242981</td><td>76.12365</td><td>74.688034</td><td>75.119926</td><td>121923600</td></tr></tbody></table></div>
+<div><table border="1" class="dataframe"><thead><tr><th>ticker</th><th>date</th><th>open_price</th><th>high_price</th><th>low_price</th><th>close_price</th><th>volume</th></tr><tr><td>str</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>i64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>2020-01-02</td><td>71.476615</td><td>72.528597</td><td>71.223274</td><td>72.468277</td><td>135480400</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-03</td><td>71.69616</td><td>72.523746</td><td>71.53933</td><td>71.763718</td><td>146322800</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-06</td><td>70.885487</td><td>72.374177</td><td>70.634554</td><td>72.335571</td><td>118387200</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-07</td><td>72.34522</td><td>72.600975</td><td>71.775804</td><td>71.995369</td><td>108872000</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-08</td><td>71.698574</td><td>73.455087</td><td>71.698574</td><td>73.153488</td><td>132079200</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-09</td><td>74.13066</td><td>74.900342</td><td>73.879735</td><td>74.707321</td><td>170108400</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-10</td><td>74.941371</td><td>75.440821</td><td>74.374363</td><td>74.876221</td><td>140644800</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-13</td><td>75.192313</td><td>76.502459</td><td>75.074081</td><td>76.475914</td><td>121532000</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-14</td><td>76.41317</td><td>76.623082</td><td>75.320175</td><td>75.443222</td><td>161954400</td></tr><tr><td>&quot;AAPL&quot;</td><td>2020-01-15</td><td>75.242981</td><td>76.12365</td><td>74.688034</td><td>75.119926</td><td>121923600</td></tr></tbody></table></div>
 
 
 
@@ -340,14 +333,7 @@ loads
 
 
 
-<div><style>
-.dataframe > thead > tr,
-.dataframe > tbody > tr {
-  text-align: right;
-  white-space: pre-wrap;
-}
-</style>
-<table border="1" class="dataframe"><thead><tr><th>load_id</th><th>schema_name</th><th>status</th><th>inserted_at</th></tr><tr><td>str</td><td>str</td><td>i64</td><td>datetime[μs, Europe/Paris]</td></tr></thead><tbody><tr><td>&quot;1764251419.3941712&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:50:21.208674 CET</td></tr><tr><td>&quot;1764250753.3403895&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:39:14.771508 CET</td></tr><tr><td>&quot;1764249716.0756714&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:21:57.290876 CET</td></tr><tr><td>&quot;1764249510.5065134&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:18:31.900797 CET</td></tr><tr><td>&quot;1764248385.3157668&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 13:59:46.452635 CET</td></tr></tbody></table></div>
+<div><table border="1" class="dataframe"><thead><tr><th>load_id</th><th>schema_name</th><th>status</th><th>inserted_at</th></tr><tr><td>str</td><td>str</td><td>i64</td><td>datetime[μs, Europe/Paris]</td></tr></thead><tbody><tr><td>&quot;1764251419.3941712&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:50:21.208674 CET</td></tr><tr><td>&quot;1764250753.3403895&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:39:14.771508 CET</td></tr><tr><td>&quot;1764249716.0756714&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:21:57.290876 CET</td></tr><tr><td>&quot;1764249510.5065134&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 14:18:31.900797 CET</td></tr><tr><td>&quot;1764248385.3157668&quot;</td><td>&quot;financial_extract&quot;</td><td>0</td><td>2025-11-27 13:59:46.452635 CET</td></tr></tbody></table></div>
 
 
 ## SQLMesh Project Setup<a name="sqlmesh_project_setup"></a>
@@ -525,66 +511,40 @@ except subprocess.CalledProcessError as e:
 
     Running SQLMesh transformation plan...
     ==================================================
-    
-    **Summary of differences from `prod`:**
-    
-    **Metadata Updated:**
-    - `marts.stock_metrics`
-    ```diff
-    --- 
-    
-    +++ 
-    
-    @@ [1m-13[0m,[1m7[0m +[1m13[0m,[1m11[0m @@
-    
-       [1m)[0m,
-       audits [1m([0m
-         [1mNOT_NULL[0m[1m([0m'columns' = [1m([0mticker, trade_date, close_price, volume[1m)[0m[1m)[0m,
-    -    [1mUNIQUE_COMBINATION_OF_COLUMNS[0m[1m([0m'columns' = [1m([0mticker, trade_date[1m)[0m[1m)[0m
-    +    [1mUNIQUE_COMBINATION_OF_COLUMNS[0m[1m([0m'columns' = [1m([0mticker, trade_date[1m)[0m[1m)[0m,
-    +    [1mVALID_RSI_RANGE[0m[1m([0m[1m)[0m,
-    +    [1mVALID_OHLC_PRICES[0m[1m([0m[1m)[0m,
-    +    [1mPOSITIVE_VOLUME[0m[1m([0m[1m)[0m,
-    +    [1mVALID_ATR[0m[1m([0m[1m)[0m
-       [1m)[0m,
-       grains [1m([0m[1m)[0m
-     [1m)[0m
-    ```
-    
-    ```
-    
-    [1mMetadata Updated: marts.stock_metrics[0m
-    
-    ```
-    
+
+    Summary of differences from `prod`:
+
+    Metadata Updated:
+    - marts.stock_metrics
+
+      audits (
+        NOT_NULL('columns' = (ticker, trade_date, close_price, volume)),
+    -   UNIQUE_COMBINATION_OF_COLUMNS('columns' = (ticker, trade_date))
+    +   UNIQUE_COMBINATION_OF_COLUMNS('columns' = (ticker, trade_date)),
+    +   VALID_RSI_RANGE(),
+    +   VALID_OHLC_PRICES(),
+    +   POSITIVE_VOLUME(),
+    +   VALID_ATR()
+      ),
+
+    Metadata Updated: marts.stock_metrics
+
     SKIP: No physical layer updates to perform
-    
-    
-    [?25l[1m[[0m [1m1[0m/[1m72[0m[1m][0m marts.stock_metrics   [1m[[0minsert [1m2020[0m-[1m01[0m-[1m01[0m - [1m2020[0m-[1m01[0m-[1m30[0m, audits passed [1m6[0m[1m][0m 
-    [1m0.[0m04s   
-    [1mAuditing models[0m                                         0.0% • pending • 0:00:00
-    marts.stock_metrics .
 
+    [ 1/72] marts.stock_metrics   [insert 2020-01-01 - 2020-01-30, audits passed 6] 0.04s
+    ...
+    [72/72] marts.stock_metrics   [insert 2025-10-31 - 2025-11-26, audits passed 6] 0.03s
 
-    [2K[1A[2K[1m[[0m[1m72[0m/[1m72[0m[1m][0m marts.stock_metrics   [1m[[0minsert [1m2025[0m-[1m10[0m-[1m31[0m - [1m2025[0m-[1m11[0m-[1m26[0m, audits passed [1m6[0m[1m][0m 
-    [1m0.[0m03s   
-    [1mAuditing models[0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  98.6% • 71/72 • 0:00:02
-    marts.stock_metrics ...                                                         
-    [2K[1A[2K[1mAuditing models[0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 72/72 • 0:00:02
-                                                                                    
-    [?25hModel batches executed
-    
-    
+    Auditing models ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 72/72 • 0:00:02
+
+    Model batches executed
+
     SKIP: No model batches to execute
-    [?25l
-    [2K[1mUpdating virtual layer [0m                                 0.0% • pending • 0:00:00
-    [2K[1mUpdating virtual layer [0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 1/1 • 0:00:00
-    [2K[1mUpdating virtual layer [0m ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 1/1 • 0:00:00
-    [?25h
+
+    Updating virtual layer ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 1/1 • 0:00:00
+
     Virtual layer updated
-    
-    
-    
+
     SQLMesh transformation completed successfully!
 
 
@@ -645,14 +605,7 @@ df_transformed
     ==================================================
     Sample AAPL data with technical indicators (most recent 15 rows):
 
-<div><style>
-.dataframe > thead > tr,
-.dataframe > tbody > tr {
-  text-align: right;
-  white-space: pre-wrap;
-}
-</style>
-<table border="1" class="dataframe"><thead><tr><th>ticker</th><th>trade_date</th><th>close</th><th>sma20</th><th>sma50</th><th>rsi</th><th>macd</th><th>atr</th><th>bb_upper</th><th>bb_lower</th></tr><tr><td>str</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>2025-11-26</td><td>277.55</td><td>271.13</td><td>271.13</td><td>63.0</td><td>1.02</td><td>5.95</td><td>277.91</td><td>264.34</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-25</td><td>276.97</td><td>270.77</td><td>270.77</td><td>61.6</td><td>0.7</td><td>6.14</td><td>276.98</td><td>264.56</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-24</td><td>275.92</td><td>270.41</td><td>270.41</td><td>60.3</td><td>0.33</td><td>6.11</td><td>275.95</td><td>264.86</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-21</td><td>271.49</td><td>270.06</td><td>270.06</td><td>55.1</td><td>0.14</td><td>5.95</td><td>274.98</td><td>265.14</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-20</td><td>266.25</td><td>269.97</td><td>269.97</td><td>41.4</td><td>0.1</td><td>5.73</td><td>275.0</td><td>264.94</td></tr><tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-12</td><td>273.47</td><td>270.49</td><td>270.49</td><td>63.0</td><td>0.0</td><td>5.46</td><td>275.11</td><td>265.87</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-11</td><td>275.25</td><td>270.12</td><td>270.12</td><td>73.1</td><td>0.0</td><td>5.64</td><td>274.45</td><td>265.79</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-10</td><td>269.43</td><td>269.39</td><td>269.39</td><td>43.6</td><td>0.0</td><td>5.52</td><td>270.72</td><td>268.05</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-07</td><td>268.21</td><td>269.38</td><td>269.38</td><td>26.7</td><td>0.0</td><td>5.4</td><td>270.84</td><td>267.92</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-06</td><td>269.51</td><td>269.61</td><td>269.61</td><td>39.2</td><td>0.0</td><td>5.38</td><td>270.63</td><td>268.6</td></tr></tbody></table></div>
+<div><table border="1" class="dataframe"><thead><tr><th>ticker</th><th>trade_date</th><th>close</th><th>sma20</th><th>sma50</th><th>rsi</th><th>macd</th><th>atr</th><th>bb_upper</th><th>bb_lower</th></tr><tr><td>str</td><td>date</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>&quot;AAPL&quot;</td><td>2025-11-26</td><td>277.55</td><td>271.13</td><td>271.13</td><td>63.0</td><td>1.02</td><td>5.95</td><td>277.91</td><td>264.34</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-25</td><td>276.97</td><td>270.77</td><td>270.77</td><td>61.6</td><td>0.7</td><td>6.14</td><td>276.98</td><td>264.56</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-24</td><td>275.92</td><td>270.41</td><td>270.41</td><td>60.3</td><td>0.33</td><td>6.11</td><td>275.95</td><td>264.86</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-21</td><td>271.49</td><td>270.06</td><td>270.06</td><td>55.1</td><td>0.14</td><td>5.95</td><td>274.98</td><td>265.14</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-20</td><td>266.25</td><td>269.97</td><td>269.97</td><td>41.4</td><td>0.1</td><td>5.73</td><td>275.0</td><td>264.94</td></tr><tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-12</td><td>273.47</td><td>270.49</td><td>270.49</td><td>63.0</td><td>0.0</td><td>5.46</td><td>275.11</td><td>265.87</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-11</td><td>275.25</td><td>270.12</td><td>270.12</td><td>73.1</td><td>0.0</td><td>5.64</td><td>274.45</td><td>265.79</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-10</td><td>269.43</td><td>269.39</td><td>269.39</td><td>43.6</td><td>0.0</td><td>5.52</td><td>270.72</td><td>268.05</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-07</td><td>268.21</td><td>269.38</td><td>269.38</td><td>26.7</td><td>0.0</td><td>5.4</td><td>270.84</td><td>267.92</td></tr><tr><td>&quot;AAPL&quot;</td><td>2025-11-06</td><td>269.51</td><td>269.61</td><td>269.61</td><td>39.2</td><td>0.0</td><td>5.38</td><td>270.63</td><td>268.6</td></tr></tbody></table></div>
 
 ## Lineage<a name="lineage"></a>
 
@@ -807,7 +760,7 @@ else:
 
     Running data quality audits...
     ==================================================
-    Found [1m6[0m [1maudit[0m[1m([0ms[1m)[0m.
+    Found 6 audits.
     not_null on model marts.stock_metrics ✅ PASS.
     unique_combination_of_columns on model marts.stock_metrics ✅ PASS.
     valid_rsi_range on model marts.stock_metrics ✅ PASS.
@@ -967,21 +920,7 @@ We can check that the data is in SQL Server:
 SELECT TOP 10 * FROM dbo.stock_metrics ORDER BY trade_date DESC",
 ```
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
+<div><table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
