@@ -1,9 +1,10 @@
 # An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
-<figure style="text-align: center;">
-  <img width="400" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-11-27_01/postmodern.jpg" alt="A Typical postmodern painting, AI generated" style="display: block; margin: 0 auto;">
-  <figcaption><em>The post-modern data stack, by Juan Romano Chucalescu</em></figcaption>
-</figure>
+<div style="text-align: center; width: 100%;">
+  <img width="400" src="/img/2025-11-27_01/postmodern.jpg" alt="A Typical postmodern painting, AI generated" style="display: inline-block;">
+  <br>
+  <em>The post-modern data stack, by Juan Romano Chucalescu</em>
+</div>
 
 In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
 
