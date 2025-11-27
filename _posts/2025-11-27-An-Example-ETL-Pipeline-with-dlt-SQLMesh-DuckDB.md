@@ -19,7 +19,7 @@ tags:
 
 # An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
-In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline, which is a common pattern for moving and transforming data between systems. This is a toy example — intentionally over-simplistic — but it helped us explore how three modern Python tools work together, and we found the combination to be quite effective for this kind of workflow.
+In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline, which is a common pattern for moving and transforming data between systems. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
 
 The stack we used:
 
@@ -56,7 +56,7 @@ Here is a basic diagram showing the pipeline architecture
 
 ## About the Tools<a name="about_the_tools"></a>
 
-Here's a brief overview of each tool. If you're already familiar with them, feel free to skip ahead to the setup section.
+Here's a brief overview of each tool.
 
 ### dlt (data load tool)
 dlt is an open-source Python library designed to simplify data loading. What we found particularly useful is how it automates schema inference, data normalization, and incremental loading. Some key features:
@@ -74,7 +74,7 @@ SQLMesh is a data transformation framework that brings software engineering prac
 DuckDB is an embedded analytical database optimized for OLAP (Online Analytical Processing) workloads, for analytics queries over large datasets rather than transactional operations:
 - **In-process**: No separate server to install or manage
 - **Fast**: Uses columnar storage with vectorized execution
-- **Handles large data**: Out-of-core processing lets it work with datasets larger than available RAM
+- **Handles relatively large data**: Out-of-core processing lets it work with datasets larger than available RAM
 
 ### Python Requirements
 
@@ -92,7 +92,7 @@ duckdb-engine
 
 ## Setup & Configuration<a name="setup_configuration"></a>
 
-Let's start by importing the necessary libraries and defining the configuration. I'm using stock market data as the example dataset; it's freely available via Yahoo Finance and has enough complexity to demonstrate the transformation capabilities.
+Let's start by importing the necessary libraries and defining the configuration. We are using stock market data as the example dataset; it's freely available via Yahoo Finance and has enough complexity to demonstrate the transformation capabilities.
 
 
 ```python
@@ -141,7 +141,7 @@ print(f"  - Date range: {START_DATE} to {END_DATE}")
 
 ## Extract: dlt + yfinance<a name="extract"></a>
 
-With the configuration in place, we can move to the **Extract** phase. Here, we use dlt to pull stock data from Yahoo Finance and load it directly into DuckDB. The data includes **OHLCV** values: Open, High, Low, Close (prices), and Volume, which are standard fields in financial time series data.
+With the configuration in place, we can move to the **Extract** phase. Here, we use dlt to pull stock data from Yahoo Finance and load it directly into DuckDB. The data includes **OHLCV** values: Open, High, Low, Close (prices), and Volume.
 
 ### Creating a Custom dlt Resource
 
