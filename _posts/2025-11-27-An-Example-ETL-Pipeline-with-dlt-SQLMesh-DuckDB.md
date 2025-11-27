@@ -19,13 +19,13 @@ tags:
 
 # An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
-In this post, I walk through building a basic **ETL (Extract-Transform-Load)** pipeline — a common pattern for moving and transforming data between systems. I wanted to explore how three modern Python tools work together, and I found the combination to be quite effective for this kind of workflow.
+In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline, which is a common pattern for moving and transforming data between systems. We wanted to explore how three modern Python tools work together, and found the combination to be quite effective for this kind of workflow.
 
-The stack I used:
+The stack we used:
 
 - **dlt (data load tool)**: Handles both extraction (pulling data from Yahoo Finance into DuckDB) and loading (pushing transformed data to SQL Server)
 - **SQLMesh**: Manages SQL transformations with helpful features like version control, column-level lineage, and incremental processing
-- **DuckDB**: Serves as our in-process analytical database — no server setup required
+- **DuckDB**: Serves as our in-process analytical database, no server setup required
 
 ## Pipeline Architecture
 
@@ -46,19 +46,19 @@ The stack I used:
 Here's a brief overview of each tool. If you're already familiar with them, feel free to skip ahead to the setup section.
 
 ### dlt (data load tool)
-dlt is an open-source Python library designed to simplify data loading. What I found particularly useful is how it automates schema inference, data normalization, and incremental loading. Some key features:
+dlt is an open-source Python library designed to simplify data loading. What we found particularly useful is how it automates schema inference, data normalization, and incremental loading. Some key features:
 - **Declarative pipelines**: You define sources as Python generators using the `@dlt.resource` decorator
 - **Schema evolution**: It automatically handles schema changes as your data evolves
 - **Multiple destinations**: Works with DuckDB, SQL Server, BigQuery, Snowflake, and many others
 
 ### SQLMesh
-SQLMesh is a data transformation framework that brings software engineering practices to SQL development. I appreciated how it helped me think about transformations more systematically:
+SQLMesh is a data transformation framework that brings software engineering practices to SQL development. We appreciated how it helped me think about transformations more systematically:
 - **Version control**: Track changes to your SQL models over time
-- **Column-level lineage**: See exactly which source columns affect which outputs — helpful for debugging
+- **Column-level lineage**: See exactly which source columns affect which outputs, helpful for debugging
 - **Virtual Data Environments**: Test changes without duplicating data
 
 ### DuckDB
-DuckDB is an embedded analytical database optimized for OLAP (Online Analytical Processing) workloads — think analytics queries over large datasets rather than transactional operations:
+DuckDB is an embedded analytical database optimized for OLAP (Online Analytical Processing) workloads, for analytics queries over large datasets rather than transactional operations:
 - **In-process**: No separate server to install or manage
 - **Fast**: Uses columnar storage with vectorized execution
 - **Handles large data**: Out-of-core processing lets it work with datasets larger than available RAM
@@ -66,11 +66,10 @@ DuckDB is an embedded analytical database optimized for OLAP (Online Analytical 
 ### Python Requirements
 
 ```
-jupyter
 duckdb
 sqlmesh
 polars
-pandas
+pandas  # for Yahoo Finance data ressource
 yfinance
 pyodbc
 sqlalchemy
@@ -81,11 +80,10 @@ duckdb-engine
 
 ## 1. Setup & Configuration
 
-Let's start by importing the necessary libraries and defining the configuration. I'm using stock market data as the example dataset — it's freely available via Yahoo Finance and has enough complexity to demonstrate the transformation capabilities.
+Let's start by importing the necessary libraries and defining the configuration. I'm using stock market data as the example dataset; it's freely available via Yahoo Finance and has enough complexity to demonstrate the transformation capabilities.
 
 
 ```python
-# All imports
 import json
 import os
 import subprocess
@@ -94,24 +92,24 @@ from datetime import date
 
 import dlt
 import duckdb
+import pandas as pd
 import polars as pl
 import yfinance as yf
 
-# Suppress deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Configuration
 DUCKDB_FILE = "./financial_etl_dlt.duckdb"
 SQLMESH_PROJECT_DIR = "./dlt_sqlmesh_project"
-CREDENTIALS_FILE = "credentials.json"
+CREDENTIALS_FILE = "./credentials.json"
 
 # Stock configuration
 TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA"]
 START_DATE = "2020-01-01"
-END_DATE = date.today().isoformat()  # Use today's date
+END_DATE = date.today().isoformat()
 
 # SQL Server target configuration
-TARGET_CONN_KEY = "ms_target_01"
+TARGET_CONN_KEY = "ms_target_01"  # key in credentials JSON file
 TARGET_SCHEMA = "dbo"
 TARGET_TABLE = "Dim_Stock_Metrics"
 
@@ -131,7 +129,7 @@ print(f"  - Date range: {START_DATE} to {END_DATE}")
 
 ## 2. Extract: dlt + yfinance
 
-With the configuration in place, we can move to the **Extract** phase. Here, I use dlt to pull stock data from Yahoo Finance and load it directly into DuckDB. The data includes **OHLCV** values — that's Open, High, Low, Close (prices), and Volume — which are standard fields in financial time series data.
+With the configuration in place, we can move to the **Extract** phase. Here, we use dlt to pull stock data from Yahoo Finance and load it directly into DuckDB. The data includes **OHLCV** values: Open, High, Low, Close (prices), and Volume, which are standard fields in financial time series data.
 
 ### Creating a Custom dlt Resource
 
@@ -209,9 +207,6 @@ def yfinance_eod_prices(tickers: list[str], start_date: str, end_date: str):
 
     print(f"Yielded {rows_yielded} rows with OHLCV data")
 
-
-# Need pandas for the resource
-import pandas as pd
 
 print("dlt resource 'yfinance_eod_prices' defined successfully!")
 print("Columns: ticker, date, open_price, high_price, low_price, close_price, volume")
@@ -614,12 +609,12 @@ print("  - CTEs for intermediate calculations (gains, losses, true_range)")
 
 ## 3. Transform: Run SQLMesh Pipeline
 
-With the project configured, we can now run **SQLMesh** to transform the raw data. This is where I found SQLMesh particularly helpful — it handles the complexity of incremental processing and keeps track of what has already been computed.
+With the project configured, we can now run **SQLMesh** to transform the raw data. This is where we found SQLMesh particularly helpful: it handles the complexity of incremental processing and keeps track of what has already been computed.
 
 The `sqlmesh plan --auto-apply` command will:
 1. Detect the external table (`raw.eod_prices_raw`) created by dlt
 2. Execute our transformation model (`marts.stock_metrics`)
-3. Create the output table with technical indicators like SMA (Simple Moving Average — an average of prices over a rolling window, commonly used in financial analysis)
+3. Create the output table with technical indicators like SMA (Simple Moving Average, an average of prices over a rolling window, commonly used in financial analysis)
 4. Run data quality audits automatically
 
 
@@ -1319,7 +1314,7 @@ print("    - valid_atr: ATR >= 0")
 
 ### SQLMesh Audits
 
-One feature I found particularly useful is SQLMesh's audits — these are data quality checks that run automatically after model execution. SQLMesh supports two types:
+One feature we found particularly useful is SQLMesh's audits : these are data quality checks that run automatically after model execution. SQLMesh supports two types:
 
 **1. Built-in Audits** (defined inline in the MODEL):
 ```sql
@@ -1478,7 +1473,7 @@ summary
 
 ## 5. Load: dlt to SQL Server
 
-With our data transformed and validated, we can move to the final **Load** phase. Here, I use dlt again — this time to export the transformed data from DuckDB to SQL Server. This demonstrates how dlt can work bidirectionally, not just for ingestion but also for exporting data to downstream systems.
+With our data transformed and validated, we can move to the final **Load** phase. Here, we use dlt again, this time to export the transformed data from DuckDB to SQL Server. This demonstrates how dlt can work bidirectionally, not just for ingestion but also for exporting data to downstream systems.
 
 ### dlt sql_database Source
 
@@ -2010,17 +2005,16 @@ For reference, here are the technical indicators computed in the transformation 
 | **Price Range %** | high, low, close | Intraday volatility as % |
 | **Volume Ratio** | volume | Current vs 20-day average |
 
-### What I Found Useful
+### What we Found Useful
 
 | Component | What helped |
 |-----------|--------|
 | **dlt** | Declarative pipelines, automatic schema evolution, load tracking |
 | **SQLMesh** | Version-controlled transformations, column-level lineage, audits |
-| **DuckDB** | Fast in-process analytics, SQL window functions for computing indicators |
 
 ## Production Deployment: Logging & Return Codes
 
-The pipeline above works well for development, but deploying to production with a scheduler (cron, Airflow, Prefect, etc.) requires a few additional considerations. I found that proper logging and return codes are essential for monitoring and debugging issues.
+The pipeline above works well for development, but deploying to production with a scheduler (cron, Airflow, Prefect, etc.) requires a few additional considerations. We found that proper logging and return codes are essential for monitoring and debugging issues.
 
 ### Why This Matters
 
@@ -2136,7 +2130,7 @@ if __name__ == "__main__":
 
 ## Further Engineering Considerations
 
-There are a few more topics worth considering as you move toward production. These go beyond the scope of this example, but I wanted to mention them briefly.
+There are a few more topics worth considering as you move toward production. These go beyond the scope of this example, but we wanted to mention them briefly.
 
 ### 1. Error Handling and Observability
 
@@ -2173,7 +2167,7 @@ Beyond SQLMesh audits, I'd recommend considering a broader testing strategy for 
 -   **Integration Tests**: Test the full pipeline flow (Extract -> Transform -> Load) in a controlled environment with representative data. This ensures all components work together seamlessly.
 -   **Virtual Data Environments (VDEs) for Development**: Leverage `SQLMesh` VDEs to create isolated environments for feature development. This allows developers to test changes to models without impacting production data or other developers' work. Changes can be validated in a VDE before merging to a shared environment.
 
-By considering these aspects, you can evolve a pipeline like this from a working example into something more suitable for production use. I hope this walkthrough has been helpful in understanding how these tools can work together.
+By considering these aspects, you can evolve a pipeline like this from a working example into something more suitable for production use. We hope this walkthrough has been helpful in understanding how these tools can work together.
 
 ## References
 
