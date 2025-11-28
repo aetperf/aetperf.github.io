@@ -6,9 +6,6 @@
   The post-modern data stack, by Juan Romano Chucalescu
 </p>
 
-The post-modern data stack, by Juan Romano Chucalescu
-
-
 In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
 
 The stack we used:
