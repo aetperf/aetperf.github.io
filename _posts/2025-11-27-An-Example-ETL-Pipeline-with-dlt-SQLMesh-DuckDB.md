@@ -19,7 +19,7 @@ tags:
 
 <figure style="text-align: center;">
   <img width="400" src="/img/2025-11-27_01/postmodern.jpg" alt="A Typical postmodern painting, AI generated" style="display: block; margin: 0 auto;">
-  <figcaption><em>The post-modern data stack, by Juan Romano Chucalescu</em></figcaption>
+  <figcaption><em>The post-modern data stack</em></figcaption>
 </figure>
 
 In this post, we walk through building a basic **ETL (Extract-Transform-Load)** pipeline. This is a toy example, intentionally over-simplistic, but it helped us explore how three modern Python tools work together.
