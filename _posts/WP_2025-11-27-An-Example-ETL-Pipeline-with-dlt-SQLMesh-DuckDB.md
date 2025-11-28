@@ -1,7 +1,7 @@
 # An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
 <div style="text-align: center; width: 100%;">
-  <img width="400" src="/img/2025-11-27_01/postmodern.jpg" alt="A Typical postmodern painting, AI generated" style="display: inline-block;">
+  <img width="400" src="/img/2025-11-27_01/postmodern.jpg" alt="The post-modern data stack, by Juan Romano Chucalescu" style="display: inline-block;">
   <br>
   <em>The post-modern data stack, by Juan Romano Chucalescu</em>
 </div>
