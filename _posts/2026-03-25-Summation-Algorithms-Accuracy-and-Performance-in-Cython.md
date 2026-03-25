@@ -778,6 +778,8 @@ For well-conditioned sums, pairwise summation gives the best accuracy per cycle.
 
 > "If high accuracy is important, consider implementing recursive summation in higher precision; if feasible this may be less expensive (and more accurate) than using one of the alternative methods at the working precision."
 
+Note: this post is a [Jupyter](https://jupyter.org/) notebook. Each `%%cython` cell is compiled independently, which is why the Cython imports (`cimport numpy`, `from libc.math cimport fabs`, etc.) are repeated in every cell.
+
 ## References<a name="references"></a>
 
 <a name="ref1"></a>[1] Wikipedia, [Kahan summation algorithm](https://en.wikipedia.org/wiki/Kahan_summation_algorithm)
