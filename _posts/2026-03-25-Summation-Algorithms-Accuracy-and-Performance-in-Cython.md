@@ -41,7 +41,7 @@ This post implements seven algorithms in [Cython](https://cython.org/), tests th
 - [Kahan-Babuška-Klein summation](#klein)
 - [Shewchuk summation](#shewchuk)
 - [Accuracy comparison](#accuracy)
-- [Scaling up with Accupy](#accupy)
+- [Accupy](#accupy)
 - [Ill condition numbers](#condition)
 - [Performance](#performance)
 - [References](#references)
@@ -509,7 +509,7 @@ compute_and_print(a, s_true)
 
 Only Shewchuk and `math.fsum` return the correct result.
 
-## Scaling up with Accupy<a name="accupy"></a>
+## Accupy<a name="accupy"></a>
 
 [Accupy](https://github.com/sigma-py/accupy/) can generate arrays of arbitrary length with a prescribed condition number via `generate_ill_conditioned_sum`, and returns the exact sum computed with arbitrary precision:
 
