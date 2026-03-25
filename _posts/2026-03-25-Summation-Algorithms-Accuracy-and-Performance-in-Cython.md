@@ -14,6 +14,7 @@ tags:
 - IEEE 754
 - NumPy
 - performance
+image: /img/2026-03-25_01/Kahan.png
 ---
 
 Adding up a list of floating-point numbers:
