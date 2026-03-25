@@ -20,15 +20,15 @@ Adding up a list of floating-point numbers:
 
 $$S_n = \sum_{i=0}^{n-1} x_i$$
 
-seems simple. IEEE 754 double-precision floats (`float64`) carry about 15 to 17 significant decimal digits, and each individual addition is faithfully rounded, but rounding errors accumulate across successive operations. How fast they accumulate depends on the summation algorithm.
+seems simple. [IEEE 754](https://en.wikipedia.org/wiki/IEEE_754) double-precision floats (`float64`) carry about 15 to 17 significant decimal digits, and each individual addition is faithfully rounded, but rounding errors accumulate across successive operations. How fast they accumulate depends on the summation algorithm.
 
-This post implements seven algorithms in [Cython](https://cython.org/), tests them on inputs with condition numbers ranging from 1 to $10^{300}$, and benchmarks them on a billion elements. Most of the algorithms come from the Wikipedia page on Kahan summation [[1]](#ref1), with error bounds drawn from Higham [[2]](#ref2). The *unit roundoff* is the maximum relative error introduced by rounding a real number to its nearest float64 representation. Its value is $u = 2^{-53} \approx 1.1 \times 10^{-16}$.
+This post implements seven algorithms in [Cython](https://cython.org/), tests them on inputs with condition numbers ranging from 1 to $10^{300}$, and benchmarks them on a billion elements. Most of the algorithms come from the Wikipedia page on Kahan summation [[1]](#ref1), with error bounds drawn from Higham [[2]](#ref2). These bounds involve the *unit roundoff*, the maximum relative error introduced by rounding a real number to its nearest float64 representation: $u = 2^{-53} \approx 1.1 \times 10^{-16}$.
 
-William Kahan, the principal architect of IEEE 754, published one of the first compensated summation algorithms in 1965, around the same time as Ivo Babuška, Ole Møller, or Jack M. Wolfe. Several of the methods below build on his ideas. These techniques have found use, for example, in celestial mechanics, where numerical integrators must sum billions of small force increments over large timescales without letting roundoff drift dominate the physics. 
+[William Kahan](https://en.wikipedia.org/wiki/William_Kahan), the principal architect of IEEE 754, published one of the first compensated summation algorithms in 1965, around the same time as Ivo Babuška, Ole Møller, or Jack M. Wolfe. Several of the methods below build on his ideas. These techniques have found use, for example, in celestial mechanics, where numerical integrators must sum billions of small force increments over large timescales without letting roundoff drift dominate the physics. 
 
 <p align="center">
-  <img src="/img/2026-03-25_01/Kahan.png" alt="William Kahan" width="300" /><br>
-  <b>William Kahan (born 1933)</b>
+  <img src="/img/2026-03-25_01/Kahan.png" alt="William Kahan" width="400" /><br>
+  <b>William Kahan (born 1933)</b> — <a href="https://www.heidelberg-laureate-forum.org/laureate/william-morton-kahan/">source</a>
 </p>
 
 **Outline**
@@ -754,7 +754,7 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="800" src="/img/2026-03-25_01/output_58_0.png" alt="Timings of various summation techniques">
+  <img width="600" src="/img/2026-03-25_01/output_58_0.png" alt="Timings of various summation techniques">
 </p>
 
 Shewchuk and `math.fsum` are roughly 10x slower than recursive summation and compress the rest of the chart. Both use the same algorithm, and `math.fsum` is implemented in C [[6]](#ref6), but it accepts any Python iterable and calls `PyFloat_AsDouble` on each element. Our Cython version uses a typed memoryview with direct pointer access to the array memory, avoiding the per-element Python object overhead. Zooming in on the remaining algorithms:
@@ -769,12 +769,12 @@ _ = ax.set(
 ```
 
 <p align="center">
-  <img width="800" src="/img/2026-03-25_01/output_60_0.png" alt="Timings without Shewchuk and math.fsum">
+  <img width="600" src="/img/2026-03-25_01/output_60_0.png" alt="Timings without Shewchuk and math.fsum">
 </p>
 
 Pairwise summation achieves $O(u \log n)$ accuracy at nearly the same speed as recursive summation, thanks to SIMD-friendly memory access patterns. The compensated methods (Kahan, Neumaier, Klein) cost more. Shewchuk's growable partials list involves branching and dynamic memory management on every element, which accounts for the large gap.
 
-For well-conditioned sums, pairwise summation gives the best accuracy per cycle. When condition numbers go above $\approx 10^{15}$, only Shewchuk / `math.fsum` can be trusted. But an advice from Higham [[2]](#ref2) is:
+For well-conditioned sums, pairwise summation gives the best accuracy per cycle. When condition numbers go above $\approx 10^{15}$, only Shewchuk / `math.fsum` can be trusted. But a wise advice from Higham [[2]](#ref2) is:
 
 > "If high accuracy is important, consider implementing recursive summation in higher precision; if feasible this may be less expensive (and more accurate) than using one of the alternative methods at the working precision."
 
