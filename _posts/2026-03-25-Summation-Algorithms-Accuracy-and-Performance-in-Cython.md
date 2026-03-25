@@ -50,7 +50,7 @@ This post implements seven algorithms in [Cython](https://cython.org/), tests th
 
 All implementations below are written in Cython, a typed superset of Python that compiles to C. Each algorithm's inner loop is a `cdef` function callable only from C, wrapped by a thin `cpdef` function exposed to Python.
 
-The Python package [Accupy](https://github.com/sigma-py/accupy/) by Nico Schlömer, generates ill-conditioned sums with known exact results, computed with arbitrary-precision arithmetic via [mpmath](https://mpmath.org/), which makes it useful for testing summation accuracy. Note that Accupy does not appear to be maintained anymore and requires NumPy < 2 (the latest version is 2.4.3 at the time of writing), so a dedicated environment is needed.
+[Accupy](https://github.com/sigma-py/accupy/) by Nico Schlömer is a neat little package that generates ill-conditioned sums with known exact results, computed with arbitrary-precision arithmetic via [mpmath](https://mpmath.org/). It lets you dial in a target condition number and get back an array plus its true sum, which is exactly what you need to stress-test summation algorithms. Unfortunately it does not appear to be maintained anymore and requires NumPy < 2 (the latest version is 2.4.3 at the time of writing), so a dedicated environment is needed.
 
 ```python
 import math
