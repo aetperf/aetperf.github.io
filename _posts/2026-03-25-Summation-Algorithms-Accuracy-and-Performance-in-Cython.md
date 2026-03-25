@@ -352,7 +352,6 @@ All previous algorithms use a fixed number of accumulators and therefore have fi
 
 cimport numpy as cnp
 from libc.math cimport fabs
-from libc.stdio cimport printf
 from libc.stdlib cimport free, malloc, realloc
 from libc.string cimport memset
 
