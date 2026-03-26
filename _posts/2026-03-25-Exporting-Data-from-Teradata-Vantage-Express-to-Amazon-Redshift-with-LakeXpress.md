@@ -324,7 +324,8 @@ Then create a new configuration with `--fastbcp_table_config` to partition the t
     --source_db_auth_id source_teradata \
     --source_db_name SYNPUF \
     --source_schema_name SYNPUF \
-    --fastbcp_table_config "CARRIER_CLAIMS:Timepartition:(CLM_FROM_DT,year,month):4;PRESCRIPTION_DRUG_EVENTS:Timepartition:(SRVC_DT,year,month):4" \
+    --fastbcp_table_config "CARRIER_CLAIMS:Timepartition:(CLM_FROM_DT,year,month):4" \
+    --fastbcp_table_config "PRESCRIPTION_DRUG_EVENTS:Timepartition:(SRVC_DT,year,month):4" \
     --n_jobs 4 \
     --target_storage_id aws_s3_01 \
     --sub_path synpuf \
@@ -334,11 +335,10 @@ Then create a new configuration with `--fastbcp_table_config` to partition the t
     --publish_target redshift_classic
 ```
 
-Multiple table configs can also be passed as separate arguments instead of semicolon-separated in a single value:
+Multiple table configs can also be passed as semicolon-separated in a single value instead of separate arguments:
 
 ```bash
-    --fastbcp_table_config "CARRIER_CLAIMS:Timepartition:(CLM_FROM_DT,year,month):4" \
-    --fastbcp_table_config "PRESCRIPTION_DRUG_EVENTS:Timepartition:(SRVC_DT,year,month):4"
+    --fastbcp_table_config "CARRIER_CLAIMS:Timepartition:(CLM_FROM_DT,year,month):4;PRESCRIPTION_DRUG_EVENTS:Timepartition:(SRVC_DT,year,month):4" \
 ```
 
 The `Timepartition:(CLM_FROM_DT,year,month):4` syntax tells [FastBCP](https://fastbcp-docs.arpe.io/latest/documentation/cli/parallel_parameters#available-methods) to split CARRIER_CLAIMS by year and month on `CLM_FROM_DT` using 4 parallel processes. Unlike database-specific partitioning methods such as `Ctid` (PostgreSQL), `Physloc` (SQL Server), or `Rowid` (Oracle), `Timepartition` works with any source database. Each year/month combination produces a separate Parquet file under Hive-style paths (`year=YYYY/month=MM/`), which Redshift then loads in parallel across its compute slices.
