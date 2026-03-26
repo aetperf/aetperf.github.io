@@ -65,7 +65,7 @@ Vantage Express runs on a single AMP (Access Module Processor), so it does not s
 Teradata uses SPOOL space as working memory for query processing. On Vantage Express, the default is 512 MB per user, shared across all concurrent sessions. With `--n_jobs 4`, four sessions run simultaneously, each getting roughly 128 MB -- tight enough to cause spool-space errors on larger tables. We set spool space to 4 GB on both the database and the user:
 
 | Setting        | Default | Configured | Reason                                   |
-|----------------|---------|------------|------------------------------------------|
+|----------------|--------:|-----------:|------------------------------------------|
 | User SPOOL     | 512 MB  | 4 GB       | Shared across all concurrent sessions    |
 | Database SPOOL | 512 MB  | 4 GB       | Governs sessions defaulting to this DB   |
 | TEMPORARY      | not set | 512 MB     | Needed if export uses volatile/temp tables |
@@ -76,11 +76,11 @@ The `NO FALLBACK` and `NO JOURNAL` settings on the database reduce I/O overhead,
 
 The source data is the [CMS Synthetic Public Use Files (SynPUF)](https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files/cms-2008-2010-data-entrepreneurs-synthetic-public-use-file-de-synpuf), a synthetic Medicare claims dataset covering 2008--2010. It was loaded into the `SYNPUF` database from 8 CSV files (362 MB compressed), totaling 11,494,963 rows across 5 tables and about 1.4 GB on disk:
 
-| Table                    | Type                          | Rows      | Size     |
-|--------------------------|-------------------------------|-----------|----------|
-| BENEFICIARY_SUMMARY      | SET, PPI on birth date        | 343,644   | 21.5 MB  |
-| INPATIENT_CLAIMS         | MULTISET, SI on CLM_FROM_DT   | 66,773    | 14.9 MB  |
-| OUTPATIENT_CLAIMS        | SET                           | 790,790   | 134.5 MB |
+| Table                    | Type                          |      Rows |     Size |
+|--------------------------|-------------------------------:|----------:|---------:|
+| BENEFICIARY_SUMMARY      | SET, PPI on birth date        |   343,644 |  21.5 MB |
+| INPATIENT_CLAIMS         | MULTISET, SI on CLM_FROM_DT   |    66,773 |  14.9 MB |
+| OUTPATIENT_CLAIMS        | SET                           |   790,790 | 134.5 MB |
 | CARRIER_CLAIMS           | SET, NUPI                     | 4,741,335 | 841.3 MB |
 | PRESCRIPTION_DRUG_EVENTS | MULTISET, PPI on service date | 5,552,421 | 416.6 MB |
 
@@ -281,13 +281,13 @@ Total elapsed     - time (s) : 208.81
 
 The full pipeline completed in 3 minutes 29 seconds for 11.5 million rows across 5 tables.
 
-| Table                    | Rows      | Export (s) | Publish (s) |
-|--------------------------|-----------|------------|-------------|
-| BENEFICIARY_SUMMARY      | 343,644   | 4          | 8           |
-| INPATIENT_CLAIMS         | 66,773    | 3          | 10          |
-| OUTPATIENT_CLAIMS        | 790,790   | 15         | 22          |
-| PRESCRIPTION_DRUG_EVENTS | 5,552,421 | 28         | 22          |
-| CARRIER_CLAIMS           | 4,741,335 | 106        | 97          |
+| Table                    |      Rows | Export (s) | Publish (s) |
+|--------------------------|----------:|-----------:|------------:|
+| BENEFICIARY_SUMMARY      |   343,644 |          4 |           8 |
+| INPATIENT_CLAIMS         |    66,773 |          3 |          10 |
+| OUTPATIENT_CLAIMS        |   790,790 |         15 |          22 |
+| PRESCRIPTION_DRUG_EVENTS | 5,552,421 |         28 |          22 |
+| CARRIER_CLAIMS           | 4,741,335 |        106 |          97 |
 
 CARRIER_CLAIMS dominates both phases. The 97s publish time for a single 841 MB file on a single-node cluster is the natural target for improvement.
 
@@ -382,23 +382,23 @@ The export also benefits from Timepartition: FastBCP splits each large table acr
 
 Comparison of per-table publish times (1 node, single file vs. 4 nodes, 36 partitioned files):
 
-| Table                    | Rows      | 1 node (s) | 4 nodes + partitioned (s) | Speedup |
-|--------------------------|-----------|------------|---------------------------|---------|
-| BENEFICIARY_SUMMARY      | 343,644   | 8          | 7                         | 1.1x    |
-| INPATIENT_CLAIMS         | 66,773    | 10         | 5                         | 2.0x    |
-| OUTPATIENT_CLAIMS        | 790,790   | 22         | 18                        | 1.2x    |
-| PRESCRIPTION_DRUG_EVENTS | 5,552,421 | 22         | 9                         | 2.4x    |
-| CARRIER_CLAIMS           | 4,741,335 | 97         | 38                        | 2.6x    |
+| Table                    |      Rows | 1 node (s) | 4 nodes + partitioned (s) | Speedup |
+|--------------------------|----------:|-----------:|--------------------------:|--------:|
+| BENEFICIARY_SUMMARY      |   343,644 |          8 |                         7 |    1.1x |
+| INPATIENT_CLAIMS         |    66,773 |         10 |                         5 |    2.0x |
+| OUTPATIENT_CLAIMS        |   790,790 |         22 |                        18 |    1.2x |
+| PRESCRIPTION_DRUG_EVENTS | 5,552,421 |         22 |                         9 |    2.4x |
+| CARRIER_CLAIMS           | 4,741,335 |         97 |                        38 |    2.6x |
 
 The largest gains are on the two partitioned tables. CARRIER_CLAIMS drops from 97s to 38s: with 36 Parquet files, all 4 Redshift nodes participate in the `COPY` instead of a single node reading a single file.
 
 End-to-end summary:
 
-| Phase     | 1 node, no partition | 4 nodes, partitioned | Speedup |
-|-----------|---------------------|----------------------|---------|
-| Export    | 111s                | 82s                  | 1.4x    |
-| Publish   | 98s                 | 40s                  | 2.5x    |
-| **Total** | **209s**            | **121s**             | **1.7x** |
+| Phase     | 1 node, no partition | 4 nodes, partitioned | Speedup  |
+|-----------|---------------------:|---------------------:|---------:|
+| Export    |                 111s |                  82s |     1.4x |
+| Publish   |                  98s |                  40s |     2.5x |
+| **Total** |             **209s** |             **121s** | **1.7x** |
 
 ## Shutdown
 
