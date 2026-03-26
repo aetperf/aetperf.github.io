@@ -10,13 +10,11 @@ tags:
   - data engineering
 ---
 
-# Exporting Data from Teradata Vantage Express to Amazon Redshift with LakeXpress
-
-[LakeXpress](https://lakexpress-docs.arpe.io/latest/) is a command-line tool that exports data from relational databases to Parquet files and publishes them to cloud data platforms. In this post, we move a healthcare dataset from a local Teradata Vantage Express instance to Amazon Redshift, using S3 as intermediate storage. We then measure the effect of adding time-based partitioning and scaling the cluster from 1 to 4 nodes. The source runs in a VirtualBox VM on a Linux laptop; the target is a single-node `ra3.large` provisioned cluster in `eu-west-1`.
+[LakeXpress](https://lakexpress-docs.arpe.io/latest/) is a command-line tool that exports data from relational databases to Parquet files and publishes them to cloud data platforms. In this post, we move a healthcare dataset from a local Teradata Vantage Express instance to Amazon Redshift, using S3 as intermediate storage. We then measure the effect of adding time-based partitioning and scaling the target cluster from 1 to 4 nodes. The source runs in a VirtualBox VM on a Linux laptop; the target is a single-node `ra3.large` provisioned cluster in `eu-west-1`.
 
 The pipeline uses:
 
-- [Teradata Vantage](https://www.teradata.com/platform/vantagecloud) -- a commercial MPP analytics database. **Vantage Express** is the free single-node edition for development and testing.
+- [Teradata Vantage](https://www.teradata.com/platform/vantagecloud) -- a commercial MPP (massively parallel processing database) analytics database. **Vantage Express** is the free single-node edition for development and testing.
 - [Amazon Redshift](https://aws.amazon.com/redshift/) -- AWS's cloud data warehouse, originally forked from PostgreSQL 8.0. It uses columnar storage and an MPP architecture while retaining the PostgreSQL wire protocol and most of the SQL dialect.
 - [Amazon S3](https://aws.amazon.com/s3/) -- object storage, used here as the intermediate landing zone for exported Parquet files.
 - [Amazon Redshift Spectrum](https://docs.aws.amazon.com/redshift/latest/dg/c-using-spectrum.html) -- a Redshift feature that queries data directly in S3 via external tables, without loading it into the cluster.
