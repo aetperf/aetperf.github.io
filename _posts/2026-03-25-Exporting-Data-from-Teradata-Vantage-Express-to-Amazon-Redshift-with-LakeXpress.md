@@ -26,7 +26,7 @@ The pipeline uses:
 
 - [Teradata Vantage Express in VirtualBox](#teradata-vantage-express-in-virtualbox)
 - [The SynPUF dataset](#the-synpuf-dataset)
-- [SQL Server as log database](#sql-server-as-log-database)
+- [SQL Server as configuration and log database](#sql-server-as-configuration-and-log-database)
 - [S3 bucket](#s3-bucket)
 - [Amazon Redshift cluster](#amazon-redshift-cluster)
 - [Credentials file](#credentials-file)
@@ -86,9 +86,9 @@ The source data is the [CMS Synthetic Public Use Files (SynPUF)](https://www.cms
 
 The schema uses Teradata-specific features: SET and MULTISET tables, Partitioned Primary Indexes (PPI), a Secondary Index, and a Non-Unique Primary Index (NUPI). The database also includes a view (`V_BENEFICIARY_CLAIMS_SUMMARY`), a macro (`CLAIMS_SUMMARY_BY_YEAR`), and a stored procedure (`CALC_MEMBER_RISK_SCORES`). LakeXpress exports tables only.
 
-## SQL Server as log database
+## SQL Server as configuration and log database
 
-LakeXpress stores export metadata and job tracking information in a relational log database. Here we use SQL Server 2022 running in a Docker container.
+LakeXpress uses a relational database — here SQL Server 2022 running in a Docker container — to store both the export configuration and the job tracking information. When we create a configuration, it is persisted in this database, and LakeXpress reads it back at runtime to drive the export. In that sense, LakeXpress together with its database acts as an orchestrator: the database holds the what and the how, while the LakeXpress engine executes accordingly and logs progress back into the same database.
 
 ## S3 bucket
 
@@ -208,6 +208,23 @@ The configuration below exports from the Teradata `SYNPUF` schema, writes Parque
     --publish_table_pattern "{schema}_{table}" \
     --publish_target redshift_classic
 ```
+
+Here is a breakdown of each argument:
+
+| Argument | Description |
+|---|---|
+| `-a` | Path to the JSON credentials file containing connection details for all components (LakeXpress DB, source database, storage, and publishing targets). |
+| `--lxdb_auth_id` | Identifier in the credentials file for the LakeXpress database, where configuration and job tracking information are stored. |
+| `--source_db_auth_id` | Identifier in the credentials file for the source database to export from. |
+| `--source_db_name` | Name of the source database. |
+| `--source_schema_name` | Source schema name to export. Supports SQL `LIKE` patterns (e.g. `prod_%`). |
+| `--n_jobs` | Number of parallel table export jobs. |
+| `--target_storage_id` | Identifier in the credentials file for the cloud storage destination. |
+| `--sub_path` | Sub-path inserted between the base storage path and the schema directory, also available as the `{subpath}` token in naming patterns. |
+| `--publish_method` | `internal` loads data into the target database; `external` registers tables pointing at cloud storage. |
+| `--publish_schema_pattern` | Dynamic schema naming using tokens such as `{schema}`, `{subpath}`, `{date}`, `{timestamp}`. |
+| `--publish_table_pattern` | Dynamic table naming using the same tokens. Must include `{table}`. |
+| `--publish_target` | Identifier in the credentials file for the target data platform where tables are published. |
 
 This returns a `sync_id` that identifies the configuration for subsequent operations.
 
