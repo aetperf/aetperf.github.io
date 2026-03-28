@@ -42,7 +42,7 @@ This post implements seven algorithms in [Cython](https://cython.org/), tests th
 - [Shewchuk summation](#shewchuk)
 - [Accuracy comparison](#accuracy)
 - [Accupy](#accupy)
-- [Ill condition numbers](#condition)
+- [Ill conditioned cases](#condition)
 - [Performance](#performance)
 - [References](#references)
 
@@ -538,7 +538,7 @@ compute_and_print(a, s_true)
 
 Recursive and pairwise sums are off by tens of thousands. Kahan reduces the error but is still off by thousands. Neumaier is accurate to 12 digits, while Klein, Shewchuk, and `math.fsum` return the exact `float64` result.
 
-## Ill condition numbers<a name="condition"></a>
+## Ill conditioned cases<a name="condition"></a>
 
 Accupy also returns the condition number as an mpmath `mpf` (arbitrary-precision float):
 
@@ -555,8 +555,6 @@ np.float64(cond)
 ```
 
     1.6179193750383511e+21
-
-The condition number measures the intrinsic sensitivity of the summation problem to rounding errors. As noted in [[1]](#ref1), the relative error of every fixed-precision summation algorithm is proportional to this quantity. It is a property of the data, not of the method.
 
 We can compute it ourselves for arbitrary arrays. The accuracy here comes from `math.fsum`, which tracks exact residuals for `float64` inputs, not from extended-precision types.
 
