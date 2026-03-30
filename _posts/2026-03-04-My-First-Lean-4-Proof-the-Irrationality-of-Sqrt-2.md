@@ -164,7 +164,7 @@ theorem sqrt2_irrat : ¬ ∃ m n : ℕ, 2 * m ^ 2 = n ^ 2 ∧ Nat.Coprime m n :=
 - `hmn` names the proof of `2 * m ^ 2 = n ^ 2` (left of `∧`)
 - `hcop` names the proof of `Nat.Coprime m n` (right of `∧`)
 
-These are not keywords — any names would work. The `h` prefix is just a Lean convention for hypotheses.
+These are not keywords, any names would work. The `h` prefix is just a Lean convention for hypotheses.
 
 ### Step 2 — Show $2 \mid n$
 
