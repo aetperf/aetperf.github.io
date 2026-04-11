@@ -16,6 +16,8 @@ google_analytics: G-B2W567YB76
 show_excerpts: false
 
 # Build settings
+sass:
+  quiet_deps: true
 theme: minima
 # remote_theme: jekyll/minima
 
