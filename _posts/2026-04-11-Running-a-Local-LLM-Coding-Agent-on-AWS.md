@@ -613,6 +613,7 @@ Then re-establish the SSH tunnel locally with the new IP:
 
 ```bash
 ssh -i ~/keys/my-key-pair.pem -L 8080:localhost:8080 ubuntu@$PUBLIC_IP -N &
+opencode
 ```
 
 ### Full teardown
@@ -665,20 +666,9 @@ aws ec2 describe-instances \
 
 If this returns nothing, all compute resources are gone and billing has stopped.
 
-### Shell variables reference
-
-For copy-paste convenience, here are the variables used throughout this post:
-
-```bash
-SG_ID=sg-0example1234abcde
-INSTANCE_ID=i-0example1234abcde
-PUBLIC_IP=198.51.100.10
-AMI_ID=ami-0a54beb9cdef7558b
-```
-
 ## 14. Cost
 
-All prices are for eu-west-1 (Ireland) as of April 2026.
+All prices below are for reference only, collected on 2026-04-11 for eu-west-1 (Ireland).
 
 ### Running costs
 
