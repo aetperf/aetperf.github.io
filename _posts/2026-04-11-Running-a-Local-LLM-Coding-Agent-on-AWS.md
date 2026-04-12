@@ -361,7 +361,7 @@ curl -s http://localhost:8080/v1/chat/completions \
   }'
 ```
 
-The llama-server request log reports about **24 tokens/second** generation (decode) speed on the A10G. Prompt evaluation (prefill) is much faster, typically 100+ tok/s. Decode is the bottleneck you feel: that's how fast the model writes its answer. Qwen3.5 uses a "thinking" mode by default, so the response includes both `reasoning_content` (internal chain of thought) and `content` (the visible answer). Most tokens go to thinking. A simple "Say hello" prompt burns ~1200 tokens of reasoning before producing a one-line answer. `max_tokens` covers both, so set it generously.
+The llama-server request log reports about 24 tokens/second generation (decode) speed on the A10G. Prompt evaluation (prefill) is much faster, typically 100+ tok/s. Decode is the bottleneck you feel: that's how fast the model writes its answer. Qwen3.5 uses a "thinking" mode by default, so the response includes both `reasoning_content` (internal chain of thought) and `content` (the visible answer). Most tokens go to thinking. A simple "Say hello" prompt burns ~1200 tokens of reasoning before producing a one-line answer. `max_tokens` covers both, so set it generously.
 
 Thinking can be disabled two ways. `/no_think` at the start of the user prompt is a soft toggle: the model is asked not to think, but the template is still there, so it may think anyway. Passing `"chat_template": "chatml"` in the API request is harder: it strips the thinking tokens from the template entirely. Both make responses faster. For well-defined coding tasks where the instructions are already precise, disabling thinking is a reasonable trade-off.
 
@@ -676,15 +676,15 @@ All prices below are for reference only, collected on 2026-04-11 for eu-west-1 (
 |-----------|-----------|------|
 | g5.xlarge compute | \$1.12/hour | ~\$0.59/hour |
 | 80 GB gp3 EBS volume | \$0.0096/hour | \$0.0096/hour |
-| **Total** | **~\$1.13/hour** | **~\$0.60/hour** |
+| Total | ~\$1.13/hour | ~\$0.60/hour |
 
 The EBS volume adds less than a cent per hour. Compute dominates.
 
 ### Idle costs
 
-When the instance is **stopped**, compute billing stops but the EBS volume persists: 80 GB × \$0.088/GB/month = **\$7.04/month** (~\$0.23/day).
+When the instance is stopped, compute billing stops but the EBS volume persists: 80 GB × \$0.088/GB/month = \$7.04/month (~\$0.23/day).
 
-A cheaper alternative: terminate the instance and keep only an **AMI snapshot**. Snapshot storage is \$0.05/GB/month, so 80 GB = **\$4/month**. Launching a new spot instance from that snapshot takes a couple of minutes, with no need to rebuild llama.cpp or re-download the model.
+A cheaper alternative: terminate the instance and keep only an AMI snapshot. Snapshot storage is \$0.05/GB/month, so 80 GB = \$4/month. Launching a new spot instance from that snapshot takes a couple of minutes, with no need to rebuild llama.cpp or re-download the model.
 
 ### Spot instances
 
