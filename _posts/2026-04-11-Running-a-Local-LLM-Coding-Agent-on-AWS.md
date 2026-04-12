@@ -674,25 +674,25 @@ All prices below are for reference only, collected on 2026-04-11 for eu-west-1 (
 
 | Component | On-demand | Spot |
 |-----------|-----------|------|
-| g5.xlarge compute | \$1.12/hour | ~\$0.59/hour |
-| 80 GB gp3 EBS volume | \$0.0096/hour | \$0.0096/hour |
-| Total | ~\$1.13/hour | ~\$0.60/hour |
+| g5.xlarge compute | <span>$</span>1.12/hour | ~<span>$</span>0.59/hour |
+| 80 GB gp3 EBS volume | <span>$</span>0.0096/hour | <span>$</span>0.0096/hour |
+| Total | ~<span>$</span>1.13/hour | ~<span>$</span>0.60/hour |
 
 The EBS volume adds less than a cent per hour. Compute dominates.
 
 ### Idle costs
 
-When the instance is stopped, compute billing stops but the EBS volume persists: 80 GB × \$0.088/GB/month = \$7.04/month (~\$0.23/day).
+When the instance is stopped, compute billing stops but the EBS volume persists: 80 GB × <span>$</span>0.088/GB/month = <span>$</span>7.04/month (~<span>$</span>0.23/day).
 
-A cheaper alternative: terminate the instance and keep only an AMI snapshot. Snapshot storage is \$0.05/GB/month, so 80 GB = \$4/month. Launching a new spot instance from that snapshot takes a couple of minutes, with no need to rebuild llama.cpp or re-download the model.
+A cheaper alternative: terminate the instance and keep only an AMI snapshot. Snapshot storage is <span>$</span>0.05/GB/month, so 80 GB = <span>$</span>4/month. Launching a new spot instance from that snapshot takes a couple of minutes, with no need to rebuild llama.cpp or re-download the model.
 
 ### Spot instances
 
-Spot prices for g5.xlarge in eu-west-1 have been stable over the past week, between \$0.58 and \$0.60, roughly half on-demand. Interruption risk exists but is low at these price levels. And since the setup can be baked into a custom AMI, a reclaimed spot instance can be replaced in minutes.
+Spot prices for g5.xlarge in eu-west-1 have been stable over the past week, between <span>$</span>0.58 and <span>$</span>0.60, roughly half on-demand. Interruption risk exists but is low at these price levels. And since the setup can be baked into a custom AMI, a reclaimed spot instance can be replaced in minutes.
 
 ### Comparison with API providers
 
-A full working day on a spot instance costs around \$5. For that budget, you can make hundreds of API calls to Claude Sonnet or GPT-4o, both of which are considerably stronger than a 27B quantized model (longer context, better reasoning, better instruction following). But the things self-hosting buys you are data privacy and no rate limits.
+A full working day on a spot instance costs around <span>$</span>5. For that budget, you can make hundreds of API calls to Claude Sonnet or GPT-4o, both of which are considerably stronger than a 27B quantized model (longer context, better reasoning, better instruction following). But the things self-hosting buys you are data privacy and no rate limits.
 
 ### Other GPU providers
 
