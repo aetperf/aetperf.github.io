@@ -499,7 +499,7 @@ Qwen3.5-27B scored **29/30 points (97%)** via llama.cpp, with the following brea
 The only miss is TC-11 (Simple Math): the model reached for the calculator tool to compute 15% of 200 instead of just answering. Correct result, unnecessary tool call.
 
 <p align="center">
-  <img src="/img/2026-04-11_01/toolcall-15_02.png" alt="ToolCall-15 results for Qwen3.5-27B" width="600" /><br>
+  <img src="/img/2026-04-11_01/toolcall-15_02.png" alt="ToolCall-15 results for Qwen3.5-27B" width="900" /><br>
   <b>ToolCall-15 results for Qwen3.5-27B (29/30)</b>
 </p>
 
