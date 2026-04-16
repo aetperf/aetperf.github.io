@@ -535,7 +535,7 @@ The model produced 981 lines of source code across 12 files. All 22 unit tests p
 
 ## 13. Stop, Restart, and Teardown
 
-Back on the **local machine**.
+Still on the **local machine**.
 
 ### Stopping the instance (pause billing)
 
