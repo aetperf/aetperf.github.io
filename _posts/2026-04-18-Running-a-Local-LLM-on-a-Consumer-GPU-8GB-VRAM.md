@@ -176,7 +176,7 @@ Qwen3.5 produces `<think>...</think>` tokens before each response. A short quest
 | `--reasoning off` | Disable thinking entirely, all tokens go to `content` |
 | `--reasoning auto` | Think by default (detected from the model's chat template), but respect `/no_think` and `/think` hints in the prompt to toggle per-request |
 
-`--reasoning-budget N` caps thinking tokens per response. At 2048 the model has room to plan without consuming too much of the 131K context window; 0 disables thinking, -1 removes the cap.
+`--reasoning-budget N` caps thinking tokens per response. At 2048 the model has room to plan without too much latency before the reply begins (around 34 seconds of thinking at 60 tok/s); 0 disables thinking, -1 removes the cap.
 
 ### Server log
 
@@ -345,7 +345,8 @@ We gave the model the following prompt through OpenCode:
 >- No external libraries, besides Cython, NumPy, Pandas. 
 >- Include unit tests. 
 >- Handle edge cases (empty strings, identical strings, unicode). 
->- Benchmark against a naive version. Vectorize for batch comparison. 
+>- Benchmark against a naive version.
+>- Vectorize for batch comparison. 
 >- Make it NumPy-friendly. Avoid Python lists for matches (use arrays / bitsets).
 
 <p align="center">
@@ -388,7 +389,9 @@ The 51 tests pass because their expected ranges match the implementation's outpu
 
 We asked the model to fix these failures across many follow-up prompts. Each time, it assured us the implementation was correct and the tests were passing. The bugs stayed.
 
-The 9B model produces output that *looks* correct (professional layout, docstrings, type hints, a passing test suite) while being quietly wrong underneath. Verdict: the Jaro-Winkler implementation is kind of rubbish.
+The 9B model produces output that *looks* correct (professional layout, docstrings, type hints, a passing test suite) while being quietly wrong underneath.
+
+Verdict: the Jaro-Winkler implementation is kind of rubbish.
 
 ## 9. Stopping the Server
 
@@ -402,6 +405,6 @@ $ pkill -f llama-server
 
 The 9B quantized model fits on an 8 GB consumer GPU at 131K context. Q4_0 compression holds the KV cache to 1152 MiB at that length.
 
-Compared to the 27B model on an A10G, we lose tool-call quality (87/100 vs 97/100 on ToolCall-15, though both failures are formatting issues rather than reasoning failures), decode speed (60 vs ~80 tok/s), and VRAM headroom (1.1 GB free vs ~17 GB). Thinking tokens add 3-5 seconds of latency before short answers.
+Compared to the 27B model on an A10G, we gain decode speed (60 vs 24 tok/s, the smaller model fits the laptop's memory bandwidth better). We lose tool-call quality (87/100 vs 97/100 on ToolCall-15, though both failures are formatting issues rather than reasoning failures) and VRAM headroom (1.1 GB free vs ~5 GB, though the two runs used different context settings). Thinking tokens add 3-5 seconds of latency before short answers.
 
 For local development and private experimentation the setup is practical. For reliable tool use or long-context coding sessions, the 27B model on a larger GPU is a stronger choice. Our setup choices for the 9B run may also not have been ideal; a different configuration might narrow the gap.
