@@ -153,7 +153,7 @@ $ ~/Workspace/llama.cpp/build/bin/llama-server \
 
 ### Parallel slots (`-np`)
 
-`-np` controls how many requests the server handles simultaneously, with each slot reserving its own GPU memory. The default is `-np 4`, but for a single-user setup `-np 1` dedicates all resources to one request and saves memory. Some per-slot buffers scale with slot count: 201 MiB with 4 slots vs 50 MiB with 1 slot.
+`-np` controls how many requests the server handles simultaneously. The default is auto (`-np -1`), which usually resolves to 4 slots with unified-KV enabled. For a single-user setup `-np 1` caps all per-slot buffers at their minimum size. In this hybrid model the recurrent-memory buffer alone goes from 50 MiB (1 slot) to 201 MiB (4 slots), and the KV cache scales similarly unless unified-KV mode is enabled; at 131K context that is the difference between ~1.2 GB and several GB.
 
 ### Context window (`-c`)
 
