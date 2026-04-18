@@ -1,8 +1,22 @@
 ---
-layout: post
 title: Running a Local LLM on a Consumer GPU (8 GB VRAM)
+layout: post
+comments: true
+author: François Pacull
 date: 2026-04-18
-categories: [llm]
+categories: [LLM]
+tags:
+- LLM
+- Qwen
+- llama.cpp
+- GPU
+- laptop
+- OpenCode
+- coding agent
+- tool calling
+- GGUF
+- quantization
+image: /img/2026-04-18_01/gpu_poor.jpeg
 ---
 
 <p align="center">
