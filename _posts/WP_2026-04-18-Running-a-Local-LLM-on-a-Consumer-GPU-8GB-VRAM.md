@@ -4,7 +4,7 @@
   <b>Any spare VRAM?</b>
 </p>
 
-In a [previous post](https://aetperf.github.io/llm/aws/2026/04/11/Running-a-Local-LLM-Coding-Agent-on-AWS.html), we ran [Qwen3.5-27B](https://huggingface.co/Qwen/Qwen3.5-27B) on an AWS `g5.xlarge` with an NVIDIA A10G (24 GB VRAM). This follow-up covers the same workflow on a consumer laptop GPU with 8 GB VRAM, using [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B), [llama.cpp](https://github.com/ggml-org/llama.cpp) for inference, and [ToolCall-15](https://github.com/stevibe/ToolCall-15) for evaluation. This is mostly out of curiosity; we do not expect anything.
+In a [previous post](https://www.architecture-performance.fr/ap_blog/running-a-local-llm-coding-agent-on-aws/), we ran [Qwen3.5-27B](https://huggingface.co/Qwen/Qwen3.5-27B) on an AWS `g5.xlarge` with an NVIDIA A10G (24 GB VRAM). This follow-up covers the same workflow on a consumer laptop GPU with 8 GB VRAM, using [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B), [llama.cpp](https://github.com/ggml-org/llama.cpp) for inference, and [ToolCall-15](https://github.com/stevibe/ToolCall-15) for evaluation. This is mostly out of curiosity; we do not expect anything.
 
 **Outline**
 
@@ -273,7 +273,7 @@ Installing opencode version: 1.4.6
 
 ### Configure
 
-We add the 9B model entry to the existing `~/.config/opencode/config.json` from the [previous post](https://aetperf.github.io/llm/aws/2026/04/11/Running-a-Local-LLM-Coding-Agent-on-AWS.html), sharing the same provider and base URL:
+We add the 9B model entry to the existing `~/.config/opencode/config.json` from the [previous post](https://www.architecture-performance.fr/ap_blog/running-a-local-llm-coding-agent-on-aws/), sharing the same provider and base URL:
 
 ```json
 {
