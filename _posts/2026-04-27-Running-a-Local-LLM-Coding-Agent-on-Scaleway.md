@@ -956,7 +956,7 @@ If `project delete` succeeds, every billable resource is gone.
 
 All prices below are in EUR before tax, collected 2026-04-27 from `scaleway.com/en/pricing/gpu/` and `scaleway.com/en/pricing/storage/`, for the `fr-par-2` zone.
 
-Before launching, set a budget alert at the [Scaleway Console](https://console.scaleway.com/billing/budget). I configured a €100 budget with a notification trigger at 90%. A forgotten running L40S burns through that in roughly three days, so the alert reaches the inbox while there's still time to react.
+Before launching, set a budget alert at the [Scaleway Console](https://console.scaleway.com/billing/budget). We configured a €100 budget with a notification trigger at 90%. A forgotten running L40S burns through that in roughly three days, so the alert reaches the inbox while there's still time to react.
 
 ### Hourly running cost
 
