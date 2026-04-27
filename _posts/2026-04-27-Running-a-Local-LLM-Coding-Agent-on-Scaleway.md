@@ -947,7 +947,7 @@ pkill -f "ssh.*scaleway-l40s"
 
 # delete the project itself; this fails if any resource is left in it,
 # which makes it a good final check
-scw account project delete $PROJECT_ID
+scw account project delete project-id=$PROJECT_ID
 ```
 
 If `project delete` succeeds, every billable resource is gone.
