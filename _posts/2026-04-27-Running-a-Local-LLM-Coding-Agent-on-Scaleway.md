@@ -967,12 +967,14 @@ Before launching, set a budget alert at the [Scaleway Console](https://console.s
 | Zonal Flexible IPv4 (routed) | €0.004/hour | €0.0040 |
 | **Total running** | | **€1.4158/hour** |
 
-Compute dominates. Every Scaleway Instance IPv4 is billable. The session produced lines totalling €3.11: €3.04 compute, €0.05 volume, €0.02 IP. Two notes on the math: (a) per the [Scaleway docs](https://www.scaleway.com/en/docs/instances/faq/#how-are-instances-billed), GPU Instances are billed per minute of uptime (including startup and standby), so €3.04 implies ~130 minutes at €0.023332/min (b) Volume and IP start billing at provisioning, before compute comes up, and continue ticking through brief stop/start cycles, so their line items are slightly larger than `compute_hours × per-hour rate` would suggest. The Console screenshot below was taken the next morning and shows **€3.60**: the extra ~€0.49 is overnight idle on the stopped instance, since block volume + Zonal Flexible IP keep ticking at €0.0158/hour while compute is paused.
+Compute dominates. Every Scaleway Instance IPv4 is billable. The session produced lines totalling €3.11: €3.04 compute, €0.05 volume, €0.02 IP. Two notes on the math: (a) per the [Scaleway docs](https://www.scaleway.com/en/docs/instances/faq/#how-are-instances-billed), GPU Instances are billed per minute of uptime (including startup and standby), so €3.04 implies ~130 minutes at €0.023332/min (b) Volume and IP might start billing at provisioning, before compute comes up. The Console screenshot below was taken the next morning and shows **€3.60**: the extra ~€0.49 is overnight idle on the stopped instance, since block volume + Zonal Flexible IP keep ticking at €0.0158/hour while compute is paused.
 
 <p align="center">
   <img src="/img/2026-04-27_01/billing_01.png" alt="Scaleway Console billing page showing €3.60 total" width="600" /><br>
   <b>Scaleway Console billing page the morning after the run: €3.60 total (€3.11 active session + overnight idle)</b>
 </p>
+
+The following idle costs is theoretical, from what we read.
 
 ### Idle cost: instance stopped
 
