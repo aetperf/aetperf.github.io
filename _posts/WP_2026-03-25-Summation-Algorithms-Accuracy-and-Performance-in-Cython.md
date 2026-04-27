@@ -32,7 +32,7 @@ This post implements seven algorithms in [Cython](https://cython.org/), tests th
 
 All implementations below are written in Cython, a typed superset of Python that compiles to C. Each algorithm's inner loop is a `cdef` function callable only from C, wrapped by a thin `cpdef` function exposed to Python.
 
-[Accupy](https://github.com/sigma-py/accupy/) by Nico Schlömer is a neat little package that generates ill-conditioned sums with known exact results, computed with arbitrary-precision arithmetic via [mpmath](https://mpmath.org/). It lets you dial in a target condition number and get back an array plus its true sum, which is exactly what you need to stress-test summation algorithms. Unfortunately it does not appear to be maintained anymore and requires NumPy < 2 (the latest version is 2.4.3 at the time of writing), so a dedicated environment is needed.
+[Accupy](https://github.com/sigma-py/accupy/) by Nico Schlömer is a neat little package that generates ill-conditioned sums with known exact results, computed with arbitrary-precision arithmetic via [mpmath](https://mpmath.org/). It lets you dial in a target condition number and get back an array plus its true sum, which is exactly what you need to stress-test summation algorithms. Unfortunately it does not appear to be maintained anymore and requires NumPy < 2 [the latest version is 2.4.3 at the time of writing], so a dedicated environment is needed.
 
 ```python
 import math
@@ -63,7 +63,7 @@ $$\text{cond} = \frac{\sum_{i=0}^{n-1} |x_i|}{\left|\sum_{i=0}^{n-1} x_i\right|}
 
 When all terms share the same sign the condition number is 1 and the error stays modest. Heavy cancellation, i.e. $\|\sum x_i \| \ll \sum \|x_i\|$, drives it up, amplifying rounding errors accordingly. As Goldberg puts it [[3]](#ref3):
 
-> "The evaluation of any expression containing a subtraction (or an addition of quantities with opposite signs) could result in a relative error so large that *all* the digits are meaningless."
+> "The evaluation of any expression containing a subtraction [or an addition of quantities with opposite signs] could result in a relative error so large that *all* the digits are meaningless."
 
 The error bound also depends on the order in which terms are added, since accumulating a large partial sum before adding small terms loses more low-order bits than the reverse. From Higham [[2]](#ref2):
 
@@ -522,7 +522,7 @@ Recursive and pairwise sums are off by tens of thousands. Kahan reduces the erro
 
 ## Ill conditioned cases<a name="condition"></a>
 
-Accupy also returns the condition number as an mpmath `mpf` (arbitrary-precision float):
+Accupy also returns the condition number as an mpmath `mpf` [arbitrary-precision float]:
 
 ```python
 cond
@@ -752,7 +752,7 @@ _ = ax.set(
   <img width="600" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2026-03-25_01/output_60_0.png" alt="Timings without Shewchuk and math.fsum">
 </p>
 
-Pairwise summation achieves $O(u \log n)$ accuracy at nearly the same speed as recursive summation, thanks to SIMD-friendly memory access patterns. The compensated methods (Kahan, Neumaier, Klein) cost more. Shewchuk's growable partials list involves branching and dynamic memory management on every element, which accounts for the large gap.
+Pairwise summation achieves $O(u \log n)$ accuracy at nearly the same speed as recursive summation, thanks to SIMD-friendly memory access patterns. The compensated methods [Kahan, Neumaier, Klein] cost more. Shewchuk's growable partials list involves branching and dynamic memory management on every element, which accounts for the large gap.
 
 For well-conditioned sums, pairwise summation gives the best accuracy per cycle. When condition numbers go above $\approx 10^{15}$, only Shewchuk / `math.fsum` can be trusted. But a wise advice from Higham [[2]](#ref2) is:
 

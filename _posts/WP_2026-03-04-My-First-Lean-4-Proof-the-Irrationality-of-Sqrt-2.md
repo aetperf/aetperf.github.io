@@ -7,13 +7,13 @@ Formal verification uses computers to automatically check whether proofs are cor
 
 ## Getting started on Linux
 
-I installed `elan` (Lean's version manager) with `curl`:
+I installed `elan` [Lean's version manager] with `curl`:
 
 ```bash
 curl https://elan.lean-lang.org/elan-init.sh -sSf | sh
 ```
 
-This sets up `lean` and `lake` (the build tool):
+This sets up `lean` and `lake` [the build tool]:
 
 ```bash
 $ elan --version
@@ -100,7 +100,7 @@ Build completed successfully.
 
 Zero errors, zero `sorry`s: the proof is machine-checked.
 
-The `#print axioms` line at the end asks Lean to list the foundational axioms the proof relies on. The three it reports, `propext` (propositional extensionality), `Classical.choice` (the axiom of choice), and `Quot.sound` (quotient soundness), are Lean's standard axioms. Every non-trivial Mathlib proof depends on them.
+The `#print axioms` line at the end asks Lean to list the foundational axioms the proof relies on. The three it reports, `propext` [propositional extensionality], `Classical.choice` [the axiom of choice], and `Quot.sound` [quotient soundness], are Lean's standard axioms. Every non-trivial Mathlib proof depends on them.
 
 Let's walk through the code.
 
@@ -110,7 +110,7 @@ Let's walk through the code.
 
 The two `import` lines are the same as in the full proof above. `import` loads Mathlib modules. The first brings in facts about GCD and coprimality of natural numbers. The second gives us general-purpose tactics like `linarith`, `ring_nf`, and `norm_num`.
 
-In Lean, we can write proofs in two ways. In term mode, we construct the proof directly as an expression, like writing a program that returns the right type. In tactic mode, we start from a goal (the thing we want to prove) and apply step-by-step commands that transform it until nothing is left to prove. Each command is a tactic. Something like `exact` just hands Lean the answer directly. Others do real work: `linarith` solves goals by linear arithmetic, `rintro` breaks apart hypotheses into pieces.
+In Lean, we can write proofs in two ways. In term mode, we construct the proof directly as an expression, like writing a program that returns the right type. In tactic mode, we start from a goal [the thing we want to prove] and apply step-by-step commands that transform it until nothing is left to prove. Each command is a tactic. Something like `exact` just hands Lean the answer directly. Others do real work: `linarith` solves goals by linear arithmetic, `rintro` breaks apart hypotheses into pieces.
 
 We enter tactic mode by writing `by`, and from there it's one tactic per line, each one chipping away at the goal. This proof uses tactic mode throughout.
 
