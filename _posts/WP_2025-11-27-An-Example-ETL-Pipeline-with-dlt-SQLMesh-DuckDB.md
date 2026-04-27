@@ -1,4 +1,3 @@
-# An Example ETL Pipeline with dlt + SQLMesh + DuckDB
 
 <p align="center">
   <img width="400" src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2025-11-27_01/postmodern.jpg?raw=true" alt="A Typical postmodern painting, AI generated">
