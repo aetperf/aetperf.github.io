@@ -757,8 +757,11 @@ INSTANCE_ID=$(scw instance server list project-id=$PROJECT_ID -o json \
 SG_ID=$(scw instance security-group list project-id=$PROJECT_ID -o json \
   | jq -r '.[] | select(.name=="llm-exploration-sg") | .id')
 
+# Verify before proceeding.
+echo "PROJECT_ID=$PROJECT_ID  INSTANCE_ID=$INSTANCE_ID  SG_ID=$SG_ID"
+
 VOLUME_ID=$(scw instance server get $INSTANCE_ID zone=fr-par-2 -o json \
-  | jq -r '.volumes["0"].id')
+  | jq -r '.Volumes[0].id')
 
 PUBLIC_IP=$(scw instance server get $INSTANCE_ID zone=fr-par-2 -o json \
   | jq -r '.public_ips[0].address')
@@ -853,7 +856,7 @@ Snapshot storage (€0.000044/GB/hour) is roughly a third of the idle-volume rat
 
 ```bash
 VOLUME_ID=$(scw instance server get $INSTANCE_ID zone=fr-par-2 \
-  -o json | jq -r '.volumes["0"].id')
+  -o json | jq -r '.Volumes[0].id')
 echo $VOLUME_ID
 
 SNAPSHOT_ID=$(scw block snapshot create \
@@ -898,6 +901,7 @@ INSTANCE_ID=$(scw instance server create \
   ip=new \
   security-group-id=$SG_ID \
   project-id=$PROJECT_ID \
+  tags.0=llm-exploration \
   -o json | jq -r .id)
 ```
 
