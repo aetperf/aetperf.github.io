@@ -769,6 +769,23 @@ PUBLIC_IP=$(scw instance server get $INSTANCE_ID zone=fr-par-2 -o json \
 
 This works because every resource was created inside a dedicated project (§1 step 3), with a known name or tag. For longer-lived deployments, Terraform / OpenTofu / Pulumi are the right tools.
 
+### Stopping llama-server
+
+`Ctrl+C` inside the tmux session works, but the cleanest one-shot (run on the **remote instance**) is:
+
+```bash
+tmux kill-session -t llmserver
+```
+
+This kills the session and the server process in one step, freeing VRAM. Verify:
+
+```bash
+ss -tlnp | grep 8080                                          # should print nothing
+nvidia-smi --query-gpu=memory.used --format=csv               # should drop near 0
+```
+
+Useful if you want to relaunch llama-server with different flags (e.g. a larger `--ctx-size`) without rebooting the instance.
+
 ### Stopping the instance
 
 Compute billing pauses. Volume and IP continue at ≈ €0.38/day combined. Everything on the volume survives.
