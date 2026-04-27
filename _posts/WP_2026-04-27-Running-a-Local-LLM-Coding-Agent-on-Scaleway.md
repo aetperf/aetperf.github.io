@@ -1,5 +1,5 @@
 
-This is the Scaleway sequel to two previous posts on self-hosted coding agents: the [AWS run](/llm/aws/2026/04/11/Running-a-Local-LLM-Coding-Agent-on-AWS.html) where we deployed a 27B model on a g5.xlarge, and the [consumer-GPU experiment](/llm/2026/04/18/Running-a-Local-LLM-on-a-Consumer-GPU-8GB-VRAM.html) where we squeezed a smaller model into 8 GB of laptop VRAM. The procedure is the same; the hardware and the model are bigger. We deploy [Qwen3.6-35B-A3B](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF) on a single [NVIDIA L40S GPU](https://www.nvidia.com/en-us/data-center/l40s/), serve it with [llama.cpp](https://github.com/ggml-org/llama.cpp), wire it to [OpenCode](https://opencode.ai), and run [ToolCall-15](https://github.com/stevibe/ToolCall-15) to measure tool-calling quality. Qwen3.6-35B-A3B is a Mixture-of-Experts model with 35B total parameters but only 3B active per token, so decode is fast despite the model size. The quantization is Unsloth's [UD-Q6_K_XL](https://unsloth.ai/) at ~30 GB, which fits in the L40S's 48 GB of VRAM with enough headroom for a 64K-token KV cache. Everything runs on a single `L40S-1-48G` instance in `fr-par-2`.
+This is the Scaleway sequel to two previous posts on self-hosted coding agents: the [AWS run](https://www.architecture-performance.fr/ap_blog/running-a-local-llm-coding-agent-on-aws/) where we deployed a 27B model on a g5.xlarge, and the [consumer-GPU experiment](https://www.architecture-performance.fr/ap_blog/running-a-local-llm-coding-agent-on-aws/) where we squeezed a smaller model into 8 GB of laptop VRAM. The procedure is the same; the hardware and the model are bigger. We deploy [Qwen3.6-35B-A3B](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF) on a single [NVIDIA L40S GPU](https://www.nvidia.com/en-us/data-center/l40s/), serve it with [llama.cpp](https://github.com/ggml-org/llama.cpp), wire it to [OpenCode](https://opencode.ai), and run [ToolCall-15](https://github.com/stevibe/ToolCall-15) to measure tool-calling quality. Qwen3.6-35B-A3B is a Mixture-of-Experts model with 35B total parameters but only 3B active per token, so decode is fast despite the model size. The quantization is Unsloth's [UD-Q6_K_XL](https://unsloth.ai/) at ~30 GB, which fits in the L40S's 48 GB of VRAM with enough headroom for a 64K-token KV cache. Everything runs on a single `L40S-1-48G` instance in `fr-par-2`.
 
 **Outline**
 
@@ -53,7 +53,7 @@ UserAgentPrefix  scaleway-cli
 **2.** Generate an API key at `https://console.scaleway.com/iam/api-keys`, then run `scw init`. A **CLI profile** is a local entry in `~/.config/scw/config.yaml`; a **Scaleway Project** is a server-side billing/IAM scope. We use the default project for `scw init` only, then create a dedicated `llm-exploration` project in step 3.
 
 <p align="center">
-  <img src="/img/2026-04-27_01/api_key_01.png" alt="Create the API key on the Scaleway web console" width="900" /><br>
+  <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2026-04-27_01/api_key_01.png" alt="Create the API key on the Scaleway web console" width="900" /><br>
   <b>Create the API key on the Scaleway web console</b>
 </p>
 
@@ -62,7 +62,7 @@ scw init
 ```
 
 <p align="center">
-  <img src="/img/2026-04-27_01/scw_init_01.png" alt="Scaleway CLI scw init splash screen" width="600" /><br>
+  <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2026-04-27_01/scw_init_01.png" alt="Scaleway CLI scw init splash screen" width="600" /><br>
   <b>Scaleway CLI <code>scw init</code> splash</b>
 </p>
 
@@ -449,7 +449,7 @@ Filesystem      Size  Used Avail Use% Mounted on
 Sebastian Raschka has published an annotated architecture diagram in his [LLM Architecture Gallery](https://sebastianraschka.com/llm-architecture-gallery/#card-qwen3-6-35b-a3b):
 
 <p align="center">
-  <img src="/img/2026-04-27_01/architecture.png" alt="Qwen3.6-35B-A3B architecture diagram by Sebastian Raschka" width="800" /><br>
+  <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2026-04-27_01/architecture.png" alt="Qwen3.6-35B-A3B architecture diagram by Sebastian Raschka" width="800" /><br>
   <b>Qwen3.6-35B-A3B architecture, diagram by <a href="https://sebastianraschka.com/">Sebastian Raschka</a>, from his <a href="https://sebastianraschka.com/llm-architecture-gallery/#card-qwen3-6-35b-a3b">LLM Architecture Gallery</a>. Reproduced with full credit; all rights to the original author.</b>
 </p>
 
@@ -684,7 +684,7 @@ As a test task we asked OpenCode to implement an optimized [Jaro-Winkler similar
 > - Avoid Python lists for matches (use arrays / bitsets)
 
 <p align="center">
-  <img src="/img/2026-04-27_01/opencode_02.png" alt="OpenCode session with Qwen3.6-35B-A3B" width="900" /><br>
+  <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2026-04-27_01/opencode_02.png" alt="OpenCode session with Qwen3.6-35B-A3B" width="900" /><br>
   <b>OpenCode session, Jaro-Winkler implementation task</b>
 </p>
 
@@ -929,7 +929,7 @@ Before launching, set a budget alert at the [Scaleway Console](https://console.s
 Compute dominates. Every Scaleway Instance IPv4 is billable. The session produced lines totalling €3.11: €3.04 compute, €0.05 volume, €0.02 IP. Two notes on the math: (a) per the [Scaleway docs](https://www.scaleway.com/en/docs/instances/faq/#how-are-instances-billed), GPU Instances are billed per minute of uptime (including startup and standby), so €3.04 implies ~130 minutes at €0.023332/min (b) Volume and IP start billing at provisioning, before compute comes up, and continue ticking through brief stop/start cycles, so their line items are slightly larger than `compute_hours × per-hour rate` would suggest. The Console screenshot below was taken the next morning and shows **€3.60**: the extra ~€0.49 is overnight idle on the stopped instance, since block volume + Zonal Flexible IP keep ticking at €0.0158/hour while compute is paused.
 
 <p align="center">
-  <img src="/img/2026-04-27_01/billing_01.png" alt="Scaleway Console billing page showing €3.60 total" width="600" /><br>
+  <img src="https://github.com/aetperf/aetperf.github.io/blob/master/img/2026-04-27_01/billing_01.png" alt="Scaleway Console billing page showing €3.60 total" width="600" /><br>
   <b>Scaleway Console billing page the morning after the run: €3.60 total (€3.11 active session + overnight idle)</b>
 </p>
 
