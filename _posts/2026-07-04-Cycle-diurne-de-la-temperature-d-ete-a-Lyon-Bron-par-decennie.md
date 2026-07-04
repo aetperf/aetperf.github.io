@@ -17,19 +17,15 @@ tags:
 image: /img/2026-07-04_01/output_11_0.png
 ---
 
-Température moyenne par heure (locale) sur les mois de **juin–juillet–août**, une courbe par décennie
-depuis 1971, station **Lyon-Bron** (Météo-France, NUM_POSTE 69029001).
+Météo-France publie ses [données climatologiques de base horaires](https://www.data.gouv.fr/fr/datasets/donnees-climatologiques-de-base-horaires/) en open data sur data.gouv.fr. On les utilise ici pour tracer la température moyenne d'été (juin–juillet–août) à chaque heure de la journée à la station Lyon-Bron (`NUM_POSTE` 69029001), une courbe par décennie de 1971 à 2025, en heure locale d'été (CEST, UTC+2). Le notebook est autonome et reproductible : les données sont téléchargées directement via l'API data.gouv.fr puis mises en cache localement, aucun fichier local n'est requis.
 
-Les données sont téléchargées directement depuis l'open data Météo-France (via l'API data.gouv.fr) :
-ce notebook est autonome et reproductible, aucun fichier local n'est requis.
-
-Deux régimes d'échantillonnage :
+La fréquence d'échantillonnage change sur la période :
 - **avant 1991** : ~8 relevés/jour aux heures synoptiques 3-horaires (0,3,…,21 UTC → 2,5,…,23 en heure locale).
   Ces décennies n'ont que 8 points/jour : on les rend en pointillé, points relevés reliés par une
-  spline cubique périodique.
+  spline cubique périodique ([`CubicSpline`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.CubicSpline.html) de [SciPy](https://scipy.org/)) ;
 - **à partir de 1991** : vraies données horaires (24 points) → trait plein entre les points.
 
-Heure locale d'été = **UTC+2 (CEST)**.
+La palette `rainbow_PuRd` de [Paul Tol](https://sronpersonalpages.nl/~pault/) (paquet [tol-colors](https://github.com/Descanonge/tol_colors)) ordonne les décennies des teintes froides vers les teintes chaudes et reste lisible pour tous les types de daltonisme.
 
 ## 1. Installation des dépendances
 
@@ -59,7 +55,7 @@ from scipy.interpolate import CubicSpline
 ## 2. Télécharger la température horaire de Lyon-Bron
 
 On interroge l'API data.gouv.fr du jeu *« Données climatologiques de base – horaires »*, on ne garde que
-les fichiers du **département 69 (Rhône)** couvrant **1971+**, et on en extrait la station Lyon-Bron
+les fichiers du département 69 (Rhône) couvrant 1971+, et on en extrait la station Lyon-Bron
 (`NUM_POSTE = 69029001`) : deux colonnes suffisent, l'horodatage (`AAAAMMJJHH`, UTC) et la température
 `T` (°C). Le résultat est mis en cache localement (`lyon_bron_hourly.parquet`) pour que les ré-exécutions
 soient instantanées.
@@ -223,7 +219,7 @@ decades
 
 
 
-## 3. Profil diurne moyen par (décennie, heure locale)
+## 4. Profil diurne moyen par (décennie, heure locale)
 
 On filtre l'été (JJA), on convertit en heure locale (`(heure_UTC + 2) % 24`), puis on moyenne la
 température pour chaque couple (décennie, heure).
@@ -500,9 +496,11 @@ prof.round(1)
 
 
 
-## 4. Figure
+Avant 1991, seules les 8 heures synoptiques locales (2, 5, 8, 11, 14, 17, 20, 23) ont une valeur, d'où les `<NA>` ; 17 h, l'heure du pic, fait partie des heures réellement observées sur toute la période.
 
-- décennies **3-horaires** (≤ 8 heures disponibles) : points relevés + spline cubique **périodique** (pointillé) ;
+## 5. Figure
+
+- décennies **3-horaires** (≤ 8 heures disponibles) : points relevés + spline cubique périodique (pointillé) ;
 - décennies **horaires** : trait plein, bouclé (T à 24 h = T à 0 h).
 
 
@@ -570,3 +568,7 @@ fig.savefig("lyon_diurnal_cycle_by_decade.png", dpi=150)
 <p align="center">
   <img width="900" src="/img/2026-07-04_01/output_11_0.png" alt="Cycle diurne moyen de la température en été (juin-juillet-août) par décennie à Lyon-Bron">
 </p>
+
+L'écart entre décennies est présent à toute heure et maximal en fin d'après-midi : au pic de 17 h, la température moyenne passe de 23,9 °C (1971–1980) à 28,0 °C (2021–2025).
+
+La série est brute, non homogénéisée, et la dernière tranche ne couvre que 5 ans ; la décennie complète 2016–2025 donne 27,9 °C au même pic.
