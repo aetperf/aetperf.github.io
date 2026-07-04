@@ -571,4 +571,4 @@ fig.savefig("lyon_diurnal_cycle_by_decade.png", dpi=150)
 
 L'écart entre décennies est présent à toute heure et maximal en fin d'après-midi : au pic de 17 h, la température moyenne passe de 23,9 °C (1971–1980) à 28,0 °C (2021–2025).
 
-La série est brute et la dernière tranche ne couvre que 5 ans ; la décennie complète 2016–2025 donne 27,9 °C au même pic.
+La série est brute et la dernière tranche ne couvre que 5 ans ; la décennie complète 2016–2025 donne 27,9 °C au même pic. La croissance urbaine autour de Bron contribue peut-être un peu.
