@@ -25,7 +25,7 @@ La fréquence d'échantillonnage change sur la période :
   spline cubique périodique ([`CubicSpline`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.CubicSpline.html) de [SciPy](https://scipy.org/)) ;
 - **à partir de 1991** : vraies données horaires (24 points) → trait plein entre les points.
 
-## 1. Installation des dépendances
+## 1. Dépendances
 
 ```python
 # %pip install "pandas==3.0.3" "numpy==2.4.6" "matplotlib==3.11.0" "scipy==1.18.0" "tol-colors==2.2.0"
