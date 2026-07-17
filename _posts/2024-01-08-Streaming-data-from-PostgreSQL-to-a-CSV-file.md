@@ -1,5 +1,6 @@
 ---
 title: Streaming data from PostgreSQL to a CSV file
+redirect_to: https://architecture-performance.fr/en/blog/streaming-data-from-postgresql-to-a-csv-file-as-fast-as-possible
 layout: post
 comments: true
 author: François Pacull

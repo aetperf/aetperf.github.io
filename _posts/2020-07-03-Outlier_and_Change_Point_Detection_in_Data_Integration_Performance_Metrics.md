@@ -1,5 +1,6 @@
 ---
 title: Outlier and Change Point Detection in Data Integration Performance Metrics
+redirect_to: https://architecture-performance.fr/en/blog/outlier-and-change-point-detection-in-data-integration-performance-metrics
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton

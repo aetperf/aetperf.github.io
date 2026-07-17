@@ -1,5 +1,6 @@
 ---
 title: Reading a SQL table by chunks with Pandas
+redirect_to: https://architecture-performance.fr/en/blog/reading-a-sql-table-by-chunks-with-pandas
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: First try of auto-sklearn
+redirect_to: https://architecture-performance.fr/en/blog/first-try-of-auto-sklearn
 layout: post
 comments: true
 author: François Pacull

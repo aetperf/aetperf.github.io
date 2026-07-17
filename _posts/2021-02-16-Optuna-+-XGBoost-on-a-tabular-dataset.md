@@ -1,5 +1,6 @@
 ---
 title: Optuna + XGBoost on a tabular dataset
+redirect_to: https://architecture-performance.fr/en/blog/optuna-xgboost-on-a-tabular-dataset
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Create a routable pedestrian network with elevation
+redirect_to: https://architecture-performance.fr/en/blog/create-a-routable-pedestrian-network-with-elevation
 layout: post
 comments: true
 author: François Pacull

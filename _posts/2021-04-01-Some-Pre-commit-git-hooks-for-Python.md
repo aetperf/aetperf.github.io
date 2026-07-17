@@ -1,5 +1,6 @@
 ---
 title: Some Pre-commit git hooks for Python
+redirect_to: https://architecture-performance.fr/en/blog/some-pre-commit-git-hooks-for-python
 layout: post
 comments: true
 author: François Pacull

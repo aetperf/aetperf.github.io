@@ -1,5 +1,6 @@
 ---
 title: Looping over Pandas data
+redirect_to: https://architecture-performance.fr/en/blog/looping-over-pandas
 layout: post
 author: François Pacull
 tags: Pandas Cython Numba

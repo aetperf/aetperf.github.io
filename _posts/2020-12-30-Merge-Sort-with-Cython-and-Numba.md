@@ -1,5 +1,6 @@
 ---
 title: Merge Sort with Cython and Numba
+redirect_to: https://architecture-performance.fr/en/blog/merge-sort-with-cython-and-numba
 layout: post
 comments: true
 author: François Pacull

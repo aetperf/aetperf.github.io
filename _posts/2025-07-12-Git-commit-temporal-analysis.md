@@ -1,5 +1,6 @@
 ---
 title: A Git commit temporal analysis
+redirect_to: https://architecture-performance.fr/en/blog/a-git-commit-temporal-analysis
 layout: post
 comments: true
 author: François Pacull

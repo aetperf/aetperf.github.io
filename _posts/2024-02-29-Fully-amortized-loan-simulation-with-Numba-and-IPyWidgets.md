@@ -1,5 +1,6 @@
 ---
 title: Fully Amortized Loan simulation with Numba and IPyWidgets
+redirect_to: https://architecture-performance.fr/en/blog/fully-amortized-loan-simulation-with-numba-and-ipywidgets
 layout: post
 comments: true
 author: François Pacull

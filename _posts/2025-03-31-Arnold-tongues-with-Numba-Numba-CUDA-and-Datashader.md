@@ -1,5 +1,6 @@
 ---
 title: Arnold tongues with Numba, Numba CUDA and Datashader
+redirect_to: https://architecture-performance.fr/en/blog/arnold-tongues-with-numba-numba-cuda-and-datashader
 layout: post
 comments: true
 author: François Pacull

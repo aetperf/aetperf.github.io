@@ -1,5 +1,6 @@
 ---
 title: Running a Local LLM Coding Agent on AWS
+redirect_to: https://architecture-performance.fr/en/blog/running-a-local-llm-coding-agent-on-aws
 layout: post
 comments: true
 author: François Pacull

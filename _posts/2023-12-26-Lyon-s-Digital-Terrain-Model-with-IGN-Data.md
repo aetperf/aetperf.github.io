@@ -1,5 +1,6 @@
 ---
 title: Lyon's Digital Terrain Model with IGN Data
+redirect_to: https://architecture-performance.fr/en/blog/lyons-digital-terrain-model-with-ign-data
 layout: post
 comments: true
 author: François Pacull

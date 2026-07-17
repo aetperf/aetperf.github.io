@@ -1,5 +1,6 @@
 ---
 title: A Parallel loop in Python with Joblib.Parallel
+redirect_to: https://architecture-performance.fr/en/blog/a-parallel-loop-in-python-with-joblib-parallel
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Forward and reverse star representation of a digraph
+redirect_to: https://architecture-performance.fr/en/blog/forward-and-reverse-star-representation-of-a-digraph
 layout: post
 comments: true
 author: François Pacull

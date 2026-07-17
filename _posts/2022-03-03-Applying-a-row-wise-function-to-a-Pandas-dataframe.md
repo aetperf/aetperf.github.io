@@ -1,5 +1,6 @@
 ---
 title: Applying a row-wise function to a Pandas dataframe
+redirect_to: https://architecture-performance.fr/en/blog/applying-a-row-wise-function-to-a-pandas-dataframe
 layout: post
 comments: true
 author: François Pacull

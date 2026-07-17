@@ -1,5 +1,6 @@
 ---
 title: Quick data exploration with pandas, matplotlib and seaborn
+redirect_to: https://architecture-performance.fr/en/blog/quick-data-exploration-with-pandas-matplotlib-and-seaborn
 layout: post
 comments: true
 author: François Pacull

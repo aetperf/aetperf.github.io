@@ -1,5 +1,6 @@
 ---
 title: Fitting a logistic curve to time series in Python
+redirect_to: https://architecture-performance.fr/en/blog/fitting-a-logistic-curve-to-time-series-in-python
 layout: post
 comments: true
 author: François Pacull

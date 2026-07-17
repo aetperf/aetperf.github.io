@@ -1,5 +1,6 @@
 --- 
 title: Le Tour de France dataset webscraping
+redirect_to: https://architecture-performance.fr/en/blog/le-tour-de-france-history-web-scraping
 layout: post
 author: Romain Ferraton
 tags: Tour_de_France webscraping beautifulsoup python dataset

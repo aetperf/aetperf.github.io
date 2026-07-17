@@ -1,5 +1,6 @@
 ---
 title: A Hybrid information retriever with DuckDB
+redirect_to: https://architecture-performance.fr/en/blog/a-hybrid-information-retriever-with-duckdb
 layout: post
 comments: true
 author: François Pacull

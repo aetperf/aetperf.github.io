@@ -1,5 +1,6 @@
 ---
 title: A Quick study of air quality in Lyon with Python
+redirect_to: https://architecture-performance.fr/en/blog/a-quick-study-of-air-quality-in-lyon-with-python
 layout: post
 comments: true
 author: François Pacull

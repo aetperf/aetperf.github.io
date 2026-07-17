@@ -1,5 +1,6 @@
 ---
 title: Finding the most concentrated areas of bakeries in Lyon
+redirect_to: https://architecture-performance.fr/en/blog/finding-the-most-concentrated-areas-of-bakeries-in-lyon
 layout: post
 comments: true
 author: François Pacull

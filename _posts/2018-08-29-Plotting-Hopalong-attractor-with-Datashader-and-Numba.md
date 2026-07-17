@@ -1,5 +1,6 @@
 ---
 title: Plotting Hopalong attractor with Datashader and Numba 
+redirect_to: https://architecture-performance.fr/en/blog/plotting-hopalong-attractor-with-datashader-and-numba
 layout: post
 author: François Pacull
 tags: Datashader Numba Pandas

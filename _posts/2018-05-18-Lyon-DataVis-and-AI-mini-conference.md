@@ -1,5 +1,6 @@
 ---
 title: Lyon DataVis and AI mini-conference
+redirect_to: https://architecture-performance.fr/en/blog/lyon-datavis-and-ai-mini-conference
 layout: post
 author: François Pacull
 tags: Conference DataViz DeepLearning AI

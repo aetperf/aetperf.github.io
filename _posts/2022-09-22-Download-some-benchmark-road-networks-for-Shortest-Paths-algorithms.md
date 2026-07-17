@@ -1,5 +1,6 @@
 ---
 title: Download some benchmark road networks for Shortest Paths algorithms
+redirect_to: https://architecture-performance.fr/en/blog/download-some-benchmark-road-networks-for-shortest-paths-algorithms
 layout: post
 comments: true
 author: François Pacull

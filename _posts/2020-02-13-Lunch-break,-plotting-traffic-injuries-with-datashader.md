@@ -1,5 +1,6 @@
 ---
 title: Lunch break, plotting traffic injuries with datashader
+redirect_to: https://architecture-performance.fr/en/blog/lunch-break-plotting-traffic-injuries-with-datashader
 layout: post
 comments: true
 author: François Pacull

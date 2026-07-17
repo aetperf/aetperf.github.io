@@ -1,5 +1,6 @@
 ---
 title: Saving a tf.keras model with data normalization
+redirect_to: https://architecture-performance.fr/en/blog/saving-a-tf-keras-model-with-data-normalization
 layout: post
 comments: true
 author: François Pacull

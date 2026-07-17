@@ -1,5 +1,6 @@
 ---
 title: Loading data from PostgreSQL to Pandas with ConnectorX
+redirect_to: https://architecture-performance.fr/en/blog/loading-data-from-postgresql-to-pandas-with-connectorx
 layout: post
 comments: true
 author: François Pacull

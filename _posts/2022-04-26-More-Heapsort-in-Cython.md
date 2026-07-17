@@ -1,5 +1,6 @@
 ---
 title: More Heapsort in Cython
+redirect_to: https://architecture-performance.fr/en/blog/more-heapsort-in-cython
 layout: post
 comments: true
 author: François Pacull

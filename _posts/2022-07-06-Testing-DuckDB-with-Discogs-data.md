@@ -1,5 +1,6 @@
 ---
 title: Trying DuckDB with Discogs data
+redirect_to: https://architecture-performance.fr/en/blog/trying-duckdb-with-discogs-data
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton

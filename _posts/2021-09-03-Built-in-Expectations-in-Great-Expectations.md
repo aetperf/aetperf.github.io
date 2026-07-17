@@ -1,5 +1,6 @@
 ---
 title: Built-in Expectations in Great Expectations
+redirect_to: https://architecture-performance.fr/en/blog/built-in-expectations-in-great-expectations
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: An Example ETL Pipeline with dlt + SQLMesh + DuckDB
+redirect_to: https://architecture-performance.fr/en/blog/an-example-etl-pipeline-with-dlt-sqlmesh-duckdb
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Symmetric Chaos with Datashader and Numba
+redirect_to: https://architecture-performance.fr/en/blog/symmetric-chaos-with-datashader-and-numba
 layout: post
 author: François Pacull
 tags: attractor symmetry datashader numba

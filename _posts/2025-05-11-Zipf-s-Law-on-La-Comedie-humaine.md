@@ -1,5 +1,6 @@
 ---
 title: Zipf's Law on "La Comédie humaine"
+redirect_to: https://architecture-performance.fr/en/blog/zipfs-law-on-la-comedie-humaine
 layout: post
 comments: true
 author: François Pacull

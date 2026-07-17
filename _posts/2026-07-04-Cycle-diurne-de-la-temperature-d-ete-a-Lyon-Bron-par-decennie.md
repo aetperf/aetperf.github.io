@@ -1,5 +1,6 @@
 ---
 title: "Cycle diurne de la température d'été à Lyon-Bron, par décennie"
+redirect_to: https://architecture-performance.fr/fr/blog/cycle-diurne-de-la-temperature-d-ete-a-lyon-bron-par-decennie
 layout: post
 comments: true
 author: François Pacull

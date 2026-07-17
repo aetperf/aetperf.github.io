@@ -1,5 +1,6 @@
 ---
 title: Euler's number and the uniform sum distribution
+redirect_to: https://architecture-performance.fr/en/blog/eulers-number-and-the-uniform-sum-distribution
 layout: post
 comments: true
 author: François Pacull

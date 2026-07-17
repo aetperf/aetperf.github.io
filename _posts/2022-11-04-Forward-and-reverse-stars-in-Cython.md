@@ -1,5 +1,6 @@
 ---
 title: Forward and reverse stars in Cython
+redirect_to: https://architecture-performance.fr/en/blog/forward-and-reverse-stars-in-cython
 layout: post
 comments: true
 author: François Pacull

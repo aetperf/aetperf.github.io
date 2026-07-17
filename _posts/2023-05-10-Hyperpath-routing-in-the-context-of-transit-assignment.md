@@ -1,5 +1,6 @@
 ---
 title: Hyperpath routing in the context of transit assignment
+redirect_to: https://architecture-performance.fr/en/blog/hyperpath-routing-in-the-context-of-transit-assignment
 layout: post
 comments: true
 author: François Pacull

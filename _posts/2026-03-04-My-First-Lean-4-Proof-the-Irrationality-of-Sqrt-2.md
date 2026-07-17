@@ -1,5 +1,6 @@
 ---
 title: "My First Lean 4 Proof: the Irrationality of √2"
+redirect_to: https://architecture-performance.fr/en/blog/my-first-lean-4-proof-the-irrationality-of-sqrt2
 layout: post
 comments: true
 author: François Pacull

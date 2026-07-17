@@ -1,5 +1,6 @@
 ---
 title: Lunch break, plotting excess death in french department zones with Python
+redirect_to: https://architecture-performance.fr/en/blog/lunch-break-plotting-excess-death-in-french-department-zones-with-python
 layout: post
 comments: true
 author: François Pacull

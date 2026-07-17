@@ -1,5 +1,6 @@
 ---
 title: Computing and Visualizing Billions of Bohemian Eigenvalues with Python
+redirect_to: https://architecture-performance.fr/en/blog/computing-and-visualizing-billions-of-bohemian-eigenvalues-with-python
 layout: post
 comments: true
 author: François Pacull

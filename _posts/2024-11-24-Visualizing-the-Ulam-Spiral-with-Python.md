@@ -1,5 +1,6 @@
 ---
 title: Visualizing the Ulam Spiral with Python
+redirect_to: https://architecture-performance.fr/en/blog/visualizing-the-ulam-spiral-with-python
 layout: post
 comments: true
 author: François Pacull

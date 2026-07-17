@@ -1,5 +1,6 @@
 ---
 title: TPC-H benchmark of Hyper, DuckDB and DataFusion on Parquet files
+redirect_to: https://architecture-performance.fr/en/blog/tpc-h-benchmark-of-hyper-duckdb-and-datafusion-on-parquet-files
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton

@@ -1,5 +1,6 @@
 ---
 title: GPU Analytics Ep 2, Load some data from OmniSci into a GPU dataframe
+redirect_to: https://architecture-performance.fr/en/blog/gpu-analytics-ep-2-load-some-data-from-omnisci-into-a-gpu-dataframe
 layout: post
 comments: true
 author: François Pacull

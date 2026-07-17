@@ -1,5 +1,6 @@
 ---
 title: Benford's law and the population of french cities
+redirect_to: https://architecture-performance.fr/en/blog/benfords-law-and-the-population-of-french-cities
 layout: post
 comments: true
 author: François Pacull

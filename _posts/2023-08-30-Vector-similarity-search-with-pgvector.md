@@ -1,5 +1,6 @@
 ---
 title: Vector similarity search with pgvector
+redirect_to: https://architecture-performance.fr/en/blog/vector-similarity-search-with-pgvector
 layout: post
 comments: true
 author: François Pacull

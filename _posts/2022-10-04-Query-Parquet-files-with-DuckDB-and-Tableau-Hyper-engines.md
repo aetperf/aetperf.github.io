@@ -1,5 +1,6 @@
 ---
 title: Query Parquet files with DuckDB and Tableau Hyper engines
+redirect_to: https://architecture-performance.fr/en/blog/query-parquet-files-with-duckdb-and-tableau-hyper-engines
 layout: post
 comments: true
 author: François Pacull & Romain Ferraton

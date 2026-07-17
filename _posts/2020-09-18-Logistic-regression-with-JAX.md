@@ -1,5 +1,6 @@
 ---
 title: Logistic regression with JAX
+redirect_to: https://architecture-performance.fr/en/blog/logistic-regression-with-jax
 layout: post
 comments: true
 author: François Pacull

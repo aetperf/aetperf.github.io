@@ -1,5 +1,6 @@
 ---
 title: Using a local sentence embedding model for similarity calculation
+redirect_to: https://architecture-performance.fr/en/blog/using-a-local-sentence-embedding-model-for-similarity-calculation
 layout: post
 comments: true
 author: François Pacull

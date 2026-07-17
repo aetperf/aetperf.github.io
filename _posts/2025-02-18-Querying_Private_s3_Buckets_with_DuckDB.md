@@ -1,5 +1,6 @@
 ---
 title: Querying Private s3 Buckets with DuckDB
+redirect_to: https://architecture-performance.fr/en/blog/querying-private-s3-buckets-with-duckdb
 layout: post
 comments: true
 author: François Pacull

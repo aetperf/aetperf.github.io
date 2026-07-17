@@ -1,5 +1,6 @@
 ---
 title: In-memory cosine distance calculation, NumPy vs DuckDB
+redirect_to: https://architecture-performance.fr/en/blog/in-memory-cosine-distance-calculation-numpy-vs-duckdb
 layout: post
 comments: true
 author: François Pacull

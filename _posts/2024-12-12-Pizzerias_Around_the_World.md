@@ -1,5 +1,6 @@
 ---
 title: Pizzerias Around the World
+redirect_to: https://architecture-performance.fr/en/blog/pizzerias-around-the-world
 layout: post
 comments: true
 author: François Pacull

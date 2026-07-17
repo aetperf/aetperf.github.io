@@ -1,5 +1,6 @@
 ---
 title: Loading data from CSV files into a Tableau Hyper extract
+redirect_to: https://architecture-performance.fr/en/blog/load-data-from-csv-files-into-a-tableau-hyper-extract
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Heapsort with Numba and Cython
+redirect_to: https://architecture-performance.fr/en/blog/heapsort-with-numba-and-cython
 layout: post
 comments: true
 author: François Pacull

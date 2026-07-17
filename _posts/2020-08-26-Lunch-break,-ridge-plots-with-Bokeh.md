@@ -1,5 +1,6 @@
 ---
 title: Lunch break, ridge plots with Bokeh
+redirect_to: https://architecture-performance.fr/en/blog/lunch-break-ridge-plots-with-bokeh
 layout: post
 comments: true
 author: François Pacull

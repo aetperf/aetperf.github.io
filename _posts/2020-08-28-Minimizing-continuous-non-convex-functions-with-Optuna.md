@@ -1,5 +1,6 @@
 ---
 title: Minimizing continuous non-convex functions with Optuna
+redirect_to: https://architecture-performance.fr/en/blog/minimizing-continuous-non-convex-functions-with-optuna
 layout: post
 comments: true
 author: François Pacull

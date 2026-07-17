@@ -1,5 +1,6 @@
 ---
 title: Python plot - North Atlantic daily water surface temperature
+redirect_to: https://architecture-performance.fr/en/blog/python-plot-north-atlantic-daily-water-surface-temperature
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: GPU Analytics Ep 3, Apply a function to the rows of a dataframe
+redirect_to: https://architecture-performance.fr/en/blog/gpu-analytics-ep-3-apply-a-function-to-the-rows-of-a-dataframe
 layout: post
 comments: true
 author: François Pacull

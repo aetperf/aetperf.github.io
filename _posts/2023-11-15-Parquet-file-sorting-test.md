@@ -1,5 +1,6 @@
 ---
 title: Parquet file sorting test
+redirect_to: https://architecture-performance.fr/en/blog/parquet-file-sorting-test
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Nighttime Lights with Rasterio and Datashader
+redirect_to: https://architecture-performance.fr/en/blog/nighttime-lights-with-rasterio-and-datashader
 layout: post
 author: François Pacull
 tags: GIS raster rasterio datashader

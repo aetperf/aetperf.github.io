@@ -1,5 +1,6 @@
 ---
 title: Pandas Time Series example with some historical land temperatures
+redirect_to: https://architecture-performance.fr/en/blog/pandas-time-series-example-with-some-historical-land-temperatures
 layout: post
 author: François Pacull
 tags: Pandas time_series

@@ -1,5 +1,6 @@
 ---
 title: Spatial queries in DuckDB with R-tree and H3 indexing
+redirect_to: https://architecture-performance.fr/en/blog/spatial-queries-in-duckdb-with-r-tree-and-h3-indexing
 layout: post
 comments: true
 author: François Pacull

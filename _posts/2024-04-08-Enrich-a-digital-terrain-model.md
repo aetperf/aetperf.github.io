@@ -1,5 +1,6 @@
 ---
 title: Enrich a digital terrain model
+redirect_to: https://architecture-performance.fr/en/blog/enrich-a-digital-terrain-model
 layout: post
 comments: true
 author: François Pacull

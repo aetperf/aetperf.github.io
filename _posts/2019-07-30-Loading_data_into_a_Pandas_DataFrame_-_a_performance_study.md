@@ -1,5 +1,6 @@
 ---
 title: Loading data into a Pandas DataFrame - a performance study
+redirect_to: https://architecture-performance.fr/en/blog/loading-data-into-a-pandas-dataframe-a-performance-study
 layout: post
 comments: true
 author: François Pacull

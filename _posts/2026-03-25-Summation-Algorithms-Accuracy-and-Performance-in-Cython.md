@@ -1,5 +1,6 @@
 ---
 title: Summation of Floating-Point Numbers in Cython
+redirect_to: https://architecture-performance.fr/en/blog/summation-of-floating-point-numbers-in-cython
 layout: post
 comments: true
 author: François Pacull

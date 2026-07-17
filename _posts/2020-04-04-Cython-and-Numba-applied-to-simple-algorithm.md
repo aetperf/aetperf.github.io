@@ -1,5 +1,6 @@
 ---
 title: Cython and Numba applied to a simple algorithm
+redirect_to: https://architecture-performance.fr/en/blog/cython-and-numba-applied-to-a-simple-algorithm-insertion-sort
 layout: post
 comments: true
 author: François Pacull

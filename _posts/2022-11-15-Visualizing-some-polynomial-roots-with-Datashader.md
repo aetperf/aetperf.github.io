@@ -1,5 +1,6 @@
 ---
 title: Visualizing some polynomial roots with Datashader
+redirect_to: https://architecture-performance.fr/en/blog/visualizing-some-polynomial-roots-with-datashader
 layout: post
 comments: true
 author: François Pacull

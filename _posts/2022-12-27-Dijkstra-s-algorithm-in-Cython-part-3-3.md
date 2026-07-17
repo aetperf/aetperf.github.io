@@ -1,5 +1,6 @@
 ---
 title: Dijkstra's algorithm in Cython, part 3/3
+redirect_to: https://architecture-performance.fr/en/blog/dijkstras-algorithm-in-cython-part-3-3
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Some cool open-source Python packages for Machine Learning Ep 2
+redirect_to: https://architecture-performance.fr/en/blog/some-cool-open-source-python-packages-for-machine-learning-ep-2
 layout: post
 comments: true
 author: François Pacull

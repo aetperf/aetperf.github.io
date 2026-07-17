@@ -1,5 +1,6 @@
 ---
 title: Running a private Qwen3.6 Coding Agent on Scaleway
+redirect_to: https://architecture-performance.fr/en/blog/running-a-private-qwen3-6-coding-agent-on-scaleway
 layout: post
 comments: true
 author: François Pacull

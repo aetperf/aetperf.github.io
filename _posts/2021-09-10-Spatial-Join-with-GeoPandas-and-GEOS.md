@@ -1,5 +1,6 @@
 ---
 title: Spatial Join with GeoPandas (and GEOS)
+redirect_to: https://architecture-performance.fr/en/blog/spatial-join-with-geopandas-and-geos
 layout: post
 comments: true
 author: François Pacull

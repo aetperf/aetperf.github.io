@@ -1,5 +1,6 @@
 ---
 title: Calculating walking isochrones with Python
+redirect_to: https://architecture-performance.fr/en/blog/calculating-walking-isochrones-with-python
 layout: post
 comments: true
 author: François Pacull

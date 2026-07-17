@@ -1,5 +1,6 @@
 ---
 title: Fetching AROME weather forecasts and plotting temperatures
+redirect_to: https://architecture-performance.fr/en/blog/fetching-arome-weather-forecasts-and-plotting-temperatures
 layout: post
 comments: true
 author: François Pacull

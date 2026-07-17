@@ -1,5 +1,6 @@
 ---
 title: A Transit graph for static macro assignment
+redirect_to: https://architecture-performance.fr/en/blog/a-transit-graph-for-static-macro-assignment
 layout: post
 comments: true
 author: François Pacull

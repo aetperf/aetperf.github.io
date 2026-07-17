@@ -1,5 +1,6 @@
 ---
 title: Python plot - Antarctic sea ice extent
+redirect_to: https://architecture-performance.fr/en/blog/python-plot-antarctic-sea-ice-extent
 layout: post
 comments: true
 author: François Pacull

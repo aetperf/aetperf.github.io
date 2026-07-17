@@ -1,5 +1,6 @@
 ---
 title: GPU Analytics Ep 1, GPU installation of OmniSci on AWS
+redirect_to: https://architecture-performance.fr/en/blog/gpu-analytics-ep-1-gpu-installation-of-omnisci-on-aws
 layout: post
 comments: true
 author: François Pacull

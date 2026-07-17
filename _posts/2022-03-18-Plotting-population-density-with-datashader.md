@@ -1,5 +1,6 @@
 ---
 title: Plotting population density with datashader
+redirect_to: https://architecture-performance.fr/en/blog/plotting-population-density-with-datashader
 layout: post
 comments: true
 author: François Pacull

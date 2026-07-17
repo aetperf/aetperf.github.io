@@ -1,5 +1,6 @@
 ---
 title: Installing your Python package on a Windows machine that does not have internet access
+redirect_to: https://architecture-performance.fr/en/blog/installing-your-python-package-on-a-windows-machine-that-does-not-have-internet-access
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Goldbach's Comet with Numba and Datashader
+redirect_to: https://architecture-performance.fr/en/blog/goldbachs-comet-with-numba-and-datashader
 layout: post
 comments: true
 author: François Pacull

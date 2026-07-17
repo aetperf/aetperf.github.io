@@ -1,5 +1,6 @@
 ---
 title: Lunch break, fetching AROME temperature forecast in Lyon
+redirect_to: https://architecture-performance.fr/en/blog/lunch-break-fetching-arome-temperature-forecast-in-lyon
 layout: post
 comments: true
 author: François Pacull

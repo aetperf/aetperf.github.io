@@ -1,5 +1,6 @@
 ---
 title: Analyzing tramontane wind frequency
+redirect_to: https://architecture-performance.fr/en/blog/analyzing-tramontane-wind-frequency
 layout: post
 comments: true
 author: François Pacull

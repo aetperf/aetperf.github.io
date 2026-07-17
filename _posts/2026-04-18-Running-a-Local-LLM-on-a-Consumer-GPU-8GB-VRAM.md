@@ -1,5 +1,6 @@
 ---
 title: Running a Local LLM on a Consumer GPU (8 GB VRAM)
+redirect_to: https://architecture-performance.fr/en/blog/running-a-local-llm-on-a-consumer-gpu-8-gb-vram
 layout: post
 comments: true
 author: François Pacull

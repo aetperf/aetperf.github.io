@@ -1,5 +1,6 @@
 ---
 title: German-style strings in Apache Arrow
+redirect_to: https://architecture-performance.fr/en/blog/german-style-strings-in-apache-arrow
 layout: post
 comments: true
 author: François Pacull

@@ -1,5 +1,6 @@
 ---
 title: Calculating daily mean temperatures with scikit-learn
+redirect_to: https://architecture-performance.fr/en/blog/calculating-daily-mean-temperatures-with-scikit-learn
 layout: post
 comments: true
 author: François Pacull

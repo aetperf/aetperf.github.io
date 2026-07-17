@@ -1,5 +1,6 @@
 ---
 title: A Cython implementation of a priority queue
+redirect_to: https://architecture-performance.fr/en/blog/a-cython-implementation-of-a-priority-queue
 layout: post
 comments: true
 author: François Pacull
